@@ -10,6 +10,7 @@ in vec3 a_color;
 
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform vec2 u_mouse;
 
 out vec3 v_color;
 
@@ -20,12 +21,19 @@ mat2 rotate2d(float angle) {
 }
 
 void main() {
+  // Convert mouse from pixel coords to normalized device coords (-1 to 1)
+  vec2 mouseNorm = (u_mouse / u_resolution) * 2.0 - 1.0;
+  mouseNorm.y = -mouseNorm.y; // Flip Y (screen coords are top-down)
+
   // Apply rotation based on time
   vec2 pos = a_position * rotate2d(u_time * 0.5);
 
   // Add some wobble
   pos.x += sin(u_time * 2.0 + a_position.y * 3.0) * 0.1;
   pos.y += cos(u_time * 2.5 + a_position.x * 3.0) * 0.1;
+
+  // Offset position toward mouse
+  pos += mouseNorm * 0.3;
 
   // Scale to maintain aspect ratio
   float aspect = u_resolution.x / u_resolution.y;
@@ -179,6 +187,7 @@ interface Resources {
   indexBuffer: WebGLBuffer;
   timeLocation: WebGLUniformLocation;
   resolutionLocation: WebGLUniformLocation;
+  mouseLocation: WebGLUniformLocation;
   indexCount: number;
 }
 
@@ -196,7 +205,8 @@ function initDemo(ctx: GLContext): Resources {
 
   const timeLocation = gl.getUniformLocation(program, "u_time");
   const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
-  if (!timeLocation || !resolutionLocation) {
+  const mouseLocation = gl.getUniformLocation(program, "u_mouse");
+  if (!timeLocation || !resolutionLocation || !mouseLocation) {
     throw new Error("oops");
   }
 
@@ -255,13 +265,20 @@ function initDemo(ctx: GLContext): Resources {
     indexBuffer,
     timeLocation,
     resolutionLocation,
+    mouseLocation,
     indexCount: indices.length,
   };
 }
 
-function render(ctx: GLContext, resources: Resources, time: number): void {
+function render(
+  ctx: GLContext,
+  resources: Resources,
+  time: number,
+  mouseX: number,
+  mouseY: number
+): void {
   const { gl } = ctx;
-  const { program, vao, timeLocation, resolutionLocation, indexCount } = resources;
+  const { program, vao, timeLocation, resolutionLocation, mouseLocation, indexCount } = resources;
 
   // clear with dark bg
   gl.clearColor(0.05, 0.05, 0.1, 1.0);
@@ -273,6 +290,7 @@ function render(ctx: GLContext, resources: Resources, time: number): void {
   // set uniforms
   gl.uniform1f(timeLocation, time);
   gl.uniform2f(resolutionLocation, ctx.width, ctx.height);
+  gl.uniform2f(mouseLocation, mouseX, mouseY);
 
   // bind VAO and draw
   gl.bindVertexArray(vao);
@@ -295,13 +313,17 @@ function main() {
 
   console.log("demo initialized, rendering...");
 
-  // Example: log mouse position
+  let mouseX = ctx.width / 2;
+  let mouseY = ctx.height / 2;
+
   ctx.onCursorMove((event) => {
-    console.log(`mouse: ${event.x.toFixed(0)}, ${event.y.toFixed(0)}`);
+    mouseX = event.x;
+    mouseY = event.y;
   });
 
   // create render callback
-  const renderCallback = (time: number, _deltaTime: number): void => render(ctx, resources, time);
+  const renderCallback = (time: number, _deltaTime: number): void =>
+    render(ctx, resources, time, mouseX, mouseY);
 
   // runRenderLoop is async (uses requestAnimationFrame), so cleanup must not
   // happen here - the browser handles resource cleanup on page unload
