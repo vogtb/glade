@@ -10,7 +10,9 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "bun run --filter '*' typecheck"
+    "typecheck": "bun run --filter '*' typecheck",
+    "demo:native": "bun run --filter '*' dev:native",
+    "demo:web": "bun run --filter '*' dev:web"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

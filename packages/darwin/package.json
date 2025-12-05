@@ -9,5 +9,8 @@
   },
   "dependencies": {
     "@bun-gui/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
   }
 }

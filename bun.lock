@@ -31,6 +31,9 @@
       "dependencies": {
         "@bun-gui/core": "workspace:*",
       },
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
     },
     "packages/demo": {
       "name": "@bun-gui/demo",

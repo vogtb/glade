@@ -282,14 +282,6 @@ function render(ctx: GLContext, resources: Resources, time: number): void {
   // and around we go!
 }
 
-function cleanup(gl: WebGL2RenderingContext, resources: Resources): void {
-  gl.deleteProgram(resources.program);
-  gl.deleteVertexArray(resources.vao);
-  gl.deleteBuffer(resources.positionBuffer);
-  gl.deleteBuffer(resources.colorBuffer);
-  gl.deleteBuffer(resources.indexBuffer);
-}
-
 function main() {
   const ctx = createContext({
     width: 800,
@@ -306,10 +298,9 @@ function main() {
   // create render callback
   const renderCallback = (time: number, _deltaTime: number): void => render(ctx, resources, time);
 
+  // runRenderLoop is async (uses requestAnimationFrame), so cleanup must not
+  // happen here - the browser handles resource cleanup on page unload
   runRenderLoop(ctx, renderCallback);
-
-  cleanup(ctx.gl, resources);
-  ctx.destroy();
 }
 
 main();
