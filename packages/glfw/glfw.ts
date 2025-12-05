@@ -1,10 +1,20 @@
 import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 
-// Use vendored GLFW dylib built from submodule (at repo root)
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const GLFW_PATH = join(__dirname, "..", "..", "vendor", "libglfw.dylib");
+// Embed the dylib at compile time - Bun will bundle this into the executable
+const GLFW_DYLIB = Bun.file(new URL("../../vendor/libglfw.dylib", import.meta.url));
+
+// Write to user's local lib directory on macOS
+const LIB_DIR = join(homedir(), ".local", "lib", "bun-gui");
+const GLFW_PATH = join(LIB_DIR, "libglfw.dylib");
+
+// Ensure the dylib is extracted before we try to load it
+if (!existsSync(GLFW_PATH)) {
+  mkdirSync(LIB_DIR, { recursive: true });
+  await Bun.write(GLFW_PATH, GLFW_DYLIB);
+}
 
 const lib = dlopen(GLFW_PATH, {
   glfwInit: { args: [], returns: FFIType.i32 },

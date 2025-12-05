@@ -7,7 +7,10 @@
   "scripts": {
     "dev:native": "bun ./demo.ts",
     "dev:web": "bun build ./demo.ts --outdir=./dist --minify && bun ./serve.ts",
+    "build:native": "bun build ./demo.ts --compile --outfile=./dist/demo",
     "build:web": "bun build ./demo.ts --outdir=./dist --minify",
+    "run:native": "./dist/demo",
+    "run:web": "bun ./serve.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
