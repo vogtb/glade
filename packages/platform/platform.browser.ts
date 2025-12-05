@@ -8,4 +8,4 @@ export {
   type ContextOptions,
   type BrowserContext,
   type BrowserContextOptions,
-} from "@bun-gui/browser";
+} from "@glade/browser";

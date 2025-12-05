@@ -1,4 +1,4 @@
-export type { GLContext, RenderCallback, ContextOptions } from "@bun-gui/core";
+export type { GLContext, RenderCallback, ContextOptions } from "@glade/core";
 
 export {
   createContext,
@@ -6,7 +6,7 @@ export {
   type DarwinContext,
   type DarwinContextOptions,
 } from "./context.ts";
-export { glfw } from "@bun-gui/glfw";
+export { glfw } from "@glade/glfw";
 export { lib } from "./gl.ts";
 export { DarwinWebGL2RenderingContext } from "./webgl2-context.ts";
 

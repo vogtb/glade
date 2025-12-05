@@ -15,64 +15,52 @@
       },
     },
     "packages/browser": {
-      "name": "@bun-gui/browser",
+      "name": "@glade/browser",
       "version": "0.0.1",
       "dependencies": {
-        "@bun-gui/core": "workspace:*",
+        "@glade/core": "workspace:*",
       },
     },
     "packages/core": {
-      "name": "@bun-gui/core",
+      "name": "@glade/core",
       "version": "0.0.1",
     },
     "packages/darwin": {
-      "name": "@bun-gui/darwin",
+      "name": "@glade/darwin",
       "version": "0.0.1",
       "dependencies": {
-        "@bun-gui/core": "workspace:*",
-        "@bun-gui/glfw": "workspace:*",
+        "@glade/core": "workspace:*",
+        "@glade/glfw": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "latest",
       },
     },
     "packages/demo": {
-      "name": "@bun-gui/demo",
+      "name": "@glade/demo",
       "version": "0.0.1",
       "dependencies": {
-        "@bun-gui/core": "workspace:*",
-        "@bun-gui/platform": "workspace:*",
+        "@glade/core": "workspace:*",
+        "@glade/platform": "workspace:*",
       },
     },
     "packages/glfw": {
-      "name": "@bun-gui/glfw",
+      "name": "@glade/glfw",
       "version": "0.0.1",
       "devDependencies": {
         "@types/bun": "latest",
       },
     },
     "packages/platform": {
-      "name": "@bun-gui/platform",
+      "name": "@glade/platform",
       "version": "0.0.1",
       "dependencies": {
-        "@bun-gui/browser": "workspace:*",
-        "@bun-gui/darwin": "workspace:*",
+        "@glade/browser": "workspace:*",
+        "@glade/darwin": "workspace:*",
       },
     },
   },
   "packages": {
-    "@bun-gui/browser": ["@bun-gui/browser@workspace:packages/browser"],
-
-    "@bun-gui/core": ["@bun-gui/core@workspace:packages/core"],
-
-    "@bun-gui/darwin": ["@bun-gui/darwin@workspace:packages/darwin"],
-
-    "@bun-gui/demo": ["@bun-gui/demo@workspace:packages/demo"],
-
-    "@bun-gui/glfw": ["@bun-gui/glfw@workspace:packages/glfw"],
-
-    "@bun-gui/platform": ["@bun-gui/platform@workspace:packages/platform"],
-
     "@eslint-community/eslint-utils": ["@eslint-community/eslint-utils@4.9.0", "", { "dependencies": { "eslint-visitor-keys": "^3.4.3" }, "peerDependencies": { "eslint": "^6.0.0 || ^7.0.0 || >=8.0.0" } }, "sha512-ayVFHdtZ+hsq1t2Dy24wCmGXGe4q9Gu3smhLYALJrr473ZH27MsnSL+LKUlimp4BWJqMDMLmPpx/Q9R3OAlL4g=="],
 
     "@eslint-community/regexpp": ["@eslint-community/regexpp@4.12.2", "", {}, "sha512-EriSTlt5OC9/7SXkRSCAhfSxxoSUgBm33OH+IkwbdpgoqsSsUg7y3uh+IICI/Qg4BBWr3U2i39RpmycbxMq4ew=="],
@@ -90,6 +78,18 @@
     "@eslint/object-schema": ["@eslint/object-schema@2.1.7", "", {}, "sha512-VtAOaymWVfZcmZbp6E2mympDIHvyjXs/12LqWYjVw6qjrfF+VK+fyG33kChz3nnK+SU5/NeHOqrTEHS8sXO3OA=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
+
+    "@glade/browser": ["@glade/browser@workspace:packages/browser"],
+
+    "@glade/core": ["@glade/core@workspace:packages/core"],
+
+    "@glade/darwin": ["@glade/darwin@workspace:packages/darwin"],
+
+    "@glade/demo": ["@glade/demo@workspace:packages/demo"],
+
+    "@glade/glfw": ["@glade/glfw@workspace:packages/glfw"],
+
+    "@glade/platform": ["@glade/platform@workspace:packages/platform"],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

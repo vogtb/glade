@@ -1,5 +1,5 @@
-import { createContext, runRenderLoop, GLSL_VERSION, GLSL_PRECISION } from "@bun-gui/platform";
-import type { GLContext } from "@bun-gui/core";
+import { createContext, runRenderLoop, GLSL_VERSION, GLSL_PRECISION } from "@glade/platform";
+import type { GLContext } from "@glade/core";
 
 // Vertex shader - transforms vertices and passes color to fragment shader
 const VERTEX_SHADER = `${GLSL_VERSION}
@@ -294,6 +294,11 @@ function main() {
   const resources = initDemo(ctx);
 
   console.log("demo initialized, rendering...");
+
+  // Example: log mouse position
+  ctx.onCursorMove((event) => {
+    console.log(`mouse: ${event.x.toFixed(0)}, ${event.y.toFixed(0)}`);
+  });
 
   // create render callback
   const renderCallback = (time: number, _deltaTime: number): void => render(ctx, resources, time);

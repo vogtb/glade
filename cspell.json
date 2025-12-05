@@ -1,3 +1,14 @@
 {
-  "words": ["GLFW", "cstring", "dylib", "libglfw", "opengl", "vsync", "GLSL", "highp", "DONT"]
+  "words": [
+    "GLFW",
+    "cstring",
+    "dylib",
+    "libglfw",
+    "opengl",
+    "vsync",
+    "GLSL",
+    "highp",
+    "DONT",
+    "scancode"
+  ]
 }

@@ -8,4 +8,4 @@ export {
   type ContextOptions,
   type DarwinContext,
   type DarwinContextOptions,
-} from "@bun-gui/darwin";
+} from "@glade/darwin";

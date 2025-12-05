@@ -1,5 +1,5 @@
 {
-  "name": "@bun-gui/darwin",
+  "name": "@glade/darwin",
   "version": "0.0.1",
   "type": "module",
   "main": "darwin.ts",
@@ -8,8 +8,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bun-gui/core": "workspace:*",
-    "@bun-gui/glfw": "workspace:*"
+    "@glade/core": "workspace:*",
+    "@glade/glfw": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest"

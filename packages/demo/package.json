@@ -1,5 +1,5 @@
 {
-  "name": "@bun-gui/demo",
+  "name": "@glade/demo",
   "version": "0.0.1",
   "type": "module",
   "main": "demo.ts",
@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bun-gui/core": "workspace:*",
-    "@bun-gui/platform": "workspace:*"
+    "@glade/core": "workspace:*",
+    "@glade/platform": "workspace:*"
   }
 }

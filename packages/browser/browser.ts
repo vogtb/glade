@@ -1,4 +1,4 @@
-export type { GLContext, RenderCallback, ContextOptions } from "@bun-gui/core";
+export type { GLContext, RenderCallback, ContextOptions } from "@glade/core";
 
 export {
   createContext,

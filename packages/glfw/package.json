@@ -1,5 +1,5 @@
 {
-  "name": "@bun-gui/glfw",
+  "name": "@glade/glfw",
   "version": "0.0.1",
   "type": "module",
   "main": "glfw.ts",

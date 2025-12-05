@@ -1,8 +1,13 @@
+// Re-export all event types
+export * from "./events.ts";
+
+import type { EventTarget } from "./events.ts";
+
 /**
  * Platform-agnostic context interface. The gl property is the standard
  * WebGL2RenderingContext interface.
  */
-export interface GLContext {
+export interface GLContext extends EventTarget {
   gl: WebGL2RenderingContext;
   width: number;
   height: number;
