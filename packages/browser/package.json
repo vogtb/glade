@@ -1,0 +1,13 @@
+{
+  "name": "@bun-gui/browser",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "browser.ts",
+  "types": "browser.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bun-gui/core": "workspace:*"
+  }
+}

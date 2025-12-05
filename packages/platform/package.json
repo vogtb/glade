@@ -1,0 +1,19 @@
+{
+  "name": "@bun-gui/platform",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "bun": "./platform.darwin.ts",
+      "browser": "./platform.browser.ts",
+      "default": "./platform.browser.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bun-gui/browser": "workspace:*",
+    "@bun-gui/darwin": "workspace:*"
+  }
+}

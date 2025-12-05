@@ -1,0 +1,13 @@
+{
+  "name": "@bun-gui/darwin",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "darwin.ts",
+  "types": "darwin.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bun-gui/core": "workspace:*"
+  }
+}

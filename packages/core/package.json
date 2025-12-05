@@ -1,0 +1,10 @@
+{
+  "name": "@bun-gui/core",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "core.ts",
+  "types": "core.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

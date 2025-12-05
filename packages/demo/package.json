@@ -1,0 +1,17 @@
+{
+  "name": "@bun-gui/demo",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "demo.ts",
+  "types": "demo.ts",
+  "scripts": {
+    "dev:native": "bun ./demo.ts",
+    "dev:web": "bun build ./demo.ts --outdir=./dist --minify && bun ./serve.ts",
+    "build:web": "bun build ./demo.ts --outdir=./dist --minify",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bun-gui/core": "workspace:*",
+    "@bun-gui/platform": "workspace:*"
+  }
+}
