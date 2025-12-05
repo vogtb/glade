@@ -304,7 +304,7 @@ function main() {
   const ctx = createContext({
     width: 800,
     height: 600,
-    title: "bun-gui WebGL2 Demo",
+    title: "glade WebGL2 Demo",
   });
 
   console.log("initializing WebGL2 demo...");

@@ -1,5 +1,5 @@
 {
-  "name": "bun-gui",
+  "name": "glade",
   "private": true,
   "type": "module",
   "workspaces": [

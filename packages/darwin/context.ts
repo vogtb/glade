@@ -29,7 +29,7 @@ export interface DarwinContext extends GLContext {
 export function createContext(options: DarwinContextOptions = {}): DarwinContext {
   const width = options.width ?? 800;
   const height = options.height ?? 600;
-  const title = options.title ?? "bun-gui";
+  const title = options.title ?? "glade";
 
   if (!glfw.init()) {
     throw new Error("Failed to initialize GLFW");
