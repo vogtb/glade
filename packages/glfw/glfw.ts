@@ -1,13 +1,10 @@
 import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
-// TODO: Probably a better way to get libglfw so we don't depend on brew. Bun's
-// FFI (and most FFIs) only work with dynamic linking, so if we want to build
-// our app into a stand-alone executable, we'd need to depend on dylib to be
-// on the machine, or do something like use Bun.file to embed the dylib, then
-// write it out to disk on start up, so we can link against it at runtime. Weird
-// but theoretically possible. The embedding would work like this:
-// `await Bun.file(new URL("./libglfw.dylib", import.meta.url));`
-const GLFW_PATH = "/opt/homebrew/lib/libglfw.dylib";
+// Use vendored GLFW dylib built from submodule (at repo root)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const GLFW_PATH = join(__dirname, "..", "..", "vendor", "libglfw.dylib");
 
 const lib = dlopen(GLFW_PATH, {
   glfwInit: { args: [], returns: FFIType.i32 },

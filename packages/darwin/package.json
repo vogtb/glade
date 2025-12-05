@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bun-gui/core": "workspace:*"
+    "@bun-gui/core": "workspace:*",
+    "@bun-gui/glfw": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest"

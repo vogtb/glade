@@ -1,0 +1,13 @@
+{
+  "name": "@bun-gui/glfw",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "glfw.ts",
+  "types": "glfw.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

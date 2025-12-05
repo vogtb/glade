@@ -30,6 +30,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@bun-gui/core": "workspace:*",
+        "@bun-gui/glfw": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -41,6 +42,13 @@
       "dependencies": {
         "@bun-gui/core": "workspace:*",
         "@bun-gui/platform": "workspace:*",
+      },
+    },
+    "packages/glfw": {
+      "name": "@bun-gui/glfw",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@types/bun": "latest",
       },
     },
     "packages/platform": {
@@ -60,6 +68,8 @@
     "@bun-gui/darwin": ["@bun-gui/darwin@workspace:packages/darwin"],
 
     "@bun-gui/demo": ["@bun-gui/demo@workspace:packages/demo"],
+
+    "@bun-gui/glfw": ["@bun-gui/glfw@workspace:packages/glfw"],
 
     "@bun-gui/platform": ["@bun-gui/platform@workspace:packages/platform"],
 

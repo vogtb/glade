@@ -1,5 +1,5 @@
 import type { GLContext, RenderCallback, ContextOptions } from "@bun-gui/core";
-import { glfw, type GLFWwindow } from "./glfw.ts";
+import { glfw, type GLFWwindow } from "@bun-gui/glfw";
 import { DarwinWebGL2RenderingContext } from "./webgl2-context.ts";
 
 export interface DarwinContextOptions extends ContextOptions {

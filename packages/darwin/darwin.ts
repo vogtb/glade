@@ -6,7 +6,7 @@ export {
   type DarwinContext,
   type DarwinContextOptions,
 } from "./context.ts";
-export { glfw } from "./glfw.ts";
+export { glfw } from "@bun-gui/glfw";
 export { lib } from "./gl.ts";
 export { DarwinWebGL2RenderingContext } from "./webgl2-context.ts";
 
