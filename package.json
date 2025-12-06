@@ -13,7 +13,8 @@
     "typecheck": "bun run --filter '*' typecheck",
     "demo:native": "bun run --filter '*' dev:native",
     "demo:web": "bun run --filter '*' dev:web",
-    "build:vendor": "./vendor/build-glfw.sh",
+    "build:vendor-glfw": "./vendor/build-glfw.sh",
+    "build:vendor-dawn": "./vendor/build-dawn.sh",
     "postinstall": "./vendor/build-glfw.sh"
   },
   "devDependencies": {

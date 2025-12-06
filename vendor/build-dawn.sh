@@ -21,12 +21,23 @@ if ! command -v cmake &> /dev/null; then
     exit 1
 fi
 
-# Check for ninja (recommended for Dawn builds)
-if ! command -v ninja &> /dev/null; then
+# Find ninja - prefer Homebrew version to avoid depot_tools conflicts
+NINJA_PATH=""
+if [ -x "/opt/homebrew/bin/ninja" ]; then
+    NINJA_PATH="/opt/homebrew/bin/ninja"
+elif [ -x "/usr/local/bin/ninja" ]; then
+    NINJA_PATH="/usr/local/bin/ninja"
+elif command -v ninja &> /dev/null; then
+    NINJA_PATH="$(command -v ninja)"
+fi
+
+if [ -z "$NINJA_PATH" ]; then
     echo "Error: ninja is required but not installed."
     echo "Install with: brew install ninja"
     exit 1
 fi
+
+echo "Using ninja at: $NINJA_PATH"
 
 # Create build directory
 mkdir -p "$BUILD_DIR"
@@ -35,6 +46,7 @@ cd "$BUILD_DIR"
 # Configure with CMake - build shared monolithic library for macOS
 cmake .. \
     -G Ninja \
+    -DCMAKE_MAKE_PROGRAM="$NINJA_PATH" \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
     -DDAWN_BUILD_MONOLITHIC_LIBRARY=SHARED \
