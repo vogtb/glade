@@ -58,10 +58,10 @@ export const WGPURequestDeviceStatus = {
 
 export const WGPUTextureFormat = {
   Undefined: 0x00000000,
-  BGRA8Unorm: 0x0000000b,
-  BGRA8UnormSrgb: 0x0000000c,
-  RGBA8Unorm: 0x00000009,
-  RGBA8UnormSrgb: 0x0000000a,
+  RGBA8Unorm: 0x00000016,
+  RGBA8UnormSrgb: 0x00000017,
+  BGRA8Unorm: 0x0000001b,
+  BGRA8UnormSrgb: 0x0000001c,
 } as const;
 
 export const WGPUTextureUsage = {

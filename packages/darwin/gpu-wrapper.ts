@@ -132,10 +132,10 @@ const indexFormatMap: Record<string, number> = {
   uint32: WGPUIndexFormat.Uint32,
 };
 
-// Texture format mapping
+// Texture format mapping (from webgpu.h)
 const textureFormatMap: Record<string, number> = {
-  bgra8unorm: 0x0000000b,
-  rgba8unorm: 0x00000009,
+  bgra8unorm: 0x0000001b, // WGPUTextureFormat_BGRA8Unorm
+  rgba8unorm: 0x00000016, // WGPUTextureFormat_RGBA8Unorm
 };
 
 function convertBufferUsage(usage: number): number {
@@ -800,12 +800,14 @@ export class DawnGPUDevice {
     usage: number;
     mappedAtCreation?: boolean;
   }): DawnGPUBuffer {
-    // WGPUBufferDescriptor struct
+    // WGPUBufferDescriptor struct layout (from webgpu.h):
+    // { nextInChain: ptr(8), label: WGPUStringView(16), usage: u64(8), size: u64(8), mappedAtCreation: u32(4) }
+    // Total: 48 bytes
     const descBuffer = Buffer.alloc(48);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
     descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
     descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
-    descBuffer.writeUInt32LE(convertBufferUsage(descriptor.usage), 24); // usage
+    descBuffer.writeBigUInt64LE(BigInt(convertBufferUsage(descriptor.usage)), 24); // usage (u64!)
     descBuffer.writeBigUInt64LE(BigInt(descriptor.size), 32); // size
     descBuffer.writeUInt32LE(descriptor.mappedAtCreation ? 1 : 0, 40); // mappedAtCreation
 
@@ -821,9 +823,12 @@ export class DawnGPUDevice {
     const code = descriptor.code;
     const codeBuffer = Buffer.from(code + "\0", "utf8");
 
-    const wgslSource = Buffer.alloc(40);
+    // WGSLDescriptor struct: { chain: ChainedStruct(16), code: WGPUStringView(16) } = 32 bytes
+    // ChainedStruct: { next: ptr(8), s_type: u32(4), padding(4) }
+    const wgslSource = Buffer.alloc(32);
     wgslSource.writeBigUInt64LE(BigInt(0), 0); // chain.next
-    wgslSource.writeUInt32LE(6, 8); // chain.sType = WGPUSType_ShaderSourceWGSL
+    wgslSource.writeUInt32LE(0x00000002, 8); // chain.sType = WGPUSType_ShaderSourceWGSL (0x02)
+    // offset 12: 4 bytes padding
     wgslSource.writeBigUInt64LE(BigInt(ptr(codeBuffer)), 16); // code.data
     wgslSource.writeBigUInt64LE(BigInt(codeBuffer.length - 1), 24); // code.length
 
@@ -844,7 +849,12 @@ export class DawnGPUDevice {
     const entries = Array.from(descriptor.entries);
     const numEntries = entries.length;
 
-    const entrySize = 80;
+    // WGPUBindGroupLayoutEntry struct layout:
+    // { nextInChain: ptr(8), binding: u32(4), visibility: u32(4), bindingArraySize: u32(4), padding(4),
+    //   buffer: WGPUBufferBindingLayout(24), sampler: WGPUSamplerBindingLayout(16),
+    //   texture: WGPUTextureBindingLayout(24), storageTexture: WGPUStorageTextureBindingLayout(24) }
+    // Total: 112 bytes
+    const entrySize = 112;
     const entriesBuffer = Buffer.alloc(entrySize * numEntries);
 
     for (let i = 0; i < numEntries; i++) {
@@ -854,7 +864,11 @@ export class DawnGPUDevice {
       entriesBuffer.writeBigUInt64LE(BigInt(0), offset); // nextInChain
       entriesBuffer.writeUInt32LE(entry.binding, offset + 8); // binding
       entriesBuffer.writeUInt32LE(convertShaderStage(entry.visibility), offset + 12); // visibility
+      entriesBuffer.writeUInt32LE(0, offset + 16); // bindingArraySize = 0
+      // offset + 20: 4 bytes padding
 
+      // buffer: WGPUBufferBindingLayout at offset 24 (24 bytes)
+      // { nextInChain: ptr(8), type: u32(4), hasDynamicOffset: u32(4), minBindingSize: u64(8) }
       if (entry.buffer) {
         const bufferType =
           entry.buffer.type === "uniform"
@@ -864,10 +878,14 @@ export class DawnGPUDevice {
               : entry.buffer.type === "read-only-storage"
                 ? 3
                 : 1;
-        entriesBuffer.writeUInt32LE(bufferType, offset + 16); // buffer.type
-        entriesBuffer.writeUInt32LE(entry.buffer.hasDynamicOffset ? 1 : 0, offset + 20);
-        entriesBuffer.writeBigUInt64LE(BigInt(entry.buffer.minBindingSize ?? 0), offset + 24);
+        entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 24); // buffer.nextInChain
+        entriesBuffer.writeUInt32LE(bufferType, offset + 32); // buffer.type
+        entriesBuffer.writeUInt32LE(entry.buffer.hasDynamicOffset ? 1 : 0, offset + 36); // buffer.hasDynamicOffset
+        entriesBuffer.writeBigUInt64LE(BigInt(entry.buffer.minBindingSize ?? 0), offset + 40); // buffer.minBindingSize
       }
+      // sampler: WGPUSamplerBindingLayout at offset 48 (16 bytes) - leave as zeros
+      // texture: WGPUTextureBindingLayout at offset 64 (24 bytes) - leave as zeros
+      // storageTexture: WGPUStorageTextureBindingLayout at offset 88 (24 bytes) - leave as zeros
     }
 
     const descBuffer = Buffer.alloc(40);
@@ -895,6 +913,10 @@ export class DawnGPUDevice {
     const entries = descriptor.entries;
     const numEntries = entries.length;
 
+    // WGPUBindGroupEntry struct layout:
+    // { nextInChain: ptr(8), binding: u32(4), padding(4), buffer: ptr(8),
+    //   offset: u64(8), size: u64(8), sampler: ptr(8), textureView: ptr(8) }
+    // Total: 56 bytes
     const entrySize = 56;
     const entriesBuffer = Buffer.alloc(entrySize * numEntries);
 
@@ -904,6 +926,7 @@ export class DawnGPUDevice {
 
       entriesBuffer.writeBigUInt64LE(BigInt(0), offset); // nextInChain
       entriesBuffer.writeUInt32LE(entry.binding, offset + 8); // binding
+      // offset + 12: 4 bytes padding
 
       const resource = entry.resource;
       entriesBuffer.writeBigUInt64LE(
@@ -912,6 +935,8 @@ export class DawnGPUDevice {
       ); // buffer
       entriesBuffer.writeBigUInt64LE(BigInt(resource.offset ?? 0), offset + 24); // offset
       entriesBuffer.writeBigUInt64LE(BigInt(resource.size ?? resource.buffer.size), offset + 32); // size
+      entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 40); // sampler = NULL
+      entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 48); // textureView = NULL
     }
 
     const descBuffer = Buffer.alloc(48);
@@ -973,10 +998,16 @@ export class DawnGPUDevice {
       }
     }
 
-    const attributeSize = 24;
+    // WGPUVertexAttribute struct layout (from webgpu.h):
+    // { nextInChain: ptr(8), format: u32(4), padding(4), offset: u64(8), shaderLocation: u32(4), padding(4) }
+    // Total: 32 bytes
+    const attributeSize = 32;
     const attributesBuffer = Buffer.alloc(attributeSize * Math.max(totalAttributes, 1));
 
-    const vertexBufferLayoutSize = 32;
+    // WGPUVertexBufferLayout struct layout (from webgpu.h):
+    // { nextInChain: ptr(8), stepMode: u32(4), padding(4), arrayStride: u64(8), attributeCount: size_t(8), attributes: ptr(8) }
+    // Total: 40 bytes
+    const vertexBufferLayoutSize = 40;
     const vertexBufferLayoutsBuffer = Buffer.alloc(
       vertexBufferLayoutSize * Math.max(numVertexBuffers, 1)
     );
@@ -989,30 +1020,37 @@ export class DawnGPUDevice {
       const attributes = buffer.attributes ? Array.from(buffer.attributes) : [];
       const bufferOffset = i * vertexBufferLayoutSize;
 
-      vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(buffer.arrayStride), bufferOffset);
+      vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(0), bufferOffset); // nextInChain = NULL
       vertexBufferLayoutsBuffer.writeUInt32LE(
         stepModeMap[buffer.stepMode ?? "vertex"] ?? WGPUVertexStepMode.Vertex,
         bufferOffset + 8
-      );
-      vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(attributes.length), bufferOffset + 16);
+      ); // stepMode
+      // bufferOffset + 12: 4 bytes padding
+      vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(buffer.arrayStride), bufferOffset + 16); // arrayStride
+      vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(attributes.length), bufferOffset + 24); // attributeCount
 
       if (attributes.length > 0) {
         const attrPtr = ptr(attributesBuffer) as unknown as number;
         vertexBufferLayoutsBuffer.writeBigUInt64LE(
           BigInt(attrPtr + attrIndex * attributeSize),
-          bufferOffset + 24
-        );
+          bufferOffset + 32
+        ); // attributes
 
         for (const attr of attributes) {
           const attrOffset = attrIndex * attributeSize;
+          attributesBuffer.writeBigUInt64LE(BigInt(0), attrOffset); // nextInChain = NULL
           attributesBuffer.writeUInt32LE(
             vertexFormatMap[attr.format] ?? WGPUVertexFormat.Float32,
-            attrOffset
-          );
-          attributesBuffer.writeBigUInt64LE(BigInt(attr.offset), attrOffset + 8);
-          attributesBuffer.writeUInt32LE(attr.shaderLocation, attrOffset + 16);
+            attrOffset + 8
+          ); // format
+          // attrOffset + 12: 4 bytes padding
+          attributesBuffer.writeBigUInt64LE(BigInt(attr.offset), attrOffset + 16); // offset
+          attributesBuffer.writeUInt32LE(attr.shaderLocation, attrOffset + 24); // shaderLocation
+          // attrOffset + 28: 4 bytes padding
           attrIndex++;
         }
+      } else {
+        vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(0), bufferOffset + 32); // attributes = NULL
       }
     }
 
@@ -1028,9 +1066,13 @@ export class DawnGPUDevice {
       const targets = descriptor.fragment.targets ? Array.from(descriptor.fragment.targets) : [];
       const numTargets = targets.length;
 
+      // WGPUColorTargetState struct layout:
+      // { nextInChain: ptr(8), format: u32(4), padding(4), blend: ptr(8), writeMask: u32(4), padding(4) }
+      // Total: 32 bytes
       const targetSize = 32;
       targetsBuffer = Buffer.alloc(targetSize * Math.max(numTargets, 1));
-      blendStatesBuffer = Buffer.alloc(48 * Math.max(numTargets, 1));
+      // WGPUBlendState: { color: WGPUBlendComponent(12), alpha: WGPUBlendComponent(12) } = 24 bytes
+      blendStatesBuffer = Buffer.alloc(24 * Math.max(numTargets, 1));
 
       for (let i = 0; i < numTargets; i++) {
         const target = targets[i]!;
@@ -1038,12 +1080,15 @@ export class DawnGPUDevice {
 
         targetsBuffer.writeBigUInt64LE(BigInt(0), targetOffset); // nextInChain
         targetsBuffer.writeUInt32LE(
-          textureFormatMap[target.format] ?? 0x0000000b,
+          textureFormatMap[target.format] ?? 0x0000001b, // default BGRA8Unorm
           targetOffset + 8
-        );
+        ); // format
+        // targetOffset + 12: 4 bytes padding
 
         if (target.blend) {
-          const blendOffset = i * 48;
+          // WGPUBlendState: { color: WGPUBlendComponent, alpha: WGPUBlendComponent }
+          // WGPUBlendComponent: { operation: u32, srcFactor: u32, dstFactor: u32 } = 12 bytes
+          const blendOffset = i * 24;
           blendStatesBuffer.writeUInt32LE(1, blendOffset); // color.operation (add)
           blendStatesBuffer.writeUInt32LE(2, blendOffset + 4); // color.srcFactor (src-alpha)
           blendStatesBuffer.writeUInt32LE(4, blendOffset + 8); // color.dstFactor (one-minus-src-alpha)
@@ -1054,12 +1099,13 @@ export class DawnGPUDevice {
           targetsBuffer.writeBigUInt64LE(
             BigInt((ptr(blendStatesBuffer) as unknown as number) + blendOffset),
             targetOffset + 16
-          );
+          ); // blend
         } else {
-          targetsBuffer.writeBigUInt64LE(BigInt(0), targetOffset + 16);
+          targetsBuffer.writeBigUInt64LE(BigInt(0), targetOffset + 16); // blend = NULL
         }
 
         targetsBuffer.writeUInt32LE(0xf, targetOffset + 24); // writeMask = All
+        // targetOffset + 28: 4 bytes padding
       }
 
       fragmentStateBuffer = Buffer.alloc(64);
@@ -1073,80 +1119,95 @@ export class DawnGPUDevice {
       fragmentStateBuffer.writeBigUInt64LE(BigInt(ptr(targetsBuffer)), 56);
     }
 
-    // Primitive state
-    const primitiveStateBuffer = Buffer.alloc(24);
-    primitiveStateBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
-    const topology = descriptor.primitive?.topology ?? "triangle-list";
-    primitiveStateBuffer.writeUInt32LE(
-      topologyMap[topology] ?? WGPUPrimitiveTopology.TriangleList,
-      8
-    );
-    primitiveStateBuffer.writeUInt32LE(0, 12); // stripIndexFormat = undefined
-    primitiveStateBuffer.writeUInt32LE(1, 16); // frontFace = CCW
-    primitiveStateBuffer.writeUInt32LE(1, 20); // cullMode = None
-
-    // Multisample state
-    const multisampleStateBuffer = Buffer.alloc(16);
-    multisampleStateBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
-    multisampleStateBuffer.writeUInt32LE(1, 8); // count
-    multisampleStateBuffer.writeUInt32LE(0xffffffff, 12); // mask
-
     // Layout
     const layout =
       descriptor.layout === "auto"
         ? null
         : (descriptor.layout as unknown as DawnGPUPipelineLayout | null);
 
-    // WGPURenderPipelineDescriptor
-    const descBuffer = Buffer.alloc(200);
+    // WGPURenderPipelineDescriptor struct layout:
+    // { nextInChain: ptr(8), label: WGPUStringView(16), layout: ptr(8),
+    //   vertex: WGPUVertexState(64), primitive: WGPUPrimitiveState(32),
+    //   depthStencil: ptr(8), multisample: WGPUMultisampleState(24), fragment: ptr(8) }
+    // Total: 168 bytes
+    const descBuffer = Buffer.alloc(168);
     let offset = 0;
 
+    // nextInChain
     descBuffer.writeBigUInt64LE(BigInt(0), offset);
-    offset += 8; // nextInChain
-    descBuffer.writeBigUInt64LE(BigInt(0), offset);
-    offset += 8; // label.data
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), offset);
-    offset += 8; // label.length
+    offset += 8;
+
+    // label: WGPUStringView { data: ptr, length: size_t }
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // label.data = NULL
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), offset); // label.length = WGPU_STRLEN
+    offset += 8;
+
+    // layout: ptr
     descBuffer.writeBigUInt64LE(
       layout ? BigInt(layout._handle as unknown as number) : BigInt(0),
       offset
     );
     offset += 8;
 
-    // Vertex state (inline)
-    descBuffer.writeBigUInt64LE(BigInt(0), offset);
-    offset += 8; // vertex.nextInChain
-    descBuffer.writeBigUInt64LE(BigInt(vertexModule._handle as unknown as number), offset);
+    // vertex: WGPUVertexState (inline, 64 bytes)
+    // { nextInChain: ptr(8), module: ptr(8), entryPoint: WGPUStringView(16),
+    //   constantCount: size_t(8), constants: ptr(8), bufferCount: size_t(8), buffers: ptr(8) }
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // vertex.nextInChain
     offset += 8;
-    descBuffer.writeBigUInt64LE(BigInt(ptr(vertexEntryPointBuffer)), offset);
+    descBuffer.writeBigUInt64LE(BigInt(vertexModule._handle as unknown as number), offset); // vertex.module
     offset += 8;
-    descBuffer.writeBigUInt64LE(BigInt(vertexEntryPointBuffer.length - 1), offset);
+    descBuffer.writeBigUInt64LE(BigInt(ptr(vertexEntryPointBuffer)), offset); // vertex.entryPoint.data
     offset += 8;
-    descBuffer.writeBigUInt64LE(BigInt(0), offset);
-    offset += 8; // vertex.constantCount
-    descBuffer.writeBigUInt64LE(BigInt(0), offset);
-    offset += 8; // vertex.constants
-    descBuffer.writeBigUInt64LE(BigInt(numVertexBuffers), offset);
+    descBuffer.writeBigUInt64LE(BigInt(vertexEntryPointBuffer.length - 1), offset); // vertex.entryPoint.length
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // vertex.constantCount
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // vertex.constants
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(numVertexBuffers), offset); // vertex.bufferCount
     offset += 8;
     descBuffer.writeBigUInt64LE(
       numVertexBuffers > 0 ? BigInt(ptr(vertexBufferLayoutsBuffer)) : BigInt(0),
       offset
-    );
+    ); // vertex.buffers
     offset += 8;
 
-    // Primitive state
-    descBuffer.writeBigUInt64LE(BigInt(ptr(primitiveStateBuffer)), offset);
+    // primitive: WGPUPrimitiveState (inline, 32 bytes)
+    // { nextInChain: ptr(8), topology: u32(4), stripIndexFormat: u32(4),
+    //   frontFace: u32(4), cullMode: u32(4), unclippedDepth: u32(4), padding(4) }
+    const topology = descriptor.primitive?.topology ?? "triangle-list";
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // primitive.nextInChain
     offset += 8;
+    descBuffer.writeUInt32LE(topologyMap[topology] ?? WGPUPrimitiveTopology.TriangleList, offset); // primitive.topology
+    offset += 4;
+    descBuffer.writeUInt32LE(0, offset); // primitive.stripIndexFormat = undefined
+    offset += 4;
+    descBuffer.writeUInt32LE(0, offset); // primitive.frontFace = undefined (defaults to CCW)
+    offset += 4;
+    descBuffer.writeUInt32LE(0, offset); // primitive.cullMode = undefined (defaults to None)
+    offset += 4;
+    descBuffer.writeUInt32LE(0, offset); // primitive.unclippedDepth = false
+    offset += 4;
+    offset += 4; // padding
 
-    // Depth stencil (NULL)
+    // depthStencil: ptr (NULL)
     descBuffer.writeBigUInt64LE(BigInt(0), offset);
     offset += 8;
 
-    // Multisample state
-    descBuffer.writeBigUInt64LE(BigInt(ptr(multisampleStateBuffer)), offset);
+    // multisample: WGPUMultisampleState (inline, 24 bytes)
+    // { nextInChain: ptr(8), count: u32(4), mask: u32(4), alphaToCoverageEnabled: u32(4), padding(4) }
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // multisample.nextInChain
     offset += 8;
+    descBuffer.writeUInt32LE(1, offset); // multisample.count
+    offset += 4;
+    descBuffer.writeUInt32LE(0xffffffff, offset); // multisample.mask
+    offset += 4;
+    descBuffer.writeUInt32LE(0, offset); // multisample.alphaToCoverageEnabled
+    offset += 4;
+    offset += 4; // padding
 
-    // Fragment state
+    // fragment: ptr
     descBuffer.writeBigUInt64LE(
       fragmentStateBuffer ? BigInt(ptr(fragmentStateBuffer)) : BigInt(0),
       offset

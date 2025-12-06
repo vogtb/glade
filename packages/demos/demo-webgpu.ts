@@ -1,5 +1,5 @@
 import { createWebGPUContext, runWebGPURenderLoop } from "@glade/platform";
-import type { CursorMoveEvent } from "@glade/core/events.ts";
+import type { WebGPUContext } from "@glade/core";
 
 // WebGPU constants (needed for native where globals aren't available)
 const GPUBufferUsage = {
@@ -21,22 +21,23 @@ const GPUShaderStage = {
   COMPUTE: 0x4,
 } as const;
 
-// WGSL Vertex Shader
+// Vertex shader - transforms vertices and passes color to fragment shader
 const VERTEX_SHADER = `
 struct VertexInput {
-  @location(0) position: vec2f,
-  @location(1) color: vec3f,
+  @location(0) a_position: vec2f,
+  @location(1) a_color: vec3f,
 }
 
 struct VertexOutput {
   @builtin(position) position: vec4f,
-  @location(0) color: vec3f,
+  @location(0) v_color: vec3f,
 }
 
 struct Uniforms {
-  time: f32,
-  resolution: vec2f,
-  mouse: vec2f,
+  u_time: f32,
+  _pad: f32,
+  u_resolution: vec2f,
+  u_mouse: vec2f,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -52,52 +53,49 @@ fn main(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
 
   // Convert mouse from pixel coords to normalized device coords (-1 to 1)
-  var mouseNorm = (uniforms.mouse / uniforms.resolution) * 2.0 - 1.0;
+  var mouseNorm = (uniforms.u_mouse / uniforms.u_resolution) * 2.0 - 1.0;
   mouseNorm.y = -mouseNorm.y; // Flip Y (screen coords are top-down)
 
   // Apply rotation based on time
-  var pos = input.position * rotate2d(uniforms.time * 0.5);
+  var pos = input.a_position * rotate2d(uniforms.u_time * 0.5);
 
   // Add some wobble
-  pos.x += sin(uniforms.time * 2.0 + input.position.y * 3.0) * 0.1;
-  pos.y += cos(uniforms.time * 2.5 + input.position.x * 3.0) * 0.1;
+  pos.x += sin(uniforms.u_time * 2.0 + input.a_position.y * 3.0) * 0.1;
+  pos.y += cos(uniforms.u_time * 2.5 + input.a_position.x * 3.0) * 0.1;
 
   // Offset position toward mouse
   pos += mouseNorm * 0.3;
 
   // Scale to maintain aspect ratio
-  let aspect = uniforms.resolution.x / uniforms.resolution.y;
+  let aspect = uniforms.u_resolution.x / uniforms.u_resolution.y;
   pos.x /= aspect;
 
   output.position = vec4f(pos, 0.0, 1.0);
 
   // Animate color
-  output.color = input.color * (0.5 + 0.5 * sin(uniforms.time + input.color));
+  output.v_color = input.a_color * (0.5 + 0.5 * sin(uniforms.u_time + input.a_color));
 
   return output;
 }
 `;
 
-// WGSL Fragment Shader
+// Fragment shader - outputs interpolated color with effects
 const FRAGMENT_SHADER = `
-struct FragmentInput {
-  @location(0) color: vec3f,
-}
-
 struct Uniforms {
-  time: f32,
-  resolution: vec2f,
-  mouse: vec2f,
+  u_time: f32,
+  _pad: f32,
+  u_resolution: vec2f,
+  u_mouse: vec2f,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 
 @fragment
-fn main(input: FragmentInput, @builtin(position) fragCoord: vec4f) -> @location(0) vec4f {
+fn main(@location(0) v_color: vec3f, @builtin(position) fragCoord: vec4f) -> @location(0) vec4f {
   // Add some color pulsing
-  var color = input.color;
-  color += 0.1 * sin(uniforms.time * 3.0 + fragCoord.x * 0.02);
-  color += 0.1 * cos(uniforms.time * 2.5 + fragCoord.y * 0.02);
+  var color = v_color;
+  color += 0.1 * sin(uniforms.u_time * 3.0 + fragCoord.x * 0.02);
+  color += 0.1 * cos(uniforms.u_time * 2.5 + fragCoord.y * 0.02);
 
   return vec4f(clamp(color, vec3f(0.0), vec3f(1.0)), 1.0);
 }
@@ -119,7 +117,7 @@ function createHexagonGeometry(): { positions: Float32Array; colors: Float32Arra
     const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
     positions.push(Math.cos(angle) * radius, Math.sin(angle) * radius);
 
-    // colors based on angle
+    // colors based on angle (ish?)
     const hue = i / sides;
     const [r, g, b] = hslToRgb(hue, 1, 0.5);
     colors.push(r, g, b);
@@ -185,40 +183,35 @@ interface Resources {
   indexCount: number;
 }
 
-function initDemo(device: GPUDevice, format: GPUTextureFormat): Resources {
-  // Create shader modules
-  const vertexModule = device.createShaderModule({
-    code: VERTEX_SHADER,
-  });
-
-  const fragmentModule = device.createShaderModule({
-    code: FRAGMENT_SHADER,
-  });
+function initDemo(ctx: WebGPUContext, format: GPUTextureFormat): Resources {
+  const { device } = ctx;
 
   // Create geometry
   const { positions, colors } = createHexagonGeometry();
   const indices = createHexagonIndices();
 
-  // Create buffers
+  // create and setup position buffer
   const positionBuffer = device.createBuffer({
     size: positions.byteLength,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(positionBuffer, 0, positions);
 
+  // create and setup color buffer
   const colorBuffer = device.createBuffer({
     size: colors.byteLength,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(colorBuffer, 0, colors);
 
+  // create index buffer
   const indexBuffer = device.createBuffer({
     size: indices.byteLength,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(indexBuffer, 0, indices);
 
-  // Uniform buffer: time (f32) + padding (f32) + resolution (vec2f) + mouse (vec2f) = 24 bytes
+  // Uniform buffer: u_time (f32) + padding (f32) + u_resolution (vec2f) + u_mouse (vec2f) = 24 bytes
   // Aligned to 16 bytes: 32 bytes
   const uniformBuffer = device.createBuffer({
     size: 32,
@@ -240,7 +233,10 @@ function initDemo(device: GPUDevice, format: GPUTextureFormat): Resources {
     bindGroupLayouts: [bindGroupLayout],
   });
 
-  // Create render pipeline
+  // compile shaders and create pipeline
+  const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
+  const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
+
   const pipeline = device.createRenderPipeline({
     layout: pipelineLayout,
     vertex: {
@@ -249,23 +245,11 @@ function initDemo(device: GPUDevice, format: GPUTextureFormat): Resources {
       buffers: [
         {
           arrayStride: 8, // 2 floats * 4 bytes
-          attributes: [
-            {
-              shaderLocation: 0,
-              offset: 0,
-              format: "float32x2",
-            },
-          ],
+          attributes: [{ shaderLocation: 0, offset: 0, format: "float32x2" }],
         },
         {
           arrayStride: 12, // 3 floats * 4 bytes
-          attributes: [
-            {
-              shaderLocation: 1,
-              offset: 0,
-              format: "float32x3",
-            },
-          ],
+          attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }],
         },
       ],
     },
@@ -290,20 +274,13 @@ function initDemo(device: GPUDevice, format: GPUTextureFormat): Resources {
         },
       ],
     },
-    primitive: {
-      topology: "triangle-list",
-    },
+    primitive: { topology: "triangle-list" },
   });
 
   // Create bind group
   const bindGroup = device.createBindGroup({
     layout: bindGroupLayout,
-    entries: [
-      {
-        binding: 0,
-        resource: { buffer: uniformBuffer },
-      },
-    ],
+    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
   });
 
   return {
@@ -318,15 +295,13 @@ function initDemo(device: GPUDevice, format: GPUTextureFormat): Resources {
 }
 
 function render(
-  device: GPUDevice,
-  context: GPUCanvasContext,
+  ctx: WebGPUContext,
   resources: Resources,
   time: number,
-  width: number,
-  height: number,
   mouseX: number,
   mouseY: number
 ): void {
+  const { device, context } = ctx;
   const {
     pipeline,
     positionBuffer,
@@ -337,14 +312,14 @@ function render(
     indexCount,
   } = resources;
 
-  // Update uniforms
+  // set uniforms
   const uniformData = new Float32Array([
-    time, // time
+    time, // u_time
     0, // padding
-    width, // resolution.x
-    height, // resolution.y
-    mouseX, // mouse.x
-    mouseY, // mouse.y
+    ctx.width, // u_resolution.x
+    ctx.height, // u_resolution.y
+    mouseX, // u_mouse.x
+    mouseY, // u_mouse.y
     0,
     0, // padding to 32 bytes
   ]);
@@ -356,7 +331,7 @@ function render(
   // Create command encoder
   const commandEncoder = device.createCommandEncoder();
 
-  // Begin render pass
+  // clear with dark bg and begin render pass
   const renderPass = commandEncoder.beginRenderPass({
     colorAttachments: [
       {
@@ -368,54 +343,55 @@ function render(
     ],
   });
 
+  // setup pipeline and bindgroup for use
   renderPass.setPipeline(pipeline);
+  renderPass.setBindGroup(0, bindGroup);
+
+  // bind buffers and draw
   renderPass.setVertexBuffer(0, positionBuffer);
   renderPass.setVertexBuffer(1, colorBuffer);
   renderPass.setIndexBuffer(indexBuffer, "uint16");
-  renderPass.setBindGroup(0, bindGroup);
   renderPass.drawIndexed(indexCount);
   renderPass.end();
 
   // Submit commands
   device.queue.submit([commandEncoder.finish()]);
 
-  // Present the frame - this is required for native WebGPU
-  // On browser, this happens automatically, but Dawn requires explicit present
+  // Present the frame - required for native WebGPU (Dawn)
   if ("present" in context && typeof context.present === "function") {
     (context as unknown as { present: () => void }).present();
   }
+
+  // and around we go!
 }
 
 async function main() {
-  console.log("Initializing WebGPU demo...");
-
   const ctx = await createWebGPUContext({
     width: 800,
     height: 600,
     title: "glade WebGPU Demo",
   });
 
-  console.log("WebGPU context created");
+  console.log("initializing WebGPU demo...");
 
-  // Get the preferred format - on browser this comes from GPU, on native we use BGRA8Unorm
+  // Get the preferred format - on native we use BGRA8Unorm
   const format: GPUTextureFormat = "bgra8unorm";
 
-  const resources = initDemo(ctx.device, format);
+  const resources = initDemo(ctx, format);
 
-  console.log("Demo initialized, rendering...");
+  console.log("demo initialized, rendering...");
 
   let mouseX = ctx.width / 2;
   let mouseY = ctx.height / 2;
 
-  ctx.onCursorMove((event: CursorMoveEvent) => {
+  ctx.onCursorMove((event) => {
     mouseX = event.x;
     mouseY = event.y;
   });
 
-  // Create render callback
-  const renderCallback = (time: number, _deltaTime: number): void => {
-    render(ctx.device, ctx.context, resources, time, ctx.width, ctx.height, mouseX, mouseY);
-  };
+  // create render callback
+  const renderCallback = (time: number, _deltaTime: number): void =>
+    render(ctx, resources, time, mouseX, mouseY);
 
   runWebGPURenderLoop(ctx, renderCallback);
 }
