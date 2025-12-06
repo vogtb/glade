@@ -7,8 +7,7 @@ export {
   type DarwinContextOptions,
 } from "./context.ts";
 export { glfw } from "@glade/glfw";
-export { lib } from "./gl.ts";
-export { DarwinWebGL2RenderingContext } from "./webgl2-context.ts";
+export { lib, DarwinWebGL2RenderingContext } from "./opengl.ts";
 
 // GLSL shader constants for OpenGL 3.2 Core Profile
 export const GLSL_VERSION = "#version 150 core";

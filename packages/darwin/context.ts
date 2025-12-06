@@ -14,7 +14,7 @@ import {
   type RefreshCallback,
 } from "@glade/core/events.ts";
 import { glfw, type GLFWwindow } from "@glade/glfw";
-import { DarwinWebGL2RenderingContext } from "./webgl2-context.ts";
+import { DarwinWebGL2RenderingContext } from "./opengl.ts";
 
 export interface DarwinContextOptions extends ContextOptions {
   title?: string;
