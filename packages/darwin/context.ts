@@ -22,6 +22,7 @@ import {
   getDeviceQueue,
   createSurfaceFromMetalLayer,
   configureSurface,
+  getSurfaceCapabilities,
   releaseInstance,
   releaseAdapter,
   releaseDevice,
@@ -29,13 +30,13 @@ import {
   releaseSurface,
   processEvents,
   tickDevice,
-  WGPUTextureFormat,
   type WGPUInstance,
   type WGPUAdapter,
   type WGPUDevice,
   type WGPUQueue,
   type WGPUSurface,
 } from "./webgpu.ts";
+import { DawnGPUDevice, DawnGPUCanvasContext } from "./gpu-wrapper.ts";
 import { createMetalLayerForView } from "./metal.ts";
 
 export interface DarwinContextOptions extends ContextOptions {
@@ -54,6 +55,7 @@ export interface DarwinWebGPUContext extends WebGPUContext {
   // Dawn-specific handles for advanced usage
   wgpuInstance: WGPUInstance;
   wgpuAdapter: WGPUAdapter;
+  wgpuDevice: WGPUDevice;
   wgpuSurface: WGPUSurface;
 }
 
@@ -309,42 +311,58 @@ export async function createWebGPUContext(
   // Request adapter
   const adapter = await requestAdapter(instance);
 
+  // Get surface capabilities to find supported formats/modes
+  const capabilities = getSurfaceCapabilities(surface, adapter);
+  if (capabilities.formats.length === 0) {
+    throw new Error("No supported surface formats");
+  }
+
+  // Use first (preferred) format from capabilities
+  const preferredFormat = capabilities.formats[0]!;
+  const preferredPresentMode =
+    capabilities.presentModes.length > 0 ? capabilities.presentModes[0]! : undefined;
+  const preferredAlphaMode =
+    capabilities.alphaModes.length > 0 ? capabilities.alphaModes[0]! : undefined;
+
   // Request device
   const device = await requestDevice(adapter);
 
   // Get queue
   const queue = getDeviceQueue(device);
 
-  // Configure surface
+  // Configure surface with capabilities-derived values
   const fbSize = glfw.getFramebufferSize(window);
   configureSurface(surface, {
     device,
-    format: WGPUTextureFormat.BGRA8Unorm,
+    format: preferredFormat,
     width: fbSize.width,
     height: fbSize.height,
+    presentMode: preferredPresentMode,
+    alphaMode: preferredAlphaMode,
   });
 
   // Track cleanup functions for all registered callbacks
   const cleanups: Array<() => void> = [];
 
-  // Create stub GPU object that proxies to Dawn
-  // Note: This is a simplified implementation - full WebGPU API would require more work
-  const gpu = {} as GPU;
+  // Create wrapped GPU device and context
+  const wrappedDevice = new DawnGPUDevice(device, queue);
+  const wrappedContext = new DawnGPUCanvasContext(surface, fbSize.width, fbSize.height);
 
-  // Create stub GPUCanvasContext
-  const gpuContext = {} as GPUCanvasContext;
+  // Stub GPU object (not fully implemented)
+  const gpu = {} as GPU;
 
   return {
     gpu,
     adapter: adapter as unknown as GPUAdapter,
-    device: device as unknown as GPUDevice,
-    queue: queue as unknown as GPUQueue,
-    context: gpuContext,
+    device: wrappedDevice as unknown as GPUDevice,
+    queue: wrappedDevice.queue as unknown as GPUQueue,
+    context: wrappedContext as unknown as GPUCanvasContext,
     window,
     width: fbSize.width,
     height: fbSize.height,
     wgpuInstance: instance,
     wgpuAdapter: adapter,
+    wgpuDevice: device,
     wgpuSurface: surface,
 
     destroy() {
@@ -536,7 +554,7 @@ export function runWebGPURenderLoop(ctx: DarwinWebGPUContext, callback: RenderCa
 
     // Process Dawn events
     processEvents(ctx.wgpuInstance);
-    tickDevice(ctx.device as unknown as WGPUDevice);
+    tickDevice(ctx.wgpuDevice);
 
     const shouldContinue = callback(time, deltaTime);
     if (shouldContinue === false) {

@@ -52,11 +52,23 @@ function getSelector(name: string): Pointer {
 const selectors = {
   alloc: getSelector("alloc"),
   init: getSelector("init"),
-  layer: getSelector("layer"),
+  layer: getSelector("layer"), // Both class method on CAMetalLayer and instance method on NSView
   setLayer: getSelector("setLayer:"),
   setWantsLayer: getSelector("setWantsLayer:"),
   contentView: getSelector("contentView"),
+  setContentsScale: getSelector("setContentsScale:"),
+  backingScaleFactor: getSelector("backingScaleFactor"),
+  window: getSelector("window"),
 };
+
+// objc_msgSend for returning double
+const objcSendReturnDouble = dlopen("/usr/lib/libobjc.A.dylib", {
+  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.f64 },
+});
+
+const objcSendOneDouble = dlopen("/usr/lib/libobjc.A.dylib", {
+  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.f64], returns: FFIType.ptr },
+});
 
 // Class cache
 const classes = {
@@ -71,15 +83,17 @@ const classes = {
  * @returns The CAMetalLayer pointer
  */
 export function createMetalLayerForView(nsView: Pointer): Pointer {
-  // Create a CAMetalLayer: [[CAMetalLayer alloc] init]
-  const alloced = objcSendNoArgs.symbols.objc_msgSend(classes.CAMetalLayer, selectors.alloc);
-  if (!alloced) {
-    throw new Error("Failed to alloc CAMetalLayer");
-  }
+  // Following Dawn's pattern from utils_metal.mm:
+  // 1. [view setWantsLayer:YES]
+  // 2. [view setLayer:[CAMetalLayer layer]]  -- use class method 'layer', not alloc/init
+  // 3. [[view layer] setContentsScale:[nsWindow backingScaleFactor]]
+  // 4. Return [view layer]
 
-  const metalLayer = objcSendNoArgs.symbols.objc_msgSend(alloced, selectors.init);
+  // Create a CAMetalLayer using the class method: [CAMetalLayer layer]
+  // This is equivalent to [[[CAMetalLayer alloc] init] autorelease]
+  const metalLayer = objcSendNoArgs.symbols.objc_msgSend(classes.CAMetalLayer, selectors.layer);
   if (!metalLayer) {
-    throw new Error("Failed to init CAMetalLayer");
+    throw new Error("Failed to create CAMetalLayer");
   }
 
   // Enable layer-backing on the view: [nsView setWantsLayer:YES]
@@ -88,7 +102,29 @@ export function createMetalLayerForView(nsView: Pointer): Pointer {
   // Set the layer: [nsView setLayer:metalLayer]
   objcSendOnePtr.symbols.objc_msgSend(nsView, selectors.setLayer, metalLayer);
 
-  return metalLayer;
+  // Get window's backing scale factor for Retina displays
+  const nsWindow = objcSendNoArgs.symbols.objc_msgSend(nsView, selectors.window);
+  if (nsWindow) {
+    const scaleFactor = objcSendReturnDouble.symbols.objc_msgSend(
+      nsWindow,
+      selectors.backingScaleFactor
+    );
+    if (scaleFactor > 0) {
+      // Get the layer back from the view and set its contents scale
+      const viewLayer = objcSendNoArgs.symbols.objc_msgSend(nsView, selectors.layer);
+      if (viewLayer) {
+        objcSendOneDouble.symbols.objc_msgSend(viewLayer, selectors.setContentsScale, scaleFactor);
+      }
+    }
+  }
+
+  // Return the layer from the view (as Dawn does)
+  const resultLayer = objcSendNoArgs.symbols.objc_msgSend(nsView, selectors.layer);
+  if (!resultLayer) {
+    throw new Error("Failed to get layer from view");
+  }
+
+  return resultLayer;
 }
 
 /**

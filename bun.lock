@@ -45,8 +45,8 @@
         "@types/bun": "latest",
       },
     },
-    "packages/demo": {
-      "name": "@glade/demo",
+    "packages/demos": {
+      "name": "@glade/demos",
       "version": "0.0.1",
       "dependencies": {
         "@glade/core": "workspace:*",
@@ -96,7 +96,7 @@
 
     "@glade/dawn": ["@glade/dawn@workspace:packages/dawn"],
 
-    "@glade/demo": ["@glade/demo@workspace:packages/demo"],
+    "@glade/demos": ["@glade/demos@workspace:packages/demos"],
 
     "@glade/glfw": ["@glade/glfw@workspace:packages/glfw"],
 

@@ -12,6 +12,7 @@
     "scancode",
     "libwebgpu",
     "webgpu",
-    "WGPU"
+    "WGPU",
+    "webgl"
   ]
 }

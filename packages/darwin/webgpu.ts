@@ -287,22 +287,23 @@ export function configureSurface(surface: WGPUSurface, config: SurfaceConfigurat
   const presentMode = config.presentMode ?? WGPUPresentMode.Fifo;
   const alphaMode = config.alphaMode ?? WGPUCompositeAlphaMode.Opaque;
 
-  // Create WGPUSurfaceConfiguration struct
-  // Layout (simplified - actual struct is more complex):
-  // { nextInChain: ptr, device: ptr, format: u32, usage: u32, width: u32, height: u32,
-  //   viewFormatCount: size_t, viewFormats: ptr, alphaMode: u32, presentMode: u32 }
-  // Approximate size: 8 + 8 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 4 = 56 bytes (with padding)
-  const configBuffer = Buffer.alloc(72); // Extra space for safety
+  // WGPUSurfaceConfiguration struct layout:
+  // { nextInChain: ptr(8), device: ptr(8), format: u32(4), padding(4),
+  //   usage: u64(8), width: u32(4), height: u32(4),
+  //   viewFormatCount: size_t(8), viewFormats: ptr(8), alphaMode: u32(4), presentMode: u32(4) }
+  // Total: 8 + 8 + 4 + 4 + 8 + 4 + 4 + 8 + 8 + 4 + 4 = 64 bytes
+  const configBuffer = Buffer.alloc(72);
   let offset = 0;
 
   configBuffer.writeBigUInt64LE(BigInt(0), offset); // nextInChain
   offset += 8;
   configBuffer.writeBigUInt64LE(BigInt(config.device as unknown as number), offset); // device
   offset += 8;
-  configBuffer.writeUInt32LE(format, offset); // format
+  configBuffer.writeUInt32LE(format, offset); // format (u32)
   offset += 4;
-  configBuffer.writeUInt32LE(usage, offset); // usage
-  offset += 4;
+  offset += 4; // padding to align usage to 8 bytes
+  configBuffer.writeBigUInt64LE(BigInt(usage), offset); // usage (u64 - WGPUFlags)
+  offset += 8;
   configBuffer.writeUInt32LE(config.width, offset); // width
   offset += 4;
   configBuffer.writeUInt32LE(config.height, offset); // height
@@ -326,6 +327,82 @@ export function unconfigureSurface(surface: WGPUSurface): void {
 }
 
 /**
+ * Surface capabilities returned by getSurfaceCapabilities.
+ */
+export interface SurfaceCapabilities {
+  usages: number;
+  formats: number[];
+  presentModes: number[];
+  alphaModes: number[];
+}
+
+/**
+ * Gets surface capabilities for an adapter.
+ * This must be called before configureSurface to get valid configuration values.
+ */
+export function getSurfaceCapabilities(
+  surface: WGPUSurface,
+  adapter: WGPUAdapter
+): SurfaceCapabilities {
+  // WGPUSurfaceCapabilities struct layout:
+  // { nextInChain: ptr(8), usages: u64(8),
+  //   formatCount: size_t(8), formats: ptr(8),
+  //   presentModeCount: size_t(8), presentModes: ptr(8),
+  //   alphaModeCount: size_t(8), alphaModes: ptr(8) }
+  // Total: 64 bytes
+  const capsBuffer = Buffer.alloc(64);
+
+  // WGPUStatus: Success = 1, Error = 2
+  const status = dawn.wgpuSurfaceGetCapabilities(surface, adapter, ptr(capsBuffer));
+  if (status !== 1) {
+    throw new Error(`Failed to get surface capabilities: status ${status}`);
+  }
+
+  // Read the capabilities
+  const usages = Number(capsBuffer.readBigUInt64LE(8));
+  const formatCount = Number(capsBuffer.readBigUInt64LE(16));
+  const formatsPtr = capsBuffer.readBigUInt64LE(24);
+  const presentModeCount = Number(capsBuffer.readBigUInt64LE(32));
+  const presentModesPtr = capsBuffer.readBigUInt64LE(40);
+  const alphaModeCount = Number(capsBuffer.readBigUInt64LE(48));
+  const alphaModesPtr = capsBuffer.readBigUInt64LE(56);
+
+  // Helper to read u32 array from a pointer
+  const readU32Array = (ptrVal: bigint, count: number): number[] => {
+    if (ptrVal === BigInt(0) || count === 0) return [];
+    // Use Bun's toArrayBuffer to read from the pointer
+    const ptrAsNumber = Number(ptrVal);
+    const arrayBuffer = new Uint32Array(count);
+    const dataView = new DataView(
+      Buffer.from(
+        new Uint8Array(
+          // Read memory directly using FFI pointer
+          (function () {
+            const { read } = require("bun:ffi");
+            const result = new Uint8Array(count * 4);
+            for (let i = 0; i < count * 4; i++) {
+              result[i] = read.u8(ptrAsNumber + i);
+            }
+            return result.buffer;
+          })()
+        )
+      ).buffer
+    );
+    const result: number[] = [];
+    for (let i = 0; i < count; i++) {
+      result.push(dataView.getUint32(i * 4, true));
+    }
+    return result;
+  };
+
+  const formats = readU32Array(formatsPtr, formatCount);
+  const presentModes = readU32Array(presentModesPtr, presentModeCount);
+  const alphaModes = readU32Array(alphaModesPtr, alphaModeCount);
+
+  return { usages, formats, presentModes, alphaModes };
+}
+
+/**
  * Surface texture result from getCurrentTexture.
  */
 export interface SurfaceTexture {
@@ -337,19 +414,26 @@ export interface SurfaceTexture {
  * Gets the current texture from a surface for rendering.
  */
 export function getSurfaceCurrentTexture(surface: WGPUSurface): SurfaceTexture {
-  // WGPUSurfaceTexture struct: { texture: ptr, suboptimal: bool(u32), status: u32 }
-  // Size: 8 + 4 + 4 = 16 bytes
-  const result = Buffer.alloc(16);
+  // WGPUSurfaceTexture struct layout from webgpu.h:
+  // { nextInChain: WGPUChainedStruct* (8), texture: WGPUTexture (8), status: u32 (4) }
+  // Total: 20 bytes (with potential padding to 24)
+  const result = Buffer.alloc(24);
 
   dawn.wgpuSurfaceGetCurrentTexture(surface, ptr(result));
 
-  const texture = result.readBigUInt64LE(0);
-  const status = result.readUInt32LE(12); // status is after texture (8) and suboptimal (4)
+  // Read texture pointer at offset 8 (after nextInChain)
+  const texturePtr = result.readBigUInt64LE(8);
+  const status = result.readUInt32LE(16); // status is at offset 16 (after texture)
 
-  return {
-    texture: texture !== BigInt(0) ? (texture as unknown as WGPUTexture) : null,
-    status,
-  };
+  // In Bun FFI, pointers are just numbers. Convert BigInt to number.
+  // This is safe because 64-bit pointers only use 52 bits of addressable space,
+  // which fits in JavaScript's 53-bit number precision.
+  let texture: WGPUTexture | null = null;
+  if (texturePtr !== BigInt(0)) {
+    texture = Number(texturePtr) as unknown as WGPUTexture;
+  }
+
+  return { texture, status };
 }
 
 /**
