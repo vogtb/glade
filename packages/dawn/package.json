@@ -1,0 +1,13 @@
+{
+  "name": "@glade/dawn",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dawn.ts",
+  "types": "dawn.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
