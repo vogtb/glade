@@ -33,7 +33,6 @@ import {
   type WGPUInstance,
   type WGPUAdapter,
   type WGPUDevice,
-  type WGPUQueue,
   type WGPUSurface,
 } from "./webgpu.ts";
 import { DawnGPUDevice, DawnGPUCanvasContext } from "./gpu-wrapper.ts";

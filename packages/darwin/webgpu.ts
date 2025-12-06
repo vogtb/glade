@@ -1,7 +1,6 @@
 import { ptr, JSCallback, FFIType } from "bun:ffi";
 import {
   dawn,
-  lib,
   WGPUSType,
   WGPUCallbackMode,
   WGPURequestAdapterStatus,
@@ -10,9 +9,6 @@ import {
   WGPUTextureUsage,
   WGPUPresentMode,
   WGPUCompositeAlphaMode,
-  WGPUSurfaceGetCurrentTextureStatus,
-  createStringView,
-  nullStringView,
   type WGPUInstance,
   type WGPUAdapter,
   type WGPUDevice,
@@ -59,8 +55,8 @@ export function requestAdapter(instance: WGPUInstance): Promise<WGPUAdapter> {
       (
         status: number,
         adapterPtr: WGPUAdapter,
-        messageData: bigint,
-        messageLength: bigint,
+        _messageData: bigint,
+        _messageLength: bigint,
         _userdata1: bigint,
         _userdata2: bigint
       ) => {
@@ -194,8 +190,8 @@ export function requestDevice(adapter: WGPUAdapter): Promise<WGPUDevice> {
       (
         status: number,
         devicePtr: WGPUDevice,
-        messageData: bigint,
-        messageLength: bigint,
+        _messageData: bigint,
+        _messageLength: bigint,
         _userdata1: bigint,
         _userdata2: bigint
       ) => {
@@ -491,9 +487,7 @@ export function getSurfaceCapabilities(
   // Helper to read u32 array from a pointer
   const readU32Array = (ptrVal: bigint, count: number): number[] => {
     if (ptrVal === BigInt(0) || count === 0) return [];
-    // Use Bun's toArrayBuffer to read from the pointer
     const ptrAsNumber = Number(ptrVal);
-    const arrayBuffer = new Uint32Array(count);
     const dataView = new DataView(
       Buffer.from(
         new Uint8Array(

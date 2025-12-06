@@ -18,6 +18,7 @@
     "build:webgl:native": "bun run --filter '@glade/demos' build:webgl:native",
     "build:webgl:web": "bun run --filter '@glade/demos' build:webgl:web",
     "build:webgpu:native": "bun run --filter '@glade/demos' build:webgpu:native",
+    "run:webgpu:native": "bun run --filter '@glade/demos' run:webgpu:native",
     "build:webgpu:web": "bun run --filter '@glade/demos' build:webgpu:web",
     "build:vendor-glfw": "./vendor/build-glfw.sh",
     "build:vendor-dawn": "./vendor/build-dawn.sh",

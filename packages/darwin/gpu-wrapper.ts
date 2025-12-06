@@ -9,7 +9,7 @@
  * satisfy at runtime.
  */
 
-import { ptr, type Pointer } from "bun:ffi";
+import { ptr } from "bun:ffi";
 import {
   dawn,
   WGPUBufferUsage,
@@ -39,7 +39,6 @@ import {
   getSurfaceCurrentTexture,
   presentSurface,
   createTextureView,
-  releaseTextureView,
   releaseTexture,
   WGPUSurfaceGetCurrentTextureStatus,
 } from "./webgpu.ts";
@@ -849,51 +848,59 @@ export class DawnGPUDevice {
     const entries = Array.from(descriptor.entries);
     const numEntries = entries.length;
 
-    // WGPUBindGroupLayoutEntry struct layout:
-    // { nextInChain: ptr(8), binding: u32(4), visibility: u32(4), bindingArraySize: u32(4), padding(4),
-    //   buffer: WGPUBufferBindingLayout(24), sampler: WGPUSamplerBindingLayout(16),
-    //   texture: WGPUTextureBindingLayout(24), storageTexture: WGPUStorageTextureBindingLayout(24) }
-    // Total: 112 bytes
-    const entrySize = 112;
+    // WGPUBindGroupLayoutEntry struct layout (from C sizeof/offsetof):
+    // { nextInChain: ptr @0, binding: u32 @8, visibility: u32 @16, bindingArraySize: u32 @24,
+    //   buffer: WGPUBufferBindingLayout @32 (24 bytes),
+    //   sampler: WGPUSamplerBindingLayout @56 (16 bytes),
+    //   texture: WGPUTextureBindingLayout @72 (24 bytes),
+    //   storageTexture: WGPUStorageTextureBindingLayout @96 (24 bytes) }
+    // Total: 120 bytes
+    const entrySize = 120;
     const entriesBuffer = Buffer.alloc(entrySize * numEntries);
 
     for (let i = 0; i < numEntries; i++) {
       const entry = entries[i]!;
       const offset = i * entrySize;
 
-      entriesBuffer.writeBigUInt64LE(BigInt(0), offset); // nextInChain
+      entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 0); // nextInChain
       entriesBuffer.writeUInt32LE(entry.binding, offset + 8); // binding
-      entriesBuffer.writeUInt32LE(convertShaderStage(entry.visibility), offset + 12); // visibility
-      entriesBuffer.writeUInt32LE(0, offset + 16); // bindingArraySize = 0
+      // offset + 12: 4 bytes padding (visibility is at 16, not 12)
+      entriesBuffer.writeUInt32LE(convertShaderStage(entry.visibility), offset + 16); // visibility
       // offset + 20: 4 bytes padding
+      entriesBuffer.writeUInt32LE(0, offset + 24); // bindingArraySize = 0
+      // offset + 28: 4 bytes padding
 
-      // buffer: WGPUBufferBindingLayout at offset 24 (24 bytes)
-      // { nextInChain: ptr(8), type: u32(4), hasDynamicOffset: u32(4), minBindingSize: u64(8) }
+      // buffer: WGPUBufferBindingLayout at offset 32 (24 bytes)
+      // { nextInChain: ptr @0, type: u32 @8, hasDynamicOffset: u32 @12, minBindingSize: u64 @16 }
+      // WGPUBufferBindingType: BindingNotUsed=0, Undefined=1, Uniform=2, Storage=3, ReadOnlyStorage=4
       if (entry.buffer) {
         const bufferType =
           entry.buffer.type === "uniform"
-            ? 1
+            ? 2 // WGPUBufferBindingType_Uniform
             : entry.buffer.type === "storage"
-              ? 2
+              ? 3 // WGPUBufferBindingType_Storage
               : entry.buffer.type === "read-only-storage"
-                ? 3
-                : 1;
-        entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 24); // buffer.nextInChain
-        entriesBuffer.writeUInt32LE(bufferType, offset + 32); // buffer.type
-        entriesBuffer.writeUInt32LE(entry.buffer.hasDynamicOffset ? 1 : 0, offset + 36); // buffer.hasDynamicOffset
-        entriesBuffer.writeBigUInt64LE(BigInt(entry.buffer.minBindingSize ?? 0), offset + 40); // buffer.minBindingSize
+                ? 4 // WGPUBufferBindingType_ReadOnlyStorage
+                : 2; // default to Uniform
+        entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 32); // buffer.nextInChain
+        entriesBuffer.writeUInt32LE(bufferType, offset + 32 + 8); // buffer.type
+        entriesBuffer.writeUInt32LE(entry.buffer.hasDynamicOffset ? 1 : 0, offset + 32 + 12); // buffer.hasDynamicOffset
+        entriesBuffer.writeBigUInt64LE(BigInt(entry.buffer.minBindingSize ?? 0), offset + 32 + 16); // buffer.minBindingSize
       }
-      // sampler: WGPUSamplerBindingLayout at offset 48 (16 bytes) - leave as zeros
-      // texture: WGPUTextureBindingLayout at offset 64 (24 bytes) - leave as zeros
-      // storageTexture: WGPUStorageTextureBindingLayout at offset 88 (24 bytes) - leave as zeros
+      // sampler: WGPUSamplerBindingLayout at offset 56 (16 bytes) - leave as zeros
+      // texture: WGPUTextureBindingLayout at offset 72 (24 bytes) - leave as zeros
+      // storageTexture: WGPUStorageTextureBindingLayout at offset 96 (24 bytes) - leave as zeros
     }
+
+    // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
+    const entriesPtr = ptr(entriesBuffer);
 
     const descBuffer = Buffer.alloc(40);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
     descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
     descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
     descBuffer.writeBigUInt64LE(BigInt(numEntries), 24); // entryCount
-    descBuffer.writeBigUInt64LE(BigInt(ptr(entriesBuffer)), 32); // entries
+    descBuffer.writeBigUInt64LE(BigInt(entriesPtr as unknown as number), 32); // entries
 
     const layout = dawn.wgpuDeviceCreateBindGroupLayout(this._handle, ptr(descBuffer));
     if (!layout) {
@@ -913,9 +920,9 @@ export class DawnGPUDevice {
     const entries = descriptor.entries;
     const numEntries = entries.length;
 
-    // WGPUBindGroupEntry struct layout:
-    // { nextInChain: ptr(8), binding: u32(4), padding(4), buffer: ptr(8),
-    //   offset: u64(8), size: u64(8), sampler: ptr(8), textureView: ptr(8) }
+    // WGPUBindGroupEntry struct layout (from C sizeof/offsetof):
+    // { nextInChain: ptr @0, binding: u32 @8, buffer: ptr @16,
+    //   offset: u64 @24, size: u64 @32, sampler: ptr @40, textureView: ptr @48 }
     // Total: 56 bytes
     const entrySize = 56;
     const entriesBuffer = Buffer.alloc(entrySize * numEntries);
@@ -924,7 +931,7 @@ export class DawnGPUDevice {
       const entry = entries[i]!;
       const offset = i * entrySize;
 
-      entriesBuffer.writeBigUInt64LE(BigInt(0), offset); // nextInChain
+      entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 0); // nextInChain
       entriesBuffer.writeUInt32LE(entry.binding, offset + 8); // binding
       // offset + 12: 4 bytes padding
 
@@ -939,13 +946,16 @@ export class DawnGPUDevice {
       entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 48); // textureView = NULL
     }
 
+    // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
+    const entriesPtr = ptr(entriesBuffer);
+
     const descBuffer = Buffer.alloc(48);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
     descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
     descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
     descBuffer.writeBigUInt64LE(BigInt(descriptor.layout._handle as unknown as number), 24); // layout
     descBuffer.writeBigUInt64LE(BigInt(numEntries), 32); // entryCount
-    descBuffer.writeBigUInt64LE(BigInt(ptr(entriesBuffer)), 40); // entries
+    descBuffer.writeBigUInt64LE(BigInt(entriesPtr as unknown as number), 40); // entries
 
     const bindGroup = dawn.wgpuDeviceCreateBindGroup(this._handle, ptr(descBuffer));
     if (!bindGroup) {
@@ -966,12 +976,15 @@ export class DawnGPUDevice {
       layoutsBuffer[i] = BigInt(layouts[i]!._handle as unknown as number);
     }
 
+    // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
+    const layoutsPtr = ptr(layoutsBuffer);
+
     const descBuffer = Buffer.alloc(40);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
     descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
     descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
     descBuffer.writeBigUInt64LE(BigInt(numLayouts), 24); // bindGroupLayoutCount
-    descBuffer.writeBigUInt64LE(BigInt(ptr(layoutsBuffer)), 32); // bindGroupLayouts
+    descBuffer.writeBigUInt64LE(BigInt(layoutsPtr as unknown as number), 32); // bindGroupLayouts
 
     const pipelineLayout = dawn.wgpuDeviceCreatePipelineLayout(this._handle, ptr(descBuffer));
     if (!pipelineLayout) {
