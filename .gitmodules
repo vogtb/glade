@@ -1,3 +1,6 @@
 [submodule "vendor/glfw"]
 	path = vendor/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "vendor/dawn"]
+	path = vendor/dawn
+	url = https://github.com/google/dawn
