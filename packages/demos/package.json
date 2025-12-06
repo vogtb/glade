@@ -11,10 +11,10 @@
     "build:webgl:web": "bun build ./demo-webgl.ts --outdir=./dist --minify",
     "build:webgpu:native": "bun build ./demo-webgpu.ts --compile --outfile=./dist/demo-webgpu",
     "build:webgpu:web": "bun build ./demo-webgpu.ts --outdir=./dist --minify",
-    "run:webgl:native": "./dist/demo-webgl",
-    "run:webgl:web": "bun ./serve.ts",
-    "run:webgpu:native": "./dist/demo-webgpu",
-    "run:webgpu:web": "bun ./serve.ts",
+    "run:webgl:native": "bun build ./demo-webgl.ts --compile --outfile=./dist/demo-webgl && ./dist/demo-webgl",
+    "run:webgl:web": "bun build ./demo-webgl.ts --outdir=./dist --minify && bun ./serve.ts & sleep 1 && open 'http://localhost:3000/index.html'",
+    "run:webgpu:native": "bun build ./demo-webgpu.ts --compile --outfile=./dist/demo-webgpu && ./dist/demo-webgpu",
+    "run:webgpu:web": "bun build ./demo-webgpu.ts --outdir=./dist --minify && bun ./serve.ts & sleep 1 && open 'http://localhost:3000/index.html'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
