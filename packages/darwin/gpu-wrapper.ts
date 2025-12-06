@@ -1030,12 +1030,9 @@ export class DawnGPUDevice {
       vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(attributes.length), bufferOffset + 24); // attributeCount
 
       if (attributes.length > 0) {
-        const attrPtr = ptr(attributesBuffer) as unknown as number;
-        vertexBufferLayoutsBuffer.writeBigUInt64LE(
-          BigInt(attrPtr + attrIndex * attributeSize),
-          bufferOffset + 32
-        ); // attributes
-
+        // IMPORTANT: Write attribute data FIRST, then get pointer
+        // Bun's Buffer can reallocate on write, invalidating previous ptr() results
+        const firstAttrIndex = attrIndex;
         for (const attr of attributes) {
           const attrOffset = attrIndex * attributeSize;
           attributesBuffer.writeBigUInt64LE(BigInt(0), attrOffset); // nextInChain = NULL
@@ -1049,6 +1046,13 @@ export class DawnGPUDevice {
           // attrOffset + 28: 4 bytes padding
           attrIndex++;
         }
+
+        // Now get the pointer AFTER all writes are done
+        const attrPtr = ptr(attributesBuffer) as unknown as number;
+        vertexBufferLayoutsBuffer.writeBigUInt64LE(
+          BigInt(attrPtr + firstAttrIndex * attributeSize),
+          bufferOffset + 32
+        ); // attributes
       } else {
         vertexBufferLayoutsBuffer.writeBigUInt64LE(BigInt(0), bufferOffset + 32); // attributes = NULL
       }

@@ -127,6 +127,59 @@ export function releaseAdapter(adapter: WGPUAdapter): void {
   dawn.wgpuAdapterRelease(adapter);
 }
 
+// Global error callback that stays alive for the duration of the process
+let globalErrorCallback: JSCallback | null = null;
+
+// Error type names for logging
+const ErrorTypeNames: Record<number, string> = {
+  0x00000001: "NoError",
+  0x00000002: "Validation",
+  0x00000003: "OutOfMemory",
+  0x00000004: "Internal",
+  0x00000005: "Unknown",
+};
+
+function ensureErrorCallback(): JSCallback {
+  if (!globalErrorCallback) {
+    globalErrorCallback = new JSCallback(
+      (
+        _devicePtr: number,
+        errorType: number,
+        messageData: number,
+        messageLength: bigint,
+        _userdata1: number,
+        _userdata2: number
+      ) => {
+        const typeName = ErrorTypeNames[errorType] ?? `Unknown(${errorType})`;
+
+        // Try to read the error message
+        let message = "<could not read message>";
+        if (messageData && messageLength > 0n) {
+          try {
+            const { read } = require("bun:ffi");
+            const len = Number(messageLength);
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = read.u8(messageData + i);
+            }
+            message = new TextDecoder().decode(bytes);
+          } catch (e) {
+            message = `<error reading message: ${e}>`;
+          }
+        }
+
+        console.error(`\n[DAWN ERROR] Type: ${typeName}`);
+        console.error(`[DAWN ERROR] Message: ${message}\n`);
+      },
+      {
+        args: [FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.ptr],
+        returns: FFIType.void,
+      }
+    );
+  }
+  return globalErrorCallback;
+}
+
 /**
  * Requests a WebGPU device from an adapter.
  * This is equivalent to adapter.requestDevice() on the web.
@@ -169,8 +222,76 @@ export function requestDevice(adapter: WGPUAdapter): Promise<WGPUDevice> {
     callbackInfo.writeBigUInt64LE(BigInt(0), 24); // userdata1
     callbackInfo.writeBigUInt64LE(BigInt(0), 32); // userdata2
 
-    // Call the async function with NULL descriptor for default device
-    dawn.wgpuAdapterRequestDevice(adapter, null, ptr(callbackInfo));
+    // Ensure we have an error callback
+    const errorCallback = ensureErrorCallback();
+
+    // Build WGPUDeviceDescriptor with error callback
+    // WGPUDeviceDescriptor layout:
+    // { nextInChain: ptr(8), label: WGPUStringView(16),
+    //   requiredFeatureCount: size_t(8), requiredFeatures: ptr(8),
+    //   requiredLimits: ptr(8),
+    //   defaultQueue: WGPUQueueDescriptor(24),
+    //   deviceLostCallbackInfo: WGPUDeviceLostCallbackInfo(40),
+    //   uncapturedErrorCallbackInfo: WGPUUncapturedErrorCallbackInfo(32) }
+    // Total: 8 + 16 + 8 + 8 + 8 + 24 + 40 + 32 = 144 bytes
+    const deviceDescriptor = Buffer.alloc(144);
+    let offset = 0;
+
+    // nextInChain
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset);
+    offset += 8;
+
+    // label: WGPUStringView
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // data = NULL
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), offset); // length = WGPU_STRLEN
+    offset += 8;
+
+    // requiredFeatureCount
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset);
+    offset += 8;
+
+    // requiredFeatures
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset);
+    offset += 8;
+
+    // requiredLimits
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset);
+    offset += 8;
+
+    // defaultQueue: WGPUQueueDescriptor (24 bytes)
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // nextInChain
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // label.data
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), offset); // label.length
+    offset += 8;
+
+    // deviceLostCallbackInfo: WGPUDeviceLostCallbackInfo (40 bytes)
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // nextInChain
+    offset += 8;
+    deviceDescriptor.writeUInt32LE(0, offset); // mode = 0 (no callback)
+    offset += 4;
+    offset += 4; // padding
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // callback = NULL
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // userdata1
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // userdata2
+    offset += 8;
+
+    // uncapturedErrorCallbackInfo: WGPUUncapturedErrorCallbackInfo (32 bytes)
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // nextInChain
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt(errorCallback.ptr!), offset); // callback
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // userdata1
+    offset += 8;
+    deviceDescriptor.writeBigUInt64LE(BigInt(0), offset); // userdata2
+    offset += 8;
+
+    // Call the async function WITH descriptor that includes error callback
+    dawn.wgpuAdapterRequestDevice(adapter, ptr(deviceDescriptor), ptr(callbackInfo));
 
     // We need an instance to process events, but we don't have direct access here
     // For now, use tick on a dummy loop - in practice this will be handled by the render loop
