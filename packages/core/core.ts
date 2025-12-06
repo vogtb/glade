@@ -4,11 +4,31 @@ export * from "./events.ts";
 import type { EventTarget } from "./events.ts";
 
 /**
- * Platform-agnostic context interface. The gl property is the standard
+ * Platform-agnostic WebGL context interface. The gl property is the standard
  * WebGL2RenderingContext interface.
  */
-export interface GLContext extends EventTarget {
+export interface WebGLContext extends EventTarget {
   gl: WebGL2RenderingContext;
+  width: number;
+  height: number;
+  destroy(): void;
+}
+
+/**
+ * @deprecated Use WebGLContext instead
+ */
+export type GLContext = WebGLContext;
+
+/**
+ * Platform-agnostic WebGPU context interface. Provides access to the standard
+ * WebGPU API (GPUDevice, GPUQueue, etc.) in a cross-platform manner.
+ */
+export interface WebGPUContext extends EventTarget {
+  gpu: GPU;
+  adapter: GPUAdapter;
+  device: GPUDevice;
+  queue: GPUQueue;
+  context: GPUCanvasContext;
   width: number;
   height: number;
   destroy(): void;

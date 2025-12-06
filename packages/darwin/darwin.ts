@@ -1,9 +1,25 @@
-export type { GLContext, RenderCallback, ContextOptions } from "@glade/core";
+export type {
+  WebGLContext,
+  WebGPUContext,
+  GLContext,
+  RenderCallback,
+  ContextOptions,
+} from "@glade/core";
 
 export {
+  // WebGL (legacy names for backwards compatibility)
   createContext,
   runRenderLoop,
+  // WebGL (new names)
+  createWebGLContext,
+  runWebGLRenderLoop,
+  // WebGPU
+  createWebGPUContext,
+  runWebGPURenderLoop,
+  // Types
   type DarwinContext,
+  type DarwinWebGLContext,
+  type DarwinWebGPUContext,
   type DarwinContextOptions,
 } from "./context.ts";
 export { glfw } from "@glade/glfw";

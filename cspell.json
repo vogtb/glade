@@ -11,6 +11,7 @@
     "DONT",
     "scancode",
     "libwebgpu",
-    "webgpu"
+    "webgpu",
+    "WGPU"
   ]
 }

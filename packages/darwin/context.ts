@@ -1,4 +1,4 @@
-import type { GLContext, RenderCallback, ContextOptions } from "@glade/core";
+import type { WebGLContext, WebGPUContext, RenderCallback, ContextOptions } from "@glade/core";
 import {
   KeyAction,
   type MouseButton,
@@ -15,18 +15,55 @@ import {
 } from "@glade/core/events.ts";
 import { glfw, type GLFWwindow } from "@glade/glfw";
 import { DarwinWebGL2RenderingContext } from "./opengl.ts";
+import {
+  createInstance,
+  requestAdapter,
+  requestDevice,
+  getDeviceQueue,
+  createSurfaceFromMetalLayer,
+  configureSurface,
+  releaseInstance,
+  releaseAdapter,
+  releaseDevice,
+  releaseQueue,
+  releaseSurface,
+  processEvents,
+  tickDevice,
+  WGPUTextureFormat,
+  type WGPUInstance,
+  type WGPUAdapter,
+  type WGPUDevice,
+  type WGPUQueue,
+  type WGPUSurface,
+} from "./webgpu.ts";
+import { createMetalLayerForView } from "./metal.ts";
 
 export interface DarwinContextOptions extends ContextOptions {
   title?: string;
 }
 
-export interface DarwinContext extends GLContext {
+// WebGL context interface
+export interface DarwinWebGLContext extends WebGLContext {
   gl: WebGL2RenderingContext;
   window: GLFWwindow;
 }
 
+// WebGPU context interface
+export interface DarwinWebGPUContext extends WebGPUContext {
+  window: GLFWwindow;
+  // Dawn-specific handles for advanced usage
+  wgpuInstance: WGPUInstance;
+  wgpuAdapter: WGPUAdapter;
+  wgpuSurface: WGPUSurface;
+}
+
+/**
+ * @deprecated Use DarwinWebGLContext instead
+ */
+export type DarwinContext = DarwinWebGLContext;
+
 // Creates a native OpenGL context for macOS using GLFW.
-export function createContext(options: DarwinContextOptions = {}): DarwinContext {
+export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWebGLContext {
   const width = options.width ?? 800;
   const height = options.height ?? 600;
   const title = options.title ?? "glade";
@@ -221,10 +258,248 @@ export function createContext(options: DarwinContextOptions = {}): DarwinContext
 }
 
 /**
- * Native render loop for macOS, which takes a DarwinContext and runs until the
- * window is closed. Time values are in seconds.
+ * @deprecated Use createWebGLContext instead
  */
-export function runRenderLoop(ctx: DarwinContext, callback: RenderCallback): void {
+export const createContext = createWebGLContext;
+
+/**
+ * Creates a native WebGPU context for macOS using GLFW and Dawn.
+ * This is an async function because WebGPU adapter/device creation is asynchronous.
+ */
+export async function createWebGPUContext(
+  options: DarwinContextOptions = {}
+): Promise<DarwinWebGPUContext> {
+  const width = options.width ?? 800;
+  const height = options.height ?? 600;
+  const title = options.title ?? "glade";
+
+  if (!glfw.init()) {
+    throw new Error("Failed to initialize GLFW");
+  }
+
+  // GLFW constants
+  const GLFW_CLIENT_API = 0x00022001;
+  const GLFW_NO_API = 0;
+
+  // For WebGPU, we don't want GLFW to create an OpenGL context
+  glfw.windowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+  const window = glfw.createWindow(width, height, title);
+  if (!window) {
+    glfw.terminate();
+    throw new Error("Failed to create GLFW window");
+  }
+
+  // Get the native view and create a Metal layer
+  const nsView = glfw.getCocoaView(window);
+  if (!nsView) {
+    glfw.destroyWindow(window);
+    glfw.terminate();
+    throw new Error("Failed to get Cocoa view from GLFW window");
+  }
+
+  const metalLayer = createMetalLayerForView(nsView);
+
+  // Create WebGPU instance
+  const instance = createInstance();
+
+  // Create surface from Metal layer
+  const surface = createSurfaceFromMetalLayer(instance, metalLayer as unknown as bigint);
+
+  // Request adapter
+  const adapter = await requestAdapter(instance);
+
+  // Request device
+  const device = await requestDevice(adapter);
+
+  // Get queue
+  const queue = getDeviceQueue(device);
+
+  // Configure surface
+  const fbSize = glfw.getFramebufferSize(window);
+  configureSurface(surface, {
+    device,
+    format: WGPUTextureFormat.BGRA8Unorm,
+    width: fbSize.width,
+    height: fbSize.height,
+  });
+
+  // Track cleanup functions for all registered callbacks
+  const cleanups: Array<() => void> = [];
+
+  // Create stub GPU object that proxies to Dawn
+  // Note: This is a simplified implementation - full WebGPU API would require more work
+  const gpu = {} as GPU;
+
+  // Create stub GPUCanvasContext
+  const gpuContext = {} as GPUCanvasContext;
+
+  return {
+    gpu,
+    adapter: adapter as unknown as GPUAdapter,
+    device: device as unknown as GPUDevice,
+    queue: queue as unknown as GPUQueue,
+    context: gpuContext,
+    window,
+    width: fbSize.width,
+    height: fbSize.height,
+    wgpuInstance: instance,
+    wgpuAdapter: adapter,
+    wgpuSurface: surface,
+
+    destroy() {
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
+      cleanups.length = 0;
+      releaseSurface(surface);
+      releaseQueue(queue);
+      releaseDevice(device);
+      releaseAdapter(adapter);
+      releaseInstance(instance);
+      glfw.destroyWindow(window);
+      glfw.terminate();
+    },
+
+    onKey(callback: KeyCallback): () => void {
+      const cleanup = glfw.setKeyCallback(window, (_win, key, scancode, action, mods) => {
+        callback({
+          key,
+          scancode,
+          action: action as KeyAction,
+          mods,
+        });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onChar(callback: CharCallback): () => void {
+      const cleanup = glfw.setCharCallback(window, (_win, codepoint) => {
+        callback({
+          codepoint,
+          char: String.fromCodePoint(codepoint),
+        });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onMouseButton(callback: MouseButtonCallback): () => void {
+      const cleanup = glfw.setMouseButtonCallback(window, (_win, button, action, mods) => {
+        callback({
+          button: button as MouseButton,
+          action: action as KeyAction,
+          mods,
+        });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onCursorMove(callback: CursorMoveCallback): () => void {
+      const cleanup = glfw.setCursorPosCallback(window, (_win, x, y) => {
+        callback({ x, y });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onScroll(callback: ScrollCallback): () => void {
+      const cleanup = glfw.setScrollCallback(window, (_win, deltaX, deltaY) => {
+        callback({ deltaX, deltaY });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onResize(callback: ResizeCallback): () => void {
+      const cleanup = glfw.setFramebufferSizeCallback(window, (_win, w, h) => {
+        callback({ width: w, height: h });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onClose(callback: CloseCallback): () => void {
+      const cleanup = glfw.setWindowCloseCallback(window, () => {
+        callback();
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onFocus(callback: FocusCallback): () => void {
+      const cleanup = glfw.setWindowFocusCallback(window, (_win, focused) => {
+        callback({ focused: focused !== 0 });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onCursorEnter(callback: CursorEnterCallback): () => void {
+      const cleanup = glfw.setCursorEnterCallback(window, (_win, entered) => {
+        callback({ entered: entered !== 0 });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onRefresh(callback: RefreshCallback): () => void {
+      const cleanup = glfw.setWindowRefreshCallback(window, () => {
+        callback();
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+  };
+}
+
+/**
+ * Native render loop for macOS WebGL context.
+ * Time values are in seconds.
+ */
+export function runWebGLRenderLoop(ctx: DarwinWebGLContext, callback: RenderCallback): void {
   let lastTime = glfw.getTime();
 
   while (!glfw.windowShouldClose(ctx.window)) {
@@ -238,6 +513,36 @@ export function runRenderLoop(ctx: DarwinContext, callback: RenderCallback): voi
     }
 
     glfw.swapBuffers(ctx.window);
+    glfw.pollEvents();
+  }
+}
+
+/**
+ * @deprecated Use runWebGLRenderLoop instead
+ */
+export const runRenderLoop = runWebGLRenderLoop;
+
+/**
+ * Native render loop for macOS WebGPU context.
+ * Time values are in seconds.
+ */
+export function runWebGPURenderLoop(ctx: DarwinWebGPUContext, callback: RenderCallback): void {
+  let lastTime = glfw.getTime();
+
+  while (!glfw.windowShouldClose(ctx.window)) {
+    const time = glfw.getTime();
+    const deltaTime = time - lastTime;
+    lastTime = time;
+
+    // Process Dawn events
+    processEvents(ctx.wgpuInstance);
+    tickDevice(ctx.device as unknown as WGPUDevice);
+
+    const shouldContinue = callback(time, deltaTime);
+    if (shouldContinue === false) {
+      break;
+    }
+
     glfw.pollEvents();
   }
 }

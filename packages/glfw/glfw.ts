@@ -25,6 +25,9 @@ const lib = dlopen(GLFW_PATH, {
   glfwGetWindowSize: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
   glfwGetFramebufferSize: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
   glfwSwapInterval: { args: [FFIType.i32], returns: FFIType.void },
+  // Native window access (macOS)
+  glfwGetCocoaWindow: { args: [FFIType.ptr], returns: FFIType.ptr },
+  glfwGetCocoaView: { args: [FFIType.ptr], returns: FFIType.ptr },
   // Callback setters
   glfwSetKeyCallback: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   glfwSetCharCallback: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
@@ -135,6 +138,15 @@ export const glfw = {
 
   windowHint(hint: number, value: number): void {
     lib.symbols.glfwWindowHint(hint, value);
+  },
+
+  // Native window access (macOS)
+  getCocoaWindow(window: GLFWwindow): Pointer | null {
+    return lib.symbols.glfwGetCocoaWindow(window);
+  },
+
+  getCocoaView(window: GLFWwindow): Pointer | null {
+    return lib.symbols.glfwGetCocoaView(window);
   },
 
   // Callback setters - return a cleanup function that removes the callback

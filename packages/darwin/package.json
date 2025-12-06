@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@glade/core": "workspace:*",
+    "@glade/dawn": "workspace:*",
     "@glade/glfw": "workspace:*"
   },
   "devDependencies": {
