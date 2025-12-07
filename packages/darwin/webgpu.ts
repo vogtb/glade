@@ -701,15 +701,21 @@ export class DawnGPUCommandEncoder {
     return new DawnGPUComputePassEncoder(computePass, descriptor?.label);
   }
 
-  // TODO implement
   copyBufferToBuffer(
-    _source: DawnGPUBuffer,
-    _sourceOffset: number,
-    _destination: DawnGPUBuffer,
-    _destinationOffset: number,
-    _size: number
+    source: DawnGPUBuffer,
+    sourceOffset: number,
+    destination: DawnGPUBuffer,
+    destinationOffset: number,
+    size: number
   ) {
-    // TODO implement
+    dawn.wgpuCommandEncoderCopyBufferToBuffer(
+      this._handle,
+      source._handle,
+      BigInt(sourceOffset),
+      destination._handle,
+      BigInt(destinationOffset),
+      BigInt(size)
+    );
   }
   copyBufferToTexture(
     _source: GPUTexelCopyBufferInfo,
@@ -732,8 +738,13 @@ export class DawnGPUCommandEncoder {
   ) {
     // TODO implement
   }
-  clearBuffer(_buffer: DawnGPUBuffer, _offset?: number, _size?: number) {
-    // TODO implement
+  clearBuffer(buffer: DawnGPUBuffer, offset?: number, size?: number) {
+    dawn.wgpuCommandEncoderClearBuffer(
+      this._handle,
+      buffer._handle,
+      BigInt(offset ?? 0),
+      BigInt(size ?? buffer.size)
+    );
   }
   resolveQuerySet(
     _querySet: GPUQuerySet,
@@ -843,14 +854,63 @@ export class DawnGPUQueue {
     );
   }
 
-  // TODO implement
   writeTexture(
-    _destination: GPUTexelCopyTextureInfo,
-    _data: BufferSource,
-    _dataLayout: GPUTexelCopyBufferLayout,
-    _size: GPUExtent3DStrict
+    destination: GPUTexelCopyTextureInfo,
+    data: BufferSource,
+    dataLayout: GPUTexelCopyBufferLayout,
+    size: GPUExtent3DStrict
   ) {
-    // TODO implement
+    // WGPUTexelCopyTextureInfo struct layout:
+    // { texture: ptr @0, mipLevel: u32 @8, origin: WGPUOrigin3D @12 (3 x u32), aspect: u32 @24 }
+    // Total: 28 bytes, padded to 32
+    const destBuffer = Buffer.alloc(32);
+    const texture = destination.texture as unknown as DawnGPUTexture;
+    destBuffer.writeBigUInt64LE(BigInt(texture._handle as unknown as number), 0);
+    destBuffer.writeUInt32LE(destination.mipLevel ?? 0, 8);
+    // origin
+    const origin = destination.origin as GPUOrigin3DDict | undefined;
+    destBuffer.writeUInt32LE(origin?.x ?? 0, 12);
+    destBuffer.writeUInt32LE(origin?.y ?? 0, 16);
+    destBuffer.writeUInt32LE(origin?.z ?? 0, 20);
+    // aspect: "all" = 1
+    const aspectMap: Record<string, number> = {
+      all: 1,
+      "stencil-only": 2,
+      "depth-only": 3,
+    };
+    destBuffer.writeUInt32LE(aspectMap[destination.aspect ?? "all"] ?? 1, 24);
+
+    // WGPUTexelCopyBufferLayout struct layout:
+    // { offset: u64 @0, bytesPerRow: u32 @8, rowsPerImage: u32 @12 }
+    // Total: 16 bytes
+    const layoutBuffer = Buffer.alloc(16);
+    layoutBuffer.writeBigUInt64LE(BigInt(dataLayout.offset ?? 0), 0);
+    layoutBuffer.writeUInt32LE(dataLayout.bytesPerRow ?? 0, 8);
+    layoutBuffer.writeUInt32LE(dataLayout.rowsPerImage ?? 0, 12);
+
+    // WGPUExtent3D struct layout: { width: u32, height: u32, depthOrArrayLayers: u32 }
+    const extentBuffer = Buffer.alloc(12);
+    const sizeDict = size as GPUExtent3DDict;
+    extentBuffer.writeUInt32LE(sizeDict.width, 0);
+    extentBuffer.writeUInt32LE(sizeDict.height ?? 1, 4);
+    extentBuffer.writeUInt32LE(sizeDict.depthOrArrayLayers ?? 1, 8);
+
+    // Get data as buffer
+    let dataView: Uint8Array;
+    if (data instanceof ArrayBuffer) {
+      dataView = new Uint8Array(data);
+    } else {
+      dataView = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    }
+
+    dawn.wgpuQueueWriteTexture(
+      this._handle,
+      ptr(destBuffer),
+      ptr(Buffer.from(dataView)),
+      BigInt(dataView.byteLength),
+      ptr(layoutBuffer),
+      ptr(extentBuffer)
+    );
   }
   copyExternalImageToTexture(
     _source: GPUCopyExternalImageSourceInfo,

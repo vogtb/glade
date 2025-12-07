@@ -502,6 +502,10 @@ export const lib = dlopen(DAWN_PATH, {
     args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr],
     returns: FFIType.void,
   },
+  wgpuCommandEncoderClearBuffer: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64, FFIType.u64],
+    returns: FFIType.void,
+  },
 
   // CommandBuffer
   wgpuCommandBufferRelease: {
