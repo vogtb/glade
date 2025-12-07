@@ -15,6 +15,7 @@
     "WGPU",
     "webgl",
     "LIBOBJC",
-    "objc"
+    "objc",
+    "Workgroups"
   ]
 }

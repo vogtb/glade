@@ -210,7 +210,7 @@ export const WGPUVertexStepMode = {
 const WGPU_STRLEN = BigInt("0xFFFFFFFFFFFFFFFF"); // SIZE_MAX
 
 // Dawn FFI bindings
-const lib = dlopen(DAWN_PATH, {
+export const lib = dlopen(DAWN_PATH, {
   // Instance
   wgpuCreateInstance: {
     args: [FFIType.ptr],
@@ -581,8 +581,6 @@ const lib = dlopen(DAWN_PATH, {
     returns: FFIType.void,
   },
 });
-
-export { lib };
 
 // Helper to create a WGPUStringView struct
 export function createStringView(str: string | null): Buffer {

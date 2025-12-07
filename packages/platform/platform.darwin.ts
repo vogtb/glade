@@ -1,5 +1,5 @@
 export {
-  // WebGL (new names)
+  // WebGL
   createWebGLContext,
   runWebGLRenderLoop,
   // WebGPU

@@ -67,6 +67,15 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
     return mods;
   }
 
+  // Simple hash function to convert e.code string to a stable numeric scancode
+  function hashCode(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash * 31 + str.charCodeAt(i)) | 0;
+    }
+    return hash;
+  }
+
   return {
     gl,
     canvas,
@@ -80,18 +89,16 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
     onKey(callback: KeyCallback): () => void {
       const handleKeyDown = (e: KeyboardEvent) => {
         callback({
-          key: e.keyCode,
-          scancode: e.keyCode,
+          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          scancode: hashCode(e.code),
           action: e.repeat ? KeyAction.Repeat : KeyAction.Press,
           mods: getModifiers(e),
         });
       };
       const handleKeyUp = (e: KeyboardEvent) => {
         callback({
-          // TODO: I should have paid attention to the deprecated warnings here
-          // and used `code` or `key` instead.
-          key: e.keyCode,
-          scancode: e.keyCode,
+          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          scancode: hashCode(e.code),
           action: KeyAction.Release,
           mods: getModifiers(e),
         });
@@ -105,7 +112,7 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
     },
 
     onChar(callback: CharCallback): () => void {
-      const handleKeyPress = (e: KeyboardEvent) => {
+      const handleInput = (e: KeyboardEvent) => {
         if (e.key.length === 1) {
           callback({
             codepoint: e.key.codePointAt(0) ?? 0,
@@ -113,8 +120,8 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
           });
         }
       };
-      canvas.addEventListener("keypress", handleKeyPress);
-      return () => canvas.removeEventListener("keypress", handleKeyPress);
+      canvas.addEventListener("keydown", handleInput);
+      return () => canvas.removeEventListener("keydown", handleInput);
     },
 
     onMouseButton(callback: MouseButtonCallback): () => void {
@@ -272,6 +279,15 @@ export async function createWebGPUContext(
     return mods;
   }
 
+  // Simple hash function to convert e.code string to a stable numeric scancode
+  function hashCode(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash * 31 + str.charCodeAt(i)) | 0;
+    }
+    return hash;
+  }
+
   return {
     gpu,
     adapter,
@@ -289,16 +305,16 @@ export async function createWebGPUContext(
     onKey(callback: KeyCallback): () => void {
       const handleKeyDown = (e: KeyboardEvent) => {
         callback({
-          key: e.keyCode,
-          scancode: e.keyCode,
+          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          scancode: hashCode(e.code),
           action: e.repeat ? KeyAction.Repeat : KeyAction.Press,
           mods: getModifiers(e),
         });
       };
       const handleKeyUp = (e: KeyboardEvent) => {
         callback({
-          key: e.keyCode,
-          scancode: e.keyCode,
+          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          scancode: hashCode(e.code),
           action: KeyAction.Release,
           mods: getModifiers(e),
         });
@@ -312,7 +328,7 @@ export async function createWebGPUContext(
     },
 
     onChar(callback: CharCallback): () => void {
-      const handleKeyPress = (e: KeyboardEvent) => {
+      const handleInput = (e: KeyboardEvent) => {
         if (e.key.length === 1) {
           callback({
             codepoint: e.key.codePointAt(0) ?? 0,
@@ -320,8 +336,8 @@ export async function createWebGPUContext(
           });
         }
       };
-      canvas.addEventListener("keypress", handleKeyPress);
-      return () => canvas.removeEventListener("keypress", handleKeyPress);
+      canvas.addEventListener("keydown", handleInput);
+      return () => canvas.removeEventListener("keydown", handleInput);
     },
 
     onMouseButton(callback: MouseButtonCallback): () => void {
