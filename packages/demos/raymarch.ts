@@ -20,7 +20,6 @@ fn main(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
 
   output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
   output.v_uv = pos[vertexIndex] * 0.5 + 0.5;
-  output.v_uv.y = 1.0 - output.v_uv.y;
 
   return output;
 }
@@ -330,7 +329,6 @@ fn main(@location(0) v_uv: vec2f) -> @location(0) vec4f {
 
   // Mouse influence on camera
   var mouseNorm = (uniforms.u_mouse / uniforms.u_resolution) * 2.0 - 1.0;
-  mouseNorm.y = -mouseNorm.y;
 
   // Camera setup
   let camDist = 5.0;

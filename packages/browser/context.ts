@@ -76,6 +76,39 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
     return hash;
   }
 
+  // Map browser key names to GLFW key codes for compatibility
+  const keyCodeMap: Record<string, number> = {
+    ArrowRight: 262,
+    ArrowLeft: 263,
+    ArrowDown: 264,
+    ArrowUp: 265,
+    Escape: 256,
+    Enter: 257,
+    Tab: 258,
+    Backspace: 259,
+    Insert: 260,
+    Delete: 261,
+    Home: 268,
+    End: 269,
+    PageUp: 266,
+    PageDown: 267,
+    Space: 32,
+  };
+
+  function getKeyCode(e: KeyboardEvent): number {
+    // Check for mapped special keys first
+    const mapped = keyCodeMap[e.key];
+    if (mapped !== undefined) {
+      return mapped;
+    }
+    // Single character keys use their char code
+    if (e.key.length === 1) {
+      return e.key.toUpperCase().charCodeAt(0);
+    }
+    // Fall back to 0 for unknown keys
+    return 0;
+  }
+
   return {
     gl,
     canvas,
@@ -89,7 +122,7 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
     onKey(callback: KeyCallback): () => void {
       const handleKeyDown = (e: KeyboardEvent) => {
         callback({
-          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          key: getKeyCode(e),
           scancode: hashCode(e.code),
           action: e.repeat ? KeyAction.Repeat : KeyAction.Press,
           mods: getModifiers(e),
@@ -97,17 +130,17 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
       };
       const handleKeyUp = (e: KeyboardEvent) => {
         callback({
-          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          key: getKeyCode(e),
           scancode: hashCode(e.code),
           action: KeyAction.Release,
           mods: getModifiers(e),
         });
       };
-      canvas.addEventListener("keydown", handleKeyDown);
-      canvas.addEventListener("keyup", handleKeyUp);
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
       return () => {
-        canvas.removeEventListener("keydown", handleKeyDown);
-        canvas.removeEventListener("keyup", handleKeyUp);
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
       };
     },
 
@@ -120,8 +153,8 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
           });
         }
       };
-      canvas.addEventListener("keydown", handleInput);
-      return () => canvas.removeEventListener("keydown", handleInput);
+      window.addEventListener("keydown", handleInput);
+      return () => window.removeEventListener("keydown", handleInput);
     },
 
     onMouseButton(callback: MouseButtonCallback): () => void {
@@ -288,6 +321,39 @@ export async function createWebGPUContext(
     return hash;
   }
 
+  // Map browser key names to GLFW key codes for compatibility
+  const keyCodeMap: Record<string, number> = {
+    ArrowRight: 262,
+    ArrowLeft: 263,
+    ArrowDown: 264,
+    ArrowUp: 265,
+    Escape: 256,
+    Enter: 257,
+    Tab: 258,
+    Backspace: 259,
+    Insert: 260,
+    Delete: 261,
+    Home: 268,
+    End: 269,
+    PageUp: 266,
+    PageDown: 267,
+    Space: 32,
+  };
+
+  function getKeyCode(e: KeyboardEvent): number {
+    // Check for mapped special keys first
+    const mapped = keyCodeMap[e.key];
+    if (mapped !== undefined) {
+      return mapped;
+    }
+    // Single character keys use their char code
+    if (e.key.length === 1) {
+      return e.key.toUpperCase().charCodeAt(0);
+    }
+    // Fall back to 0 for unknown keys
+    return 0;
+  }
+
   return {
     gpu,
     adapter,
@@ -305,7 +371,7 @@ export async function createWebGPUContext(
     onKey(callback: KeyCallback): () => void {
       const handleKeyDown = (e: KeyboardEvent) => {
         callback({
-          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          key: getKeyCode(e),
           scancode: hashCode(e.code),
           action: e.repeat ? KeyAction.Repeat : KeyAction.Press,
           mods: getModifiers(e),
@@ -313,17 +379,17 @@ export async function createWebGPUContext(
       };
       const handleKeyUp = (e: KeyboardEvent) => {
         callback({
-          key: e.key.length === 1 ? e.key.toUpperCase().charCodeAt(0) : 0,
+          key: getKeyCode(e),
           scancode: hashCode(e.code),
           action: KeyAction.Release,
           mods: getModifiers(e),
         });
       };
-      canvas.addEventListener("keydown", handleKeyDown);
-      canvas.addEventListener("keyup", handleKeyUp);
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
       return () => {
-        canvas.removeEventListener("keydown", handleKeyDown);
-        canvas.removeEventListener("keyup", handleKeyUp);
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
       };
     },
 
@@ -336,8 +402,8 @@ export async function createWebGPUContext(
           });
         }
       };
-      canvas.addEventListener("keydown", handleInput);
-      return () => canvas.removeEventListener("keydown", handleInput);
+      window.addEventListener("keydown", handleInput);
+      return () => window.removeEventListener("keydown", handleInput);
     },
 
     onMouseButton(callback: MouseButtonCallback): () => void {

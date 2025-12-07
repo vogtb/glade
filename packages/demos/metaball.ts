@@ -97,8 +97,7 @@ fn main(@location(0) v_uv: vec2f) -> @location(0) vec4f {
 
   // Convert mouse to normalized coords
   var mouseNorm = (uniforms.u_mouse / uniforms.u_resolution) * 2.0 - 1.0;
-  mouseNorm.x *= aspect;
-  mouseNorm.y = -mouseNorm.y;
+  mouseNorm.x = mouseNorm.x * aspect;
 
   let t = uniforms.u_time;
 

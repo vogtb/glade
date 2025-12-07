@@ -8,6 +8,7 @@ import { initRaymarchDemo } from "./raymarch";
 import { initGalaxyDemo, renderGalaxy } from "./galaxy";
 import { initFluidDemo, renderFluid } from "./fluid";
 import { initPostProcessDemo, renderPostProcess } from "./postprocess";
+import { initTerrainDemo } from "./terrain";
 import type { DemoResources } from "./common";
 
 type RenderFn = (
@@ -120,6 +121,7 @@ async function main() {
     { name: "Raymarched 3D", resources: initRaymarchDemo(ctx, format) },
     { name: "Galaxy Simulation", resources: initGalaxyDemo(ctx, format), render: renderGalaxy },
     { name: "Fluid Simulation", resources: initFluidDemo(ctx, format), render: renderFluid },
+    { name: "Terrain Flyover", resources: initTerrainDemo(ctx, format) },
   ];
 
   console.log("demos initialized, rendering...");
@@ -140,7 +142,9 @@ async function main() {
   const KEY_LEFT = 263;
 
   ctx.onKey((event) => {
-    if (event.action !== KeyAction.Press) return;
+    if (event.action !== KeyAction.Press) {
+      return;
+    }
 
     if (event.key === KEY_RIGHT) {
       currentDemoIndex = (currentDemoIndex + 1) % demos.length;

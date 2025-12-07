@@ -179,7 +179,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3u) {
   var mouseNorm = (uniforms.u_mouse / uniforms.u_resolution) * 2.0 - 1.0;
   let aspect = uniforms.u_resolution.x / uniforms.u_resolution.y;
   mouseNorm.x *= aspect;
-  mouseNorm.y = -mouseNorm.y;
+
 
   // Vector to center
   let toCenter = center - star.position;
@@ -268,7 +268,6 @@ fn main(@builtin(vertex_index) vertexIndex: u32) -> VertexOutput {
 
   output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
   output.v_uv = pos[vertexIndex] * 0.5 + 0.5;
-  output.v_uv.y = 1.0 - output.v_uv.y;
 
   return output;
 }
