@@ -338,6 +338,10 @@ export const lib = dlopen(DAWN_PATH, {
     args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.ptr],
     returns: FFIType.void,
   },
+  wgpuQueueOnSubmittedWorkDone: {
+    args: [FFIType.ptr, FFIType.ptr],
+    returns: FFIType.u64, // WGPUFuture
+  },
 
   // Surface
   wgpuSurfaceRelease: {
@@ -560,6 +564,22 @@ export const lib = dlopen(DAWN_PATH, {
   },
   wgpuRenderPassEncoderSetScissorRect: {
     args: [FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.u32, FFIType.u32],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderSetBlendConstant: {
+    args: [FFIType.ptr, FFIType.ptr], // color is a pointer to WGPUColor struct
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderSetStencilReference: {
+    args: [FFIType.ptr, FFIType.u32],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderDrawIndirect: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderDrawIndexedIndirect: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64],
     returns: FFIType.void,
   },
 

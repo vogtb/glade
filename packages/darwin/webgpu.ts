@@ -185,6 +185,13 @@ const compareFunctionMap: Record<string, number> = {
   always: 0x08,
 };
 
+// Texture aspect mapping
+const textureAspectMap: Record<string, number> = {
+  all: 0x01, // WGPUTextureAspect_All
+  "stencil-only": 0x02, // WGPUTextureAspect_StencilOnly
+  "depth-only": 0x03, // WGPUTextureAspect_DepthOnly
+};
+
 function convertBufferUsage(usage: number): number {
   let result = 0;
   for (const [webgpuFlag, dawnFlag] of Object.entries(bufferUsageMap)) {
@@ -498,11 +505,18 @@ export class DawnGPURenderPassEncoder {
   }
 
   // Stubs for other methods
-  setBlendConstant(_color: GPUColor) {
-    // TODO implement
+  setBlendConstant(color: GPUColor) {
+    // WGPUColor struct: { r: f64, g: f64, b: f64, a: f64 } = 32 bytes
+    const colorBuffer = Buffer.alloc(32);
+    const colorDict = color as { r: number; g: number; b: number; a: number };
+    colorBuffer.writeDoubleLE(colorDict.r, 0);
+    colorBuffer.writeDoubleLE(colorDict.g, 8);
+    colorBuffer.writeDoubleLE(colorDict.b, 16);
+    colorBuffer.writeDoubleLE(colorDict.a, 24);
+    dawn.wgpuRenderPassEncoderSetBlendConstant(this._handle, ptr(colorBuffer));
   }
-  setStencilReference(_reference: number) {
-    // TODO implement
+  setStencilReference(reference: number) {
+    dawn.wgpuRenderPassEncoderSetStencilReference(this._handle, reference);
   }
   beginOcclusionQuery(_queryIndex: number) {
     // TODO implement
@@ -513,11 +527,19 @@ export class DawnGPURenderPassEncoder {
   executeBundles(_bundles: Iterable<GPURenderBundle>) {
     // TODO implement
   }
-  drawIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
-    // TODO implement
+  drawIndirect(indirectBuffer: DawnGPUBuffer, indirectOffset: number) {
+    dawn.wgpuRenderPassEncoderDrawIndirect(
+      this._handle,
+      indirectBuffer._handle,
+      BigInt(indirectOffset)
+    );
   }
-  drawIndexedIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
-    // TODO implement
+  drawIndexedIndirect(indirectBuffer: DawnGPUBuffer, indirectOffset: number) {
+    dawn.wgpuRenderPassEncoderDrawIndexedIndirect(
+      this._handle,
+      indirectBuffer._handle,
+      BigInt(indirectOffset)
+    );
   }
   pushDebugGroup(_groupLabel: string) {
     // TODO implement
@@ -718,25 +740,128 @@ export class DawnGPUCommandEncoder {
     );
   }
   copyBufferToTexture(
-    _source: GPUTexelCopyBufferInfo,
-    _destination: GPUTexelCopyTextureInfo,
-    _copySize: GPUExtent3DStrict
+    source: GPUTexelCopyBufferInfo,
+    destination: GPUTexelCopyTextureInfo,
+    copySize: GPUExtent3DStrict
   ) {
-    // TODO implement
+    // WGPUTexelCopyBufferInfo struct layout:
+    // { nextInChain: ptr @0, layout: WGPUTexelCopyBufferLayout @8 (16 bytes), buffer: ptr @24 }
+    // WGPUTexelCopyBufferLayout: { offset: u64 @0, bytesPerRow: u32 @8, rowsPerImage: u32 @12 }
+    // Total: 32 bytes
+    const srcBuffer = Buffer.alloc(32);
+    srcBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
+    srcBuffer.writeBigUInt64LE(BigInt(source.offset ?? 0), 8); // layout.offset
+    srcBuffer.writeUInt32LE(source.bytesPerRow ?? 0, 16); // layout.bytesPerRow
+    srcBuffer.writeUInt32LE(source.rowsPerImage ?? 0, 20); // layout.rowsPerImage
+    const buffer = source.buffer as unknown as DawnGPUBuffer;
+    srcBuffer.writeBigUInt64LE(BigInt(buffer._handle as unknown as number), 24); // buffer
+
+    // WGPUTexelCopyTextureInfo struct layout:
+    // { texture: ptr @0, mipLevel: u32 @8, origin: WGPUOrigin3D @12 (3 x u32), aspect: u32 @24 }
+    // Total: 28 bytes, padded to 32
+    const destBuffer = Buffer.alloc(32);
+    const texture = destination.texture as unknown as DawnGPUTexture;
+    destBuffer.writeBigUInt64LE(BigInt(texture._handle as unknown as number), 0);
+    destBuffer.writeUInt32LE(destination.mipLevel ?? 0, 8);
+    const origin = destination.origin as GPUOrigin3DDict | undefined;
+    destBuffer.writeUInt32LE(origin?.x ?? 0, 12);
+    destBuffer.writeUInt32LE(origin?.y ?? 0, 16);
+    destBuffer.writeUInt32LE(origin?.z ?? 0, 20);
+    destBuffer.writeUInt32LE(textureAspectMap[destination.aspect ?? "all"] ?? 0x01, 24);
+
+    // WGPUExtent3D struct layout: { width: u32, height: u32, depthOrArrayLayers: u32 }
+    const extentBuffer = Buffer.alloc(12);
+    const sizeDict = copySize as GPUExtent3DDict;
+    extentBuffer.writeUInt32LE(sizeDict.width, 0);
+    extentBuffer.writeUInt32LE(sizeDict.height ?? 1, 4);
+    extentBuffer.writeUInt32LE(sizeDict.depthOrArrayLayers ?? 1, 8);
+
+    dawn.wgpuCommandEncoderCopyBufferToTexture(
+      this._handle,
+      ptr(srcBuffer),
+      ptr(destBuffer),
+      ptr(extentBuffer)
+    );
   }
   copyTextureToBuffer(
-    _source: GPUTexelCopyTextureInfo,
-    _destination: GPUTexelCopyBufferInfo,
-    _copySize: GPUExtent3DStrict
+    source: GPUTexelCopyTextureInfo,
+    destination: GPUTexelCopyBufferInfo,
+    copySize: GPUExtent3DStrict
   ) {
-    // TODO implement
+    // WGPUTexelCopyTextureInfo struct layout
+    const srcBuffer = Buffer.alloc(32);
+    const texture = source.texture as unknown as DawnGPUTexture;
+    srcBuffer.writeBigUInt64LE(BigInt(texture._handle as unknown as number), 0);
+    srcBuffer.writeUInt32LE(source.mipLevel ?? 0, 8);
+    const origin = source.origin as GPUOrigin3DDict | undefined;
+    srcBuffer.writeUInt32LE(origin?.x ?? 0, 12);
+    srcBuffer.writeUInt32LE(origin?.y ?? 0, 16);
+    srcBuffer.writeUInt32LE(origin?.z ?? 0, 20);
+    srcBuffer.writeUInt32LE(textureAspectMap[source.aspect ?? "all"] ?? 0x01, 24);
+
+    // WGPUTexelCopyBufferInfo struct layout
+    const destBuffer = Buffer.alloc(32);
+    destBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
+    destBuffer.writeBigUInt64LE(BigInt(destination.offset ?? 0), 8); // layout.offset
+    destBuffer.writeUInt32LE(destination.bytesPerRow ?? 0, 16); // layout.bytesPerRow
+    destBuffer.writeUInt32LE(destination.rowsPerImage ?? 0, 20); // layout.rowsPerImage
+    const buffer = destination.buffer as unknown as DawnGPUBuffer;
+    destBuffer.writeBigUInt64LE(BigInt(buffer._handle as unknown as number), 24); // buffer
+
+    // WGPUExtent3D struct layout
+    const extentBuffer = Buffer.alloc(12);
+    const sizeDict = copySize as GPUExtent3DDict;
+    extentBuffer.writeUInt32LE(sizeDict.width, 0);
+    extentBuffer.writeUInt32LE(sizeDict.height ?? 1, 4);
+    extentBuffer.writeUInt32LE(sizeDict.depthOrArrayLayers ?? 1, 8);
+
+    dawn.wgpuCommandEncoderCopyTextureToBuffer(
+      this._handle,
+      ptr(srcBuffer),
+      ptr(destBuffer),
+      ptr(extentBuffer)
+    );
   }
   copyTextureToTexture(
-    _source: GPUTexelCopyTextureInfo,
-    _destination: GPUTexelCopyTextureInfo,
-    _copySize: GPUExtent3DStrict
+    source: GPUTexelCopyTextureInfo,
+    destination: GPUTexelCopyTextureInfo,
+    copySize: GPUExtent3DStrict
   ) {
-    // TODO implement
+    // WGPUTexelCopyTextureInfo struct layout for source
+    const srcBuffer = Buffer.alloc(32);
+    const srcTexture = source.texture as unknown as DawnGPUTexture;
+    srcBuffer.writeBigUInt64LE(BigInt(srcTexture._handle as unknown as number), 0);
+    srcBuffer.writeUInt32LE(source.mipLevel ?? 0, 8);
+    const srcOrigin = source.origin as GPUOrigin3DDict | undefined;
+    srcBuffer.writeUInt32LE(srcOrigin?.x ?? 0, 12);
+    srcBuffer.writeUInt32LE(srcOrigin?.y ?? 0, 16);
+    srcBuffer.writeUInt32LE(srcOrigin?.z ?? 0, 20);
+    srcBuffer.writeUInt32LE(textureAspectMap[source.aspect ?? "all"] ?? 0x01, 24);
+
+    // WGPUTexelCopyTextureInfo struct layout for destination
+    const destBuffer = Buffer.alloc(32);
+    const destTexture = destination.texture as unknown as DawnGPUTexture;
+    destBuffer.writeBigUInt64LE(BigInt(destTexture._handle as unknown as number), 0);
+    destBuffer.writeUInt32LE(destination.mipLevel ?? 0, 8);
+    const destOrigin = destination.origin as GPUOrigin3DDict | undefined;
+    destBuffer.writeUInt32LE(destOrigin?.x ?? 0, 12);
+    destBuffer.writeUInt32LE(destOrigin?.y ?? 0, 16);
+    destBuffer.writeUInt32LE(destOrigin?.z ?? 0, 20);
+    destBuffer.writeUInt32LE(textureAspectMap[destination.aspect ?? "all"] ?? 0x01, 24);
+
+    // WGPUExtent3D struct layout
+    const extentBuffer = Buffer.alloc(12);
+    const sizeDict = copySize as GPUExtent3DDict;
+    extentBuffer.writeUInt32LE(sizeDict.width, 0);
+    extentBuffer.writeUInt32LE(sizeDict.height ?? 1, 4);
+    extentBuffer.writeUInt32LE(sizeDict.depthOrArrayLayers ?? 1, 8);
+
+    dawn.wgpuCommandEncoderCopyTextureToTexture(
+      this._handle,
+      ptr(srcBuffer),
+      ptr(destBuffer),
+      ptr(extentBuffer)
+    );
   }
   clearBuffer(buffer: DawnGPUBuffer, offset?: number, size?: number) {
     dawn.wgpuCommandEncoderClearBuffer(
@@ -872,13 +997,7 @@ export class DawnGPUQueue {
     destBuffer.writeUInt32LE(origin?.x ?? 0, 12);
     destBuffer.writeUInt32LE(origin?.y ?? 0, 16);
     destBuffer.writeUInt32LE(origin?.z ?? 0, 20);
-    // aspect: "all" = 1
-    const aspectMap: Record<string, number> = {
-      all: 1,
-      "stencil-only": 2,
-      "depth-only": 3,
-    };
-    destBuffer.writeUInt32LE(aspectMap[destination.aspect ?? "all"] ?? 1, 24);
+    destBuffer.writeUInt32LE(textureAspectMap[destination.aspect ?? "all"] ?? 0x01, 24);
 
     // WGPUTexelCopyBufferLayout struct layout:
     // { offset: u64 @0, bytesPerRow: u32 @8, rowsPerImage: u32 @12 }
@@ -920,8 +1039,32 @@ export class DawnGPUQueue {
     // TODO implement
   }
   onSubmittedWorkDone(): Promise<undefined> {
-    // TODO implement
-    return Promise.resolve(undefined);
+    return new Promise((resolve) => {
+      // Create callback for work done notification
+      const callback = new JSCallback(
+        (_status: number, _userdata1: number, _userdata2: number) => {
+          callback.close();
+          resolve(undefined);
+        },
+        {
+          args: [FFIType.u32, FFIType.ptr, FFIType.ptr],
+          returns: FFIType.void,
+        }
+      );
+
+      // WGPUQueueWorkDoneCallbackInfo struct layout:
+      // { nextInChain: ptr(8), mode: u32(4), padding(4), callback: ptr(8), userdata1: ptr(8), userdata2: ptr(8) }
+      // Total: 40 bytes
+      const callbackInfo = Buffer.alloc(40);
+      callbackInfo.writeBigUInt64LE(BigInt(0), 0); // nextInChain = NULL
+      callbackInfo.writeUInt32LE(WGPUCallbackMode.AllowSpontaneous, 8); // mode
+      // offset 12: 4 bytes padding
+      callbackInfo.writeBigUInt64LE(BigInt(callback.ptr!), 16); // callback
+      callbackInfo.writeBigUInt64LE(BigInt(0), 24); // userdata1
+      callbackInfo.writeBigUInt64LE(BigInt(0), 32); // userdata2
+
+      dawn.wgpuQueueOnSubmittedWorkDone(this._handle, ptr(callbackInfo));
+    });
   }
 }
 
