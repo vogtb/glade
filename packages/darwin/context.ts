@@ -30,12 +30,15 @@ import {
   releaseSurface,
   processEvents,
   tickDevice,
+  DawnGPUDevice,
+  DawnGPUCanvasContext,
+} from "./webgpu.ts";
+import {
   type WGPUInstance,
   type WGPUAdapter,
   type WGPUDevice,
   type WGPUSurface,
-} from "./webgpu.ts";
-import { DawnGPUDevice, DawnGPUCanvasContext } from "./gpu-wrapper.ts";
+} from "@glade/dawn";
 import { createMetalLayerForView } from "./metal.ts";
 
 export interface DarwinContextOptions extends ContextOptions {

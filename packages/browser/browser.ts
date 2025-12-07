@@ -1,3 +1,7 @@
+/**
+ * Browser bindings are not r
+ */
+
 export type {
   WebGLContext,
   WebGPUContext,

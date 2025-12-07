@@ -13,6 +13,8 @@
     "libwebgpu",
     "webgpu",
     "WGPU",
-    "webgl"
+    "webgl",
+    "LIBOBJC",
+    "objc"
   ]
 }

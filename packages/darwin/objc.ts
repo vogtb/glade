@@ -5,8 +5,10 @@
 
 import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
 
+const LIBOBJC_DYLIB_PATH = "/usr/lib/libobjc.A.dylib";
+
 // Load Objective-C runtime
-const objc = dlopen("/usr/lib/libobjc.A.dylib", {
+const objc = dlopen(LIBOBJC_DYLIB_PATH, {
   objc_getClass: { args: [FFIType.cstring], returns: FFIType.ptr },
   objc_msgSend: { args: [], returns: FFIType.ptr }, // Variadic, we'll use different signatures
   sel_registerName: { args: [FFIType.cstring], returns: FFIType.ptr },
@@ -16,24 +18,24 @@ const objc = dlopen("/usr/lib/libobjc.A.dylib", {
 
 // We need to call objc_msgSend with different signatures for different calls
 // Create specialized bindings for the specific calls we need
-export const objcSendNoArgs = dlopen("/usr/lib/libobjc.A.dylib", {
+export const objcSendNoArgs = dlopen(LIBOBJC_DYLIB_PATH, {
   objc_msgSend: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
 });
 
-export const objcSendOnePtr = dlopen("/usr/lib/libobjc.A.dylib", {
+export const objcSendOnePtr = dlopen(LIBOBJC_DYLIB_PATH, {
   objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
 });
 
-export const objcSendOneBool = dlopen("/usr/lib/libobjc.A.dylib", {
+export const objcSendOneBool = dlopen(LIBOBJC_DYLIB_PATH, {
   objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.i32], returns: FFIType.ptr },
 });
 
 // objc_msgSend for returning double
-export const objcSendReturnDouble = dlopen("/usr/lib/libobjc.A.dylib", {
+export const objcSendReturnDouble = dlopen(LIBOBJC_DYLIB_PATH, {
   objc_msgSend: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.f64 },
 });
 
-export const objcSendOneDouble = dlopen("/usr/lib/libobjc.A.dylib", {
+export const objcSendOneDouble = dlopen(LIBOBJC_DYLIB_PATH, {
   objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.f64], returns: FFIType.ptr },
 });
 

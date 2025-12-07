@@ -1,5 +1,9 @@
 import { dlopen, FFIType, ptr } from "bun:ffi";
 
+// GLSL shader constants for OpenGL 3.2 Core Profile
+export const GLSL_VERSION = "#version 150 core";
+export const GLSL_PRECISION = "";
+
 const GL_PATH = "/System/Library/Frameworks/OpenGL.framework/OpenGL";
 
 export const lib = dlopen(GL_PATH, {
