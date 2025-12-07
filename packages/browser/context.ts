@@ -217,11 +217,6 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
 }
 
 /**
- * @deprecated Use createWebGLContext instead
- */
-export const createContext = createWebGLContext;
-
-/**
  * Creates a WebGPU context for browser rendering.
  * This is async because WebGPU adapter/device creation is asynchronous.
  */

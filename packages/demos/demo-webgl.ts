@@ -1,4 +1,9 @@
-import { createContext, runRenderLoop, GLSL_VERSION, GLSL_PRECISION } from "@glade/platform";
+import {
+  createWebGLContext,
+  runWebGLRenderLoop,
+  GLSL_VERSION,
+  GLSL_PRECISION,
+} from "@glade/platform";
 import type { GLContext } from "@glade/core";
 
 // Vertex shader - transforms vertices and passes color to fragment shader
@@ -301,7 +306,7 @@ function render(
 }
 
 function main() {
-  const ctx = createContext({
+  const ctx = createWebGLContext({
     width: 800,
     height: 600,
     title: "glade WebGL2 Demo",
@@ -327,7 +332,7 @@ function main() {
 
   // runRenderLoop is async (uses requestAnimationFrame), so cleanup must not
   // happen here - the browser handles resource cleanup on page unload
-  runRenderLoop(ctx, renderCallback);
+  runWebGLRenderLoop(ctx, renderCallback);
 }
 
 main();

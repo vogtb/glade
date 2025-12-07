@@ -7,10 +7,7 @@ export type {
 } from "@glade/core";
 
 export {
-  // WebGL (legacy names for backwards compatibility)
-  createContext,
-  runRenderLoop,
-  // WebGL (new names)
+  // WebGL
   createWebGLContext,
   runWebGLRenderLoop,
   // WebGPU

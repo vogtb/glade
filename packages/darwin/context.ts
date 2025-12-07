@@ -259,11 +259,6 @@ export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWe
 }
 
 /**
- * @deprecated Use createWebGLContext instead
- */
-export const createContext = createWebGLContext;
-
-/**
  * Creates a native WebGPU context for macOS using GLFW and Dawn.
  * This is an async function because WebGPU adapter/device creation is asynchronous.
  */

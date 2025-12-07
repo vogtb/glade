@@ -1,58 +1,23 @@
 /**
- * Objective-C runtime bindings for creating CAMetalLayer on macOS.
- * This is needed to connect GLFW windows to WebGPU/Dawn.
+ * Metal layer utilities for macOS. Creates CAMetalLayer for connecting GLFW
+ * windows to WebGPU/Dawn.
  */
 
-import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
-
-// Load Objective-C runtime
-const objc = dlopen("/usr/lib/libobjc.A.dylib", {
-  objc_getClass: { args: [FFIType.cstring], returns: FFIType.ptr },
-  objc_msgSend: { args: [], returns: FFIType.ptr }, // Variadic, we'll use different signatures
-  sel_registerName: { args: [FFIType.cstring], returns: FFIType.ptr },
-  class_getInstanceMethod: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-  object_getClass: { args: [FFIType.ptr], returns: FFIType.ptr },
-});
-
-// We need to call objc_msgSend with different signatures for different calls
-// Create specialized bindings for the specific calls we need
-const objcSendNoArgs = dlopen("/usr/lib/libobjc.A.dylib", {
-  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-});
-
-const objcSendOnePtr = dlopen("/usr/lib/libobjc.A.dylib", {
-  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
-});
-
-const objcSendOneBool = dlopen("/usr/lib/libobjc.A.dylib", {
-  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.i32], returns: FFIType.ptr },
-});
-
-// Helper to get a class
-function getClass(name: string): Pointer {
-  const nameBuffer = Buffer.from(name + "\0");
-  const cls = objc.symbols.objc_getClass(ptr(nameBuffer));
-  if (!cls) {
-    throw new Error(`Failed to get Objective-C class: ${name}`);
-  }
-  return cls;
-}
-
-// Helper to get a selector
-function getSelector(name: string): Pointer {
-  const nameBuffer = Buffer.from(name + "\0");
-  const sel = objc.symbols.sel_registerName(ptr(nameBuffer));
-  if (!sel) {
-    throw new Error(`Failed to get selector: ${name}`);
-  }
-  return sel;
-}
+import type { Pointer } from "bun:ffi";
+import {
+  getClass,
+  getSelector,
+  objcSendNoArgs,
+  objcSendOnePtr,
+  objcSendOneBool,
+  objcSendReturnDouble,
+  objcSendOneDouble,
+} from "./objc.ts";
 
 // Selector cache
 const selectors = {
-  alloc: getSelector("alloc"),
-  init: getSelector("init"),
-  layer: getSelector("layer"), // Both class method on CAMetalLayer and instance method on NSView
+  // Both class method on CAMetalLayer and instance method on NSView
+  layer: getSelector("layer"),
   setLayer: getSelector("setLayer:"),
   setWantsLayer: getSelector("setWantsLayer:"),
   contentView: getSelector("contentView"),
@@ -60,15 +25,6 @@ const selectors = {
   backingScaleFactor: getSelector("backingScaleFactor"),
   window: getSelector("window"),
 };
-
-// objc_msgSend for returning double
-const objcSendReturnDouble = dlopen("/usr/lib/libobjc.A.dylib", {
-  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.f64 },
-});
-
-const objcSendOneDouble = dlopen("/usr/lib/libobjc.A.dylib", {
-  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.f64], returns: FFIType.ptr },
-});
 
 // Class cache
 const classes = {

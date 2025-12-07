@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@glade/core": "workspace:*",
-    "@glade/platform": "workspace:*"
+    "@glade/platform": "workspace:*",
+    "@glade/webgpu": "workspace:*"
   }
 }

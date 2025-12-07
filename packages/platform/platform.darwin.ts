@@ -1,7 +1,4 @@
 export {
-  // WebGL (legacy names for backwards compatibility)
-  createContext,
-  runRenderLoop,
   // WebGL (new names)
   createWebGLContext,
   runWebGLRenderLoop,
