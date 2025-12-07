@@ -66,6 +66,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/browser": "workspace:*",
+        "@glade/core": "workspace:*",
         "@glade/darwin": "workspace:*",
       },
     },

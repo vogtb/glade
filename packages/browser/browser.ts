@@ -1,14 +1,8 @@
 /**
- * Browser bindings are not r
+ * Browser bindings are not really that complex as we're depending on the
+ * standard WebGL and WegGPU JS APIs, not our own custom implementations of
+ * them like on darwin.
  */
-
-export type {
-  WebGLContext,
-  WebGPUContext,
-  GLContext,
-  RenderCallback,
-  ContextOptions,
-} from "@glade/core";
 
 export {
   // WebGL

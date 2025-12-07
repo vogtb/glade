@@ -1,11 +1,3 @@
-export type {
-  WebGLContext,
-  WebGPUContext,
-  GLContext,
-  RenderCallback,
-  ContextOptions,
-} from "@glade/core";
-
 export {
   // WebGL
   createWebGLContext,

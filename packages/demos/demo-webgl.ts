@@ -3,8 +3,8 @@ import {
   runWebGLRenderLoop,
   GLSL_VERSION,
   GLSL_PRECISION,
+  type WebGLContext,
 } from "@glade/platform";
-import type { GLContext } from "@glade/core";
 
 // Vertex shader - transforms vertices and passes color to fragment shader
 const VERTEX_SHADER = `${GLSL_VERSION}
@@ -196,7 +196,7 @@ interface Resources {
   indexCount: number;
 }
 
-function initDemo(ctx: GLContext): Resources {
+function initDemo(ctx: WebGLContext): Resources {
   const { gl } = ctx;
 
   // compile shaders
@@ -276,7 +276,7 @@ function initDemo(ctx: GLContext): Resources {
 }
 
 function render(
-  ctx: GLContext,
+  ctx: WebGLContext,
   resources: Resources,
   time: number,
   mouseX: number,
