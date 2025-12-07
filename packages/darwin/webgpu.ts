@@ -176,14 +176,12 @@ export class DawnGPUBuffer {
     throw new Error("mapAsync not implemented");
   }
 
-  unmap(): undefined {
+  unmap() {
     dawn.wgpuBufferUnmap(this._handle);
-    return undefined;
   }
 
-  destroy(): undefined {
+  destroy() {
     dawn.wgpuBufferDestroy(this._handle);
-    return undefined;
   }
 }
 
@@ -307,18 +305,14 @@ export class DawnGPURenderPassEncoder {
     this.label = label ?? "";
   }
 
-  setPipeline(pipeline: DawnGPURenderPipeline): undefined {
+  setPipeline(pipeline: DawnGPURenderPipeline) {
     dawn.wgpuRenderPassEncoderSetPipeline(this._handle, pipeline._handle);
-    return undefined;
   }
 
-  setVertexBuffer(
-    slot: number,
-    buffer: DawnGPUBuffer | null,
-    offset?: number,
-    size?: number
-  ): undefined {
-    if (!buffer) return undefined;
+  setVertexBuffer(slot: number, buffer: DawnGPUBuffer | null, offset?: number, size?: number) {
+    if (!buffer) {
+      return;
+    }
     const bufferSize = size ?? buffer.size - (offset ?? 0);
     dawn.wgpuRenderPassEncoderSetVertexBuffer(
       this._handle,
@@ -327,15 +321,9 @@ export class DawnGPURenderPassEncoder {
       BigInt(offset ?? 0),
       BigInt(bufferSize)
     );
-    return undefined;
   }
 
-  setIndexBuffer(
-    buffer: DawnGPUBuffer,
-    indexFormat: string,
-    offset?: number,
-    size?: number
-  ): undefined {
+  setIndexBuffer(buffer: DawnGPUBuffer, indexFormat: string, offset?: number, size?: number) {
     const bufferSize = size ?? buffer.size - (offset ?? 0);
     dawn.wgpuRenderPassEncoderSetIndexBuffer(
       this._handle,
@@ -344,15 +332,16 @@ export class DawnGPURenderPassEncoder {
       BigInt(offset ?? 0),
       BigInt(bufferSize)
     );
-    return undefined;
   }
 
   setBindGroup(
     index: number,
     bindGroup: DawnGPUBindGroup | null,
     dynamicOffsets?: Iterable<number>
-  ): undefined {
-    if (!bindGroup) return undefined;
+  ) {
+    if (!bindGroup) {
+      return;
+    }
     const offsets = dynamicOffsets ? Array.from(dynamicOffsets) : [];
     const offsetsBuffer = offsets.length > 0 ? new Uint32Array(offsets) : null;
     dawn.wgpuRenderPassEncoderSetBindGroup(
@@ -362,15 +351,9 @@ export class DawnGPURenderPassEncoder {
       BigInt(offsets.length),
       offsetsBuffer ? ptr(offsetsBuffer) : null
     );
-    return undefined;
   }
 
-  draw(
-    vertexCount: number,
-    instanceCount?: number,
-    firstVertex?: number,
-    firstInstance?: number
-  ): undefined {
+  draw(vertexCount: number, instanceCount?: number, firstVertex?: number, firstInstance?: number) {
     dawn.wgpuRenderPassEncoderDraw(
       this._handle,
       vertexCount,
@@ -378,7 +361,6 @@ export class DawnGPURenderPassEncoder {
       firstVertex ?? 0,
       firstInstance ?? 0
     );
-    return undefined;
   }
 
   drawIndexed(
@@ -387,7 +369,7 @@ export class DawnGPURenderPassEncoder {
     firstIndex?: number,
     baseVertex?: number,
     firstInstance?: number
-  ): undefined {
+  ) {
     dawn.wgpuRenderPassEncoderDrawIndexed(
       this._handle,
       indexCount,
@@ -396,7 +378,6 @@ export class DawnGPURenderPassEncoder {
       baseVertex ?? 0,
       firstInstance ?? 0
     );
-    return undefined;
   }
 
   setViewport(
@@ -406,51 +387,48 @@ export class DawnGPURenderPassEncoder {
     height: number,
     minDepth: number,
     maxDepth: number
-  ): undefined {
+  ) {
     dawn.wgpuRenderPassEncoderSetViewport(this._handle, x, y, width, height, minDepth, maxDepth);
-    return undefined;
   }
 
-  setScissorRect(x: number, y: number, width: number, height: number): undefined {
+  setScissorRect(x: number, y: number, width: number, height: number) {
     dawn.wgpuRenderPassEncoderSetScissorRect(this._handle, x, y, width, height);
-    return undefined;
   }
 
-  end(): undefined {
+  end() {
     dawn.wgpuRenderPassEncoderEnd(this._handle);
-    return undefined;
   }
 
   // Stubs for other methods
-  setBlendConstant(_color: GPUColor): undefined {
-    return undefined;
+  setBlendConstant(_color: GPUColor) {
+    // stub
   }
-  setStencilReference(_reference: number): undefined {
-    return undefined;
+  setStencilReference(_reference: number) {
+    // stub
   }
-  beginOcclusionQuery(_queryIndex: number): undefined {
-    return undefined;
+  beginOcclusionQuery(_queryIndex: number) {
+    // stub
   }
-  endOcclusionQuery(): undefined {
-    return undefined;
+  endOcclusionQuery() {
+    // stub
   }
-  executeBundles(_bundles: Iterable<GPURenderBundle>): undefined {
-    return undefined;
+  executeBundles(_bundles: Iterable<GPURenderBundle>) {
+    // stub
   }
-  drawIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number): undefined {
-    return undefined;
+  drawIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
+    // stub
   }
-  drawIndexedIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number): undefined {
-    return undefined;
+  drawIndexedIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
+    // stub
   }
-  pushDebugGroup(_groupLabel: string): undefined {
-    return undefined;
+  pushDebugGroup(_groupLabel: string) {
+    // stub
   }
-  popDebugGroup(): undefined {
-    return undefined;
+  popDebugGroup() {
+    // stub
   }
-  insertDebugMarker(_markerLabel: string): undefined {
-    return undefined;
+  insertDebugMarker(_markerLabel: string) {
+    // stub
   }
 }
 
@@ -551,32 +529,32 @@ export class DawnGPUCommandEncoder {
     _destination: DawnGPUBuffer,
     _destinationOffset: number,
     _size: number
-  ): undefined {
-    return undefined;
+  ) {
+    // stub
   }
   copyBufferToTexture(
     _source: GPUTexelCopyBufferInfo,
     _destination: GPUTexelCopyTextureInfo,
     _copySize: GPUExtent3DStrict
-  ): undefined {
-    return undefined;
+  ) {
+    // stub
   }
   copyTextureToBuffer(
     _source: GPUTexelCopyTextureInfo,
     _destination: GPUTexelCopyBufferInfo,
     _copySize: GPUExtent3DStrict
-  ): undefined {
-    return undefined;
+  ) {
+    // stub
   }
   copyTextureToTexture(
     _source: GPUTexelCopyTextureInfo,
     _destination: GPUTexelCopyTextureInfo,
     _copySize: GPUExtent3DStrict
-  ): undefined {
-    return undefined;
+  ) {
+    // stub
   }
-  clearBuffer(_buffer: DawnGPUBuffer, _offset?: number, _size?: number): undefined {
-    return undefined;
+  clearBuffer(_buffer: DawnGPUBuffer, _offset?: number, _size?: number) {
+    // stub
   }
   resolveQuerySet(
     _querySet: GPUQuerySet,
@@ -584,17 +562,17 @@ export class DawnGPUCommandEncoder {
     _queryCount: number,
     _destination: DawnGPUBuffer,
     _destinationOffset: number
-  ): undefined {
-    return undefined;
+  ) {
+    // stub
   }
-  pushDebugGroup(_groupLabel: string): undefined {
-    return undefined;
+  pushDebugGroup(_groupLabel: string) {
+    // stub
   }
-  popDebugGroup(): undefined {
-    return undefined;
+  popDebugGroup() {
+    // stub
   }
-  insertDebugMarker(_markerLabel: string): undefined {
-    return undefined;
+  insertDebugMarker(_markerLabel: string) {
+    // stub
   }
 }
 
@@ -628,9 +606,8 @@ export class DawnGPUTexture {
     return new DawnGPUTextureView(view);
   }
 
-  destroy(): undefined {
+  destroy() {
     releaseTexture(this._handle);
-    return undefined;
   }
 }
 
@@ -642,9 +619,11 @@ export class DawnGPUQueue {
 
   constructor(public readonly _handle: WGPUQueue) {}
 
-  submit(commandBuffers: Iterable<DawnGPUCommandBuffer>): undefined {
+  submit(commandBuffers: Iterable<DawnGPUCommandBuffer>) {
     const buffers = Array.from(commandBuffers);
-    if (buffers.length === 0) return undefined;
+    if (buffers.length === 0) {
+      return;
+    }
 
     // Create array of command buffer handles
     const handles = new BigUint64Array(buffers.length);
@@ -653,7 +632,6 @@ export class DawnGPUQueue {
     }
 
     dawn.wgpuQueueSubmit(this._handle, BigInt(buffers.length), ptr(handles));
-    return undefined;
   }
 
   writeBuffer(
@@ -662,7 +640,7 @@ export class DawnGPUQueue {
     data: BufferSource,
     dataOffset?: number,
     size?: number
-  ): undefined {
+  ) {
     let byteOffset = dataOffset ?? 0;
     let dataView: Uint8Array;
 
@@ -684,7 +662,6 @@ export class DawnGPUQueue {
       ptr(dataView),
       BigInt(dataView.byteLength)
     );
-    return undefined;
   }
 
   // Stubs
@@ -693,17 +670,18 @@ export class DawnGPUQueue {
     _data: BufferSource,
     _dataLayout: GPUTexelCopyBufferLayout,
     _size: GPUExtent3DStrict
-  ): undefined {
-    return undefined;
+  ) {
+    // stub
   }
   copyExternalImageToTexture(
     _source: GPUCopyExternalImageSourceInfo,
     _destination: GPUCopyExternalImageDestInfo,
     _copySize: GPUExtent3DStrict
-  ): undefined {
-    return undefined;
+  ) {
+    // stub
   }
   onSubmittedWorkDone(): Promise<undefined> {
+    // stub
     return Promise.resolve(undefined);
   }
 }
@@ -722,16 +700,16 @@ export class DawnGPUCanvasContext {
     private readonly _height: number
   ) {}
 
-  configure(configuration: { format: string }): undefined {
+  configure(configuration: { format: string }) {
     this.format = configuration.format;
-    return undefined;
   }
 
-  unconfigure(): undefined {
-    return undefined;
+  unconfigure() {
+    // no-op
   }
 
   getConfiguration(): null {
+    // TODO: this
     return null;
   }
 
@@ -781,9 +759,8 @@ export class DawnGPUDevice {
     this.lost = new Promise(() => {}); // Never resolves for now
   }
 
-  destroy(): undefined {
+  destroy() {
     dawn.wgpuDeviceDestroy(this._handle);
-    return undefined;
   }
 
   createBuffer(descriptor: {
@@ -1268,27 +1245,29 @@ export class DawnGPUDevice {
   importExternalTexture(_descriptor: GPUExternalTextureDescriptor): never {
     throw new Error("importExternalTexture not implemented");
   }
-  pushErrorScope(_filter: GPUErrorFilter): undefined {
-    return undefined;
+  pushErrorScope(_filter: GPUErrorFilter) {
+    // stub
   }
   popErrorScope(): Promise<GPUError | null> {
+    // TODO implement
     return Promise.resolve(null);
   }
   addEventListener(
     _type: string,
     _listener: EventListenerOrEventListenerObject,
     _options?: boolean | AddEventListenerOptions
-  ): undefined {
-    return undefined;
+  ) {
+    // TODO implement
   }
   removeEventListener(
     _type: string,
     _listener: EventListenerOrEventListenerObject,
     _options?: boolean | EventListenerOptions
-  ): undefined {
-    return undefined;
+  ) {
+    // TODO implement
   }
   dispatchEvent(_event: Event): boolean {
+    // TODO implement
     return false;
   }
 }
@@ -1758,7 +1737,9 @@ export function getSurfaceCapabilities(
 
   // Helper to read u32 array from a pointer
   const readU32Array = (ptrVal: bigint, count: number): number[] => {
-    if (ptrVal === BigInt(0) || count === 0) return [];
+    if (ptrVal === BigInt(0) || count === 0) {
+      return [];
+    }
     const ptrAsNumber = Number(ptrVal);
     const dataView = new DataView(
       Buffer.from(

@@ -768,7 +768,9 @@ export function getHandle(
     | null
     | undefined
 ): number {
-  if (obj == null) return 0;
+  if (obj == null) {
+    return 0;
+  }
   return (obj as { [GL_HANDLE]: number })[GL_HANDLE] ?? 0;
 }
 
@@ -1447,12 +1449,16 @@ export class DarwinWebGL2RenderingContext {
   }
 
   attachShader(program: WebGLProgram | null, shader: WebGLShader | null): void {
-    if (!program || !shader) return;
+    if (!program || !shader) {
+      return;
+    }
     lib.symbols.glAttachShader(getHandle(program), getHandle(shader));
   }
 
   bindAttribLocation(program: WebGLProgram | null, index: GLuint, name: string): void {
-    if (!program) return;
+    if (!program) {
+      return;
+    }
     const nameBuffer = Buffer.from(name + "\0");
     lib.symbols.glBindAttribLocation(getHandle(program), index, ptr(nameBuffer));
   }
@@ -1540,7 +1546,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   compileShader(shader: WebGLShader | null): void {
-    if (!shader) return;
+    if (!shader) {
+      return;
+    }
     lib.symbols.glCompileShader(getHandle(shader));
   }
 
@@ -1659,38 +1667,50 @@ export class DarwinWebGL2RenderingContext {
   }
 
   deleteBuffer(buffer: WebGLBuffer | null): void {
-    if (!buffer) return;
+    if (!buffer) {
+      return;
+    }
     const handle = getHandle(buffer);
     const buffers = new Uint32Array([handle]);
     lib.symbols.glDeleteBuffers(1, ptr(buffers));
   }
 
   deleteFramebuffer(framebuffer: WebGLFramebuffer | null): void {
-    if (!framebuffer) return;
+    if (!framebuffer) {
+      return;
+    }
     const handle = getHandle(framebuffer);
     const framebuffers = new Uint32Array([handle]);
     lib.symbols.glDeleteFramebuffers(1, ptr(framebuffers));
   }
 
   deleteProgram(program: WebGLProgram | null): void {
-    if (!program) return;
+    if (!program) {
+      return;
+    }
     lib.symbols.glDeleteProgram(getHandle(program));
   }
 
   deleteRenderbuffer(renderbuffer: WebGLRenderbuffer | null): void {
-    if (!renderbuffer) return;
+    if (!renderbuffer) {
+      return;
+    }
     const handle = getHandle(renderbuffer);
     const renderbuffers = new Uint32Array([handle]);
     lib.symbols.glDeleteRenderbuffers(1, ptr(renderbuffers));
   }
 
   deleteShader(shader: WebGLShader | null): void {
-    if (!shader) return;
+    if (!shader) {
+      return;
+    }
     lib.symbols.glDeleteShader(getHandle(shader));
   }
 
   deleteTexture(texture: WebGLTexture | null): void {
-    if (!texture) return;
+    if (!texture) {
+      return;
+    }
     const handle = getHandle(texture);
     const textures = new Uint32Array([handle]);
     lib.symbols.glDeleteTextures(1, ptr(textures));
@@ -1709,7 +1729,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   detachShader(program: WebGLProgram | null, shader: WebGLShader | null): void {
-    if (!program || !shader) return;
+    if (!program || !shader) {
+      return;
+    }
     lib.symbols.glDetachShader(getHandle(program), getHandle(shader));
   }
 
@@ -1778,7 +1800,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getActiveAttrib(program: WebGLProgram | null, index: GLuint): WebGLActiveInfo | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const length = new Int32Array(1);
     const size = new Int32Array(1);
     const type = new Uint32Array(1);
@@ -1797,7 +1821,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getActiveUniform(program: WebGLProgram | null, index: GLuint): WebGLActiveInfo | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const length = new Int32Array(1);
     const size = new Int32Array(1);
     const type = new Uint32Array(1);
@@ -1816,7 +1842,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getAttachedShaders(program: WebGLProgram | null): WebGLShader[] | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const count = new Int32Array(1);
     lib.symbols.glGetProgramiv(getHandle(program), this.ATTACHED_SHADERS, ptr(count));
     const shaders = new Uint32Array(count[0]!);
@@ -1826,7 +1854,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getAttribLocation(program: WebGLProgram | null, name: string): GLint {
-    if (!program) return -1;
+    if (!program) {
+      return -1;
+    }
     const nameBuffer = Buffer.from(name + "\0");
     return lib.symbols.glGetAttribLocation(getHandle(program), ptr(nameBuffer));
   }
@@ -1854,7 +1884,9 @@ export class DarwinWebGL2RenderingContext {
       case this.VENDOR:
       case this.RENDERER: {
         const strPtr = lib.symbols.glGetString(pname);
-        if (!strPtr) return null;
+        if (!strPtr) {
+          return null;
+        }
         // Read null-terminated string from pointer
         const cstr = new (require("bun:ffi").CString)(strPtr);
         return cstr.toString();
@@ -1868,11 +1900,15 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getProgramInfoLog(program: WebGLProgram | null): string | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const lengthBuffer = new Int32Array(1);
     lib.symbols.glGetProgramiv(getHandle(program), this.INFO_LOG_LENGTH, ptr(lengthBuffer));
     const length = lengthBuffer[0]!;
-    if (length === 0) return "";
+    if (length === 0) {
+      return "";
+    }
     const logBuffer = Buffer.alloc(length);
     const actualLengthBuffer = new Int32Array(1);
     lib.symbols.glGetProgramInfoLog(
@@ -1885,7 +1921,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getProgramParameter(program: WebGLProgram | null, pname: GLenum): unknown {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const buffer = new Int32Array(1);
     lib.symbols.glGetProgramiv(getHandle(program), pname, ptr(buffer));
     if (
@@ -1905,11 +1943,15 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getShaderInfoLog(shader: WebGLShader | null): string | null {
-    if (!shader) return null;
+    if (!shader) {
+      return null;
+    }
     const lengthBuffer = new Int32Array(1);
     lib.symbols.glGetShaderiv(getHandle(shader), this.INFO_LOG_LENGTH, ptr(lengthBuffer));
     const length = lengthBuffer[0]!;
-    if (length === 0) return "";
+    if (length === 0) {
+      return "";
+    }
     const logBuffer = Buffer.alloc(length);
     const actualLengthBuffer = new Int32Array(1);
     lib.symbols.glGetShaderInfoLog(
@@ -1922,7 +1964,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getShaderParameter(shader: WebGLShader | null, pname: GLenum): unknown {
-    if (!shader) return null;
+    if (!shader) {
+      return null;
+    }
     const buffer = new Int32Array(1);
     lib.symbols.glGetShaderiv(getHandle(shader), pname, ptr(buffer));
     if (pname === this.DELETE_STATUS || pname === this.COMPILE_STATUS) {
@@ -1959,11 +2003,15 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getShaderSource(shader: WebGLShader | null): string | null {
-    if (!shader) return null;
+    if (!shader) {
+      return null;
+    }
     const lengthBuffer = new Int32Array(1);
     lib.symbols.glGetShaderiv(getHandle(shader), this.SHADER_SOURCE_LENGTH, ptr(lengthBuffer));
     const length = lengthBuffer[0]!;
-    if (length === 0) return "";
+    if (length === 0) {
+      return "";
+    }
     const sourceBuffer = Buffer.alloc(length);
     const actualLengthBuffer = new Int32Array(1);
     lib.symbols.glGetShaderSource(
@@ -1982,14 +2030,18 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getUniform(program: WebGLProgram | null, location: WebGLUniformLocation | null): unknown {
-    if (!program || !location) return null;
+    if (!program || !location) {
+      return null;
+    }
     const buffer = new Float32Array(16);
     lib.symbols.glGetUniformfv(getHandle(program), getHandle(location), ptr(buffer));
     return buffer[0];
   }
 
   getUniformLocation(program: WebGLProgram | null, name: string): WebGLUniformLocation | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const nameBuffer = Buffer.from(name + "\0");
     const location = lib.symbols.glGetUniformLocation(getHandle(program), ptr(nameBuffer));
     return location >= 0 ? new DarwinWebGLUniformLocation(location) : null;
@@ -2012,7 +2064,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   isBuffer(buffer: WebGLBuffer | null): GLboolean {
-    if (!buffer) return false;
+    if (!buffer) {
+      return false;
+    }
     return lib.symbols.glIsBuffer(getHandle(buffer)) !== 0;
   }
 
@@ -2021,27 +2075,37 @@ export class DarwinWebGL2RenderingContext {
   }
 
   isFramebuffer(framebuffer: WebGLFramebuffer | null): GLboolean {
-    if (!framebuffer) return false;
+    if (!framebuffer) {
+      return false;
+    }
     return lib.symbols.glIsFramebuffer(getHandle(framebuffer)) !== 0;
   }
 
   isProgram(program: WebGLProgram | null): GLboolean {
-    if (!program) return false;
+    if (!program) {
+      return false;
+    }
     return lib.symbols.glIsProgram(getHandle(program)) !== 0;
   }
 
   isRenderbuffer(renderbuffer: WebGLRenderbuffer | null): GLboolean {
-    if (!renderbuffer) return false;
+    if (!renderbuffer) {
+      return false;
+    }
     return lib.symbols.glIsRenderbuffer(getHandle(renderbuffer)) !== 0;
   }
 
   isShader(shader: WebGLShader | null): GLboolean {
-    if (!shader) return false;
+    if (!shader) {
+      return false;
+    }
     return lib.symbols.glIsShader(getHandle(shader)) !== 0;
   }
 
   isTexture(texture: WebGLTexture | null): GLboolean {
-    if (!texture) return false;
+    if (!texture) {
+      return false;
+    }
     return lib.symbols.glIsTexture(getHandle(texture)) !== 0;
   }
 
@@ -2050,7 +2114,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   linkProgram(program: WebGLProgram | null): void {
-    if (!program) return;
+    if (!program) {
+      return;
+    }
     lib.symbols.glLinkProgram(getHandle(program));
   }
 
@@ -2071,7 +2137,9 @@ export class DarwinWebGL2RenderingContext {
     type: GLenum,
     pixels: ArrayBufferView | null
   ): void {
-    if (!pixels) return;
+    if (!pixels) {
+      return;
+    }
     const bytes = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength);
     lib.symbols.glReadPixels(x, y, width, height, format, type, ptr(bytes));
   }
@@ -2094,7 +2162,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   shaderSource(shader: WebGLShader | null, source: string): void {
-    if (!shader) return;
+    if (!shader) {
+      return;
+    }
     const sourceBuffer = Buffer.from(source + "\0");
     const sourcePtrArray = new BigUint64Array([BigInt(ptr(sourceBuffer).valueOf())]);
     lib.symbols.glShaderSource(getHandle(shader), 1, ptr(sourcePtrArray), null);
@@ -2206,67 +2276,91 @@ export class DarwinWebGL2RenderingContext {
   }
 
   uniform1f(location: WebGLUniformLocation | null, x: GLfloat): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform1f(getHandle(location), x);
   }
 
   uniform1fv(location: WebGLUniformLocation | null, v: Float32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Float32Array ? v : new Float32Array(v);
     lib.symbols.glUniform1fv(getHandle(location), arr.length, ptr(arr));
   }
 
   uniform1i(location: WebGLUniformLocation | null, x: GLint): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform1i(getHandle(location), x);
   }
 
   uniform1iv(location: WebGLUniformLocation | null, v: Int32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Int32Array ? v : new Int32Array(v);
     lib.symbols.glUniform1iv(getHandle(location), arr.length, ptr(arr));
   }
 
   uniform2f(location: WebGLUniformLocation | null, x: GLfloat, y: GLfloat): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform2f(getHandle(location), x, y);
   }
 
   uniform2fv(location: WebGLUniformLocation | null, v: Float32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Float32Array ? v : new Float32Array(v);
     lib.symbols.glUniform2fv(getHandle(location), arr.length / 2, ptr(arr));
   }
 
   uniform2i(location: WebGLUniformLocation | null, x: GLint, y: GLint): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform2i(getHandle(location), x, y);
   }
 
   uniform2iv(location: WebGLUniformLocation | null, v: Int32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Int32Array ? v : new Int32Array(v);
     lib.symbols.glUniform2iv(getHandle(location), arr.length / 2, ptr(arr));
   }
 
   uniform3f(location: WebGLUniformLocation | null, x: GLfloat, y: GLfloat, z: GLfloat): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform3f(getHandle(location), x, y, z);
   }
 
   uniform3fv(location: WebGLUniformLocation | null, v: Float32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Float32Array ? v : new Float32Array(v);
     lib.symbols.glUniform3fv(getHandle(location), arr.length / 3, ptr(arr));
   }
 
   uniform3i(location: WebGLUniformLocation | null, x: GLint, y: GLint, z: GLint): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform3i(getHandle(location), x, y, z);
   }
 
   uniform3iv(location: WebGLUniformLocation | null, v: Int32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Int32Array ? v : new Int32Array(v);
     lib.symbols.glUniform3iv(getHandle(location), arr.length / 3, ptr(arr));
   }
@@ -2278,23 +2372,31 @@ export class DarwinWebGL2RenderingContext {
     z: GLfloat,
     w: GLfloat
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform4f(getHandle(location), x, y, z, w);
   }
 
   uniform4fv(location: WebGLUniformLocation | null, v: Float32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Float32Array ? v : new Float32Array(v);
     lib.symbols.glUniform4fv(getHandle(location), arr.length / 4, ptr(arr));
   }
 
   uniform4i(location: WebGLUniformLocation | null, x: GLint, y: GLint, z: GLint, w: GLint): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform4i(getHandle(location), x, y, z, w);
   }
 
   uniform4iv(location: WebGLUniformLocation | null, v: Int32List): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = v instanceof Int32Array ? v : new Int32Array(v);
     lib.symbols.glUniform4iv(getHandle(location), arr.length / 4, ptr(arr));
   }
@@ -2304,7 +2406,9 @@ export class DarwinWebGL2RenderingContext {
     transpose: GLboolean,
     value: Float32List
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = value instanceof Float32Array ? value : new Float32Array(value);
     lib.symbols.glUniformMatrix2fv(
       getHandle(location),
@@ -2319,7 +2423,9 @@ export class DarwinWebGL2RenderingContext {
     transpose: GLboolean,
     value: Float32List
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = value instanceof Float32Array ? value : new Float32Array(value);
     lib.symbols.glUniformMatrix3fv(
       getHandle(location),
@@ -2334,7 +2440,9 @@ export class DarwinWebGL2RenderingContext {
     transpose: GLboolean,
     value: Float32List
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const arr = value instanceof Float32Array ? value : new Float32Array(value);
     lib.symbols.glUniformMatrix4fv(
       getHandle(location),
@@ -2349,7 +2457,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   validateProgram(program: WebGLProgram | null): void {
-    if (!program) return;
+    if (!program) {
+      return;
+    }
     lib.symbols.glValidateProgram(getHandle(program));
   }
 
@@ -2805,23 +2915,31 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getFragDataLocation(program: WebGLProgram | null, name: string): GLint {
-    if (!program) return -1;
+    if (!program) {
+      return -1;
+    }
     const nameBuffer = Buffer.from(name + "\0");
     return lib.symbols.glGetFragDataLocation(getHandle(program), ptr(nameBuffer));
   }
 
   uniform1ui(location: WebGLUniformLocation | null, v0: GLuint): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform1ui(getHandle(location), v0);
   }
 
   uniform2ui(location: WebGLUniformLocation | null, v0: GLuint, v1: GLuint): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform2ui(getHandle(location), v0, v1);
   }
 
   uniform3ui(location: WebGLUniformLocation | null, v0: GLuint, v1: GLuint, v2: GLuint): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform3ui(getHandle(location), v0, v1, v2);
   }
 
@@ -2832,7 +2950,9 @@ export class DarwinWebGL2RenderingContext {
     v2: GLuint,
     v3: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     lib.symbols.glUniform4ui(getHandle(location), v0, v1, v2, v3);
   }
 
@@ -2842,7 +2962,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Uint32Array ? data : new Uint32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2856,7 +2978,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Uint32Array ? data : new Uint32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2870,7 +2994,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Uint32Array ? data : new Uint32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2884,7 +3010,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Uint32Array ? data : new Uint32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2899,7 +3027,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Float32Array ? data : new Float32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2914,7 +3044,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Float32Array ? data : new Float32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2929,7 +3061,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Float32Array ? data : new Float32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2944,7 +3078,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Float32Array ? data : new Float32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2964,7 +3100,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Float32Array ? data : new Float32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -2979,7 +3117,9 @@ export class DarwinWebGL2RenderingContext {
     srcOffset?: GLuint,
     srcLength?: GLuint
   ): void {
-    if (!location) return;
+    if (!location) {
+      return;
+    }
     const offset = srcOffset ?? 0;
     const arr = data instanceof Float32Array ? data : new Float32Array(data);
     const length = srcLength ?? arr.length - offset;
@@ -3107,18 +3247,24 @@ export class DarwinWebGL2RenderingContext {
   }
 
   deleteQuery(query: WebGLQuery | null): void {
-    if (!query) return;
+    if (!query) {
+      return;
+    }
     const queries = new Uint32Array([getHandle(query)]);
     lib.symbols.glDeleteQueries(1, ptr(queries));
   }
 
   isQuery(query: WebGLQuery | null): GLboolean {
-    if (!query) return false;
+    if (!query) {
+      return false;
+    }
     return lib.symbols.glIsQuery(getHandle(query)) !== 0;
   }
 
   beginQuery(target: GLenum, query: WebGLQuery | null): void {
-    if (!query) return;
+    if (!query) {
+      return;
+    }
     lib.symbols.glBeginQuery(target, getHandle(query));
   }
 
@@ -3133,7 +3279,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getQueryParameter(query: WebGLQuery | null, pname: GLenum): unknown {
-    if (!query) return null;
+    if (!query) {
+      return null;
+    }
     const buffer = new Uint32Array(1);
     lib.symbols.glGetQueryObjectuiv(getHandle(query), pname, ptr(buffer));
     if (pname === this.QUERY_RESULT_AVAILABLE) {
@@ -3151,13 +3299,17 @@ export class DarwinWebGL2RenderingContext {
   }
 
   deleteSampler(sampler: WebGLSampler | null): void {
-    if (!sampler) return;
+    if (!sampler) {
+      return;
+    }
     const samplers = new Uint32Array([getHandle(sampler)]);
     lib.symbols.glDeleteSamplers(1, ptr(samplers));
   }
 
   isSampler(sampler: WebGLSampler | null): GLboolean {
-    if (!sampler) return false;
+    if (!sampler) {
+      return false;
+    }
     return lib.symbols.glIsSampler(getHandle(sampler)) !== 0;
   }
 
@@ -3166,17 +3318,23 @@ export class DarwinWebGL2RenderingContext {
   }
 
   samplerParameteri(sampler: WebGLSampler | null, pname: GLenum, param: GLint): void {
-    if (!sampler) return;
+    if (!sampler) {
+      return;
+    }
     lib.symbols.glSamplerParameteri(getHandle(sampler), pname, param);
   }
 
   samplerParameterf(sampler: WebGLSampler | null, pname: GLenum, param: GLfloat): void {
-    if (!sampler) return;
+    if (!sampler) {
+      return;
+    }
     lib.symbols.glSamplerParameterf(getHandle(sampler), pname, param);
   }
 
   getSamplerParameter(sampler: WebGLSampler | null, pname: GLenum): unknown {
-    if (!sampler) return null;
+    if (!sampler) {
+      return null;
+    }
     const buffer = new Int32Array(1);
     lib.symbols.glGetSamplerParameteriv(getHandle(sampler), pname, ptr(buffer));
     return buffer[0];
@@ -3189,17 +3347,23 @@ export class DarwinWebGL2RenderingContext {
   }
 
   isSync(sync: WebGLSync | null): GLboolean {
-    if (!sync) return false;
+    if (!sync) {
+      return false;
+    }
     return lib.symbols.glIsSync(getHandle(sync) as unknown as ReturnType<typeof ptr>) !== 0;
   }
 
   deleteSync(sync: WebGLSync | null): void {
-    if (!sync) return;
+    if (!sync) {
+      return;
+    }
     lib.symbols.glDeleteSync(getHandle(sync) as unknown as ReturnType<typeof ptr>);
   }
 
   clientWaitSync(sync: WebGLSync | null, flags: GLbitfield, timeout: GLuint64): GLenum {
-    if (!sync) return this.WAIT_FAILED;
+    if (!sync) {
+      return this.WAIT_FAILED;
+    }
     return lib.symbols.glClientWaitSync(
       getHandle(sync) as unknown as ReturnType<typeof ptr>,
       flags,
@@ -3208,7 +3372,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   waitSync(sync: WebGLSync | null, flags: GLbitfield, timeout: GLint64): void {
-    if (!sync) return;
+    if (!sync) {
+      return;
+    }
     lib.symbols.glWaitSync(
       getHandle(sync) as unknown as ReturnType<typeof ptr>,
       flags,
@@ -3217,7 +3383,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getSyncParameter(sync: WebGLSync | null, pname: GLenum): unknown {
-    if (!sync) return null;
+    if (!sync) {
+      return null;
+    }
     const length = new Int32Array(1);
     const values = new Int32Array(1);
     lib.symbols.glGetSynciv(
@@ -3239,13 +3407,17 @@ export class DarwinWebGL2RenderingContext {
   }
 
   deleteTransformFeedback(tf: WebGLTransformFeedback | null): void {
-    if (!tf) return;
+    if (!tf) {
+      return;
+    }
     const feedbacks = new Uint32Array([getHandle(tf)]);
     lib.symbols.glDeleteTransformFeedbacks(1, ptr(feedbacks));
   }
 
   isTransformFeedback(tf: WebGLTransformFeedback | null): GLboolean {
-    if (!tf) return false;
+    if (!tf) {
+      return false;
+    }
     return lib.symbols.glIsTransformFeedback(getHandle(tf)) !== 0;
   }
 
@@ -3266,7 +3438,9 @@ export class DarwinWebGL2RenderingContext {
     varyings: string[],
     bufferMode: GLenum
   ): void {
-    if (!program) return;
+    if (!program) {
+      return;
+    }
     const buffers = varyings.map((s) => Buffer.from(s + "\0"));
     const ptrs = new BigUint64Array(buffers.map((b) => BigInt(ptr(b).valueOf())));
     lib.symbols.glTransformFeedbackVaryings(
@@ -3278,7 +3452,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getTransformFeedbackVarying(program: WebGLProgram | null, index: GLuint): WebGLActiveInfo | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const length = new Int32Array(1);
     const size = new Int32Array(1);
     const type = new Uint32Array(1);
@@ -3326,7 +3502,9 @@ export class DarwinWebGL2RenderingContext {
 
   // Uniform blocks
   getUniformIndices(program: WebGLProgram | null, uniformNames: string[]): GLuint[] | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const buffers = uniformNames.map((s) => Buffer.from(s + "\0"));
     const ptrs = new BigUint64Array(buffers.map((b) => BigInt(ptr(b).valueOf())));
     const indices = new Uint32Array(uniformNames.length);
@@ -3344,7 +3522,9 @@ export class DarwinWebGL2RenderingContext {
     uniformIndices: GLuint[],
     pname: GLenum
   ): unknown {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const indices = new Uint32Array(uniformIndices);
     const params = new Int32Array(uniformIndices.length);
     lib.symbols.glGetActiveUniformsiv(
@@ -3358,7 +3538,9 @@ export class DarwinWebGL2RenderingContext {
   }
 
   getUniformBlockIndex(program: WebGLProgram | null, uniformBlockName: string): GLuint {
-    if (!program) return this.INVALID_INDEX;
+    if (!program) {
+      return this.INVALID_INDEX;
+    }
     const nameBuffer = Buffer.from(uniformBlockName + "\0");
     return lib.symbols.glGetUniformBlockIndex(getHandle(program), ptr(nameBuffer));
   }
@@ -3368,7 +3550,9 @@ export class DarwinWebGL2RenderingContext {
     uniformBlockIndex: GLuint,
     pname: GLenum
   ): unknown {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const buffer = new Int32Array(16);
     lib.symbols.glGetActiveUniformBlockiv(
       getHandle(program),
@@ -3394,7 +3578,9 @@ export class DarwinWebGL2RenderingContext {
     program: WebGLProgram | null,
     uniformBlockIndex: GLuint
   ): string | null {
-    if (!program) return null;
+    if (!program) {
+      return null;
+    }
     const length = new Int32Array(1);
     const nameBuffer = Buffer.alloc(256);
     lib.symbols.glGetActiveUniformBlockName(
@@ -3412,7 +3598,9 @@ export class DarwinWebGL2RenderingContext {
     uniformBlockIndex: GLuint,
     uniformBlockBinding: GLuint
   ): void {
-    if (!program) return;
+    if (!program) {
+      return;
+    }
     lib.symbols.glUniformBlockBinding(getHandle(program), uniformBlockIndex, uniformBlockBinding);
   }
 
@@ -3425,13 +3613,17 @@ export class DarwinWebGL2RenderingContext {
   }
 
   deleteVertexArray(vertexArray: WebGLVertexArrayObject | null): void {
-    if (!vertexArray) return;
+    if (!vertexArray) {
+      return;
+    }
     const arrays = new Uint32Array([getHandle(vertexArray)]);
     lib.symbols.glDeleteVertexArrays(1, ptr(arrays));
   }
 
   isVertexArray(vertexArray: WebGLVertexArrayObject | null): GLboolean {
-    if (!vertexArray) return false;
+    if (!vertexArray) {
+      return false;
+    }
     return lib.symbols.glIsVertexArray(getHandle(vertexArray)) !== 0;
   }
 
