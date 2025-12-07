@@ -20,6 +20,8 @@
     "Metaballs",
     "Metaball",
     "Raymarched",
-    "RAYMARCH"
+    "RAYMARCH",
+    "raymarching",
+    "multisampled"
   ]
 }

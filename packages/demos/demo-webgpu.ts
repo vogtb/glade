@@ -7,6 +7,7 @@ import { initMetaballDemo } from "./metaball";
 import { initRaymarchDemo } from "./raymarch";
 import { initGalaxyDemo, renderGalaxy } from "./galaxy";
 import { initFluidDemo, renderFluid } from "./fluid";
+import { initPostProcessDemo, renderPostProcess } from "./postprocess";
 import type { DemoResources } from "./common";
 
 type RenderFn = (
@@ -108,6 +109,11 @@ async function main() {
   const format: GPUTextureFormat = "bgra8unorm";
 
   const demos: Array<Demo> = [
+    {
+      name: "Post-Processing",
+      resources: initPostProcessDemo(ctx, format),
+      render: renderPostProcess,
+    },
     { name: "Hexagon", resources: initHexagonDemo(ctx, format) },
     { name: "Particle System", resources: initParticleDemo(ctx, format) },
     { name: "Metaballs", resources: initMetaballDemo(ctx, format) },

@@ -1,4 +1,4 @@
-import { ptr, JSCallback, FFIType } from "bun:ffi";
+import { ptr, JSCallback, FFIType, type Pointer } from "bun:ffi";
 import {
   WGPUSType,
   WGPUCallbackMode,
@@ -130,11 +130,74 @@ const indexFormatMap: Record<string, number> = {
 const textureFormatMap: Record<string, number> = {
   bgra8unorm: 0x0000001b, // WGPUTextureFormat_BGRA8Unorm
   rgba8unorm: 0x00000016, // WGPUTextureFormat_RGBA8Unorm
+  r8unorm: 0x00000001, // WGPUTextureFormat_R8Unorm
+  rg8unorm: 0x0000000a, // WGPUTextureFormat_RG8Unorm
+  rgba16float: 0x00000021, // WGPUTextureFormat_RGBA16Float
+  rgba32float: 0x00000025, // WGPUTextureFormat_RGBA32Float
+  depth24plus: 0x00000030, // WGPUTextureFormat_Depth24Plus
+  depth32float: 0x00000032, // WGPUTextureFormat_Depth32Float
+};
+
+// Texture usage flag mapping (same as WebGPU spec)
+const textureUsageMap: Record<number, number> = {
+  0x01: 0x01, // COPY_SRC
+  0x02: 0x02, // COPY_DST
+  0x04: 0x04, // TEXTURE_BINDING
+  0x08: 0x08, // STORAGE_BINDING
+  0x10: 0x10, // RENDER_ATTACHMENT
+};
+
+// Texture dimension mapping
+const textureDimensionMap: Record<string, number> = {
+  "1d": 0x01, // WGPUTextureDimension_1D
+  "2d": 0x02, // WGPUTextureDimension_2D
+  "3d": 0x03, // WGPUTextureDimension_3D
+};
+
+// Address mode mapping for samplers
+const addressModeMap: Record<string, number> = {
+  "clamp-to-edge": 0x01, // WGPUAddressMode_ClampToEdge
+  repeat: 0x02, // WGPUAddressMode_Repeat
+  "mirror-repeat": 0x03, // WGPUAddressMode_MirrorRepeat
+};
+
+// Filter mode mapping for samplers
+const filterModeMap: Record<string, number> = {
+  nearest: 0x01, // WGPUFilterMode_Nearest
+  linear: 0x02, // WGPUFilterMode_Linear
+};
+
+// Mipmap filter mode mapping
+const mipmapFilterModeMap: Record<string, number> = {
+  nearest: 0x01, // WGPUMipmapFilterMode_Nearest
+  linear: 0x02, // WGPUMipmapFilterMode_Linear
+};
+
+// Compare function mapping
+const compareFunctionMap: Record<string, number> = {
+  never: 0x01,
+  less: 0x02,
+  equal: 0x03,
+  "less-equal": 0x04,
+  greater: 0x05,
+  "not-equal": 0x06,
+  "greater-equal": 0x07,
+  always: 0x08,
 };
 
 function convertBufferUsage(usage: number): number {
   let result = 0;
   for (const [webgpuFlag, dawnFlag] of Object.entries(bufferUsageMap)) {
+    if (usage & Number(webgpuFlag)) {
+      result |= dawnFlag;
+    }
+  }
+  return result;
+}
+
+function convertTextureUsage(usage: number): number {
+  let result = 0;
+  for (const [webgpuFlag, dawnFlag] of Object.entries(textureUsageMap)) {
     if (usage & Number(webgpuFlag)) {
       result |= dawnFlag;
     }
@@ -314,6 +377,20 @@ export class DawnGPUTextureView {
 }
 
 /**
+ * Wrapped GPUSampler for Dawn
+ */
+export class DawnGPUSampler {
+  readonly label: string;
+
+  constructor(
+    public readonly _handle: Pointer,
+    label?: string
+  ) {
+    this.label = label ?? "";
+  }
+}
+
+/**
  * Wrapped GPURenderPassEncoder for Dawn
  */
 export class DawnGPURenderPassEncoder {
@@ -422,34 +499,34 @@ export class DawnGPURenderPassEncoder {
 
   // Stubs for other methods
   setBlendConstant(_color: GPUColor) {
-    // stub
+    // TODO implement
   }
   setStencilReference(_reference: number) {
-    // stub
+    // TODO implement
   }
   beginOcclusionQuery(_queryIndex: number) {
-    // stub
+    // TODO implement
   }
   endOcclusionQuery() {
-    // stub
+    // TODO implement
   }
   executeBundles(_bundles: Iterable<GPURenderBundle>) {
-    // stub
+    // TODO implement
   }
   drawIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
-    // stub
+    // TODO implement
   }
   drawIndexedIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
-    // stub
+    // TODO implement
   }
   pushDebugGroup(_groupLabel: string) {
-    // stub
+    // TODO implement
   }
   popDebugGroup() {
-    // stub
+    // TODO implement
   }
   insertDebugMarker(_markerLabel: string) {
-    // stub
+    // TODO implement
   }
 }
 
@@ -499,7 +576,7 @@ export class DawnGPUComputePassEncoder {
   }
 
   dispatchWorkgroupsIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
-    // stub - would need wgpuComputePassEncoderDispatchWorkgroupsIndirect
+    // TODO implement - would need wgpuComputePassEncoderDispatchWorkgroupsIndirect
     throw new Error("dispatchWorkgroupsIndirect not implemented");
   }
 
@@ -508,15 +585,15 @@ export class DawnGPUComputePassEncoder {
   }
 
   pushDebugGroup(_groupLabel: string) {
-    // stub
+    // TODO implement
   }
 
   popDebugGroup() {
-    // stub
+    // TODO implement
   }
 
   insertDebugMarker(_markerLabel: string) {
-    // stub
+    // TODO implement
   }
 }
 
@@ -624,7 +701,7 @@ export class DawnGPUCommandEncoder {
     return new DawnGPUComputePassEncoder(computePass, descriptor?.label);
   }
 
-  // Stubs
+  // TODO implement
   copyBufferToBuffer(
     _source: DawnGPUBuffer,
     _sourceOffset: number,
@@ -632,31 +709,31 @@ export class DawnGPUCommandEncoder {
     _destinationOffset: number,
     _size: number
   ) {
-    // stub
+    // TODO implement
   }
   copyBufferToTexture(
     _source: GPUTexelCopyBufferInfo,
     _destination: GPUTexelCopyTextureInfo,
     _copySize: GPUExtent3DStrict
   ) {
-    // stub
+    // TODO implement
   }
   copyTextureToBuffer(
     _source: GPUTexelCopyTextureInfo,
     _destination: GPUTexelCopyBufferInfo,
     _copySize: GPUExtent3DStrict
   ) {
-    // stub
+    // TODO implement
   }
   copyTextureToTexture(
     _source: GPUTexelCopyTextureInfo,
     _destination: GPUTexelCopyTextureInfo,
     _copySize: GPUExtent3DStrict
   ) {
-    // stub
+    // TODO implement
   }
   clearBuffer(_buffer: DawnGPUBuffer, _offset?: number, _size?: number) {
-    // stub
+    // TODO implement
   }
   resolveQuerySet(
     _querySet: GPUQuerySet,
@@ -665,16 +742,16 @@ export class DawnGPUCommandEncoder {
     _destination: DawnGPUBuffer,
     _destinationOffset: number
   ) {
-    // stub
+    // TODO implement
   }
   pushDebugGroup(_groupLabel: string) {
-    // stub
+    // TODO implement
   }
   popDebugGroup() {
-    // stub
+    // TODO implement
   }
   insertDebugMarker(_markerLabel: string) {
-    // stub
+    // TODO implement
   }
 }
 
@@ -766,24 +843,24 @@ export class DawnGPUQueue {
     );
   }
 
-  // Stubs
+  // TODO implement
   writeTexture(
     _destination: GPUTexelCopyTextureInfo,
     _data: BufferSource,
     _dataLayout: GPUTexelCopyBufferLayout,
     _size: GPUExtent3DStrict
   ) {
-    // stub
+    // TODO implement
   }
   copyExternalImageToTexture(
     _source: GPUCopyExternalImageSourceInfo,
     _destination: GPUCopyExternalImageDestInfo,
     _copySize: GPUExtent3DStrict
   ) {
-    // stub
+    // TODO implement
   }
   onSubmittedWorkDone(): Promise<undefined> {
-    // stub
+    // TODO implement
     return Promise.resolve(undefined);
   }
 }
@@ -934,11 +1011,23 @@ export class DawnGPUDevice {
       const entry = entries[i]!;
       const offset = i * entrySize;
 
+      // WGPUBindGroupLayoutEntry layout (with 64-bit alignment):
+      // nextInChain: ptr @0 (8 bytes)
+      // binding: u32 @8 (4 bytes)
+      // padding: @12 (4 bytes)
+      // visibility: WGPUFlags=u64 @16 (8 bytes)
+      // bindingArraySize: u32 @24 (4 bytes)
+      // padding: @28 (4 bytes)
+      // buffer: WGPUBufferBindingLayout @32 (24 bytes)
+      // sampler: WGPUSamplerBindingLayout @56 (16 bytes)
+      // texture: WGPUTextureBindingLayout @72 (24 bytes)
+      // storageTexture: WGPUStorageTextureBindingLayout @96 (24 bytes)
+      // Total: 120 bytes
+
       entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 0); // nextInChain
       entriesBuffer.writeUInt32LE(entry.binding, offset + 8); // binding
-      // offset + 12: 4 bytes padding (visibility is at 16, not 12)
-      entriesBuffer.writeUInt32LE(convertShaderStage(entry.visibility), offset + 16); // visibility
-      // offset + 20: 4 bytes padding
+      // offset + 12: 4 bytes padding
+      entriesBuffer.writeBigUInt64LE(BigInt(convertShaderStage(entry.visibility)), offset + 16); // visibility (u64!)
       entriesBuffer.writeUInt32LE(0, offset + 24); // bindingArraySize = 0
       // offset + 28: 4 bytes padding
 
@@ -959,9 +1048,57 @@ export class DawnGPUDevice {
         entriesBuffer.writeUInt32LE(entry.buffer.hasDynamicOffset ? 1 : 0, offset + 32 + 12); // buffer.hasDynamicOffset
         entriesBuffer.writeBigUInt64LE(BigInt(entry.buffer.minBindingSize ?? 0), offset + 32 + 16); // buffer.minBindingSize
       }
-      // sampler: WGPUSamplerBindingLayout at offset 56 (16 bytes) - leave as zeros
-      // texture: WGPUTextureBindingLayout at offset 72 (24 bytes) - leave as zeros
-      // storageTexture: WGPUStorageTextureBindingLayout at offset 96 (24 bytes) - leave as zeros
+
+      // sampler: WGPUSamplerBindingLayout at offset 56 (16 bytes)
+      // { nextInChain: ptr @0, type: u32 @8, padding @12 }
+      if (entry.sampler) {
+        const samplerType =
+          entry.sampler.type === "filtering"
+            ? 2 // WGPUSamplerBindingType_Filtering
+            : entry.sampler.type === "non-filtering"
+              ? 3 // WGPUSamplerBindingType_NonFiltering
+              : entry.sampler.type === "comparison"
+                ? 4 // WGPUSamplerBindingType_Comparison
+                : 2; // default to Filtering
+        entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 56); // sampler.nextInChain
+        entriesBuffer.writeUInt32LE(samplerType, offset + 56 + 8); // sampler.type
+      }
+
+      // texture: WGPUTextureBindingLayout at offset 72 (24 bytes)
+      // { nextInChain: ptr @0, sampleType: u32 @8, viewDimension: u32 @12, multisampled: u32 @16, padding @20 }
+      if (entry.texture) {
+        const sampleType =
+          entry.texture.sampleType === "float"
+            ? 2 // WGPUTextureSampleType_Float
+            : entry.texture.sampleType === "unfilterable-float"
+              ? 3 // WGPUTextureSampleType_UnfilterableFloat
+              : entry.texture.sampleType === "depth"
+                ? 4 // WGPUTextureSampleType_Depth
+                : entry.texture.sampleType === "sint"
+                  ? 5 // WGPUTextureSampleType_Sint
+                  : entry.texture.sampleType === "uint"
+                    ? 6 // WGPUTextureSampleType_Uint
+                    : 2; // default to Float
+        const viewDimension =
+          entry.texture.viewDimension === "1d"
+            ? 1 // WGPUTextureViewDimension_1D
+            : entry.texture.viewDimension === "2d"
+              ? 2 // WGPUTextureViewDimension_2D
+              : entry.texture.viewDimension === "2d-array"
+                ? 3 // WGPUTextureViewDimension_2DArray
+                : entry.texture.viewDimension === "cube"
+                  ? 4 // WGPUTextureViewDimension_Cube
+                  : entry.texture.viewDimension === "cube-array"
+                    ? 5 // WGPUTextureViewDimension_CubeArray
+                    : entry.texture.viewDimension === "3d"
+                      ? 6 // WGPUTextureViewDimension_3D
+                      : 2; // default to 2D
+        entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 72); // texture.nextInChain
+        entriesBuffer.writeUInt32LE(sampleType, offset + 72 + 8); // texture.sampleType
+        entriesBuffer.writeUInt32LE(viewDimension, offset + 72 + 12); // texture.viewDimension
+        entriesBuffer.writeUInt32LE(entry.texture.multisampled ? 1 : 0, offset + 72 + 16); // texture.multisampled
+      }
+      // storageTexture: WGPUStorageTextureBindingLayout at offset 96 (24 bytes) - leave as zeros for now
     }
 
     // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
@@ -986,7 +1123,10 @@ export class DawnGPUDevice {
     layout: DawnGPUBindGroupLayout;
     entries: Array<{
       binding: number;
-      resource: { buffer: DawnGPUBuffer; offset?: number; size?: number };
+      resource:
+        | { buffer: DawnGPUBuffer; offset?: number; size?: number }
+        | DawnGPUSampler
+        | DawnGPUTextureView;
     }>;
   }): DawnGPUBindGroup {
     const entries = descriptor.entries;
@@ -1008,14 +1148,29 @@ export class DawnGPUDevice {
       // offset + 12: 4 bytes padding
 
       const resource = entry.resource;
-      entriesBuffer.writeBigUInt64LE(
-        BigInt(resource.buffer._handle as unknown as number),
-        offset + 16
-      ); // buffer
-      entriesBuffer.writeBigUInt64LE(BigInt(resource.offset ?? 0), offset + 24); // offset
-      entriesBuffer.writeBigUInt64LE(BigInt(resource.size ?? resource.buffer.size), offset + 32); // size
+
+      // Initialize all resource fields to 0/NULL
+      entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 16); // buffer = NULL
+      entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 24); // offset = 0
+      entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 32); // size = 0
       entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 40); // sampler = NULL
       entriesBuffer.writeBigUInt64LE(BigInt(0), offset + 48); // textureView = NULL
+
+      if (resource instanceof DawnGPUSampler) {
+        // Sampler resource
+        entriesBuffer.writeBigUInt64LE(BigInt(resource._handle as unknown as number), offset + 40); // sampler
+      } else if (resource instanceof DawnGPUTextureView) {
+        // Texture view resource
+        entriesBuffer.writeBigUInt64LE(BigInt(resource._handle as unknown as number), offset + 48); // textureView
+      } else if ("buffer" in resource) {
+        // Buffer resource
+        entriesBuffer.writeBigUInt64LE(
+          BigInt(resource.buffer._handle as unknown as number),
+          offset + 16
+        ); // buffer
+        entriesBuffer.writeBigUInt64LE(BigInt(resource.offset ?? 0), offset + 24); // offset
+        entriesBuffer.writeBigUInt64LE(BigInt(resource.size ?? resource.buffer.size), offset + 32); // size
+      }
     }
 
     // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
@@ -1322,12 +1477,119 @@ export class DawnGPUDevice {
     return new DawnGPUCommandEncoder(encoder, descriptor?.label);
   }
 
-  // Stubs for other methods
-  createTexture(_descriptor: GPUTextureDescriptor): never {
-    throw new Error("createTexture not implemented");
+  createTexture(descriptor: GPUTextureDescriptor): DawnGPUTexture {
+    // WGPUTextureDescriptor struct layout (from webgpu.h):
+    // { nextInChain: ptr(8), label: WGPUStringView(16), usage: u64(8), dimension: u32(4),
+    //   size: WGPUExtent3D(12), format: u32(4), mipLevelCount: u32(4), sampleCount: u32(4),
+    //   viewFormatCount: size_t(8), viewFormats: ptr(8) }
+    // Total: 80 bytes (with alignment)
+    const descBuffer = Buffer.alloc(80);
+
+    // nextInChain
+    descBuffer.writeBigUInt64LE(BigInt(0), 0);
+
+    // label (WGPUStringView: data ptr + length)
+    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data = NULL
+    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length = WGPU_STRLEN
+
+    // usage (u64)
+    descBuffer.writeBigUInt64LE(BigInt(convertTextureUsage(descriptor.usage)), 24);
+
+    // dimension (u32)
+    const dimension = descriptor.dimension ?? "2d";
+    descBuffer.writeUInt32LE(textureDimensionMap[dimension] ?? 0x02, 32);
+
+    // size: WGPUExtent3D (3 x u32 = 12 bytes)
+    const size = descriptor.size;
+    const width = typeof size === "number" ? size : (size as GPUExtent3DDict).width;
+    const height = typeof size === "number" ? 1 : ((size as GPUExtent3DDict).height ?? 1);
+    const depthOrArrayLayers =
+      typeof size === "number" ? 1 : ((size as GPUExtent3DDict).depthOrArrayLayers ?? 1);
+    descBuffer.writeUInt32LE(width, 36);
+    descBuffer.writeUInt32LE(height, 40);
+    descBuffer.writeUInt32LE(depthOrArrayLayers, 44);
+
+    // format (u32)
+    const format = textureFormatMap[descriptor.format] ?? 0x0000001b; // default to bgra8unorm
+    descBuffer.writeUInt32LE(format, 48);
+
+    // mipLevelCount (u32)
+    descBuffer.writeUInt32LE(descriptor.mipLevelCount ?? 1, 52);
+
+    // sampleCount (u32)
+    descBuffer.writeUInt32LE(descriptor.sampleCount ?? 1, 56);
+    // padding @60 (4 bytes for size_t alignment)
+
+    // viewFormatCount (size_t = 8 bytes)
+    descBuffer.writeBigUInt64LE(BigInt(0), 64);
+
+    // viewFormats (ptr)
+    descBuffer.writeBigUInt64LE(BigInt(0), 72);
+
+    const texture = dawn.wgpuDeviceCreateTexture(this._handle, ptr(descBuffer));
+    if (!texture) {
+      throw new Error("Failed to create texture");
+    }
+    return new DawnGPUTexture(texture, descriptor.format, descriptor.label);
   }
-  createSampler(_descriptor?: GPUSamplerDescriptor): never {
-    throw new Error("createSampler not implemented");
+
+  createSampler(descriptor?: GPUSamplerDescriptor): DawnGPUSampler {
+    // WGPUSamplerDescriptor struct layout (from webgpu.h):
+    // { nextInChain: ptr(8), label: WGPUStringView(16), addressModeU: u32(4), addressModeV: u32(4),
+    //   addressModeW: u32(4), magFilter: u32(4), minFilter: u32(4), mipmapFilter: u32(4),
+    //   lodMinClamp: f32(4), lodMaxClamp: f32(4), compare: u32(4), maxAnisotropy: u16(2) }
+    // Total: 64 bytes (with alignment padding)
+    const descBuffer = Buffer.alloc(72);
+
+    // nextInChain
+    descBuffer.writeBigUInt64LE(BigInt(0), 0);
+
+    // label (WGPUStringView: data ptr + length)
+    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data = NULL
+    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length = WGPU_STRLEN
+
+    // addressModeU (u32)
+    const addressModeU = addressModeMap[descriptor?.addressModeU ?? "clamp-to-edge"] ?? 0x01;
+    descBuffer.writeUInt32LE(addressModeU, 24);
+
+    // addressModeV (u32)
+    const addressModeV = addressModeMap[descriptor?.addressModeV ?? "clamp-to-edge"] ?? 0x01;
+    descBuffer.writeUInt32LE(addressModeV, 28);
+
+    // addressModeW (u32)
+    const addressModeW = addressModeMap[descriptor?.addressModeW ?? "clamp-to-edge"] ?? 0x01;
+    descBuffer.writeUInt32LE(addressModeW, 32);
+
+    // magFilter (u32)
+    const magFilter = filterModeMap[descriptor?.magFilter ?? "nearest"] ?? 0x01;
+    descBuffer.writeUInt32LE(magFilter, 36);
+
+    // minFilter (u32)
+    const minFilter = filterModeMap[descriptor?.minFilter ?? "nearest"] ?? 0x01;
+    descBuffer.writeUInt32LE(minFilter, 40);
+
+    // mipmapFilter (u32)
+    const mipmapFilter = mipmapFilterModeMap[descriptor?.mipmapFilter ?? "nearest"] ?? 0x01;
+    descBuffer.writeUInt32LE(mipmapFilter, 44);
+
+    // lodMinClamp (f32)
+    descBuffer.writeFloatLE(descriptor?.lodMinClamp ?? 0, 48);
+
+    // lodMaxClamp (f32)
+    descBuffer.writeFloatLE(descriptor?.lodMaxClamp ?? 32, 52);
+
+    // compare (u32) - 0 means no comparison
+    const compare = descriptor?.compare ? (compareFunctionMap[descriptor.compare] ?? 0) : 0;
+    descBuffer.writeUInt32LE(compare, 56);
+
+    // maxAnisotropy (u16)
+    descBuffer.writeUInt16LE(descriptor?.maxAnisotropy ?? 1, 60);
+
+    const sampler = dawn.wgpuDeviceCreateSampler(this._handle, ptr(descBuffer));
+    if (!sampler) {
+      throw new Error("Failed to create sampler");
+    }
+    return new DawnGPUSampler(sampler, descriptor?.label);
   }
   createComputePipeline(descriptor: GPUComputePipelineDescriptor): DawnGPUComputePipeline {
     // Get compute shader module and entry point
@@ -1402,7 +1664,7 @@ export class DawnGPUDevice {
     throw new Error("importExternalTexture not implemented");
   }
   pushErrorScope(_filter: GPUErrorFilter) {
-    // stub
+    // TODO implement
   }
   popErrorScope(): Promise<GPUError | null> {
     // TODO implement
