@@ -30,6 +30,8 @@ import {
   type WGPUCommandEncoder,
   type WGPUCommandBuffer,
   type WGPURenderPassEncoder,
+  type WGPUComputePassEncoder,
+  type WGPUComputePipeline,
   type WGPUTexture,
   type WGPUTextureView,
   type WGPUSurface,
@@ -265,6 +267,25 @@ export class DawnGPURenderPipeline {
 }
 
 /**
+ * Wrapped GPUComputePipeline for Dawn
+ */
+export class DawnGPUComputePipeline {
+  readonly label: string;
+
+  constructor(
+    public readonly _handle: WGPUComputePipeline,
+    label?: string
+  ) {
+    this.label = label ?? "";
+  }
+
+  getBindGroupLayout(index: number): DawnGPUBindGroupLayout {
+    const handle = dawn.wgpuComputePipelineGetBindGroupLayout(this._handle, index);
+    return new DawnGPUBindGroupLayout(handle!);
+  }
+}
+
+/**
  * Wrapped GPUCommandBuffer for Dawn
  */
 export class DawnGPUCommandBuffer {
@@ -433,6 +454,73 @@ export class DawnGPURenderPassEncoder {
 }
 
 /**
+ * Wrapped GPUComputePassEncoder for Dawn
+ */
+export class DawnGPUComputePassEncoder {
+  readonly label: string;
+
+  constructor(
+    public readonly _handle: WGPUComputePassEncoder,
+    label?: string
+  ) {
+    this.label = label ?? "";
+  }
+
+  setPipeline(pipeline: DawnGPUComputePipeline) {
+    dawn.wgpuComputePassEncoderSetPipeline(this._handle, pipeline._handle);
+  }
+
+  setBindGroup(
+    index: number,
+    bindGroup: DawnGPUBindGroup | null,
+    dynamicOffsets?: Iterable<number>
+  ) {
+    if (!bindGroup) {
+      return;
+    }
+    const offsets = dynamicOffsets ? Array.from(dynamicOffsets) : [];
+    const offsetsBuffer = offsets.length > 0 ? new Uint32Array(offsets) : null;
+    dawn.wgpuComputePassEncoderSetBindGroup(
+      this._handle,
+      index,
+      bindGroup._handle,
+      BigInt(offsets.length),
+      offsetsBuffer ? ptr(offsetsBuffer) : null
+    );
+  }
+
+  dispatchWorkgroups(workgroupCountX: number, workgroupCountY?: number, workgroupCountZ?: number) {
+    dawn.wgpuComputePassEncoderDispatchWorkgroups(
+      this._handle,
+      workgroupCountX,
+      workgroupCountY ?? 1,
+      workgroupCountZ ?? 1
+    );
+  }
+
+  dispatchWorkgroupsIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
+    // stub - would need wgpuComputePassEncoderDispatchWorkgroupsIndirect
+    throw new Error("dispatchWorkgroupsIndirect not implemented");
+  }
+
+  end() {
+    dawn.wgpuComputePassEncoderEnd(this._handle);
+  }
+
+  pushDebugGroup(_groupLabel: string) {
+    // stub
+  }
+
+  popDebugGroup() {
+    // stub
+  }
+
+  insertDebugMarker(_markerLabel: string) {
+    // stub
+  }
+}
+
+/**
  * Wrapped GPUCommandEncoder for Dawn
  */
 export class DawnGPUCommandEncoder {
@@ -519,10 +607,24 @@ export class DawnGPUCommandEncoder {
     return new DawnGPUCommandBuffer(commandBuffer!, descriptor?.label);
   }
 
-  // Stubs
-  beginComputePass(_descriptor?: GPUComputePassDescriptor): never {
-    throw new Error("beginComputePass not implemented");
+  beginComputePass(descriptor?: GPUComputePassDescriptor): DawnGPUComputePassEncoder {
+    // WGPUComputePassDescriptor struct layout:
+    // { nextInChain: ptr(8), label: WGPUStringView(16), timestampWrites: ptr(8) }
+    // Total: 32 bytes
+    const descBuffer = Buffer.alloc(32);
+    descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain = NULL
+    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data = NULL
+    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length = WGPU_STRLEN
+    descBuffer.writeBigUInt64LE(BigInt(0), 24); // timestampWrites = NULL
+
+    const computePass = dawn.wgpuCommandEncoderBeginComputePass(this._handle, ptr(descBuffer));
+    if (!computePass) {
+      throw new Error("Failed to begin compute pass");
+    }
+    return new DawnGPUComputePassEncoder(computePass, descriptor?.label);
   }
+
+  // Stubs
   copyBufferToBuffer(
     _source: DawnGPUBuffer,
     _sourceOffset: number,
@@ -1227,8 +1329,62 @@ export class DawnGPUDevice {
   createSampler(_descriptor?: GPUSamplerDescriptor): never {
     throw new Error("createSampler not implemented");
   }
-  createComputePipeline(_descriptor: GPUComputePipelineDescriptor): never {
-    throw new Error("createComputePipeline not implemented");
+  createComputePipeline(descriptor: GPUComputePipelineDescriptor): DawnGPUComputePipeline {
+    // Get compute shader module and entry point
+    const computeModule = descriptor.compute.module as unknown as DawnGPUShaderModule;
+    const computeEntryPoint = descriptor.compute.entryPoint ?? "main";
+    const computeEntryPointBuffer = Buffer.from(computeEntryPoint + "\0", "utf8");
+
+    // Layout
+    const layout =
+      descriptor.layout === "auto"
+        ? null
+        : (descriptor.layout as unknown as DawnGPUPipelineLayout | null);
+
+    // WGPUComputePipelineDescriptor struct layout:
+    // { nextInChain: ptr(8), label: WGPUStringView(16), layout: ptr(8), compute: WGPUProgrammableStageDescriptor(48) }
+    // WGPUProgrammableStageDescriptor: { nextInChain: ptr(8), module: ptr(8), entryPoint: WGPUStringView(16), constantCount: size_t(8), constants: ptr(8) }
+    // Total: 80 bytes
+    const descBuffer = Buffer.alloc(80);
+    let offset = 0;
+
+    // nextInChain
+    descBuffer.writeBigUInt64LE(BigInt(0), offset);
+    offset += 8;
+
+    // label: WGPUStringView { data: ptr, length: size_t }
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // label.data = NULL
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), offset); // label.length = WGPU_STRLEN
+    offset += 8;
+
+    // layout: ptr
+    descBuffer.writeBigUInt64LE(
+      layout ? BigInt(layout._handle as unknown as number) : BigInt(0),
+      offset
+    );
+    offset += 8;
+
+    // compute: WGPUProgrammableStageDescriptor (inline, 48 bytes)
+    // { nextInChain: ptr(8), module: ptr(8), entryPoint: WGPUStringView(16), constantCount: size_t(8), constants: ptr(8) }
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // compute.nextInChain
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(computeModule._handle as unknown as number), offset); // compute.module
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(ptr(computeEntryPointBuffer)), offset); // compute.entryPoint.data
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(computeEntryPointBuffer.length - 1), offset); // compute.entryPoint.length
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // compute.constantCount
+    offset += 8;
+    descBuffer.writeBigUInt64LE(BigInt(0), offset); // compute.constants
+    offset += 8;
+
+    const pipeline = dawn.wgpuDeviceCreateComputePipeline(this._handle, ptr(descBuffer));
+    if (!pipeline) {
+      throw new Error("Failed to create compute pipeline");
+    }
+    return new DawnGPUComputePipeline(pipeline, descriptor.label);
   }
   createComputePipelineAsync(_descriptor: GPUComputePipelineDescriptor): Promise<never> {
     throw new Error("createComputePipelineAsync not implemented");
