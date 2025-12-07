@@ -1,30 +1,13 @@
 import { createWebGPUContext, runWebGPURenderLoop } from "@glade/platform";
-import type { WebGPUContext } from "@glade/core";
+import { KeyAction, type WebGPUContext } from "@glade/core";
 
-import { initHexagonDemo } from "./hexagon.js";
-import { initParticleDemo } from "./particle.js";
-import { initMetaballDemo } from "./metaball.js";
-import { initRaymarchDemo } from "./raymarch.js";
-import { initGalaxyDemo, renderGalaxy } from "./galaxy.js";
-
-const DEMO_CYCLE_INTERVAL_SECONDS = 1.0;
-
-// ============================================================================
-// Resource types
-// ============================================================================
-
-export interface DemoResources {
-  pipeline: GPURenderPipeline;
-  positionBuffer: GPUBuffer;
-  colorBuffer: GPUBuffer;
-  indexBuffer: GPUBuffer | null;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
-  indexCount: number;
-  vertexCount: number;
-  instanceCount: number;
-  useInstancing: boolean;
-}
+import { initHexagonDemo } from "./hexagon";
+import { initParticleDemo } from "./particle";
+import { initMetaballDemo } from "./metaball";
+import { initRaymarchDemo } from "./raymarch";
+import { initGalaxyDemo, renderGalaxy } from "./galaxy";
+import { initFluidDemo, renderFluid } from "./fluid";
+import type { DemoResources } from "./common";
 
 type RenderFn = (
   ctx: WebGPUContext,
@@ -130,6 +113,7 @@ async function main() {
     { name: "Metaballs", resources: initMetaballDemo(ctx, format) },
     { name: "Raymarched 3D", resources: initRaymarchDemo(ctx, format) },
     { name: "Galaxy Simulation", resources: initGalaxyDemo(ctx, format), render: renderGalaxy },
+    { name: "Fluid Simulation", resources: initFluidDemo(ctx, format), render: renderFluid },
   ];
 
   console.log("demos initialized, rendering...");
@@ -143,15 +127,25 @@ async function main() {
   });
 
   let currentDemoIndex = 0;
+  console.log(`Current demo: ${demos[currentDemoIndex]!.name} (use left/right arrows to navigate)`);
 
-  const renderCallback = (time: number, deltaTime: number): void => {
-    // Cycle demos every 3 seconds
-    const newDemoIndex = Math.floor(time / DEMO_CYCLE_INTERVAL_SECONDS) % demos.length;
-    if (newDemoIndex !== currentDemoIndex) {
-      currentDemoIndex = newDemoIndex;
+  // GLFW key codes: RIGHT=262, LEFT=263
+  const KEY_RIGHT = 262;
+  const KEY_LEFT = 263;
+
+  ctx.onKey((event) => {
+    if (event.action !== KeyAction.Press) return;
+
+    if (event.key === KEY_RIGHT) {
+      currentDemoIndex = (currentDemoIndex + 1) % demos.length;
+      console.log(`Switching to demo: ${demos[currentDemoIndex]!.name}`);
+    } else if (event.key === KEY_LEFT) {
+      currentDemoIndex = (currentDemoIndex - 1 + demos.length) % demos.length;
       console.log(`Switching to demo: ${demos[currentDemoIndex]!.name}`);
     }
+  });
 
+  const renderCallback = (time: number, deltaTime: number): void => {
     const demo = demos[currentDemoIndex]!;
     const renderFn = demo.render ?? defaultRender;
     renderFn(ctx, demo.resources, time, deltaTime, mouseX, mouseY);

@@ -1,6 +1,6 @@
 import type { WebGPUContext } from "@glade/core";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/webgpu";
-import type { DemoResources } from "./demo-webgpu.js";
+import type { DemoResources } from "./common";
 
 const VERTEX_SHADER = `
 struct VertexInput {

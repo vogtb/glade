@@ -1,6 +1,6 @@
 import type { WebGPUContext } from "@glade/core";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/webgpu";
-import type { DemoResources } from "./demo-webgpu.js";
+import type { DemoResources } from "./common";
 
 // Galaxy simulation with thousands of stars orbiting a central black hole
 // Features: gravitational physics, bloom/glow effects, dust lanes, spiral arms
