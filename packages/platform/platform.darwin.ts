@@ -9,7 +9,6 @@ export {
   GLSL_VERSION,
   GLSL_PRECISION,
   // Types
-  type DarwinContext,
   type DarwinWebGLContext,
   type DarwinWebGPUContext,
   type DarwinContextOptions,

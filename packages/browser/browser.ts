@@ -12,7 +12,6 @@ export {
   createWebGPUContext,
   runWebGPURenderLoop,
   // Types
-  type BrowserContext,
   type BrowserWebGLContext,
   type BrowserWebGPUContext,
   type BrowserContextOptions,

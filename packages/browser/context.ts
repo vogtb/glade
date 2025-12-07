@@ -36,11 +36,6 @@ export interface BrowserWebGPUContext extends WebGPUContext {
   canvas: HTMLCanvasElement;
 }
 
-/**
- * @deprecated Use BrowserWebGLContext instead
- */
-export type BrowserContext = BrowserWebGLContext;
-
 // Creates a WebGL2 context for browser rendering. Automatically appends canvas
 // to document.body unless a custom canvas is provided.
 export function createWebGLContext(options: BrowserContextOptions = {}): BrowserWebGLContext {
@@ -444,11 +439,6 @@ export function runWebGLRenderLoop(ctx: BrowserWebGLContext, callback: RenderCal
 
   requestAnimationFrame(frame);
 }
-
-/**
- * @deprecated Use runWebGLRenderLoop instead
- */
-export const runRenderLoop = runWebGLRenderLoop;
 
 /**
  * Render loop for browser WebGPU context.

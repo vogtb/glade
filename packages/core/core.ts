@@ -15,11 +15,6 @@ export interface WebGLContext extends EventTarget {
 }
 
 /**
- * @deprecated Use WebGLContext instead
- */
-export type GLContext = WebGLContext;
-
-/**
  * Platform-agnostic WebGPU context interface. Provides access to the standard
  * WebGPU API (GPUDevice, GPUQueue, etc.) in a cross-platform manner.
  */

@@ -61,11 +61,6 @@ export interface DarwinWebGPUContext extends WebGPUContext {
   wgpuSurface: WGPUSurface;
 }
 
-/**
- * @deprecated Use DarwinWebGLContext instead
- */
-export type DarwinContext = DarwinWebGLContext;
-
 // Creates a native OpenGL context for macOS using GLFW.
 export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWebGLContext {
   const width = options.width ?? 800;

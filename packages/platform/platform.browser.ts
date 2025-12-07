@@ -9,7 +9,6 @@ export {
   GLSL_VERSION,
   GLSL_PRECISION,
   // Types
-  type BrowserContext,
   type BrowserWebGLContext,
   type BrowserWebGPUContext,
   type BrowserContextOptions,

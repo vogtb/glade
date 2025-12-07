@@ -6,7 +6,6 @@ export {
   createWebGPUContext,
   runWebGPURenderLoop,
   // Types
-  type DarwinContext,
   type DarwinWebGLContext,
   type DarwinWebGPUContext,
   type DarwinContextOptions,
