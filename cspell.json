@@ -16,6 +16,10 @@
     "webgl",
     "LIBOBJC",
     "objc",
-    "Workgroups"
+    "Workgroups",
+    "Metaballs",
+    "Metaball",
+    "Raymarched",
+    "RAYMARCH"
   ]
 }
