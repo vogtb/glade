@@ -48,6 +48,15 @@ import { FlashScene } from "./scene.ts";
 import type { Styles } from "./styles.ts";
 import { SHADOW_DEFINITIONS } from "./styles.ts";
 import { FlashLayoutEngine, type LayoutId } from "./layout.ts";
+import type { Hitbox, HitboxId, HitTest, HitboxFrame } from "./hitbox.ts";
+import {
+  HitboxBehavior,
+  createHitboxFrame,
+  insertHitbox,
+  performHitTest,
+  isHitboxHovered,
+  GroupHitboxes,
+} from "./hitbox.ts";
 
 /**
  * Options for creating a window.
@@ -121,6 +130,12 @@ export class FlashWindow {
 
   private scrollStates = new Map<ScrollHandleId, ScrollState>();
   private nextScrollHandleId = 1;
+
+  // Hitbox tracking
+  private hitboxFrame: HitboxFrame = createHitboxFrame();
+  private mouseHitTest: HitTest = { ids: [], hoverHitboxCount: 0 };
+  private groupHitboxes = new GroupHitboxes();
+  private currentContentMask: ContentMask | null = null;
 
   constructor(
     readonly id: WindowId,
@@ -253,6 +268,81 @@ export class FlashWindow {
     state.offset = clamped;
   }
 
+  // ============ Hitbox Management ============
+
+  /**
+   * Insert a hitbox for the current frame.
+   * Should only be called during prepaint phase.
+   */
+  insertHitbox(bounds: Bounds, behavior: HitboxBehavior = HitboxBehavior.Normal): Hitbox {
+    return insertHitbox(this.hitboxFrame, bounds, this.currentContentMask, behavior);
+  }
+
+  /**
+   * Check if a hitbox is currently hovered.
+   */
+  isHitboxHovered(hitbox: Hitbox): boolean {
+    return isHitboxHovered(this.mouseHitTest, hitbox.id);
+  }
+
+  /**
+   * Check if a hitbox ID is currently hovered.
+   */
+  isHitboxIdHovered(id: HitboxId): boolean {
+    return isHitboxHovered(this.mouseHitTest, id);
+  }
+
+  /**
+   * Get the current hit test result.
+   */
+  getMouseHitTest(): HitTest {
+    return this.mouseHitTest;
+  }
+
+  /**
+   * Push a group hitbox.
+   */
+  pushGroupHitbox(groupName: string, hitboxId: HitboxId): void {
+    this.groupHitboxes.push(groupName, hitboxId);
+  }
+
+  /**
+   * Pop a group hitbox.
+   */
+  popGroupHitbox(groupName: string): void {
+    this.groupHitboxes.pop(groupName);
+  }
+
+  /**
+   * Get the topmost hitbox ID for a group.
+   */
+  getGroupHitbox(groupName: string): HitboxId | null {
+    return this.groupHitboxes.get(groupName);
+  }
+
+  /**
+   * Check if a group is hovered.
+   */
+  isGroupHovered(groupName: string): boolean {
+    const hitboxId = this.groupHitboxes.get(groupName);
+    if (hitboxId === null) return false;
+    return isHitboxHovered(this.mouseHitTest, hitboxId);
+  }
+
+  /**
+   * Set the current content mask (for hitbox clipping).
+   */
+  setCurrentContentMask(mask: ContentMask | null): void {
+    this.currentContentMask = mask;
+  }
+
+  /**
+   * Get the current content mask.
+   */
+  getCurrentContentMask(): ContentMask | null {
+    return this.currentContentMask;
+  }
+
   /**
    * Render the window using the three-phase lifecycle.
    */
@@ -325,6 +415,9 @@ export class FlashWindow {
   private beginFrame(): void {
     this.visitedElementIds.clear();
     this.nextElementId = 1;
+    // Reset hitbox frame for new frame
+    this.hitboxFrame = createHitboxFrame();
+    this.groupHitboxes.clear();
   }
 
   private endFrame(): void {
@@ -333,6 +426,12 @@ export class FlashWindow {
         this.elementState.delete(id);
       }
     }
+    // Update hit test with current mouse position
+    this.mouseHitTest = performHitTest(
+      this.hitboxFrame,
+      this.mousePosition.x,
+      this.mousePosition.y
+    );
   }
 
   private allocateElementId(): GlobalElementId {
@@ -431,6 +530,9 @@ export class FlashWindow {
     const layoutEngine = this.layoutEngine;
     const elementState = this.elementState;
     const createPrepaintContext = this.createPrepaintContext.bind(this);
+    const insertHitboxFn = this.insertHitbox.bind(this);
+    const pushGroupHitboxFn = this.pushGroupHitbox.bind(this);
+    const popGroupHitboxFn = this.popGroupHitbox.bind(this);
 
     return {
       elementId,
@@ -453,6 +555,18 @@ export class FlashWindow {
 
       withElementId: (newElementId: GlobalElementId): PrepaintContext => {
         return createPrepaintContext(newElementId);
+      },
+
+      insertHitbox: (bounds: Bounds, behavior?: HitboxBehavior): Hitbox => {
+        return insertHitboxFn(bounds, behavior ?? HitboxBehavior.Normal);
+      },
+
+      pushGroupHitbox: (groupName: string, hitboxId: HitboxId): void => {
+        pushGroupHitboxFn(groupName, hitboxId);
+      },
+
+      popGroupHitbox: (groupName: string): void => {
+        popGroupHitboxFn(groupName);
       },
     };
   }
@@ -586,11 +700,14 @@ export class FlashWindow {
       },
 
       withContentMask: (mask: ContentMask, callback: () => void): void => {
+        const previousMask = this.currentContentMask;
+        this.currentContentMask = mask;
         scene.pushContentMask(mask);
         try {
           callback();
         } finally {
           scene.popContentMask();
+          this.currentContentMask = previousMask;
         }
       },
 
@@ -601,6 +718,14 @@ export class FlashWindow {
         } finally {
           scene.popTransform();
         }
+      },
+
+      isHitboxHovered: (hitbox: Hitbox): boolean => {
+        return isHitboxHovered(this.mouseHitTest, hitbox.id);
+      },
+
+      isGroupHovered: (groupName: string): boolean => {
+        return this.isGroupHovered(groupName);
       },
     };
   }

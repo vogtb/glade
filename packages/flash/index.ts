@@ -151,6 +151,20 @@ export {
   dispatchScrollEvent,
 } from "./dispatch.ts";
 
+// Hitbox system
+export type { Hitbox, HitboxId, HitTest, HitboxFrame } from "./hitbox.ts";
+
+export {
+  HitboxBehavior,
+  createHitboxFrame,
+  createHitTest,
+  insertHitbox,
+  performHitTest,
+  isHitboxHovered,
+  shouldHitboxHandleScroll,
+  GroupHitboxes,
+} from "./hitbox.ts";
+
 // Window
 export type { WindowOptions, FlashPlatform, FlashRenderTarget } from "./window.ts";
 

@@ -521,6 +521,10 @@ function buildDemoScene(
   // ============ Scroll Demo (demonstrates scrollable content) ============
 
   buildScrollDemo(scene, width, height, scrollOffset, ctx);
+
+  // ============ Hitbox Demo (demonstrates group hover and occlusion) ============
+
+  buildHitboxDemo(scene, width, height, time, ctx);
 }
 
 /**
@@ -711,6 +715,226 @@ function buildTransformDemo(
     borderWidth: 0,
     borderColor: { r: 0, g: 0, b: 0, a: 0 },
   });
+}
+
+/**
+ * Build a hitbox demo to demonstrate the new hitbox system features.
+ * Shows:
+ * - Group hover effects (hovering one element highlights others)
+ * - Hitbox occlusion (modal blocking hover on elements behind)
+ * - blockMouseExceptScroll behavior
+ */
+function buildHitboxDemo(
+  scene: FlashScene,
+  width: number,
+  height: number,
+  time: number,
+  ctx: DivRenderContext
+): void {
+  // Position the hitbox demo panel - bottom right area
+  const panelX = width - 280;
+  const panelY = height - 220;
+  const panelWidth = 260;
+  const panelHeight = 200;
+
+  // Panel background
+  scene.addRect({
+    x: panelX,
+    y: panelY,
+    width: panelWidth,
+    height: panelHeight,
+    color: { r: 0.12, g: 0.12, b: 0.18, a: 0.95 },
+    cornerRadius: 12,
+    borderWidth: 1,
+    borderColor: { r: 0.3, g: 0.3, b: 0.4, a: 1 },
+  });
+
+  // Title bar
+  scene.addRect({
+    x: panelX + 10,
+    y: panelY + 10,
+    width: panelWidth - 20,
+    height: 24,
+    color: { r: 0.08, g: 0.08, b: 0.12, a: 1 },
+    cornerRadius: 6,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // ============ Group Hover Demo ============
+  // Three buttons in a group - hovering one highlights all
+  const groupY = panelY + 50;
+  const buttonWidth = 70;
+  const buttonHeight = 36;
+  const buttonGap = 10;
+  const groupStartX = panelX + (panelWidth - 3 * buttonWidth - 2 * buttonGap) / 2;
+
+  // Use div() with .group() and .groupHover() for coordinated hover effects
+  for (let i = 0; i < 3; i++) {
+    const btnX = groupStartX + i * (buttonWidth + buttonGap);
+
+    // Check if mouse is hovering any button in the group
+    const isAnyHovered =
+      ctx.mouseX >= groupStartX &&
+      ctx.mouseX < groupStartX + 3 * buttonWidth + 2 * buttonGap &&
+      ctx.mouseY >= groupY &&
+      ctx.mouseY < groupY + buttonHeight;
+
+    // Check if THIS button is hovered
+    const isThisHovered =
+      ctx.mouseX >= btnX &&
+      ctx.mouseX < btnX + buttonWidth &&
+      ctx.mouseY >= groupY &&
+      ctx.mouseY < groupY + buttonHeight;
+
+    // Group hover: all buttons get subtle highlight when any is hovered
+    // Individual hover: the specific button gets stronger highlight
+    let buttonColor: Color;
+    let borderColor: Color;
+
+    if (isThisHovered) {
+      // Direct hover - bright highlight
+      buttonColor = rgb(0x6366f1);
+      borderColor = rgb(0xa5b4fc);
+    } else if (isAnyHovered) {
+      // Group hover - subtle highlight
+      buttonColor = rgb(0x4338ca);
+      borderColor = rgb(0x6366f1);
+    } else {
+      // Normal state
+      buttonColor = rgb(0x3730a3);
+      borderColor = { r: 0.3, g: 0.3, b: 0.5, a: 1 };
+    }
+
+    // Create button using div() with group hover styling
+    // Note: This demo shows the visual effect manually since renderDiv doesn't
+    // use the full FlashApp framework with hitbox tracking
+    const button = div()
+      .bg(buttonColor)
+      .rounded(8)
+      .border(2)
+      .borderColor(borderColor)
+      .group("button-group")
+      .groupHover("button-group", (s) => s.bg(rgb(0x4338ca)).borderColor(rgb(0x6366f1)));
+
+    renderDiv(button, { x: btnX, y: groupY, width: buttonWidth, height: buttonHeight }, ctx);
+
+    // Inner label indicator
+    const labelWidth = buttonWidth - 16;
+    const labelHeight = 8;
+    scene.addRect({
+      x: btnX + 8,
+      y: groupY + (buttonHeight - labelHeight) / 2,
+      width: labelWidth,
+      height: labelHeight,
+      color: { r: 1, g: 1, b: 1, a: isThisHovered ? 0.5 : 0.2 },
+      cornerRadius: 4,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // ============ Occlusion Demo ============
+  // Shows how occludeMouse() blocks hover on elements behind
+  const occlusionY = panelY + 100;
+
+  // Background elements (would be blocked by overlay)
+  for (let i = 0; i < 3; i++) {
+    const elemX = panelX + 20 + i * 75;
+    const elemWidth = 60;
+    const elemHeight = 30;
+
+    // Check if hovered (but in real hitbox system, occlusion would block this)
+    const isHovered =
+      ctx.mouseX >= elemX &&
+      ctx.mouseX < elemX + elemWidth &&
+      ctx.mouseY >= occlusionY &&
+      ctx.mouseY < occlusionY + elemHeight;
+
+    const elemColor = isHovered ? rgb(0x22c55e) : rgb(0x166534);
+
+    scene.addRect({
+      x: elemX,
+      y: occlusionY,
+      width: elemWidth,
+      height: elemHeight,
+      color: elemColor,
+      cornerRadius: 6,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // ============ Animated Occlusion Overlay ============
+  // A semi-transparent overlay that moves back and forth
+  // When over an element, it blocks hover (demonstrated visually)
+  const overlayWidth = 80;
+  const overlayHeight = 50;
+  const overlayRange = panelWidth - overlayWidth - 40;
+  const overlayX = panelX + 20 + (Math.sin(time * 1.5) * 0.5 + 0.5) * overlayRange;
+  const overlayY = occlusionY - 10;
+
+  // Check if mouse is over the overlay
+  const isOverlayHovered =
+    ctx.mouseX >= overlayX &&
+    ctx.mouseX < overlayX + overlayWidth &&
+    ctx.mouseY >= overlayY &&
+    ctx.mouseY < overlayY + overlayHeight;
+
+  // Overlay with occludeMouse() behavior indicator
+  // In a real FlashApp, this would use .occludeMouse() to block elements behind
+  const overlayDiv = div()
+    .bg({ r: 0.1, g: 0.1, b: 0.2, a: 0.85 })
+    .rounded(10)
+    .border(2)
+    .borderColor(isOverlayHovered ? rgb(0xf97316) : { r: 0.5, g: 0.5, b: 0.6, a: 0.8 })
+    .occludeMouse(); // Would block mouse events for elements behind
+
+  renderDiv(
+    overlayDiv,
+    { x: overlayX, y: overlayY, width: overlayWidth, height: overlayHeight },
+    ctx
+  );
+
+  // Overlay indicator pattern (stripes to show it's an overlay)
+  for (let i = 0; i < 3; i++) {
+    scene.addRect({
+      x: overlayX + 10 + i * 22,
+      y: overlayY + overlayHeight / 2 - 2,
+      width: 16,
+      height: 4,
+      color: { r: 1, g: 1, b: 1, a: isOverlayHovered ? 0.4 : 0.2 },
+      cornerRadius: 2,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // ============ Info Label ============
+  scene.addRect({
+    x: panelX + 10,
+    y: panelY + panelHeight - 35,
+    width: panelWidth - 20,
+    height: 25,
+    color: { r: 0.08, g: 0.08, b: 0.12, a: 0.9 },
+    cornerRadius: 6,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // "Hitbox Demo" text indicator dots
+  for (let i = 0; i < 5; i++) {
+    scene.addRect({
+      x: panelX + 30 + i * 20,
+      y: panelY + panelHeight - 26,
+      width: 8,
+      height: 8,
+      color: hslToRgb((i / 5 + time * 0.2) % 1, 0.7, 0.5),
+      cornerRadius: 4,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
 }
 
 /**

@@ -18,6 +18,8 @@ import type { FlashViewContext } from "./context.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { ScrollOffset } from "./types.ts";
 import type { FlashScene } from "./scene.ts";
+import type { Hitbox, HitboxId } from "./hitbox.ts";
+import type { HitboxBehavior } from "./hitbox.ts";
 
 // ============ Element Identity Types ============
 
@@ -134,6 +136,23 @@ export interface PrepaintContext {
    * Create a child context with a specific element ID.
    */
   withElementId(elementId: GlobalElementId): PrepaintContext;
+
+  /**
+   * Insert a hitbox for the current frame.
+   * Returns the hitbox for later hover/active checking.
+   */
+  insertHitbox(bounds: Bounds, behavior?: HitboxBehavior): Hitbox;
+
+  /**
+   * Push a hitbox onto a group stack.
+   * Use for group hover effects.
+   */
+  pushGroupHitbox(groupName: string, hitboxId: HitboxId): void;
+
+  /**
+   * Pop a hitbox from a group stack.
+   */
+  popGroupHitbox(groupName: string): void;
 }
 
 /**
@@ -227,6 +246,16 @@ export interface PaintContext {
    * Transforms are composed (multiplied) with any existing transform.
    */
   withTransform(transform: TransformationMatrix, callback: () => void): void;
+
+  /**
+   * Check if a hitbox is currently hovered.
+   */
+  isHitboxHovered(hitbox: Hitbox): boolean;
+
+  /**
+   * Check if a group is hovered.
+   */
+  isGroupHovered(groupName: string): boolean;
 }
 
 // ============ Element Base Classes ============

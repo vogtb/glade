@@ -29,6 +29,8 @@ import type {
   ScrollHandler,
 } from "./dispatch.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
+import type { Hitbox } from "./hitbox.ts";
+import { HitboxBehavior } from "./hitbox.ts";
 
 /**
  * State passed from requestLayout to prepaint for FlashDiv.
@@ -48,6 +50,7 @@ interface DivPrepaintState {
   childLayoutIds: LayoutId[];
   childElementIds: GlobalElementId[];
   childPrepaintStates: unknown[];
+  hitbox: Hitbox | null;
 }
 
 /**
@@ -58,10 +61,13 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private hoverStyles: Partial<Styles> | null = null;
   private activeStyles: Partial<Styles> | null = null;
   private focusedStyles: Partial<Styles> | null = null;
+  private groupHoverStylesMap: Map<string, Partial<Styles>> = new Map();
   private handlers: EventHandlers = {};
   private focusHandleRef: FocusHandle | null = null;
   private scrollHandleRef: ScrollHandle | null = null;
   private keyContextValue: string | null = null;
+  private hitboxBehaviorValue: HitboxBehavior = HitboxBehavior.Normal;
+  private groupNameValue: string | null = null;
 
   // ============ Layout Styles (Tailwind-like API) ============
 
@@ -623,6 +629,44 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  // ============ Hitbox ============
+
+  /**
+   * Set this element to block all mouse events for elements behind it.
+   * Use for modal overlays that should prevent interaction with underlying content.
+   */
+  occludeMouse(): this {
+    this.hitboxBehaviorValue = HitboxBehavior.BlockMouse;
+    return this;
+  }
+
+  /**
+   * Set this element to block hover but allow scroll events.
+   * Use for overlays that should allow scrolling underlying content.
+   */
+  blockMouseExceptScroll(): this {
+    this.hitboxBehaviorValue = HitboxBehavior.BlockMouseExceptScroll;
+    return this;
+  }
+
+  /**
+   * Assign this element to a hitbox group.
+   * Other elements can use groupHover() to respond to hover on this group.
+   */
+  group(name: string): this {
+    this.groupNameValue = name;
+    return this;
+  }
+
+  /**
+   * Apply styles when any element in the named group is hovered.
+   * Use for coordinated hover effects across multiple elements.
+   */
+  groupHover(groupName: string, f: (s: StyleBuilder) => StyleBuilder): this {
+    this.groupHoverStylesMap.set(groupName, f(new StyleBuilder()).build());
+    return this;
+  }
+
   // ============ Three-Phase Lifecycle ============
 
   /**
@@ -662,7 +706,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
   /**
    * Phase 2: Prepaint - runs after layout computation.
-   * Can be used for post-layout processing before painting.
+   * Creates hitbox and processes children.
    */
   prepaint(
     cx: PrepaintContext,
@@ -670,6 +714,15 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     requestState: DivRequestLayoutState
   ): DivPrepaintState {
     const { childLayoutIds, childElementIds, childRequestStates } = requestState;
+
+    // Create hitbox for this element
+    const hitbox = cx.insertHitbox(bounds, this.hitboxBehaviorValue);
+
+    // Register with group if this element is in a group
+    if (this.groupNameValue) {
+      cx.pushGroupHitbox(this.groupNameValue, hitbox.id);
+    }
+
     const childBounds = cx.getChildLayouts(bounds, childLayoutIds);
     const childPrepaintStates: unknown[] = [];
 
@@ -689,10 +742,16 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       childPrepaintStates.push(prepaintState);
     }
 
+    // Pop group after children are processed
+    if (this.groupNameValue) {
+      cx.popGroupHitbox(this.groupNameValue);
+    }
+
     return {
       childLayoutIds,
       childElementIds,
       childPrepaintStates,
+      hitbox,
     };
   }
 
@@ -700,13 +759,23 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
    * Phase 3: Paint - emit GPU primitives.
    */
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DivPrepaintState): void {
-    const { childLayoutIds, childElementIds, childPrepaintStates } = prepaintState;
+    const { childLayoutIds, childElementIds, childPrepaintStates, hitbox } = prepaintState;
 
-    const isHovered = cx.isHovered(bounds);
-    const isActive = cx.isActive(bounds);
+    // Use hitbox for hover/active detection (with occlusion support)
+    const isHovered = hitbox ? cx.isHitboxHovered(hitbox) : false;
+    const isActive = isHovered && cx.isActive(bounds);
     const isFocused = this.focusHandleRef ? cx.isFocused(this.focusHandleRef) : false;
 
     let effectiveStyles = { ...this.styles };
+
+    // Apply group hover styles
+    for (const [groupName, groupStyles] of this.groupHoverStylesMap) {
+      if (cx.isGroupHovered(groupName)) {
+        effectiveStyles = { ...effectiveStyles, ...groupStyles };
+      }
+    }
+
+    // Apply element hover styles
     if (isHovered && this.hoverStyles) {
       effectiveStyles = { ...effectiveStyles, ...this.hoverStyles };
     }
