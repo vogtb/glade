@@ -9,22 +9,25 @@ import { initGalaxyDemo, renderGalaxy } from "./galaxy";
 import { initFluidDemo, renderFluid } from "./fluid";
 import { initPostProcessDemo, renderPostProcess } from "./postprocess";
 import { initTerrainDemo } from "./terrain";
+import { initFlashDemo, renderFlashDemo, type FlashDemoResources } from "./flash";
 import type { DemoResources } from "./common";
 
-type RenderFn = (
+type RenderFn<T> = (
   ctx: WebGPUContext,
-  resources: DemoResources,
+  resources: T,
   time: number,
   deltaTime: number,
   mouseX: number,
   mouseY: number
 ) => void;
 
-type Demo = {
+type Demo<T = DemoResources> = {
   name: string;
-  resources: DemoResources;
-  render?: RenderFn;
+  resources: T;
+  render?: RenderFn<T>;
 };
+
+type AnyDemo = Demo<DemoResources> | Demo<FlashDemoResources>;
 
 // ============================================================================
 // Default Rendering
@@ -109,7 +112,12 @@ async function main() {
 
   const format: GPUTextureFormat = "bgra8unorm";
 
-  const demos: Array<Demo> = [
+  const demos: Array<AnyDemo> = [
+    {
+      name: "Flash GUI",
+      resources: initFlashDemo(ctx, format),
+      render: renderFlashDemo,
+    } as Demo<FlashDemoResources>,
     {
       name: "Post-Processing",
       resources: initPostProcessDemo(ctx, format),
@@ -157,8 +165,12 @@ async function main() {
 
   const renderCallback = (time: number, deltaTime: number): void => {
     const demo = demos[currentDemoIndex]!;
-    const renderFn = demo.render ?? defaultRender;
-    renderFn(ctx, demo.resources, time, deltaTime, mouseX, mouseY);
+    if (demo.render) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      demo.render(ctx, demo.resources as any, time, deltaTime, mouseX, mouseY);
+    } else {
+      defaultRender(ctx, demo.resources as DemoResources, time, deltaTime, mouseX, mouseY);
+    }
   };
 
   runWebGPURenderLoop(ctx, renderCallback);

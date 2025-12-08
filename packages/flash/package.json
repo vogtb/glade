@@ -1,0 +1,14 @@
+{
+  "name": "@glade/flash",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@glade/core": "workspace:*",
+    "@glade/webgpu": "workspace:*"
+  }
+}

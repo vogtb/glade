@@ -22,6 +22,7 @@
     "Raymarched",
     "RAYMARCH",
     "raymarching",
-    "multisampled"
+    "multisampled",
+    "prepaint"
   ]
 }
