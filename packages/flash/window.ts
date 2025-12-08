@@ -8,7 +8,16 @@
  * 3. paint - emit GPU primitives
  */
 
-import type { WindowId, EntityId, FocusId, Point, Bounds, Color, ContentMask } from "./types.ts";
+import type {
+  WindowId,
+  EntityId,
+  FocusId,
+  Point,
+  Bounds,
+  Color,
+  ContentMask,
+  TransformationMatrix,
+} from "./types.ts";
 import type { FlashViewHandle, FocusHandle } from "./entity.ts";
 import type {
   FlashView,
@@ -480,6 +489,15 @@ export class FlashWindow {
           callback();
         } finally {
           scene.popContentMask();
+        }
+      },
+
+      withTransform: (transform: TransformationMatrix, callback: () => void): void => {
+        scene.pushTransform(transform);
+        try {
+          callback();
+        } finally {
+          scene.popTransform();
         }
       },
     };

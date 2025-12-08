@@ -25,6 +25,8 @@ struct ShadowInstance {
   @location(2) params: vec4<f32>,          // corner_radius, blur, z_index, 0
   @location(3) clip_bounds: vec4<f32>,     // clip_x, clip_y, clip_width, clip_height
   @location(4) clip_params: vec4<f32>,     // clip_corner_radius, has_clip, 0, 0
+  @location(5) transform_ab: vec4<f32>,    // a, b, tx, has_transform
+  @location(6) transform_cd: vec4<f32>,    // c, d, ty, 0
 }
 
 struct VertexOutput {
@@ -51,6 +53,20 @@ var<private> QUAD_VERTICES: array<vec2<f32>, 6> = array<vec2<f32>, 6>(
   vec2<f32>(0.0, 1.0),
 );
 
+// Apply 2D affine transform to a point
+fn apply_transform(pos: vec2<f32>, transform_ab: vec4<f32>, transform_cd: vec4<f32>) -> vec2<f32> {
+  let a = transform_ab.x;
+  let b = transform_ab.y;
+  let tx = transform_ab.z;
+  let c = transform_cd.x;
+  let d = transform_cd.y;
+  let ty = transform_cd.z;
+  return vec2<f32>(
+    a * pos.x + b * pos.y + tx,
+    c * pos.x + d * pos.y + ty
+  );
+}
+
 @vertex
 fn vs_main(
   @builtin(vertex_index) vertex_index: u32,
@@ -60,6 +76,7 @@ fn vs_main(
 
   let quad_pos = QUAD_VERTICES[vertex_index];
   let blur = instance.params.y;
+  let has_transform = instance.transform_ab.w > 0.5;
 
   // Expand the quad to include blur spread (3x blur for smooth falloff)
   let spread = blur * 3.0;
@@ -67,7 +84,12 @@ fn vs_main(
   let expanded_size = instance.pos_size.zw + vec2<f32>(spread * 2.0);
 
   // Calculate world position in logical coordinates
-  let world_pos = expanded_pos + quad_pos * expanded_size;
+  var world_pos = expanded_pos + quad_pos * expanded_size;
+
+  // Apply transform if present
+  if has_transform {
+    world_pos = apply_transform(world_pos, instance.transform_ab, instance.transform_cd);
+  }
 
   // Scale from logical to framebuffer coordinates using DPR (scale factor)
   let scaled_pos = world_pos * uniforms.scale;
@@ -178,14 +200,16 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 `;
 
 /**
- * Instance data layout: 20 floats per instance.
+ * Instance data layout: 28 floats per instance.
  * - pos_size: 4 floats (x, y, width, height)
  * - color: 4 floats (r, g, b, a)
  * - params: 4 floats (corner_radius, blur, z_index, 0)
  * - clip_bounds: 4 floats (x, y, width, height)
  * - clip_params: 4 floats (corner_radius, has_clip, 0, 0)
+ * - transform_ab: 4 floats (a, b, tx, has_transform)
+ * - transform_cd: 4 floats (c, d, ty, 0)
  */
-const FLOATS_PER_INSTANCE = 20;
+const FLOATS_PER_INSTANCE = 28;
 const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
 
 /**
@@ -239,6 +263,8 @@ export class ShadowPipeline {
               { shaderLocation: 2, offset: 32, format: "float32x4" }, // params
               { shaderLocation: 3, offset: 48, format: "float32x4" }, // clip_bounds
               { shaderLocation: 4, offset: 64, format: "float32x4" }, // clip_params
+              { shaderLocation: 5, offset: 80, format: "float32x4" }, // transform_ab
+              { shaderLocation: 6, offset: 96, format: "float32x4" }, // transform_cd
             ],
           },
         ],
@@ -312,6 +338,19 @@ export class ShadowPipeline {
       this.instanceData[offset + 17] = clip ? 1.0 : 0.0;
       this.instanceData[offset + 18] = 0;
       this.instanceData[offset + 19] = 0;
+
+      // transform_ab (a, b, tx, has_transform)
+      const transform = shadow.transform;
+      this.instanceData[offset + 20] = transform?.a ?? 1;
+      this.instanceData[offset + 21] = transform?.b ?? 0;
+      this.instanceData[offset + 22] = transform?.tx ?? 0;
+      this.instanceData[offset + 23] = transform ? 1.0 : 0.0;
+
+      // transform_cd (c, d, ty, 0)
+      this.instanceData[offset + 24] = transform?.c ?? 0;
+      this.instanceData[offset + 25] = transform?.d ?? 1;
+      this.instanceData[offset + 26] = transform?.ty ?? 0;
+      this.instanceData[offset + 27] = 0;
     }
 
     // Upload instance data

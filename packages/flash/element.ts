@@ -10,7 +10,7 @@
  * 3. paint() - Emit GPU primitives using PrepaintState
  */
 
-import type { Bounds, Color, ContentMask } from "./types.ts";
+import type { Bounds, Color, ContentMask, TransformationMatrix } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import type { HitTestNode } from "./dispatch.ts";
@@ -214,6 +214,13 @@ export interface PaintContext {
    * Content painted inside the callback will be clipped to the mask bounds.
    */
   withContentMask(mask: ContentMask, callback: () => void): void;
+
+  /**
+   * Execute a callback with a transform applied.
+   * Primitives painted inside the callback will have the transform applied.
+   * Transforms are composed (multiplied) with any existing transform.
+   */
+  withTransform(transform: TransformationMatrix, callback: () => void): void;
 }
 
 // ============ Element Base Classes ============

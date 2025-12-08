@@ -4,7 +4,8 @@
  * Provides a Tailwind-like styling API for layout and visual properties.
  */
 
-import type { Color } from "./types.ts";
+import type { Color, TransformationMatrix } from "./types.ts";
+import { scaleTransform, rotateTransform, translateTransform } from "./types.ts";
 
 /**
  * Shadow preset names.
@@ -124,6 +125,9 @@ export interface Styles {
   shadow?: ShadowPreset;
   opacity?: number;
 
+  // Transform
+  transform?: TransformationMatrix;
+
   // Text
   color?: Color;
   fontSize?: number;
@@ -173,8 +177,23 @@ export class StyleBuilder {
     return this;
   }
 
-  scale(_v: number): this {
-    // TODO: implement transform scale
+  scale(v: number): this {
+    this.styles.transform = scaleTransform(v);
+    return this;
+  }
+
+  rotate(angleRadians: number): this {
+    this.styles.transform = rotateTransform(angleRadians);
+    return this;
+  }
+
+  translate(x: number, y: number): this {
+    this.styles.transform = translateTransform(x, y);
+    return this;
+  }
+
+  transform(matrix: TransformationMatrix): this {
+    this.styles.transform = matrix;
     return this;
   }
 

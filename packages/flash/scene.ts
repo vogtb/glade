@@ -5,8 +5,8 @@
  * into layers for proper z-ordering (painter's algorithm).
  */
 
-import type { Color, ContentMask, Bounds } from "./types.ts";
-import { boundsIntersect } from "./types.ts";
+import type { Color, ContentMask, Bounds, TransformationMatrix } from "./types.ts";
+import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
 
 /**
  * Clip bounds for shader-based clipping.
@@ -33,6 +33,7 @@ export interface RectPrimitive {
   borderWidth: number;
   borderColor: Color;
   clipBounds?: ClipBounds;
+  transform?: TransformationMatrix;
 }
 
 /**
@@ -49,6 +50,7 @@ export interface ShadowPrimitive {
   offsetX: number;
   offsetY: number;
   clipBounds?: ClipBounds;
+  transform?: TransformationMatrix;
 }
 
 /**
@@ -97,6 +99,7 @@ export class FlashScene {
   private layers: SceneLayer[] = [];
   private currentLayerIndex = 0;
   private clipStack: ContentMask[] = [];
+  private transformStack: TransformationMatrix[] = [];
 
   constructor() {
     this.pushLayer();
@@ -169,6 +172,34 @@ export class FlashScene {
   }
 
   /**
+   * Get the current transform from the transform stack.
+   * Returns identity if no transform is active.
+   */
+  getCurrentTransform(): TransformationMatrix {
+    if (this.transformStack.length === 0) {
+      return IDENTITY_TRANSFORM;
+    }
+    return this.transformStack[this.transformStack.length - 1]!;
+  }
+
+  /**
+   * Push a transform onto the transform stack.
+   * The new transform is composed with the current transform.
+   */
+  pushTransform(transform: TransformationMatrix): void {
+    const current = this.getCurrentTransform();
+    const composed = multiplyTransform(current, transform);
+    this.transformStack.push(composed);
+  }
+
+  /**
+   * Pop a transform from the transform stack.
+   */
+  popTransform(): void {
+    this.transformStack.pop();
+  }
+
+  /**
    * Push a new layer onto the stack.
    */
   pushLayer(): void {
@@ -199,7 +230,19 @@ export class FlashScene {
       return;
     }
     const clipBounds = this.getCurrentClipBounds();
-    this.currentLayer.rects.push({ ...rect, clipBounds });
+    const transform = this.getCurrentTransform();
+    const hasTransform =
+      transform.a !== 1 ||
+      transform.b !== 0 ||
+      transform.c !== 0 ||
+      transform.d !== 1 ||
+      transform.tx !== 0 ||
+      transform.ty !== 0;
+    this.currentLayer.rects.push({
+      ...rect,
+      clipBounds,
+      transform: hasTransform ? transform : undefined,
+    });
   }
 
   /**
@@ -211,7 +254,19 @@ export class FlashScene {
       return;
     }
     const clipBounds = this.getCurrentClipBounds();
-    this.currentLayer.shadows.push({ ...shadow, clipBounds });
+    const transform = this.getCurrentTransform();
+    const hasTransform =
+      transform.a !== 1 ||
+      transform.b !== 0 ||
+      transform.c !== 0 ||
+      transform.d !== 1 ||
+      transform.tx !== 0 ||
+      transform.ty !== 0;
+    this.currentLayer.shadows.push({
+      ...shadow,
+      clipBounds,
+      transform: hasTransform ? transform : undefined,
+    });
   }
 
   /**
@@ -235,6 +290,7 @@ export class FlashScene {
     this.layers = [];
     this.currentLayerIndex = 0;
     this.clipStack = [];
+    this.transformStack = [];
     this.pushLayer();
   }
 

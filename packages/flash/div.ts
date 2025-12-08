@@ -14,7 +14,8 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import type { Bounds, Color, TransformationMatrix } from "./types.ts";
+import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
@@ -507,6 +508,34 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   }
   cursorPointer(): this {
     return this.cursor("pointer");
+  }
+
+  // ============ Transforms ============
+
+  transformMatrix(matrix: TransformationMatrix): this {
+    this.styles.transform = matrix;
+    return this;
+  }
+
+  rotate(angleRadians: number): this {
+    this.styles.transform = rotateTransform(angleRadians);
+    return this;
+  }
+
+  rotateDeg(angleDegrees: number): this {
+    return this.rotate((angleDegrees * Math.PI) / 180);
+  }
+
+  scale(s: number): this;
+  scale(sx: number, sy: number): this;
+  scale(sx: number, sy?: number): this {
+    this.styles.transform = scaleTransform(sx, sy);
+    return this;
+  }
+
+  translate(x: number, y: number): this {
+    this.styles.transform = translateTransform(x, y);
+    return this;
   }
 
   // ============ State Styles ============

@@ -20,6 +20,10 @@ import {
   type Bounds,
   type Color,
   SHADOW_DEFINITIONS,
+  rotateAroundTransform,
+  scaleAroundTransform,
+  multiplyTransform,
+  type TransformationMatrix,
 } from "@glade/flash";
 
 export interface FlashDemoResources {
@@ -45,7 +49,12 @@ interface DivRenderContext {
  * Render a div element tree directly to the scene.
  * This is a simplified version of what FlashWindow does.
  */
-function renderDiv(element: FlashDiv, bounds: Bounds, ctx: DivRenderContext): void {
+function renderDiv(
+  element: FlashDiv,
+  bounds: Bounds,
+  ctx: DivRenderContext,
+  transform?: TransformationMatrix
+): void {
   // Access internal styles via a workaround (in a real app, we'd use the proper paint context)
   // TypeScript's private is only compile-time, so runtime access works
   const elementAny = element as unknown as {
@@ -54,6 +63,14 @@ function renderDiv(element: FlashDiv, bounds: Bounds, ctx: DivRenderContext): vo
     activeStyles: Record<string, unknown> | null;
   };
   const styles = elementAny.styles || {};
+  const elementTransform = styles.transform as TransformationMatrix | undefined;
+
+  // Compose transforms if both are present
+  const effectiveTransform = elementTransform
+    ? transform
+      ? multiplyTransform(transform, elementTransform)
+      : elementTransform
+    : transform;
 
   const isHovered =
     ctx.mouseX >= bounds.x &&
@@ -90,6 +107,7 @@ function renderDiv(element: FlashDiv, bounds: Bounds, ctx: DivRenderContext): vo
         blur: def.blur,
         offsetX: 0,
         offsetY: def.offsetY,
+        transform: effectiveTransform,
       });
     }
   }
@@ -111,6 +129,7 @@ function renderDiv(element: FlashDiv, bounds: Bounds, ctx: DivRenderContext): vo
       cornerRadius: (effectiveStyles.borderRadius as number) ?? 0,
       borderWidth: (effectiveStyles.borderWidth as number) ?? 0,
       borderColor: (effectiveStyles.borderColor as Color) ?? { r: 0, g: 0, b: 0, a: 0 },
+      transform: effectiveTransform,
     });
   }
 
@@ -127,6 +146,7 @@ function renderDiv(element: FlashDiv, bounds: Bounds, ctx: DivRenderContext): vo
       cornerRadius: (effectiveStyles.borderRadius as number) ?? 0,
       borderWidth,
       borderColor,
+      transform: effectiveTransform,
     });
   }
 }
@@ -444,6 +464,10 @@ function buildDemoScene(
 
   buildClippingDemo(scene, width, time, ctx);
 
+  // ============ Transform Demo (demonstrates rotation, scale, translation) ============
+
+  buildTransformDemo(scene, width, height, time, ctx);
+
   // ============ Flexbox Layout Demo (using Taffy layout engine) ============
 
   buildFlexboxDemo(scene, layoutEngine, width, height, time, ctx);
@@ -533,6 +557,104 @@ function buildClippingDemo(
     x: clipDemoX,
     y: clipDemoY + clipHeight + 10,
     width: clipWidth,
+    height: 24,
+    color: { r: 0.1, g: 0.1, b: 0.15, a: 0.8 },
+    cornerRadius: 4,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+}
+
+/**
+ * Build a transform demo to show rotation, scale, and translation.
+ */
+function buildTransformDemo(
+  scene: FlashScene,
+  _width: number,
+  height: number,
+  time: number,
+  ctx: DivRenderContext
+): void {
+  // Position below the clipping demo on the left side
+  const demoX = 20;
+  const demoY = height - 200;
+  const demoWidth = 200;
+  const demoHeight = 160;
+
+  // Draw container background
+  scene.addRect({
+    x: demoX,
+    y: demoY,
+    width: demoWidth,
+    height: demoHeight,
+    color: { r: 0.12, g: 0.12, b: 0.18, a: 0.95 },
+    cornerRadius: 12,
+    borderWidth: 1,
+    borderColor: { r: 0.3, g: 0.3, b: 0.4, a: 1 },
+  });
+
+  // ============ Rotating Rectangles ============
+  const centerX = demoX + demoWidth / 2;
+  const centerY = demoY + demoHeight / 2;
+
+  // Draw multiple rotating rectangles with different phases
+  const numRects = 4;
+  const rectSize = 40;
+
+  for (let i = 0; i < numRects; i++) {
+    const angle = time * (1 + i * 0.3) + (i * Math.PI) / 2;
+    const distance = 35 + i * 5;
+    const rectX = centerX + Math.cos(angle) * distance - rectSize / 2;
+    const rectY = centerY + Math.sin(angle) * distance - rectSize / 2;
+
+    // Create rotation around the rect's center
+    const rectCenterX = rectX + rectSize / 2;
+    const rectCenterY = rectY + rectSize / 2;
+    const rotationAngle = time * 2 + i * 0.5;
+    const rotateTransform = rotateAroundTransform(rotationAngle, rectCenterX, rectCenterY);
+
+    // Animated scale
+    const scaleValue = 0.7 + Math.sin(time * 3 + i) * 0.3;
+    const scaleT = scaleAroundTransform(scaleValue, scaleValue, rectCenterX, rectCenterY);
+
+    // Combine rotation and scale
+    const combinedTransform = multiplyTransform(rotateTransform, scaleT);
+
+    const hue = (i / numRects + time * 0.1) % 1;
+    const rectColor = hslToRgb(hue, 0.7, 0.5);
+
+    const rectDiv = div().bg(rectColor).rounded(6);
+
+    renderDiv(
+      rectDiv,
+      { x: rectX, y: rectY, width: rectSize, height: rectSize },
+      ctx,
+      combinedTransform
+    );
+  }
+
+  // ============ Pulsing/Scaling Center Element ============
+  const pulseScale = 0.8 + Math.sin(time * 4) * 0.2;
+  const pulseSize = 30;
+  const pulseX = centerX - pulseSize / 2;
+  const pulseY = centerY - pulseSize / 2;
+
+  const pulseTransform = scaleAroundTransform(pulseScale, pulseScale, centerX, centerY);
+
+  const pulseDiv = div().bg(rgb(0xffffff)).roundedFull();
+
+  renderDiv(
+    pulseDiv,
+    { x: pulseX, y: pulseY, width: pulseSize, height: pulseSize },
+    ctx,
+    pulseTransform
+  );
+
+  // Label below
+  scene.addRect({
+    x: demoX,
+    y: demoY + demoHeight + 10,
+    width: demoWidth,
     height: 24,
     color: { r: 0.1, g: 0.1, b: 0.15, a: 0.8 },
     cornerRadius: 4,

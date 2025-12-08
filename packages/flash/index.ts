@@ -22,9 +22,25 @@ export type {
   Color,
   FlashTask,
   ContentMask,
+  TransformationMatrix,
 } from "./types.ts";
 
-export { rgb, rgba, color, boundsContains, boundsIntersect, boundsIsEmpty } from "./types.ts";
+export {
+  rgb,
+  rgba,
+  color,
+  boundsContains,
+  boundsIntersect,
+  boundsIsEmpty,
+  IDENTITY_TRANSFORM,
+  translateTransform,
+  scaleTransform,
+  rotateTransform,
+  multiplyTransform,
+  transformPoint,
+  rotateAroundTransform,
+  scaleAroundTransform,
+} from "./types.ts";
 
 // Layout engine
 export type { LayoutId, AvailableSpace, AvailableSpaceValue } from "./layout.ts";
