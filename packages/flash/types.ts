@@ -12,6 +12,9 @@ export type WindowId = number & { [__windowIdBrand]: true };
 declare const __focusIdBrand: unique symbol;
 export type FocusId = number & { [__focusIdBrand]: true };
 
+declare const __scrollHandleIdBrand: unique symbol;
+export type ScrollHandleId = number & { [__scrollHandleIdBrand]: true };
+
 /**
  * 2D point.
  */
@@ -136,6 +139,62 @@ export function boundsIntersect(a: Bounds, b: Bounds): Bounds | null {
  */
 export function boundsIsEmpty(bounds: Bounds): boolean {
   return bounds.width <= 0 || bounds.height <= 0;
+}
+
+// ============ Scroll Types ============
+
+/**
+ * Scroll offset representing the current scroll position.
+ */
+export interface ScrollOffset {
+  x: number;
+  y: number;
+}
+
+/**
+ * Scroll state for a scroll container.
+ */
+export interface ScrollState {
+  offset: ScrollOffset;
+  contentSize: Size;
+  viewportSize: Size;
+  velocityX: number;
+  velocityY: number;
+}
+
+/**
+ * Create an empty scroll state.
+ */
+export function createScrollState(): ScrollState {
+  return {
+    offset: { x: 0, y: 0 },
+    contentSize: { width: 0, height: 0 },
+    viewportSize: { width: 0, height: 0 },
+    velocityX: 0,
+    velocityY: 0,
+  };
+}
+
+/**
+ * Clamp scroll offset to valid range based on content and viewport sizes.
+ */
+export function clampScrollOffset(state: ScrollState): ScrollOffset {
+  const maxX = Math.max(0, state.contentSize.width - state.viewportSize.width);
+  const maxY = Math.max(0, state.contentSize.height - state.viewportSize.height);
+  return {
+    x: Math.max(0, Math.min(state.offset.x, maxX)),
+    y: Math.max(0, Math.min(state.offset.y, maxY)),
+  };
+}
+
+/**
+ * Check if content is scrollable in either direction.
+ */
+export function isScrollable(state: ScrollState): { x: boolean; y: boolean } {
+  return {
+    x: state.contentSize.width > state.viewportSize.width,
+    y: state.contentSize.height > state.viewportSize.height,
+  };
 }
 
 // ============ 2D Transforms ============

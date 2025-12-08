@@ -190,7 +190,11 @@ export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWe
 
     onScroll(callback: ScrollCallback): () => void {
       const cleanup = glfw.setScrollCallback(window, (_win, deltaX, deltaY) => {
-        callback({ deltaX, deltaY });
+        // GLFW: positive yoffset = scroll up (wheel toward user / trackpad swipe down in natural mode)
+        // Our convention: positive deltaY = scroll down (increase offset, see content below)
+        // So we negate the GLFW values. GLFW gives raw ticks (~1-3), scale up to match pixels.
+        const scale = 3.5;
+        callback({ deltaX: -deltaX * scale, deltaY: -deltaY * scale });
       });
       cleanups.push(cleanup);
       return () => {
@@ -508,7 +512,11 @@ export async function createWebGPUContext(
 
     onScroll(callback: ScrollCallback): () => void {
       const cleanup = glfw.setScrollCallback(window, (_win, deltaX, deltaY) => {
-        callback({ deltaX, deltaY });
+        // GLFW: positive yoffset = scroll up (wheel toward user / trackpad swipe down in natural mode)
+        // Our convention: positive deltaY = scroll down (increase offset, see content below)
+        // So we negate the GLFW values. GLFW gives raw ticks (~1-3), scale up to match pixels.
+        const scale = 3.5;
+        callback({ deltaX: -deltaX * scale, deltaY: -deltaY * scale });
       });
       cleanups.push(cleanup);
       return () => {

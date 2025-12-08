@@ -32,6 +32,8 @@ export interface FlashDemoResources {
   shadowPipeline: ShadowPipeline;
   scene: FlashScene;
   layoutEngine: FlashLayoutEngine;
+  scrollOffset: { x: number; y: number };
+  scrollMaxY: number;
 }
 
 /**
@@ -176,13 +178,47 @@ export function initFlashDemo(ctx: WebGPUContext, format: GPUTextureFormat): Fla
   // Create layout engine (Taffy-powered flexbox)
   const layoutEngine = new FlashLayoutEngine();
 
+  // Initialize scroll offset
+  const scrollOffset = { x: 0, y: 0 };
+
+  // Calculate max scroll for the scroll demo
+  // Content: 12 items * (35 height + 8 gap) + 20 padding = 536
+  // Viewport: 180
+  // Max scroll: 536 - 180 = 356
+  const numItems = 12;
+  const itemHeight = 35;
+  const itemGap = 8;
+  const itemPadding = 10;
+  const contentHeight = numItems * (itemHeight + itemGap) + itemPadding * 2;
+  const viewportHeight = 180;
+  const scrollMaxY = Math.max(0, contentHeight - viewportHeight);
+
   return {
     renderer,
     rectPipeline,
     shadowPipeline,
     scene,
     layoutEngine,
+    scrollOffset,
+    scrollMaxY,
   };
+}
+
+/**
+ * Handle scroll input for the Flash demo.
+ */
+export function handleFlashScroll(
+  resources: FlashDemoResources,
+  deltaX: number,
+  deltaY: number
+): void {
+  // Positive delta = scroll down = increase offset (see content below)
+  // This matches natural scrolling (two-finger swipe up -> see content below)
+  resources.scrollOffset.x += deltaX;
+  resources.scrollOffset.y += deltaY;
+  // Clamp scroll offset to valid range
+  resources.scrollOffset.x = Math.max(0, Math.min(resources.scrollOffset.x, 0)); // No horizontal scroll
+  resources.scrollOffset.y = Math.max(0, Math.min(resources.scrollOffset.y, resources.scrollMaxY));
 }
 
 /**
@@ -197,7 +233,7 @@ export function renderFlashDemo(
   mouseY: number
 ): void {
   const { context } = ctx;
-  const { renderer, scene, layoutEngine } = resources;
+  const { renderer, scene, layoutEngine, scrollOffset } = resources;
 
   // Clear scene for new frame
   scene.clear();
@@ -216,7 +252,16 @@ export function renderFlashDemo(
   const logicalWidth = ctxAny.windowWidth ?? ctx.width;
   const logicalHeight = ctxAny.windowHeight ?? ctx.height;
 
-  buildDemoScene(scene, layoutEngine, logicalWidth, logicalHeight, time, mouseX, mouseY);
+  buildDemoScene(
+    scene,
+    layoutEngine,
+    logicalWidth,
+    logicalHeight,
+    time,
+    mouseX,
+    mouseY,
+    scrollOffset
+  );
 
   // Render scene - use logical coordinates for UI, framebuffer size for GPU viewport
   const texture = context.getCurrentTexture();
@@ -248,7 +293,8 @@ function buildDemoScene(
   height: number,
   time: number,
   mouseX: number,
-  mouseY: number
+  mouseY: number,
+  scrollOffset: { x: number; y: number }
 ): void {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -471,6 +517,10 @@ function buildDemoScene(
   // ============ Flexbox Layout Demo (using Taffy layout engine) ============
 
   buildFlexboxDemo(scene, layoutEngine, width, height, time, ctx);
+
+  // ============ Scroll Demo (demonstrates scrollable content) ============
+
+  buildScrollDemo(scene, width, height, scrollOffset, ctx);
 }
 
 /**
@@ -950,5 +1000,139 @@ function buildFlexboxDemo(
         ctx
       );
     }
+  }
+}
+
+/**
+ * Build a scroll demo to demonstrate scrollable content.
+ * Shows a scrollable container with content that extends beyond the viewport.
+ * Use mouse wheel to scroll the content.
+ */
+function buildScrollDemo(
+  scene: FlashScene,
+  width: number,
+  _height: number,
+  scrollOffset: { x: number; y: number },
+  _ctx: DivRenderContext
+): void {
+  // Position at bottom-left area
+  const containerX = 20;
+  const containerY = 260;
+  const containerWidth = 200;
+  const containerHeight = 180;
+
+  // Draw the scroll container background (visible boundary)
+  scene.addRect({
+    x: containerX,
+    y: containerY,
+    width: containerWidth,
+    height: containerHeight,
+    color: { r: 0.12, g: 0.14, b: 0.18, a: 1 },
+    cornerRadius: 12,
+    borderWidth: 2,
+    borderColor: { r: 0.3, g: 0.4, b: 0.5, a: 1 },
+  });
+
+  // Draw a label above the container
+  scene.addRect({
+    x: containerX,
+    y: containerY - 25,
+    width: 140,
+    height: 20,
+    color: { r: 0.2, g: 0.3, b: 0.4, a: 0.8 },
+    cornerRadius: 4,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // Push content mask for clipping
+  scene.pushContentMask({
+    bounds: { x: containerX, y: containerY, width: containerWidth, height: containerHeight },
+    cornerRadius: 12,
+  });
+
+  // Content items (many items that extend beyond the viewport)
+  const numItems = 12;
+  const itemHeight = 35;
+  const itemGap = 8;
+  const itemPadding = 10;
+  const contentHeight = numItems * (itemHeight + itemGap) + itemPadding * 2;
+
+  // Clamp scroll offset to content bounds
+  const maxScroll = Math.max(0, contentHeight - containerHeight);
+  const clampedScrollY = Math.min(Math.max(0, scrollOffset.y), maxScroll);
+
+  // Draw content items with scroll offset applied
+  for (let i = 0; i < numItems; i++) {
+    const itemY = containerY + itemPadding + i * (itemHeight + itemGap) - clampedScrollY;
+    const itemWidth = containerWidth - itemPadding * 2;
+
+    // Skip items completely outside the viewport
+    if (itemY + itemHeight < containerY || itemY > containerY + containerHeight) {
+      continue;
+    }
+
+    // Calculate item color (gradient)
+    const hue = i / numItems;
+    const itemColor = hslToRgb(hue, 0.6, 0.45);
+
+    scene.addRect({
+      x: containerX + itemPadding,
+      y: itemY,
+      width: itemWidth,
+      height: itemHeight,
+      color: itemColor,
+      cornerRadius: 8,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+
+    // Inner highlight
+    scene.addRect({
+      x: containerX + itemPadding + 8,
+      y: itemY + 8,
+      width: itemWidth * 0.6,
+      height: 6,
+      color: { r: 1, g: 1, b: 1, a: 0.3 },
+      cornerRadius: 3,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // Pop the content mask
+  scene.popContentMask();
+
+  // Draw scroll indicator (scrollbar)
+  if (contentHeight > containerHeight) {
+    const scrollbarWidth = 6;
+    const scrollbarX = containerX + containerWidth - scrollbarWidth - 4;
+    const scrollbarHeight = containerHeight - 16;
+    const thumbHeight = Math.max(20, (containerHeight / contentHeight) * scrollbarHeight);
+    const thumbY = containerY + 8 + (clampedScrollY / maxScroll) * (scrollbarHeight - thumbHeight);
+
+    // Scrollbar track
+    scene.addRect({
+      x: scrollbarX,
+      y: containerY + 8,
+      width: scrollbarWidth,
+      height: scrollbarHeight,
+      color: { r: 0.2, g: 0.2, b: 0.25, a: 0.5 },
+      cornerRadius: 3,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+
+    // Scrollbar thumb
+    scene.addRect({
+      x: scrollbarX,
+      y: thumbY,
+      width: scrollbarWidth,
+      height: thumbHeight,
+      color: { r: 0.5, g: 0.6, b: 0.7, a: 0.8 },
+      cornerRadius: 3,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
   }
 }

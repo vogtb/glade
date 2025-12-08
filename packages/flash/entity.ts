@@ -5,7 +5,7 @@
  * access to entities - they're inert without a context.
  */
 
-import type { EntityId, FocusId, WindowId } from "./types.ts";
+import type { EntityId, FocusId, WindowId, ScrollHandleId, ScrollOffset } from "./types.ts";
 import type { FlashReadContext, FlashContext, FlashEntityContext } from "./context.ts";
 import type { FlashView } from "./element.ts";
 
@@ -111,5 +111,37 @@ export class FocusHandle {
    */
   blur(cx: FlashContext): void {
     cx.blur(this);
+  }
+}
+
+/**
+ * Handle for managing scroll state.
+ * Provides external control over a scroll container's offset.
+ */
+export class ScrollHandle {
+  constructor(
+    readonly id: ScrollHandleId,
+    readonly windowId: WindowId
+  ) {}
+
+  /**
+   * Get the current scroll offset.
+   */
+  getOffset(cx: FlashReadContext): ScrollOffset {
+    return cx.getScrollOffset(this);
+  }
+
+  /**
+   * Set the scroll offset.
+   */
+  setOffset(cx: FlashContext, offset: ScrollOffset): void {
+    cx.setScrollOffset(this, offset);
+  }
+
+  /**
+   * Scroll by a delta amount.
+   */
+  scrollBy(cx: FlashContext, deltaX: number, deltaY: number): void {
+    cx.scrollBy(this, deltaX, deltaY);
   }
 }

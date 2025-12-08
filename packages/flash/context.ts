@@ -5,11 +5,12 @@
  * are available in different situations (reading, updating, rendering).
  */
 
-import type { EntityId, FocusId, WindowId, FlashTask } from "./types.ts";
+import type { EntityId, FocusId, WindowId, FlashTask, ScrollOffset } from "./types.ts";
 import type {
   FlashHandle,
   FlashViewHandle,
   FocusHandle,
+  ScrollHandle,
   ObserverHandle,
   SubscriberHandle,
 } from "./entity.ts";
@@ -40,6 +41,11 @@ export interface FlashReadContext {
    * Check if a focus handle currently has focus.
    */
   isFocused(handle: FocusHandle): boolean;
+
+  /**
+   * Get the current scroll offset for a scroll handle.
+   */
+  getScrollOffset(handle: ScrollHandle): ScrollOffset;
 }
 
 /**
@@ -98,6 +104,23 @@ export interface FlashContext extends FlashReadContext {
    * Create a new focus handle for a window.
    */
   newFocusHandle(windowId: WindowId): FocusHandle;
+
+  // Scroll
+
+  /**
+   * Create a new scroll handle for a window.
+   */
+  newScrollHandle(windowId: WindowId): ScrollHandle;
+
+  /**
+   * Set the scroll offset for a scroll handle.
+   */
+  setScrollOffset(handle: ScrollHandle, offset: ScrollOffset): void;
+
+  /**
+   * Scroll by a delta amount.
+   */
+  scrollBy(handle: ScrollHandle, deltaX: number, deltaY: number): void;
 
   // Async
 

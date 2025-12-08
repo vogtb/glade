@@ -5,11 +5,12 @@
  * the render cycle across windows.
  */
 
-import type { EntityId, WindowId, FocusId, FlashTask } from "./types.ts";
+import type { EntityId, WindowId, FocusId, FlashTask, ScrollOffset } from "./types.ts";
 import {
   FlashHandle,
   FlashViewHandle,
   FocusHandle,
+  ScrollHandle,
   ObserverHandle,
   SubscriberHandle,
   type EntityMeta,
@@ -270,6 +271,32 @@ export class FlashApp {
     return window?.isFocused(handle.id) ?? false;
   }
 
+  // ============ Scroll ============
+
+  newScrollHandle(windowId: WindowId): ScrollHandle {
+    const window = this.windows.get(windowId);
+    if (!window) {
+      throw new Error(`Window ${windowId} not found`);
+    }
+    const id = window.allocateScrollHandleId();
+    return new ScrollHandle(id, windowId);
+  }
+
+  getScrollOffset(handle: ScrollHandle): ScrollOffset {
+    const window = this.windows.get(handle.windowId);
+    return window?.getScrollOffset(handle.id) ?? { x: 0, y: 0 };
+  }
+
+  setScrollOffset(handle: ScrollHandle, offset: ScrollOffset): void {
+    const window = this.windows.get(handle.windowId);
+    window?.setScrollOffset(handle.id, offset);
+  }
+
+  scrollBy(handle: ScrollHandle, deltaX: number, deltaY: number): void {
+    const window = this.windows.get(handle.windowId);
+    window?.scrollBy(handle.id, deltaX, deltaY);
+  }
+
   // ============ Effect Queue ============
 
   queueEffect(effect: FlashEffect): void {
@@ -464,6 +491,22 @@ class FlashAppContext implements FlashContext {
 
   newFocusHandle(windowId: WindowId): FocusHandle {
     return this.app.newFocusHandle(windowId);
+  }
+
+  newScrollHandle(windowId: WindowId): ScrollHandle {
+    return this.app.newScrollHandle(windowId);
+  }
+
+  getScrollOffset(handle: ScrollHandle): ScrollOffset {
+    return this.app.getScrollOffset(handle);
+  }
+
+  setScrollOffset(handle: ScrollHandle, offset: ScrollOffset): void {
+    this.app.setScrollOffset(handle, offset);
+  }
+
+  scrollBy(handle: ScrollHandle, deltaX: number, deltaY: number): void {
+    this.app.scrollBy(handle, deltaX, deltaY);
   }
 
   spawn<T>(_future: Promise<T>): FlashTask<T> {

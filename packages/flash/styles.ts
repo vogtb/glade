@@ -203,6 +203,20 @@ export class StyleBuilder {
 }
 
 /**
+ * Check if overflow style enables scrolling.
+ */
+export function overflowAllowsScroll(overflow: Overflow | undefined): boolean {
+  return overflow === "scroll" || overflow === "auto";
+}
+
+/**
+ * Check if overflow style clips content.
+ */
+export function overflowClipsContent(overflow: Overflow | undefined): boolean {
+  return overflow === "hidden" || overflow === "scroll" || overflow === "auto";
+}
+
+/**
  * Shadow definitions for each preset.
  */
 export const SHADOW_DEFINITIONS: Record<

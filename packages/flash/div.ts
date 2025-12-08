@@ -14,8 +14,9 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color, TransformationMatrix } from "./types.ts";
+import type { Bounds, Color, TransformationMatrix, ScrollOffset } from "./types.ts";
 import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
+import { overflowClipsContent } from "./styles.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
@@ -27,7 +28,7 @@ import type {
   KeyHandler,
   ScrollHandler,
 } from "./dispatch.ts";
-import type { FocusHandle } from "./entity.ts";
+import type { FocusHandle, ScrollHandle } from "./entity.ts";
 
 /**
  * State passed from requestLayout to prepaint for FlashDiv.
@@ -59,6 +60,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private focusedStyles: Partial<Styles> | null = null;
   private handlers: EventHandlers = {};
   private focusHandleRef: FocusHandle | null = null;
+  private scrollHandleRef: ScrollHandle | null = null;
   private keyContextValue: string | null = null;
 
   // ============ Layout Styles (Tailwind-like API) ============
@@ -614,6 +616,13 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  // ============ Scroll ============
+
+  trackScroll(handle: ScrollHandle): this {
+    this.scrollHandleRef = handle;
+    return this;
+  }
+
   // ============ Three-Phase Lifecycle ============
 
   /**
@@ -721,15 +730,51 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     }
 
     const childBounds = cx.getChildLayouts(bounds, childLayoutIds);
-    for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i]!;
-      const childId = childElementIds[i]!;
-      const childBound = childBounds[i]!;
-      const childPrepaintState = childPrepaintStates[i];
 
-      const childCx = cx.withElementId(childId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (child as FlashElement<any, any>).paint(childCx, childBound, childPrepaintState);
+    // Determine if we need to apply scroll and/or clipping
+    const shouldClip = overflowClipsContent(effectiveStyles.overflow);
+    const isScrollContainer = this.scrollHandleRef != null;
+
+    // Get scroll offset if this is a scroll container
+    let scrollOffset: ScrollOffset | null = null;
+    if (isScrollContainer && this.scrollHandleRef) {
+      scrollOffset = cx.getScrollOffset(this.scrollHandleRef);
+    }
+
+    // Paint children with optional clipping and scroll transform
+    const paintChildren = () => {
+      for (let i = 0; i < this.children.length; i++) {
+        const child = this.children[i]!;
+        const childId = childElementIds[i]!;
+        let childBound = childBounds[i]!;
+        const childPrepaintState = childPrepaintStates[i];
+
+        // Apply scroll offset to child bounds
+        if (scrollOffset) {
+          childBound = {
+            x: childBound.x - scrollOffset.x,
+            y: childBound.y - scrollOffset.y,
+            width: childBound.width,
+            height: childBound.height,
+          };
+        }
+
+        const childCx = cx.withElementId(childId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (child as FlashElement<any, any>).paint(childCx, childBound, childPrepaintState);
+      }
+    };
+
+    if (shouldClip) {
+      cx.withContentMask(
+        {
+          bounds,
+          cornerRadius: effectiveStyles.borderRadius ?? 0,
+        },
+        paintChildren
+      );
+    } else {
+      paintChildren();
     }
   }
 
@@ -751,6 +796,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       bounds,
       handlers: this.handlers,
       focusHandle: this.focusHandleRef,
+      scrollHandle: this.scrollHandleRef,
       keyContext: this.keyContextValue,
       children: childNodes,
     };

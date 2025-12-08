@@ -197,12 +197,18 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
 
     onScroll(callback: ScrollCallback): () => void {
       const handleWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        // Browser deltaY > 0 means scroll down, which matches our convention
+        // (positive delta = increase scroll offset = see content below)
+        // Chrome applies ~40x multiplier to discrete wheel events (kScrollbarPixelsPerCocoaTick)
+        // and trackpad events include macOS acceleration. Scale down significantly.
+        const scale = 0.3;
         callback({
-          deltaX: e.deltaX,
-          deltaY: e.deltaY,
+          deltaX: e.deltaX * scale,
+          deltaY: e.deltaY * scale,
         });
       };
-      canvas.addEventListener("wheel", handleWheel);
+      canvas.addEventListener("wheel", handleWheel, { passive: false });
       return () => canvas.removeEventListener("wheel", handleWheel);
     },
 
@@ -561,12 +567,18 @@ export async function createWebGPUContext(
 
     onScroll(callback: ScrollCallback): () => void {
       const handleWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        // Browser deltaY > 0 means scroll down, which matches our convention
+        // (positive delta = increase scroll offset = see content below)
+        // Chrome applies ~40x multiplier to discrete wheel events (kScrollbarPixelsPerCocoaTick)
+        // and trackpad events include macOS acceleration. Scale down significantly.
+        const scale = 0.3;
         callback({
-          deltaX: e.deltaX,
-          deltaY: e.deltaY,
+          deltaX: e.deltaX * scale,
+          deltaY: e.deltaY * scale,
         });
       };
-      canvas.addEventListener("wheel", handleWheel);
+      canvas.addEventListener("wheel", handleWheel, { passive: false });
       return () => canvas.removeEventListener("wheel", handleWheel);
     },
 

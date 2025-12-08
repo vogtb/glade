@@ -5,7 +5,7 @@
  */
 
 import type { Bounds, Point } from "./types.ts";
-import type { FocusHandle } from "./entity.ts";
+import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { FlashContext } from "./context.ts";
 import type { FlashWindow } from "./window.ts";
 
@@ -145,6 +145,7 @@ export interface HitTestNode {
   bounds: Bounds;
   handlers: EventHandlers;
   focusHandle: FocusHandle | null;
+  scrollHandle: ScrollHandle | null;
   keyContext: string | null;
   children: HitTestNode[];
 }
@@ -251,6 +252,37 @@ export function dispatchKeyEvent(
       if (result?.stopPropagation) {
         return;
       }
+    }
+  }
+}
+
+/**
+ * Dispatch a scroll event through the hit test path.
+ * First tries custom scroll handlers, then applies to scroll containers.
+ */
+export function dispatchScrollEvent(
+  event: FlashScrollEvent,
+  path: HitTestNode[],
+  window: FlashWindow,
+  cx: FlashContext
+): void {
+  // Bubble phase (target to root)
+  for (let i = path.length - 1; i >= 0; i--) {
+    const node = path[i]!;
+
+    // First try custom scroll handler
+    const handler = node.handlers.scroll;
+    if (handler) {
+      const result = handler(event, window, cx);
+      if (result?.stopPropagation) {
+        return;
+      }
+    }
+
+    // If this node has a scroll handle, apply scroll to it
+    if (node.scrollHandle) {
+      cx.scrollBy(node.scrollHandle, event.deltaX, event.deltaY);
+      return;
     }
   }
 }

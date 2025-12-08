@@ -16,6 +16,7 @@ export type {
   EntityId,
   WindowId,
   FocusId,
+  ScrollHandleId,
   Point,
   Size,
   Bounds,
@@ -23,6 +24,8 @@ export type {
   FlashTask,
   ContentMask,
   TransformationMatrix,
+  ScrollOffset,
+  ScrollState,
 } from "./types.ts";
 
 export {
@@ -40,6 +43,9 @@ export {
   transformPoint,
   rotateAroundTransform,
   scaleAroundTransform,
+  createScrollState,
+  clampScrollOffset,
+  isScrollable,
 } from "./types.ts";
 
 // Layout engine
@@ -52,6 +58,7 @@ export {
   FlashHandle,
   FlashViewHandle,
   FocusHandle,
+  ScrollHandle,
   ObserverHandle,
   SubscriberHandle,
 } from "./entity.ts";
@@ -84,7 +91,12 @@ export type {
   ShadowPreset,
 } from "./styles.ts";
 
-export { StyleBuilder, SHADOW_DEFINITIONS } from "./styles.ts";
+export {
+  StyleBuilder,
+  SHADOW_DEFINITIONS,
+  overflowAllowsScroll,
+  overflowClipsContent,
+} from "./styles.ts";
 
 // Elements
 export type {
@@ -131,7 +143,13 @@ export type {
   HitTestNode,
 } from "./dispatch.ts";
 
-export { hitTest, dispatchMouseEvent, dispatchClickEvent, dispatchKeyEvent } from "./dispatch.ts";
+export {
+  hitTest,
+  dispatchMouseEvent,
+  dispatchClickEvent,
+  dispatchKeyEvent,
+  dispatchScrollEvent,
+} from "./dispatch.ts";
 
 // Window
 export type { WindowOptions, FlashPlatform, FlashRenderTarget } from "./window.ts";

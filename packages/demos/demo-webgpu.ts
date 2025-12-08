@@ -9,7 +9,12 @@ import { initGalaxyDemo, renderGalaxy } from "./galaxy";
 import { initFluidDemo, renderFluid } from "./fluid";
 import { initPostProcessDemo, renderPostProcess } from "./postprocess";
 import { initTerrainDemo } from "./terrain";
-import { initFlashDemo, renderFlashDemo, type FlashDemoResources } from "./flash";
+import {
+  initFlashDemo,
+  renderFlashDemo,
+  handleFlashScroll,
+  type FlashDemoResources,
+} from "./flash";
 import type { DemoResources } from "./common";
 
 type RenderFn<T> = (
@@ -149,6 +154,14 @@ async function main() {
   ctx.onCursorMove((event) => {
     mouseX = event.x;
     mouseY = event.y;
+  });
+
+  // Hook up scroll events for Flash demo
+  const flashDemo = demos.find((d) => d.name === "Flash GUI") as Demo<FlashDemoResources>;
+  ctx.onScroll((event) => {
+    if (flashDemo) {
+      handleFlashScroll(flashDemo.resources, event.deltaX, event.deltaY);
+    }
   });
 
   let currentDemoIndex = 0;

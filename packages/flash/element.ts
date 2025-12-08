@@ -15,7 +15,8 @@ import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { FlashViewContext } from "./context.ts";
-import type { FocusHandle } from "./entity.ts";
+import type { FocusHandle, ScrollHandle } from "./entity.ts";
+import type { ScrollOffset } from "./types.ts";
 import type { FlashScene } from "./scene.ts";
 
 // ============ Element Identity Types ============
@@ -163,6 +164,11 @@ export interface PaintContext {
    * Check if the given focus handle is focused.
    */
   isFocused(handle: FocusHandle): boolean;
+
+  /**
+   * Get the current scroll offset for a scroll handle.
+   */
+  getScrollOffset(handle: ScrollHandle): ScrollOffset;
 
   /**
    * Get the computed bounds for child layout IDs.

@@ -17,8 +17,12 @@ import type {
   Color,
   ContentMask,
   TransformationMatrix,
+  ScrollHandleId,
+  ScrollOffset,
+  ScrollState,
 } from "./types.ts";
-import type { FlashViewHandle, FocusHandle } from "./entity.ts";
+import { createScrollState, clampScrollOffset } from "./types.ts";
+import type { FlashViewHandle, FocusHandle, ScrollHandle } from "./entity.ts";
 import type {
   FlashView,
   RequestLayoutContext,
@@ -27,8 +31,19 @@ import type {
   GlobalElementId,
 } from "./element.ts";
 import type { FlashContext } from "./context.ts";
-import type { HitTestNode, FlashMouseEvent, FlashClickEvent, Modifiers } from "./dispatch.ts";
-import { hitTest, dispatchMouseEvent, dispatchClickEvent } from "./dispatch.ts";
+import type {
+  HitTestNode,
+  FlashMouseEvent,
+  FlashClickEvent,
+  FlashScrollEvent,
+  Modifiers,
+} from "./dispatch.ts";
+import {
+  hitTest,
+  dispatchMouseEvent,
+  dispatchClickEvent,
+  dispatchScrollEvent,
+} from "./dispatch.ts";
 import { FlashScene } from "./scene.ts";
 import type { Styles } from "./styles.ts";
 import { SHADOW_DEFINITIONS } from "./styles.ts";
@@ -83,6 +98,9 @@ export interface FlashRenderTarget {
   onClick?(
     callback: (x: number, y: number, clickCount: number, mods: Modifiers) => void
   ): () => void;
+  onScroll?(
+    callback: (x: number, y: number, deltaX: number, deltaY: number, mods: Modifiers) => void
+  ): () => void;
 }
 
 /**
@@ -100,6 +118,9 @@ export class FlashWindow {
   private elementState = new Map<GlobalElementId, unknown>();
   private visitedElementIds = new Set<GlobalElementId>();
   private nextElementId = 1;
+
+  private scrollStates = new Map<ScrollHandleId, ScrollState>();
+  private nextScrollHandleId = 1;
 
   constructor(
     readonly id: WindowId,
@@ -163,6 +184,73 @@ export class FlashWindow {
    */
   isFocused(focusId: FocusId): boolean {
     return this.focusStack.includes(focusId);
+  }
+
+  // ============ Scroll State Management ============
+
+  /**
+   * Allocate a new scroll handle ID.
+   */
+  allocateScrollHandleId(): ScrollHandleId {
+    return this.nextScrollHandleId++ as ScrollHandleId;
+  }
+
+  /**
+   * Get the scroll offset for a scroll handle.
+   */
+  getScrollOffset(scrollId: ScrollHandleId): ScrollOffset {
+    const state = this.scrollStates.get(scrollId);
+    return state?.offset ?? { x: 0, y: 0 };
+  }
+
+  /**
+   * Set the scroll offset for a scroll handle.
+   */
+  setScrollOffset(scrollId: ScrollHandleId, offset: ScrollOffset): void {
+    let state = this.scrollStates.get(scrollId);
+    if (!state) {
+      state = createScrollState();
+      this.scrollStates.set(scrollId, state);
+    }
+    state.offset = offset;
+    const clamped = clampScrollOffset(state);
+    state.offset = clamped;
+  }
+
+  /**
+   * Scroll by a delta amount.
+   */
+  scrollBy(scrollId: ScrollHandleId, deltaX: number, deltaY: number): void {
+    let state = this.scrollStates.get(scrollId);
+    if (!state) {
+      state = createScrollState();
+      this.scrollStates.set(scrollId, state);
+    }
+    state.offset = {
+      x: state.offset.x + deltaX,
+      y: state.offset.y + deltaY,
+    };
+    const clamped = clampScrollOffset(state);
+    state.offset = clamped;
+  }
+
+  /**
+   * Update content and viewport sizes for a scroll handle.
+   */
+  updateScrollContentSize(
+    scrollId: ScrollHandleId,
+    contentSize: { width: number; height: number },
+    viewportSize: { width: number; height: number }
+  ): void {
+    let state = this.scrollStates.get(scrollId);
+    if (!state) {
+      state = createScrollState();
+      this.scrollStates.set(scrollId, state);
+    }
+    state.contentSize = contentSize;
+    state.viewportSize = viewportSize;
+    const clamped = clampScrollOffset(state);
+    state.offset = clamped;
   }
 
   /**
@@ -291,6 +379,15 @@ export class FlashWindow {
       });
       this.eventCleanups.push(cleanup);
     }
+
+    if (target.onScroll) {
+      const cleanup = target.onScroll((x, y, deltaX, deltaY, mods) => {
+        const event: FlashScrollEvent = { x, y, deltaX, deltaY, modifiers: mods };
+        const path = hitTest(this.hitTestTree, { x, y });
+        dispatchScrollEvent(event, path, this, this.getContext());
+      });
+      this.eventCleanups.push(cleanup);
+    }
   }
 
   private createRequestLayoutContext(elementId: GlobalElementId): RequestLayoutContext {
@@ -366,6 +463,7 @@ export class FlashWindow {
     const elementState = this.elementState;
     const mousePosition = this.mousePosition;
     const isFocused = this.isFocused.bind(this);
+    const getScrollOffset = this.getScrollOffset.bind(this);
     const createPaintContext = this.createPaintContext.bind(this);
     const getMouseDown = () => this.mouseDown;
 
@@ -397,6 +495,10 @@ export class FlashWindow {
 
       isFocused: (handle: FocusHandle): boolean => {
         return isFocused(handle.id);
+      },
+
+      getScrollOffset: (handle: ScrollHandle): ScrollOffset => {
+        return getScrollOffset(handle.id);
       },
 
       getChildLayouts: (_parentBounds: Bounds, childLayoutIds: LayoutId[]): Bounds[] => {
