@@ -330,8 +330,8 @@ function main() {
   const renderCallback = (time: number, _deltaTime: number): void =>
     render(ctx, resources, time, mouseX, mouseY);
 
-  // runRenderLoop is async (uses requestAnimationFrame), so cleanup must not
-  // happen here - the browser handles resource cleanup on page unload
+  // runWebGLRenderLoop is async (uses requestAnimationFrame), so cleanup must
+  // not happen here - the browser handles resource cleanup on page unload
   runWebGLRenderLoop(ctx, renderCallback);
 }
 

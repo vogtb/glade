@@ -605,11 +605,6 @@ export function runWebGLRenderLoop(ctx: DarwinWebGLContext, callback: RenderCall
 }
 
 /**
- * @deprecated Use runWebGLRenderLoop instead
- */
-export const runRenderLoop = runWebGLRenderLoop;
-
-/**
  * Native render loop for macOS WebGPU context.
  * Time values are in seconds.
  */

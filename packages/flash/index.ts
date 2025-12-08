@@ -16,7 +16,6 @@ export type {
   EntityId,
   WindowId,
   FocusId,
-  LayoutId,
   Point,
   Size,
   Bounds,
@@ -25,6 +24,11 @@ export type {
 } from "./types.ts";
 
 export { rgb, rgba, color, boundsContains } from "./types.ts";
+
+// Layout engine
+export type { LayoutId, AvailableSpace, AvailableSpaceValue } from "./layout.ts";
+
+export { FlashLayoutEngine, definite, minContent, maxContent } from "./layout.ts";
 
 // Entity system
 export {

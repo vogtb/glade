@@ -2,23 +2,16 @@
   "name": "@glade/layout",
   "version": "0.0.1",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
+  "main": "ts/layout.ts",
+  "types": "ts/layout.ts",
   "files": [
-    "dist",
+    "ts",
     "pkg"
   ],
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
-    "build:ts": "bunx tsc",
-    "build": "bun run build:wasm && bun run build:ts",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf pkg dist"
+    "build": "bun run build:wasm",
+    "typecheck": "bunx tsc --noEmit",
+    "clean": "rm -rf pkg"
   }
 }

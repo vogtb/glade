@@ -12,9 +12,6 @@ export type WindowId = number & { [__windowIdBrand]: true };
 declare const __focusIdBrand: unique symbol;
 export type FocusId = number & { [__focusIdBrand]: true };
 
-declare const __layoutIdBrand: unique symbol;
-export type LayoutId = number & { [__layoutIdBrand]: true };
-
 /**
  * 2D point.
  */

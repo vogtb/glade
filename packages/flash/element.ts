@@ -5,7 +5,8 @@
  * They're created fresh each render and converted to GPU primitives.
  */
 
-import type { Bounds, LayoutId, Color } from "./types.ts";
+import type { Bounds, Color } from "./types.ts";
+import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { FlashViewContext } from "./context.ts";

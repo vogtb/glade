@@ -3,36 +3,44 @@
  *
  * Provides CSS flexbox/grid layout computation via Taffy,
  * compiled to WebAssembly for use in Flash.
+ *
+ * Uses Bun macros to embed WASM at build time, works in both
+ * native (Bun) and browser environments.
  */
 
-import type { InitOutput } from "../pkg/layout";
+import { initSync, TaffyLayoutEngine, type InitOutput } from "../pkg/layout";
+import type { LayoutId, LayoutBounds } from "../pkg/layout";
+import { embedAsBase64 } from "./embed" with { type: "macro" };
 
-export type { LayoutId, LayoutBounds, TaffyLayoutEngine } from "../pkg/layout";
+// Embed WASM as base64 at build time via Bun macro
+// The macro is async but Bun inlines the resolved string at bundle time
+const wasmBase64 = embedAsBase64("../pkg/layout_bg.wasm") as unknown as string;
 
 let wasmModule: InitOutput | null = null;
-let initPromise: Promise<InitOutput> | null = null;
 
 /**
- * Initialize the WASM module.
- * Must be called before using any layout functions.
- * Safe to call multiple times - will only initialize once.
+ * Decode base64 to Uint8Array (works in both browser and Node/Bun)
  */
-export async function initLayout(): Promise<InitOutput> {
+function base64ToBytes(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Initialize the WASM module synchronously.
+ * Uses the embedded WASM binary - no network fetch required.
+ */
+export function initLayout(): InitOutput {
   if (wasmModule) {
     return wasmModule;
   }
-
-  if (initPromise) {
-    return initPromise;
-  }
-
-  initPromise = (async () => {
-    const wasm = await import("../pkg/layout");
-    wasmModule = await wasm.default();
-    return wasmModule;
-  })();
-
-  return initPromise;
+  const wasmBytes = base64ToBytes(wasmBase64);
+  wasmModule = initSync({ module: wasmBytes });
+  return wasmModule;
 }
 
 /**
@@ -43,16 +51,16 @@ export function isInitialized(): boolean {
 }
 
 /**
- * Get the layout engine class.
- * Throws if WASM is not initialized.
+ * Create a new layout engine instance.
+ * Automatically initializes WASM if not already done.
  */
-export async function createLayoutEngine(): Promise<
-  InstanceType<typeof import("../pkg/layout").TaffyLayoutEngine>
-> {
-  await initLayout();
-  const { TaffyLayoutEngine } = await import("../pkg/layout");
+export function createLayoutEngine(): TaffyLayoutEngine {
+  initLayout();
   return new TaffyLayoutEngine();
 }
+
+// Re-export types
+export type { LayoutId, LayoutBounds, TaffyLayoutEngine, InitOutput };
 
 /**
  * Style input for layout computation.

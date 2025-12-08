@@ -12,6 +12,7 @@ import {
   FlashRenderer,
   RectPipeline,
   ShadowPipeline,
+  FlashLayoutEngine,
   rgb,
   rgba,
   div,
@@ -26,6 +27,7 @@ export interface FlashDemoResources {
   rectPipeline: RectPipeline;
   shadowPipeline: ShadowPipeline;
   scene: FlashScene;
+  layoutEngine: FlashLayoutEngine;
 }
 
 /**
@@ -151,11 +153,15 @@ export function initFlashDemo(ctx: WebGPUContext, format: GPUTextureFormat): Fla
   // Create scene
   const scene = new FlashScene();
 
+  // Create layout engine (Taffy-powered flexbox)
+  const layoutEngine = new FlashLayoutEngine();
+
   return {
     renderer,
     rectPipeline,
     shadowPipeline,
     scene,
+    layoutEngine,
   };
 }
 
@@ -171,10 +177,11 @@ export function renderFlashDemo(
   mouseY: number
 ): void {
   const { context } = ctx;
-  const { renderer, scene } = resources;
+  const { renderer, scene, layoutEngine } = resources;
 
   // Clear scene for new frame
   scene.clear();
+  layoutEngine.clear();
 
   // Build UI scene
   // Reset debug counter each frame
@@ -189,7 +196,7 @@ export function renderFlashDemo(
   const logicalWidth = ctxAny.windowWidth ?? ctx.width;
   const logicalHeight = ctxAny.windowHeight ?? ctx.height;
 
-  buildDemoScene(scene, logicalWidth, logicalHeight, time, mouseX, mouseY);
+  buildDemoScene(scene, layoutEngine, logicalWidth, logicalHeight, time, mouseX, mouseY);
 
   // Render scene - use logical coordinates for UI, framebuffer size for GPU viewport
   const texture = context.getCurrentTexture();
@@ -216,6 +223,7 @@ export function renderFlashDemo(
  */
 function buildDemoScene(
   scene: FlashScene,
+  layoutEngine: FlashLayoutEngine,
   width: number,
   height: number,
   time: number,
@@ -431,6 +439,10 @@ function buildDemoScene(
 
     renderDiv(statusDot, { x: dotX, y: dotY, width: 12, height: 12 }, ctx);
   }
+
+  // ============ Flexbox Layout Demo (using Taffy layout engine) ============
+
+  buildFlexboxDemo(scene, layoutEngine, width, height, time, ctx);
 }
 
 /**
@@ -459,4 +471,266 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
   }
 
   return { r, g, b, a: 1 };
+}
+
+/**
+ * Build a flexbox layout demo using the Taffy-powered layout engine.
+ * Demonstrates real CSS flexbox layout with gap, justify-content, align-items, etc.
+ */
+function buildFlexboxDemo(
+  scene: FlashScene,
+  layoutEngine: FlashLayoutEngine,
+  width: number,
+  height: number,
+  time: number,
+  ctx: DivRenderContext
+): void {
+  // Position the flexbox demo panel on the right side
+  const panelX = width - 280;
+  const panelY = 100;
+  const panelWidth = 260;
+  const panelHeight = 400;
+
+  // Panel background
+  const panelBg = div()
+    .bg({ r: 0.12, g: 0.12, b: 0.18, a: 0.95 })
+    .rounded(12)
+    .border(1)
+    .borderColor({ r: 0.3, g: 0.3, b: 0.4, a: 1 })
+    .shadowLg();
+
+  renderDiv(panelBg, { x: panelX, y: panelY, width: panelWidth, height: panelHeight }, ctx);
+
+  // Title
+  const titleBg = div().bg({ r: 0.08, g: 0.08, b: 0.12, a: 1 }).rounded(8);
+  renderDiv(titleBg, { x: panelX + 10, y: panelY + 10, width: panelWidth - 20, height: 30 }, ctx);
+
+  // ============ Flexbox Row Layout ============
+  // Create a row container with children that flex
+
+  const rowContainerX = panelX + 15;
+  const rowContainerY = panelY + 55;
+  const rowContainerWidth = panelWidth - 30;
+  const rowContainerHeight = 50;
+
+  // Create child layout nodes first (bottom-up like GPUI)
+  const rowChildren = [];
+  const numRowItems = 4;
+  const itemWidth = 40;
+  const animatedGap = 8 + Math.sin(time * 2) * 4;
+
+  for (let i = 0; i < numRowItems; i++) {
+    const childId = layoutEngine.requestLayout({
+      width: itemWidth,
+      height: 40,
+    });
+    rowChildren.push(childId);
+  }
+
+  // Create parent container with flexbox row layout
+  const rowContainerId = layoutEngine.requestLayout(
+    {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: animatedGap,
+      paddingTop: 5,
+      paddingBottom: 5,
+      paddingLeft: 5,
+      paddingRight: 5,
+    },
+    rowChildren
+  );
+
+  // Compute layout
+  layoutEngine.computeLayout(rowContainerId, rowContainerWidth, rowContainerHeight);
+
+  // Render container background
+  const rowContainer = div().bg({ r: 0.18, g: 0.18, b: 0.25, a: 1 }).rounded(8);
+  renderDiv(
+    rowContainer,
+    { x: rowContainerX, y: rowContainerY, width: rowContainerWidth, height: rowContainerHeight },
+    ctx
+  );
+
+  // Render children using computed layout bounds
+  const rowColors = [rgb(0xef4444), rgb(0xf59e0b), rgb(0x22c93f), rgb(0x3b82f6)];
+  for (let i = 0; i < rowChildren.length; i++) {
+    const childBounds = layoutEngine.layoutBounds(rowChildren[i]!);
+    const itemDiv = div().bg(rowColors[i]!).rounded(6);
+    renderDiv(
+      itemDiv,
+      {
+        x: rowContainerX + childBounds.x,
+        y: rowContainerY + childBounds.y,
+        width: childBounds.width,
+        height: childBounds.height,
+      },
+      ctx
+    );
+  }
+
+  // ============ Flexbox Column Layout ============
+
+  layoutEngine.clear();
+
+  const colContainerX = panelX + 15;
+  const colContainerY = panelY + 120;
+  const colContainerWidth = 80;
+  const colContainerHeight = 260;
+
+  // Create column children with varying flex-grow
+  const colChildren = [];
+  const colItemConfigs = [
+    { height: 30, flexGrow: 0 },
+    { height: 20, flexGrow: 1 },
+    { height: 20, flexGrow: 2 },
+    { height: 30, flexGrow: 0 },
+  ];
+
+  for (const config of colItemConfigs) {
+    const childId = layoutEngine.requestLayout({
+      height: config.height,
+      flexGrow: config.flexGrow,
+      flexShrink: 1,
+    });
+    colChildren.push(childId);
+  }
+
+  // Create column container
+  const colContainerId = layoutEngine.requestLayout(
+    {
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-start",
+      alignItems: "stretch",
+      gap: 8,
+      paddingTop: 8,
+      paddingBottom: 8,
+      paddingLeft: 8,
+      paddingRight: 8,
+    },
+    colChildren
+  );
+
+  layoutEngine.computeLayout(colContainerId, colContainerWidth, colContainerHeight);
+
+  // Render column container
+  const colContainer = div().bg({ r: 0.15, g: 0.2, b: 0.25, a: 1 }).rounded(8);
+  renderDiv(
+    colContainer,
+    { x: colContainerX, y: colContainerY, width: colContainerWidth, height: colContainerHeight },
+    ctx
+  );
+
+  // Render column children
+  const colColors = [rgb(0x8b5cf6), rgb(0x06b6d4), rgb(0x10b981), rgb(0xf97316)];
+  for (let i = 0; i < colChildren.length; i++) {
+    const childBounds = layoutEngine.layoutBounds(colChildren[i]!);
+    const itemDiv = div().bg(colColors[i]!).rounded(4);
+    renderDiv(
+      itemDiv,
+      {
+        x: colContainerX + childBounds.x,
+        y: colContainerY + childBounds.y,
+        width: childBounds.width,
+        height: childBounds.height,
+      },
+      ctx
+    );
+  }
+
+  // ============ Centered Grid Layout ============
+
+  layoutEngine.clear();
+
+  const gridContainerX = panelX + 110;
+  const gridContainerY = panelY + 120;
+  const gridContainerWidth = 135;
+  const gridContainerHeight = 260;
+
+  // Create a 3x3 grid using nested flex containers
+  const gridRows = [];
+  const gridSize = 35;
+  const gridGap = 6;
+
+  for (let row = 0; row < 3; row++) {
+    const rowCells = [];
+    for (let col = 0; col < 3; col++) {
+      const cellId = layoutEngine.requestLayout({
+        width: gridSize,
+        height: gridSize,
+      });
+      rowCells.push(cellId);
+    }
+
+    const rowId = layoutEngine.requestLayout(
+      {
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: gridGap,
+      },
+      rowCells
+    );
+    gridRows.push({ id: rowId, cells: rowCells });
+  }
+
+  const gridContainerId = layoutEngine.requestLayout(
+    {
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: gridGap,
+      paddingTop: 10,
+      paddingBottom: 10,
+      paddingLeft: 10,
+      paddingRight: 10,
+    },
+    gridRows.map((r) => r.id)
+  );
+
+  layoutEngine.computeLayout(gridContainerId, gridContainerWidth, gridContainerHeight);
+
+  // Render grid container
+  const gridContainer = div().bg({ r: 0.2, g: 0.15, b: 0.25, a: 1 }).rounded(8);
+  renderDiv(
+    gridContainer,
+    {
+      x: gridContainerX,
+      y: gridContainerY,
+      width: gridContainerWidth,
+      height: gridContainerHeight,
+    },
+    ctx
+  );
+
+  // Render grid cells with animation
+  for (let row = 0; row < gridRows.length; row++) {
+    const rowData = gridRows[row]!;
+    for (let col = 0; col < rowData.cells.length; col++) {
+      const cellId = rowData.cells[col]!;
+      const cellBounds = layoutEngine.layoutBounds(cellId);
+
+      const phase = time * 3 + row * 0.5 + col * 0.7;
+      const hue = ((row * 3 + col) / 9 + time * 0.1) % 1;
+      const pulse = 0.7 + Math.sin(phase) * 0.3;
+      const cellColor = hslToRgb(hue, 0.7, 0.5 * pulse);
+
+      const cellDiv = div().bg(cellColor).rounded(6);
+      renderDiv(
+        cellDiv,
+        {
+          x: gridContainerX + cellBounds.x,
+          y: gridContainerY + cellBounds.y,
+          width: cellBounds.width,
+          height: cellBounds.height,
+        },
+        ctx
+      );
+    }
+  }
 }

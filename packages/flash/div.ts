@@ -5,7 +5,8 @@
  */
 
 import { FlashContainerElement, type PrepaintContext, type PaintContext } from "./element.ts";
-import type { Bounds, Color, LayoutId } from "./types.ts";
+import type { Bounds, Color } from "./types.ts";
+import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import type {
