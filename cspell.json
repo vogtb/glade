@@ -24,6 +24,7 @@
     "raymarching",
     "multisampled",
     "prepaint",
-    "unfilterable"
+    "unfilterable",
+    "flexbox"
   ]
 }

@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = ["packages/layout"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+
+[profile.release]
+opt-level = "s"
+lto = true

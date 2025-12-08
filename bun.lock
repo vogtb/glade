@@ -60,6 +60,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/core": "workspace:*",
+        "@glade/layout": "workspace:*",
         "@glade/webgpu": "workspace:*",
       },
     },
@@ -69,6 +70,10 @@
       "devDependencies": {
         "@types/bun": "latest",
       },
+    },
+    "packages/layout": {
+      "name": "@glade/layout",
+      "version": "0.0.1",
     },
     "packages/platform": {
       "name": "@glade/platform",
@@ -116,6 +121,8 @@
     "@glade/flash": ["@glade/flash@workspace:packages/flash"],
 
     "@glade/glfw": ["@glade/glfw@workspace:packages/glfw"],
+
+    "@glade/layout": ["@glade/layout@workspace:packages/layout"],
 
     "@glade/platform": ["@glade/platform@workspace:packages/platform"],
 

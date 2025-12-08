@@ -49,3 +49,6 @@ Thumbs.db
 
 tmp_zig_project
 tmp/*
+
+target/*
+target

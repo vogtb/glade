@@ -23,6 +23,7 @@
     "run:webgpu:web": "bun run --filter '@glade/demos' run:webgpu:web",
     "build:vendor-glfw": "./vendor/build-glfw.sh",
     "build:vendor-dawn": "./vendor/build-dawn.sh",
+    "build:layout": "bun run --filter '@glade/layout' build",
     "postinstall": "./vendor/build-glfw.sh"
   },
   "devDependencies": {
