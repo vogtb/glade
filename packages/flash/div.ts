@@ -27,7 +27,11 @@ import type {
   ClickHandler,
   KeyHandler,
   ScrollHandler,
+  DragStartHandler,
 } from "./dispatch.ts";
+import type { DropHandler, CanDropPredicate } from "./drag.ts";
+import type { TooltipBuilder, TooltipConfig } from "./tooltip.ts";
+import { DEFAULT_TOOLTIP_CONFIG, TooltipConfigBuilder } from "./tooltip.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
@@ -61,6 +65,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private hoverStyles: Partial<Styles> | null = null;
   private activeStyles: Partial<Styles> | null = null;
   private focusedStyles: Partial<Styles> | null = null;
+  private dragOverStyles: Partial<Styles> | null = null;
   private groupHoverStylesMap: Map<string, Partial<Styles>> = new Map();
   private handlers: EventHandlers = {};
   private focusHandleRef: FocusHandle | null = null;
@@ -68,6 +73,9 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private keyContextValue: string | null = null;
   private hitboxBehaviorValue: HitboxBehavior = HitboxBehavior.Normal;
   private groupNameValue: string | null = null;
+  private isDropTarget = false;
+  private tooltipBuilderFn: TooltipBuilder | null = null;
+  private tooltipConfigValue: TooltipConfig = DEFAULT_TOOLTIP_CONFIG;
 
   // ============ Layout Styles (Tailwind-like API) ============
 
@@ -610,6 +618,66 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  // ============ Drag and Drop ============
+
+  /**
+   * Make this element draggable.
+   * Handler is called on mouse down and should return a DragPayload if drag should start.
+   */
+  onDragStart<T>(handler: DragStartHandler<T>): this {
+    this.handlers.dragStart = handler as DragStartHandler;
+    return this;
+  }
+
+  /**
+   * Make this element a drop target.
+   * Handler is called when a dragged item is dropped on this element.
+   */
+  onDrop<T>(handler: DropHandler<T>): this {
+    this.handlers.drop = handler as DropHandler;
+    this.isDropTarget = true;
+    return this;
+  }
+
+  /**
+   * Set a predicate to determine if this element can accept a drop.
+   * Only called if onDrop is set.
+   */
+  canDrop<T>(predicate: CanDropPredicate<T>): this {
+    this.handlers.canDrop = predicate as CanDropPredicate;
+    return this;
+  }
+
+  /**
+   * Apply styles when a drag is over this drop target and can be dropped.
+   */
+  dragOver(f: (s: StyleBuilder) => StyleBuilder): this {
+    this.dragOverStyles = f(new StyleBuilder()).build();
+    return this;
+  }
+
+  // ============ Tooltips ============
+
+  /**
+   * Add a tooltip to this element.
+   * @param builder Function that creates the tooltip content element.
+   * @param config Optional tooltip configuration or builder function.
+   */
+  tooltip(
+    builder: TooltipBuilder,
+    config?: TooltipConfig | ((cfg: TooltipConfigBuilder) => TooltipConfigBuilder)
+  ): this {
+    this.tooltipBuilderFn = builder;
+    if (config) {
+      if (typeof config === "function") {
+        this.tooltipConfigValue = config(new TooltipConfigBuilder()).build();
+      } else {
+        this.tooltipConfigValue = config;
+      }
+    }
+    return this;
+  }
+
   // ============ Focus ============
 
   trackFocus(handle: FocusHandle): this {
@@ -718,6 +786,17 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     // Create hitbox for this element (pass cursor for platform cursor updates)
     const hitbox = cx.insertHitbox(bounds, this.hitboxBehaviorValue, this.styles.cursor);
 
+    // Register as drop target if this element handles drops
+    if (this.isDropTarget && this.handlers.drop) {
+      const canDrop = this.handlers.canDrop ? true : true;
+      cx.registerDropTarget(hitbox.id, canDrop);
+    }
+
+    // Register tooltip if this element has one
+    if (this.tooltipBuilderFn) {
+      cx.registerTooltip(hitbox.id, bounds, this.tooltipBuilderFn, this.tooltipConfigValue);
+    }
+
     // Register with group if this element is in a group
     if (this.groupNameValue) {
       cx.pushGroupHitbox(this.groupNameValue, hitbox.id);
@@ -784,6 +863,11 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     }
     if (isFocused && this.focusedStyles) {
       effectiveStyles = { ...effectiveStyles, ...this.focusedStyles };
+    }
+
+    // Apply drag-over styles if this is a drop target and drag is over it
+    if (this.isDropTarget && this.dragOverStyles && hitbox && cx.canDropOnHitbox(hitbox)) {
+      effectiveStyles = { ...effectiveStyles, ...this.dragOverStyles };
     }
 
     if (effectiveStyles.shadow && effectiveStyles.shadow !== "none") {

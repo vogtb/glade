@@ -554,6 +554,14 @@ function buildDemoScene(
   // ============ Cursor Demo (demonstrates cursor style changes) ============
 
   buildCursorDemo(scene, width, height, ctx);
+
+  // ============ Drag & Drop Demo (demonstrates drag/drop API) ============
+
+  buildDragDropDemo(scene, width, height, time, ctx);
+
+  // ============ Tooltip Demo (demonstrates tooltip API) ============
+
+  buildTooltipDemo(scene, width, height, time, ctx);
 }
 
 /**
@@ -1521,4 +1529,275 @@ function buildCursorDemo(
       borderColor: { r: 0, g: 0, b: 0, a: 0 },
     });
   }
+}
+
+/**
+ * Build a drag and drop demo.
+ * Shows draggable items and drop zones with visual feedback.
+ * Note: This is a visual representation - full drag/drop requires FlashApp.
+ */
+function buildDragDropDemo(
+  scene: FlashScene,
+  width: number,
+  _height: number,
+  time: number,
+  ctx: DivRenderContext
+): void {
+  // Position below the scroll demo
+  const panelX = 20;
+  const panelY = 520;
+  const panelWidth = 200;
+  const panelHeight = 120;
+
+  // Panel background
+  const panelBg = div()
+    .bg({ r: 0.12, g: 0.14, b: 0.18, a: 0.95 })
+    .rounded(12)
+    .border(1)
+    .borderColor({ r: 0.35, g: 0.25, b: 0.45, a: 1 })
+    .shadowMd();
+
+  renderDiv(panelBg, { x: panelX, y: panelY, width: panelWidth, height: panelHeight }, ctx);
+
+  // Title indicator
+  scene.addRect({
+    x: panelX + 10,
+    y: panelY + 8,
+    width: 80,
+    height: 4,
+    color: rgb(0xa855f7),
+    cornerRadius: 2,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // Draggable items
+  const itemColors = [rgb(0xef4444), rgb(0xf59e0b), rgb(0x22c55e)];
+  const itemSize = 30;
+  const itemGap = 10;
+
+  for (let i = 0; i < 3; i++) {
+    const baseX = panelX + 20 + i * (itemSize + itemGap);
+    const baseY = panelY + 25;
+
+    // Animate items slightly to show they're interactive
+    const wobble = Math.sin(time * 3 + i * 1.5) * 2;
+    const itemX = baseX + wobble;
+
+    const isHovered =
+      ctx.mouseX >= itemX &&
+      ctx.mouseX < itemX + itemSize &&
+      ctx.mouseY >= baseY &&
+      ctx.mouseY < baseY + itemSize;
+
+    const itemDiv = div()
+      .bg(itemColors[i]!)
+      .rounded(6)
+      .border(isHovered ? 2 : 0)
+      .borderColor({ r: 1, g: 1, b: 1, a: 0.8 })
+      .cursorPointer();
+
+    renderDiv(itemDiv, { x: itemX, y: baseY, width: itemSize, height: itemSize }, ctx);
+
+    if (isHovered) {
+      ctx.setCursor("grab");
+    }
+  }
+
+  // Drop zone
+  const dropZoneX = panelX + 15;
+  const dropZoneY = panelY + 70;
+  const dropZoneWidth = panelWidth - 30;
+  const dropZoneHeight = 35;
+
+  const isOverDropZone =
+    ctx.mouseX >= dropZoneX &&
+    ctx.mouseX < dropZoneX + dropZoneWidth &&
+    ctx.mouseY >= dropZoneY &&
+    ctx.mouseY < dropZoneY + dropZoneHeight;
+
+  // Drop zone with drag-over highlighting
+  const dropZone = div()
+    .bg(isOverDropZone ? rgba(0xa855f740) : rgba(0x40404040))
+    .rounded(8)
+    .border(2)
+    .borderColor(isOverDropZone ? rgb(0xa855f7) : rgba(0x60606080));
+
+  renderDiv(
+    dropZone,
+    { x: dropZoneX, y: dropZoneY, width: dropZoneWidth, height: dropZoneHeight },
+    ctx
+  );
+
+  // Drop zone indicator dots
+  for (let i = 0; i < 3; i++) {
+    scene.addRect({
+      x: dropZoneX + dropZoneWidth / 2 - 15 + i * 12,
+      y: dropZoneY + dropZoneHeight / 2 - 3,
+      width: 6,
+      height: 6,
+      color: isOverDropZone
+        ? { r: 0.66, g: 0.33, b: 0.97, a: 0.8 }
+        : { r: 0.5, g: 0.5, b: 0.5, a: 0.4 },
+      cornerRadius: 3,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+}
+
+/**
+ * Build a tooltip demo.
+ * Shows elements with hover tooltips.
+ * Note: This is a visual representation - full tooltips require FlashApp.
+ */
+function buildTooltipDemo(
+  scene: FlashScene,
+  width: number,
+  _height: number,
+  time: number,
+  ctx: DivRenderContext
+): void {
+  // Position to the right of drag/drop demo
+  const panelX = 240;
+  const panelY = 520;
+  const panelWidth = 180;
+  const panelHeight = 120;
+
+  // Panel background
+  const panelBg = div()
+    .bg({ r: 0.12, g: 0.16, b: 0.14, a: 0.95 })
+    .rounded(12)
+    .border(1)
+    .borderColor({ r: 0.25, g: 0.45, b: 0.35, a: 1 })
+    .shadowMd();
+
+  renderDiv(panelBg, { x: panelX, y: panelY, width: panelWidth, height: panelHeight }, ctx);
+
+  // Title indicator
+  scene.addRect({
+    x: panelX + 10,
+    y: panelY + 8,
+    width: 60,
+    height: 4,
+    color: rgb(0x22c55e),
+    cornerRadius: 2,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // Tooltip target buttons
+  const buttonConfigs = [
+    { label: "?", tooltip: "Help info" },
+    { label: "i", tooltip: "Details" },
+    { label: "★", tooltip: "Favorite" },
+  ];
+
+  for (let i = 0; i < buttonConfigs.length; i++) {
+    const btnX = panelX + 25 + i * 50;
+    const btnY = panelY + 30;
+    const btnSize = 36;
+
+    const isHovered =
+      ctx.mouseX >= btnX &&
+      ctx.mouseX < btnX + btnSize &&
+      ctx.mouseY >= btnY &&
+      ctx.mouseY < btnY + btnSize;
+
+    // Button with hover effect
+    const btn = div()
+      .bg(isHovered ? rgb(0x22c55e) : rgba(0x22c55e60))
+      .roundedFull()
+      .border(isHovered ? 2 : 1)
+      .borderColor(isHovered ? { r: 1, g: 1, b: 1, a: 0.9 } : rgb(0x22c55e))
+      .cursorPointer();
+
+    renderDiv(btn, { x: btnX, y: btnY, width: btnSize, height: btnSize }, ctx);
+
+    if (isHovered) {
+      ctx.setCursor("pointer");
+
+      // Show tooltip above the button
+      const tooltipWidth = 70;
+      const tooltipHeight = 24;
+      const tooltipX = btnX + btnSize / 2 - tooltipWidth / 2;
+      const tooltipY = btnY - tooltipHeight - 8;
+
+      // Tooltip background
+      scene.addRect({
+        x: tooltipX,
+        y: tooltipY,
+        width: tooltipWidth,
+        height: tooltipHeight,
+        color: { r: 0.1, g: 0.1, b: 0.12, a: 0.95 },
+        cornerRadius: 6,
+        borderWidth: 1,
+        borderColor: { r: 0.4, g: 0.4, b: 0.45, a: 1 },
+      });
+
+      // Tooltip arrow (small triangle approximation with rect)
+      scene.addRect({
+        x: btnX + btnSize / 2 - 4,
+        y: tooltipY + tooltipHeight - 1,
+        width: 8,
+        height: 8,
+        color: { r: 0.1, g: 0.1, b: 0.12, a: 0.95 },
+        cornerRadius: 2,
+        borderWidth: 0,
+        borderColor: { r: 0, g: 0, b: 0, a: 0 },
+      });
+
+      // Tooltip text indicator (dots for now since we don't have text rendering)
+      const textDots = buttonConfigs[i]!.tooltip.length / 3;
+      for (let j = 0; j < Math.min(textDots, 5); j++) {
+        scene.addRect({
+          x: tooltipX + 10 + j * 10,
+          y: tooltipY + tooltipHeight / 2 - 2,
+          width: 6,
+          height: 4,
+          color: { r: 0.9, g: 0.9, b: 0.9, a: 0.9 },
+          cornerRadius: 2,
+          borderWidth: 0,
+          borderColor: { r: 0, g: 0, b: 0, a: 0 },
+        });
+      }
+    }
+
+    // Button icon indicator
+    scene.addRect({
+      x: btnX + btnSize / 2 - 6,
+      y: btnY + btnSize / 2 - 6,
+      width: 12,
+      height: 12,
+      color: isHovered ? { r: 0.1, g: 0.1, b: 0.1, a: 0.9 } : { r: 0.9, g: 0.9, b: 0.9, a: 0.7 },
+      cornerRadius: i === 2 ? 6 : 2, // Star icon is round
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // Info bar at bottom
+  scene.addRect({
+    x: panelX + 10,
+    y: panelY + panelHeight - 35,
+    width: panelWidth - 20,
+    height: 22,
+    color: { r: 0.08, g: 0.12, b: 0.1, a: 0.8 },
+    cornerRadius: 6,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // Pulsing indicator to show tooltip functionality
+  const pulse = 0.5 + Math.sin(time * 2) * 0.3;
+  scene.addRect({
+    x: panelX + panelWidth / 2 - 20,
+    y: panelY + panelHeight - 28,
+    width: 40,
+    height: 8,
+    color: { r: 0.13, g: 0.77, b: 0.37, a: pulse },
+    cornerRadius: 4,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
 }

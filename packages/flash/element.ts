@@ -153,6 +153,22 @@ export interface PrepaintContext {
    * Pop a hitbox from a group stack.
    */
   popGroupHitbox(groupName: string): void;
+
+  /**
+   * Register a drop target for drag and drop.
+   * Called during prepaint for elements with onDrop handlers.
+   */
+  registerDropTarget(hitboxId: HitboxId, canDrop: boolean): void;
+
+  /**
+   * Register a tooltip for an element.
+   */
+  registerTooltip(
+    hitboxId: HitboxId,
+    bounds: Bounds,
+    builder: (cx: import("./context.ts").FlashContext) => FlashElement,
+    config: import("./tooltip.ts").TooltipConfig
+  ): void;
 }
 
 /**
@@ -256,6 +272,21 @@ export interface PaintContext {
    * Check if a group is hovered.
    */
   isGroupHovered(groupName: string): boolean;
+
+  /**
+   * Check if there's an active drag operation.
+   */
+  isDragging(): boolean;
+
+  /**
+   * Check if this element (by hitbox) is being dragged over.
+   */
+  isDragOver(hitbox: Hitbox): boolean;
+
+  /**
+   * Check if the current drag can be dropped on this element.
+   */
+  canDropOnHitbox(hitbox: Hitbox): boolean;
 }
 
 // ============ Element Base Classes ============

@@ -8,6 +8,7 @@ import type { Bounds, Point } from "./types.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { FlashContext } from "./context.ts";
 import type { FlashWindow } from "./window.ts";
+import type { DragPayload, DropHandler, CanDropPredicate } from "./drag.ts";
 
 /**
  * Mouse event data.
@@ -124,6 +125,16 @@ export type ScrollHandler = (
 ) => EventResult | void;
 
 /**
+ * Handler that starts a drag operation.
+ * Returns the drag payload if drag should start, null otherwise.
+ */
+export type DragStartHandler<T = unknown> = (
+  event: FlashMouseEvent,
+  window: FlashWindow,
+  cx: FlashContext
+) => DragPayload<T> | null;
+
+/**
  * Event handlers that can be attached to elements.
  */
 export interface EventHandlers {
@@ -136,6 +147,9 @@ export interface EventHandlers {
   scroll?: ScrollHandler;
   keyDown?: KeyHandler;
   keyUp?: KeyHandler;
+  dragStart?: DragStartHandler;
+  drop?: DropHandler;
+  canDrop?: CanDropPredicate;
 }
 
 /**

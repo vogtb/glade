@@ -176,9 +176,36 @@ export type { FlashAppOptions } from "./app.ts";
 export { FlashApp } from "./app.ts";
 
 // Mouse utilities
-export type { MouseState, DragTracker } from "./mouse.ts";
+export { MouseState, coreModsToFlashMods } from "./mouse.ts";
 
-export { coreModsToFlashMods } from "./mouse.ts";
+// Drag and drop
+export type {
+  DragId,
+  DragHandler,
+  DropHandler,
+  CanDropPredicate,
+  DragPayload,
+  ActiveDrag,
+  DropTarget,
+} from "./drag.ts";
+
+export { DragTracker, dragPayload, dragPayloadWithPreview } from "./drag.ts";
+
+// Tooltip system
+export type {
+  TooltipPosition,
+  TooltipConfig,
+  TooltipBuilder,
+  TooltipRegistration,
+  ActiveTooltip,
+} from "./tooltip.ts";
+
+export {
+  TooltipManager,
+  TooltipConfigBuilder,
+  tooltipConfig,
+  DEFAULT_TOOLTIP_CONFIG,
+} from "./tooltip.ts";
 
 // Keyboard utilities
 export type { Keystroke } from "./keyboard.ts";
