@@ -125,8 +125,16 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
   // Compute SDF distance
   let dist = quad_sdf(in.local_pos, half_size, radius);
 
-  // Anti-aliasing using 0.5 pixel threshold (like GPUI)
-  let alpha = saturate(0.5 - dist);
+  // Multi-sample anti-aliasing: sample SDF at 4 points within the pixel
+  // This gives much smoother edges than single-sample approaches
+  let aa_offset = 0.35; // offset in pixels for subpixel sampling
+  let d1 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset, -aa_offset), half_size, radius);
+  let d2 = quad_sdf(in.local_pos + vec2<f32>( aa_offset, -aa_offset), half_size, radius);
+  let d3 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset,  aa_offset), half_size, radius);
+  let d4 = quad_sdf(in.local_pos + vec2<f32>( aa_offset,  aa_offset), half_size, radius);
+
+  // Average the coverage from all 4 samples
+  let alpha = (saturate(0.5 - d1) + saturate(0.5 - d2) + saturate(0.5 - d3) + saturate(0.5 - d4)) * 0.25;
 
   if alpha <= 0.0 {
     discard;
@@ -134,12 +142,15 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
   var final_color = in.color;
 
-  // Border handling
+  // Border handling with multi-sample AA
   if in.border_width > 0.0 {
     let inner_half_size = half_size - vec2<f32>(in.border_width, in.border_width);
     let inner_radius = max(0.0, radius - in.border_width);
-    let inner_dist = quad_sdf(in.local_pos, inner_half_size, inner_radius);
-    let border_alpha = saturate(0.5 + inner_dist);
+    let id1 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset, -aa_offset), inner_half_size, inner_radius);
+    let id2 = quad_sdf(in.local_pos + vec2<f32>( aa_offset, -aa_offset), inner_half_size, inner_radius);
+    let id3 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset,  aa_offset), inner_half_size, inner_radius);
+    let id4 = quad_sdf(in.local_pos + vec2<f32>( aa_offset,  aa_offset), inner_half_size, inner_radius);
+    let border_alpha = (saturate(0.5 + id1) + saturate(0.5 + id2) + saturate(0.5 + id3) + saturate(0.5 + id4)) * 0.25;
     final_color = mix(in.color, in.border_color, border_alpha);
   }
 

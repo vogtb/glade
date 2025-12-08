@@ -262,7 +262,7 @@ function buildDemoScene(
   ];
 
   for (let i = 0; i < 3; i++) {
-    const size = 18;
+    const size = 14;
     const controlX = panelX + 20 + i * 24;
     const controlY = panelY + 18;
 
