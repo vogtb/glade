@@ -262,8 +262,12 @@ export async function createWebGPUContext(
   options: BrowserWebGPUContextOptions = {}
 ): Promise<BrowserWebGPUContext> {
   const canvas = options.canvas ?? document.createElement("canvas");
-  const logicalWidth = options.width ?? 800;
-  const logicalHeight = options.height ?? 600;
+
+  // If no custom canvas provided, make it fill the window
+  const isFullscreen = !options.canvas;
+  // In fullscreen mode, always use actual window size (ignore passed width/height)
+  const logicalWidth = isFullscreen ? window.innerWidth : (options.width ?? 800);
+  const logicalHeight = isFullscreen ? window.innerHeight : (options.height ?? 600);
 
   // Account for device pixel ratio for crisp rendering on high-DPI displays
   const dpr = window.devicePixelRatio || 1;
@@ -274,13 +278,29 @@ export async function createWebGPUContext(
   canvas.width = physicalWidth;
   canvas.height = physicalHeight;
 
-  // Set CSS size to logical pixels so it displays at the correct size
-  canvas.style.width = `${logicalWidth}px`;
-  canvas.style.height = `${logicalHeight}px`;
+  if (isFullscreen) {
+    // Make canvas fill the entire window
+    canvas.style.position = "fixed";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100vw";
+    canvas.style.height = "100vh";
+    canvas.style.margin = "0";
+    canvas.style.padding = "0";
+
+    // Ensure body has no margins
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.overflow = "hidden";
+  } else {
+    // Set CSS size to logical pixels so it displays at the correct size
+    canvas.style.width = `${logicalWidth}px`;
+    canvas.style.height = `${logicalHeight}px`;
+  }
 
   // Debug: log canvas setup
   console.log(
-    `Canvas setup: buffer=${canvas.width}x${canvas.height}, CSS=${canvas.style.width}x${canvas.style.height}, dpr=${dpr}`
+    `Canvas setup: buffer=${canvas.width}x${canvas.height}, logical=${logicalWidth}x${logicalHeight}, dpr=${dpr}, fullscreen=${isFullscreen}`
   );
 
   if (!options.canvas) {
@@ -372,6 +392,55 @@ export async function createWebGPUContext(
     return 0;
   }
 
+  // Mutable dimensions for resize handling
+  let currentPhysicalWidth = physicalWidth;
+  let currentPhysicalHeight = physicalHeight;
+  let currentLogicalWidth = logicalWidth;
+  let currentLogicalHeight = logicalHeight;
+
+  // Throttled resize handler
+  let resizeTimeout: number | null = null;
+  const RESIZE_THROTTLE_MS = 16; // ~60fps
+
+  function handleResize() {
+    const newLogicalWidth = window.innerWidth;
+    const newLogicalHeight = window.innerHeight;
+    const newDpr = window.devicePixelRatio || 1;
+    const newPhysicalWidth = Math.floor(newLogicalWidth * newDpr);
+    const newPhysicalHeight = Math.floor(newLogicalHeight * newDpr);
+
+    if (newPhysicalWidth !== currentPhysicalWidth || newPhysicalHeight !== currentPhysicalHeight) {
+      currentPhysicalWidth = newPhysicalWidth;
+      currentPhysicalHeight = newPhysicalHeight;
+      currentLogicalWidth = newLogicalWidth;
+      currentLogicalHeight = newLogicalHeight;
+
+      // Update canvas buffer size
+      canvas.width = newPhysicalWidth;
+      canvas.height = newPhysicalHeight;
+
+      console.log(
+        `Canvas resized: buffer=${newPhysicalWidth}x${newPhysicalHeight}, logical=${newLogicalWidth}x${newLogicalHeight}`
+      );
+    }
+  }
+
+  // Set up throttled resize listener for fullscreen mode
+  let removeResizeListener: (() => void) | null = null;
+  if (isFullscreen) {
+    const throttledResize = () => {
+      if (resizeTimeout !== null) {
+        return;
+      }
+      resizeTimeout = window.setTimeout(() => {
+        resizeTimeout = null;
+        handleResize();
+      }, RESIZE_THROTTLE_MS);
+    };
+    window.addEventListener("resize", throttledResize);
+    removeResizeListener = () => window.removeEventListener("resize", throttledResize);
+  }
+
   return {
     gpu,
     adapter,
@@ -381,13 +450,39 @@ export async function createWebGPUContext(
     format,
     canvas,
     // width/height are framebuffer size (physical pixels) for GPU operations
-    width: physicalWidth,
-    height: physicalHeight,
+    get width() {
+      return currentPhysicalWidth;
+    },
+    set width(v: number) {
+      currentPhysicalWidth = v;
+    },
+    get height() {
+      return currentPhysicalHeight;
+    },
+    set height(v: number) {
+      currentPhysicalHeight = v;
+    },
     // windowWidth/windowHeight are logical CSS pixels for UI
-    windowWidth: logicalWidth,
-    windowHeight: logicalHeight,
+    get windowWidth() {
+      return currentLogicalWidth;
+    },
+    set windowWidth(v: number) {
+      currentLogicalWidth = v;
+    },
+    get windowHeight() {
+      return currentLogicalHeight;
+    },
+    set windowHeight(v: number) {
+      currentLogicalHeight = v;
+    },
 
     destroy() {
+      if (removeResizeListener) {
+        removeResizeListener();
+      }
+      if (resizeTimeout !== null) {
+        clearTimeout(resizeTimeout);
+      }
       device.destroy();
     },
 

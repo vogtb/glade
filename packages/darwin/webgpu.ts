@@ -1155,16 +1155,33 @@ export class DawnGPUCanvasContext {
   readonly canvas: null = null;
   private currentTexture: DawnGPUTexture | null = null;
   private format: string;
+  private _width: number;
+  private _height: number;
 
   constructor(
     private readonly surface: WGPUSurface,
-    private readonly _width: number,
-    private readonly _height: number,
+    width: number,
+    height: number,
     format: string | number = "bgra8unorm"
   ) {
+    this._width = width;
+    this._height = height;
     // Convert numeric format to string if needed
     this.format =
       typeof format === "number" ? (textureFormatToString[format] ?? "bgra8unorm") : format;
+  }
+
+  get width(): number {
+    return this._width;
+  }
+
+  get height(): number {
+    return this._height;
+  }
+
+  resize(width: number, height: number): void {
+    this._width = width;
+    this._height = height;
   }
 
   configure(configuration: { format: string }) {

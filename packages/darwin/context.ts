@@ -63,6 +63,8 @@ export interface DarwinWebGPUContext extends WebGPUContext {
   wgpuAdapter: WGPUAdapter;
   wgpuDevice: WGPUDevice;
   wgpuSurface: WGPUSurface;
+  // Resize handler for reconfiguring surface on window resize
+  handleResize(): void;
 }
 
 // Creates a native OpenGL context for macOS using GLFW.
@@ -360,7 +362,13 @@ export async function createWebGPUContext(
   // Convert numeric format to string for WebGPU API compatibility
   const formatString = (textureFormatToString[preferredFormat] ?? "bgra8unorm") as GPUTextureFormat;
 
-  return {
+  // Mutable dimensions for resize handling
+  let currentFbWidth = fbSize.width;
+  let currentFbHeight = fbSize.height;
+  let currentWinWidth = winSize.width;
+  let currentWinHeight = winSize.height;
+
+  const ctx: DarwinWebGPUContext = {
     gpu,
     adapter: adapter as unknown as GPUAdapter,
     device: wrappedDevice as unknown as GPUDevice,
@@ -369,15 +377,60 @@ export async function createWebGPUContext(
     format: formatString,
     window,
     // width/height are framebuffer size (physical pixels) for GPU operations
-    width: fbSize.width,
-    height: fbSize.height,
+    get width() {
+      return currentFbWidth;
+    },
+    set width(v: number) {
+      currentFbWidth = v;
+    },
+    get height() {
+      return currentFbHeight;
+    },
+    set height(v: number) {
+      currentFbHeight = v;
+    },
     // windowWidth/windowHeight are logical screen coordinates for UI
-    windowWidth: winSize.width,
-    windowHeight: winSize.height,
+    get windowWidth() {
+      return currentWinWidth;
+    },
+    set windowWidth(v: number) {
+      currentWinWidth = v;
+    },
+    get windowHeight() {
+      return currentWinHeight;
+    },
+    set windowHeight(v: number) {
+      currentWinHeight = v;
+    },
     wgpuInstance: instance,
     wgpuAdapter: adapter,
     wgpuDevice: device,
     wgpuSurface: surface,
+
+    handleResize() {
+      const newFbSize = glfw.getFramebufferSize(window);
+      const newWinSize = glfw.getWindowSize(window);
+
+      if (newFbSize.width !== currentFbWidth || newFbSize.height !== currentFbHeight) {
+        currentFbWidth = newFbSize.width;
+        currentFbHeight = newFbSize.height;
+        currentWinWidth = newWinSize.width;
+        currentWinHeight = newWinSize.height;
+
+        // Reconfigure the surface with new dimensions
+        configureSurface(surface, {
+          device,
+          format: preferredFormat,
+          width: newFbSize.width,
+          height: newFbSize.height,
+          presentMode: preferredPresentMode,
+          alphaMode: preferredAlphaMode,
+        });
+
+        // Update the wrapped context dimensions
+        wrappedContext.resize(newFbSize.width, newFbSize.height);
+      }
+    },
 
     destroy() {
       for (const cleanup of cleanups) {
@@ -525,6 +578,8 @@ export async function createWebGPUContext(
       };
     },
   };
+
+  return ctx;
 }
 
 /**
@@ -565,6 +620,9 @@ export function runWebGPURenderLoop(ctx: DarwinWebGPUContext, callback: RenderCa
     const time = glfw.getTime();
     const deltaTime = time - lastTime;
     lastTime = time;
+
+    // Check for window resize and reconfigure surface if needed
+    ctx.handleResize();
 
     // Process Dawn events
     processEvents(ctx.wgpuInstance);
