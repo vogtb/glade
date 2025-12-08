@@ -5,6 +5,8 @@ export {
   // WebGPU
   createWebGPUContext,
   runWebGPURenderLoop,
+  // Flash
+  createFlashPlatform,
   // Constants
   GLSL_VERSION,
   GLSL_PRECISION,

@@ -70,15 +70,7 @@ export class FlashApp {
    * Initialize the app - must be called before opening windows.
    */
   async initialize(): Promise<void> {
-    const adapter = await this.platform.requestAdapter();
-    if (!adapter) {
-      throw new Error("WebGPU not supported");
-    }
-
-    this.device = await adapter.requestDevice({
-      requiredFeatures: [],
-      requiredLimits: {},
-    });
+    this.device = await this.platform.requestDevice();
 
     this.device.lost.then((info) => {
       console.error("WebGPU device lost:", info.message);
@@ -399,19 +391,15 @@ export class FlashApp {
     // Flush pending effects
     this.flushEffects();
 
-    // Render dirty windows
+    // Render and present dirty windows
     for (const windowId of this.dirtyWindows) {
       const window = this.windows.get(windowId);
       if (window) {
         window.render((entityId, windowId, win) => this.createViewContext(entityId, windowId, win));
+        window.present();
       }
     }
     this.dirtyWindows.clear();
-
-    // Present all windows
-    for (const window of this.windows.values()) {
-      window.present();
-    }
   }
 
   markWindowDirty(windowId: WindowId): void {

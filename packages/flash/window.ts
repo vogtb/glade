@@ -60,6 +60,9 @@ import {
 } from "./hitbox.ts";
 import { DragTracker, type ActiveDrag, type DragPayload } from "./drag.ts";
 import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./tooltip.ts";
+import { FlashRenderer } from "./renderer.ts";
+import { RectPipeline } from "./rect.ts";
+import { ShadowPipeline } from "./shadow.ts";
 
 /**
  * Options for creating a window.
@@ -78,6 +81,7 @@ export interface FlashPlatform {
   readonly runtime: "browser" | "darwin";
 
   requestAdapter(): Promise<GPUAdapter | null>;
+  requestDevice(): Promise<GPUDevice>;
   getPreferredCanvasFormat(): GPUTextureFormat;
 
   createRenderTarget(options: { width: number; height: number; title?: string }): FlashRenderTarget;
@@ -155,6 +159,10 @@ export class FlashWindow {
   // Tooltips
   private tooltipManager = new TooltipManager();
 
+  // Renderer
+  private renderer: FlashRenderer;
+  private didRenderThisFrame = false;
+
   constructor(
     readonly id: WindowId,
     private platform: FlashPlatform,
@@ -169,6 +177,24 @@ export class FlashWindow {
     this.layoutEngine = new FlashLayoutEngine();
     this.layoutEngine.setScaleFactor(renderTarget.devicePixelRatio);
     this.renderTarget.configure(device, format);
+
+    // Initialize renderer with pipelines
+    this.renderer = new FlashRenderer(device, format, {
+      clearColor: { r: 0.08, g: 0.08, b: 0.1, a: 1 },
+    });
+    const rectPipeline = new RectPipeline(
+      device,
+      format,
+      this.renderer.getUniformBindGroupLayout()
+    );
+    const shadowPipeline = new ShadowPipeline(
+      device,
+      format,
+      this.renderer.getUniformBindGroupLayout()
+    );
+    this.renderer.setRectPipeline(rectPipeline);
+    this.renderer.setShadowPipeline(shadowPipeline);
+
     this.setupEventListeners();
   }
 
@@ -450,6 +476,7 @@ export class FlashWindow {
       window: FlashWindow
     ) => import("./context.ts").FlashViewContext<V>
   ): void {
+    this.didRenderThisFrame = false;
     this.beginFrame();
 
     this.scene.clear();
@@ -482,13 +509,30 @@ export class FlashWindow {
     }
 
     this.endFrame();
+
+    // Get texture and render scene to GPU
+    const texture = this.renderTarget.getCurrentTexture();
+    const textureView = texture.createView();
+
+    // Calculate framebuffer dimensions (physical pixels)
+    const logicalWidth = this.renderTarget.width;
+    const logicalHeight = this.renderTarget.height;
+    const dpr = this.renderTarget.devicePixelRatio;
+    const fbWidth = Math.floor(logicalWidth * dpr);
+    const fbHeight = Math.floor(logicalHeight * dpr);
+
+    this.renderer.render(this.scene, textureView, logicalWidth, logicalHeight, fbWidth, fbHeight);
+    this.didRenderThisFrame = true;
   }
 
   /**
    * Present the rendered frame.
+   * Only presents if getCurrentTexture was called this frame.
    */
   present(): void {
-    this.renderTarget.present();
+    if (this.didRenderThisFrame) {
+      this.renderTarget.present();
+    }
   }
 
   /**

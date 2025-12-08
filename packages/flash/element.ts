@@ -49,7 +49,8 @@ export interface RequestLayoutResult<R> {
  * Analogous to a React component or GPUI View.
  */
 export interface FlashView {
-  render(cx: FlashViewContext<this>): FlashElement;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  render(cx: FlashViewContext<this>): FlashElement<any, any>;
 }
 
 /**
@@ -57,7 +58,8 @@ export interface FlashView {
  * Similar to GPUI's RenderOnce.
  */
 export interface FlashRenderOnce {
-  render(cx: FlashViewContext<never>): FlashElement;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  render(cx: FlashViewContext<never>): FlashElement<any, any>;
 }
 
 // ============ Phase Contexts ============
@@ -166,7 +168,8 @@ export interface PrepaintContext {
   registerTooltip(
     hitboxId: HitboxId,
     bounds: Bounds,
-    builder: (cx: import("./context.ts").FlashContext) => FlashElement,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    builder: (cx: import("./context.ts").FlashContext) => FlashElement<any, any>,
     config: import("./tooltip.ts").TooltipConfig
   ): void;
 }
@@ -349,13 +352,15 @@ export abstract class FlashContainerElement<
   RequestLayoutState = NoState,
   PrepaintState = NoState,
 > extends FlashElement<RequestLayoutState, PrepaintState> {
-  protected children: FlashElement[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected children: FlashElement<any, any>[] = [];
   protected childLayoutIds: LayoutId[] = [];
 
   /**
    * Add a child element.
    */
-  child(element: FlashElement | string | number): this {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  child(element: FlashElement<any, any> | string | number): this {
     if (typeof element === "string" || typeof element === "number") {
       this.children.push(new FlashTextElement(String(element)));
     } else {
@@ -367,7 +372,8 @@ export abstract class FlashContainerElement<
   /**
    * Add multiple children.
    */
-  children_(...elements: Array<FlashElement | string | number | null | undefined>): this {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  children_(...elements: Array<FlashElement<any, any> | string | number | null | undefined>): this {
     for (const el of elements) {
       if (el != null) {
         this.child(el);
@@ -379,7 +385,8 @@ export abstract class FlashContainerElement<
   /**
    * Get the child elements.
    */
-  getChildren(): readonly FlashElement[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getChildren(): readonly FlashElement<any, any>[] {
     return this.children;
   }
 }

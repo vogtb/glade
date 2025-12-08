@@ -5,6 +5,8 @@ export {
   // WebGPU
   createWebGPUContext,
   runWebGPURenderLoop,
+  // Flash
+  createFlashPlatform,
   // Constants
   GLSL_VERSION,
   GLSL_PRECISION,
@@ -12,5 +14,6 @@ export {
   type DarwinWebGLContext,
   type DarwinWebGPUContext,
   type DarwinContextOptions,
+  type DarwinFlashPlatformInstance,
 } from "@glade/darwin";
 export * from "@glade/core";

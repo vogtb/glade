@@ -20,6 +20,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/core": "workspace:*",
+        "@glade/flash": "workspace:*",
       },
     },
     "packages/core": {
@@ -32,6 +33,7 @@
       "dependencies": {
         "@glade/core": "workspace:*",
         "@glade/dawn": "workspace:*",
+        "@glade/flash": "workspace:*",
         "@glade/glfw": "workspace:*",
       },
       "devDependencies": {

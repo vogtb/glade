@@ -10,11 +10,15 @@
     "build:webgl:native": "bun build ./demo-webgl.ts --compile --outfile=./dist/demo-webgl",
     "build:webgl:web": "bun build ./demo-webgl.ts --outdir=./dist --minify",
     "build:webgpu:native": "bun build ./demo-webgpu.ts --compile --outfile=./dist/demo-webgpu",
-    "build:webgpu:web": "bun build ./demo-webgpu.ts --outdir=./dist --minify",
+    "build:webgpu:web": "bun build ./demo-webgpu.ts ./demo-flash.ts --outdir=./dist --minify",
     "run:webgl:native": "bun build ./demo-webgl.ts --compile --outfile=./dist/demo-webgl && ./dist/demo-webgl",
-    "run:webgl:web": "bun build ./demo-webgl.ts --outdir=./dist --minify && open 'http://localhost:3000/index.html' && bun ./serve.ts",
+    "run:webgl:web": "bun build ./demo-webgl.ts ./demo-flash.ts --outdir=./dist --minify && open 'http://localhost:3000/index.html' && bun ./serve.ts",
     "run:webgpu:native": "bun build ./demo-webgpu.ts --compile --outfile=./dist/demo-webgpu && ./dist/demo-webgpu",
-    "run:webgpu:web": "bun build ./demo-webgpu.ts --outdir=./dist --minify && open 'http://localhost:3000/index.html' && bun ./serve.ts",
+    "run:webgpu:web": "bun build ./demo-webgpu.ts ./demo-flash.ts --outdir=./dist --minify && open 'http://localhost:3000/index.html' && bun ./serve.ts",
+    "run:flash:native": "bun build ./demo-flash.ts --compile --outfile=./dist/demo-flash && ./dist/demo-flash",
+    "run:flash:web": "bun build ./demo-flash.ts --outdir=./dist --minify && open 'http://localhost:3000/flash.html' && bun ./serve.ts",
+    "build:flash:native": "bun build ./demo-flash.ts --compile --outfile=./dist/demo-flash",
+    "build:flash:web": "bun build ./demo-flash.ts ./demo-flash.ts --outdir=./dist --minify",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@glade/core": "workspace:*"
+    "@glade/core": "workspace:*",
+    "@glade/flash": "workspace:*"
   }
 }

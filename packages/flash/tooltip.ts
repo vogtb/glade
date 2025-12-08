@@ -43,7 +43,8 @@ export const DEFAULT_TOOLTIP_CONFIG: TooltipConfig = {
  * Builder function for creating tooltip content.
  * Called when tooltip should be displayed.
  */
-export type TooltipBuilder = (cx: FlashContext) => FlashElement;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TooltipBuilder = (cx: FlashContext) => FlashElement<any, any>;
 
 /**
  * Tooltip registration for an element.
