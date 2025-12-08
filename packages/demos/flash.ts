@@ -262,11 +262,20 @@ function buildDemoScene(
   ];
 
   for (let i = 0; i < 3; i++) {
-    const size = 14;
+    const size = 16;
     const controlX = panelX + 20 + i * 24;
     const controlY = panelY + 18;
 
     const control = div().bg(controlColors[i]!).roundedFull(); // Makes it a circle
+
+    // Debug: log first circle's data once
+    if (i === 0) {
+      const debugState = buildDemoScene as unknown as { loggedCircle?: boolean };
+      if (!debugState.loggedCircle) {
+        debugState.loggedCircle = true;
+        console.log(`Circle: size=${size}, borderRadius=9999`);
+      }
+    }
 
     renderDiv(control, { x: controlX, y: controlY, width: size, height: size }, ctx);
   }

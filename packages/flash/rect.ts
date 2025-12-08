@@ -29,8 +29,8 @@ struct RectInstance {
 
 struct VertexOutput {
   @builtin(position) position: vec4<f32>,
-  @location(0) local_pos: vec2<f32>,           // position relative to rect origin (in pixels)
-  @location(1) @interpolate(flat) half_size: vec2<f32>,  // half of rect size (in pixels)
+  @location(0) @interpolate(flat) rect_origin: vec2<f32>,  // rect origin in framebuffer coords
+  @location(1) @interpolate(flat) half_size: vec2<f32>,    // half of rect size (in pixels)
   @location(2) @interpolate(flat) color: vec4<f32>,
   @location(3) @interpolate(flat) border_color: vec4<f32>,
   @location(4) @interpolate(flat) corner_radius: f32,
@@ -59,8 +59,9 @@ fn vs_main(
   let quad_pos = QUAD_VERTICES[vertex_index];
   let rect_pos = instance.pos_size.xy;
   let rect_size = instance.pos_size.zw;
+  let corner_radius = instance.corner_border.x;
 
-  // Calculate world position in logical coordinates
+  // Calculate world position in logical coordinates (no expansion)
   let world_pos = rect_pos + quad_pos * rect_size;
 
   // Scale from logical to framebuffer coordinates using DPR (scale factor)
@@ -78,63 +79,64 @@ fn vs_main(
   let z_depth = 1.0 - (instance.corner_border.z / 10000.0);
 
   out.position = vec4<f32>(clip_pos, z_depth, 1.0);
-  // Pass position relative to rect center (not origin)
-  // quad_pos goes 0->1, so (quad_pos - 0.5) goes -0.5->0.5
-  // Multiply by rect_size and scale to get pixel offset from center in framebuffer coords
-  out.local_pos = (quad_pos - vec2<f32>(0.5, 0.5)) * rect_size * uniforms.scale;
+  // Pass the original rect origin (not expanded) in framebuffer coords
+  out.rect_origin = rect_pos * uniforms.scale;
   out.half_size = rect_size * 0.5 * uniforms.scale;
   out.color = instance.color;
   out.border_color = instance.border_color;
-  out.corner_radius = instance.corner_border.x * uniforms.scale;
+  out.corner_radius = corner_radius * uniforms.scale;
   out.border_width = instance.corner_border.y * uniforms.scale;
 
   return out;
 }
 
-// GPUI-style quad SDF (from Zed's Metal shaders)
+// SDF for rounded rectangles (Zed/GPUI style)
 // p is the position relative to center
 // half_size is half the rect dimensions
-// corner_radius is the corner radius
+// corner_radius is the corner radius (clamped by caller)
 fn quad_sdf(p: vec2<f32>, half_size: vec2<f32>, corner_radius: f32) -> f32 {
-  // Vector from corner to point
+  // Vector from quad edge to point (in positive quadrant)
   let corner_to_point = abs(p) - half_size;
-  // Offset by corner radius to get distance from inset corner
-  let corner_center_to_point = corner_to_point + vec2<f32>(corner_radius, corner_radius);
 
-  // For sharp corners (radius == 0), just use max of corner distances
+  // Offset inward by corner radius to find distance from rounded corner center
+  let q = corner_to_point + vec2<f32>(corner_radius, corner_radius);
+
+  // For sharp corners (radius == 0), just use max (box SDF)
   if corner_radius == 0.0 {
     return max(corner_to_point.x, corner_to_point.y);
   }
 
-  // Standard rounded box SDF
-  // length for outside corners, max for inside
-  let dist_to_inset = length(max(corner_center_to_point, vec2<f32>(0.0, 0.0))) +
-                      min(max(corner_center_to_point.x, corner_center_to_point.y), 0.0);
-  return dist_to_inset - corner_radius;
+  // Rounded box SDF:
+  // - length(max(q, 0)) handles the outside corner (circular part)
+  // - min(max(q.x, q.y), 0) handles the inside (flat edges)
+  // - subtract corner_radius to get actual distance to the rounded edge
+  return length(max(q, vec2<f32>(0.0, 0.0))) + min(max(q.x, q.y), 0.0) - corner_radius;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-  // in.local_pos is position relative to rect center (from vertex shader)
-  // in.half_size is half the rect size
+  // Compute local position from fragment screen position (like Zed/GPUI)
+  // in.position.xy is the fragment's screen position in framebuffer coords
+  let point = in.position.xy - in.rect_origin;
   let half_size = in.half_size;
+  let local_pos = point - half_size;  // position relative to rect center
 
   // Clamp corner radius to max possible (for circles)
   let radius = min(in.corner_radius, min(half_size.x, half_size.y));
 
+  // For circles/pills (where radius >= min half_size), inset slightly so edges
+  // fall inside the quad bounds for AA at cardinal points
+  let min_half = min(half_size.x, half_size.y);
+  let is_circle = radius >= min_half - 0.5;
+  let aa_inset = select(0.0, 0.5, is_circle);
+  let sdf_half_size = half_size - aa_inset;
+  let sdf_radius = max(0.0, radius - aa_inset);
+
   // Compute SDF distance
-  let dist = quad_sdf(in.local_pos, half_size, radius);
+  let dist = quad_sdf(local_pos, sdf_half_size, sdf_radius);
 
-  // Multi-sample anti-aliasing: sample SDF at 4 points within the pixel
-  // This gives much smoother edges than single-sample approaches
-  let aa_offset = 0.35; // offset in pixels for subpixel sampling
-  let d1 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset, -aa_offset), half_size, radius);
-  let d2 = quad_sdf(in.local_pos + vec2<f32>( aa_offset, -aa_offset), half_size, radius);
-  let d3 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset,  aa_offset), half_size, radius);
-  let d4 = quad_sdf(in.local_pos + vec2<f32>( aa_offset,  aa_offset), half_size, radius);
-
-  // Average the coverage from all 4 samples
-  let alpha = (saturate(0.5 - d1) + saturate(0.5 - d2) + saturate(0.5 - d3) + saturate(0.5 - d4)) * 0.25;
+  // Anti-aliasing using smoothstep for smooth edges
+  let alpha = 1.0 - smoothstep(-0.5, 0.5, dist);
 
   if alpha <= 0.0 {
     discard;
@@ -142,19 +144,16 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
   var final_color = in.color;
 
-  // Border handling with multi-sample AA
+  // Border handling
   if in.border_width > 0.0 {
-    let inner_half_size = half_size - vec2<f32>(in.border_width, in.border_width);
-    let inner_radius = max(0.0, radius - in.border_width);
-    let id1 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset, -aa_offset), inner_half_size, inner_radius);
-    let id2 = quad_sdf(in.local_pos + vec2<f32>( aa_offset, -aa_offset), inner_half_size, inner_radius);
-    let id3 = quad_sdf(in.local_pos + vec2<f32>(-aa_offset,  aa_offset), inner_half_size, inner_radius);
-    let id4 = quad_sdf(in.local_pos + vec2<f32>( aa_offset,  aa_offset), inner_half_size, inner_radius);
-    let border_alpha = (saturate(0.5 + id1) + saturate(0.5 + id2) + saturate(0.5 + id3) + saturate(0.5 + id4)) * 0.25;
+    let inner_half_size = sdf_half_size - vec2<f32>(in.border_width, in.border_width);
+    let inner_radius = max(0.0, sdf_radius - in.border_width);
+    let inner_dist = quad_sdf(local_pos, inner_half_size, inner_radius);
+    let border_alpha = smoothstep(-0.5, 0.5, inner_dist);
     final_color = mix(in.color, in.border_color, border_alpha);
   }
 
-  return vec4<f32>(final_color.rgb, final_color.a * alpha);
+  return final_color * alpha;
 }
 `;
 
@@ -251,6 +250,17 @@ export class RectPipeline {
     for (let i = 0; i < count; i++) {
       const rect = rects[i]!;
       const offset = i * FLOATS_PER_INSTANCE;
+
+      // Debug: log circles (where cornerRadius is very large)
+      if (rect.cornerRadius > 100 && rect.width === rect.height) {
+        const debugState = this.render as unknown as { loggedCircle?: boolean };
+        if (!debugState.loggedCircle) {
+          debugState.loggedCircle = true;
+          console.log(
+            `RectPipeline circle: ${rect.width}x${rect.height}, cornerRadius=${rect.cornerRadius}`
+          );
+        }
+      }
 
       // pos_size
       this.instanceData[offset + 0] = rect.x;
