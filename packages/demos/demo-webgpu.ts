@@ -110,7 +110,8 @@ async function main() {
 
   console.log("initializing WebGPU demos...");
 
-  const format: GPUTextureFormat = "bgra8unorm";
+  // Use the format from the context (matches browser's getPreferredCanvasFormat)
+  const format = ctx.format;
 
   const demos: Array<AnyDemo> = [
     {

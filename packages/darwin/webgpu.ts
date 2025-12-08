@@ -129,7 +129,9 @@ const indexFormatMap: Record<string, number> = {
 // Texture format mapping (from webgpu.h)
 const textureFormatMap: Record<string, number> = {
   bgra8unorm: 0x0000001b, // WGPUTextureFormat_BGRA8Unorm
+  "bgra8unorm-srgb": 0x0000001c, // WGPUTextureFormat_BGRA8UnormSrgb
   rgba8unorm: 0x00000016, // WGPUTextureFormat_RGBA8Unorm
+  "rgba8unorm-srgb": 0x00000017, // WGPUTextureFormat_RGBA8UnormSrgb
   r8unorm: 0x00000001, // WGPUTextureFormat_R8Unorm
   rg8unorm: 0x0000000a, // WGPUTextureFormat_RG8Unorm
   rgba16float: 0x00000021, // WGPUTextureFormat_RGBA16Float
@@ -137,6 +139,11 @@ const textureFormatMap: Record<string, number> = {
   depth24plus: 0x00000030, // WGPUTextureFormat_Depth24Plus
   depth32float: 0x00000032, // WGPUTextureFormat_Depth32Float
 };
+
+// Reverse texture format mapping (number -> string)
+export const textureFormatToString: Record<number, string> = Object.fromEntries(
+  Object.entries(textureFormatMap).map(([k, v]) => [v, k])
+);
 
 // Texture usage flag mapping (same as WebGPU spec)
 const textureUsageMap: Record<number, number> = {
@@ -190,6 +197,32 @@ const textureAspectMap: Record<string, number> = {
   all: 0x01, // WGPUTextureAspect_All
   "stencil-only": 0x02, // WGPUTextureAspect_StencilOnly
   "depth-only": 0x03, // WGPUTextureAspect_DepthOnly
+};
+
+// Blend factor mapping (from WebGPU spec to Dawn)
+const blendFactorMap: Record<string, number> = {
+  zero: 0x01, // WGPUBlendFactor_Zero
+  one: 0x02, // WGPUBlendFactor_One
+  src: 0x03, // WGPUBlendFactor_Src
+  "one-minus-src": 0x04, // WGPUBlendFactor_OneMinusSrc
+  "src-alpha": 0x05, // WGPUBlendFactor_SrcAlpha
+  "one-minus-src-alpha": 0x06, // WGPUBlendFactor_OneMinusSrcAlpha
+  dst: 0x07, // WGPUBlendFactor_Dst
+  "one-minus-dst": 0x08, // WGPUBlendFactor_OneMinusDst
+  "dst-alpha": 0x09, // WGPUBlendFactor_DstAlpha
+  "one-minus-dst-alpha": 0x0a, // WGPUBlendFactor_OneMinusDstAlpha
+  "src-alpha-saturated": 0x0b, // WGPUBlendFactor_SrcAlphaSaturated
+  constant: 0x0c, // WGPUBlendFactor_Constant
+  "one-minus-constant": 0x0d, // WGPUBlendFactor_OneMinusConstant
+};
+
+// Blend operation mapping
+const blendOperationMap: Record<string, number> = {
+  add: 0x01, // WGPUBlendOperation_Add
+  subtract: 0x02, // WGPUBlendOperation_Subtract
+  "reverse-subtract": 0x03, // WGPUBlendOperation_ReverseSubtract
+  min: 0x04, // WGPUBlendOperation_Min
+  max: 0x05, // WGPUBlendOperation_Max
 };
 
 function convertBufferUsage(usage: number): number {
@@ -1121,13 +1154,18 @@ export class DawnGPUQueue {
 export class DawnGPUCanvasContext {
   readonly canvas: null = null;
   private currentTexture: DawnGPUTexture | null = null;
-  private format: string = "bgra8unorm";
+  private format: string;
 
   constructor(
     private readonly surface: WGPUSurface,
     private readonly _width: number,
-    private readonly _height: number
-  ) {}
+    private readonly _height: number,
+    format: string | number = "bgra8unorm"
+  ) {
+    // Convert numeric format to string if needed
+    this.format =
+      typeof format === "number" ? (textureFormatToString[format] ?? "bgra8unorm") : format;
+  }
 
   configure(configuration: { format: string }) {
     this.format = configuration.format;
@@ -1583,12 +1621,36 @@ export class DawnGPUDevice {
           // WGPUBlendState: { color: WGPUBlendComponent, alpha: WGPUBlendComponent }
           // WGPUBlendComponent: { operation: u32, srcFactor: u32, dstFactor: u32 } = 12 bytes
           const blendOffset = i * 24;
-          blendStatesBuffer.writeUInt32LE(1, blendOffset); // color.operation (add)
-          blendStatesBuffer.writeUInt32LE(2, blendOffset + 4); // color.srcFactor (src-alpha)
-          blendStatesBuffer.writeUInt32LE(4, blendOffset + 8); // color.dstFactor (one-minus-src-alpha)
-          blendStatesBuffer.writeUInt32LE(1, blendOffset + 12); // alpha.operation (add)
-          blendStatesBuffer.writeUInt32LE(1, blendOffset + 16); // alpha.srcFactor (one)
-          blendStatesBuffer.writeUInt32LE(4, blendOffset + 20); // alpha.dstFactor (one-minus-src-alpha)
+          const colorBlend = target.blend.color;
+          const alphaBlend = target.blend.alpha;
+
+          // Color blend component
+          blendStatesBuffer.writeUInt32LE(
+            blendOperationMap[colorBlend.operation ?? "add"] ?? 0x01,
+            blendOffset
+          );
+          blendStatesBuffer.writeUInt32LE(
+            blendFactorMap[colorBlend.srcFactor ?? "one"] ?? 0x02,
+            blendOffset + 4
+          );
+          blendStatesBuffer.writeUInt32LE(
+            blendFactorMap[colorBlend.dstFactor ?? "zero"] ?? 0x01,
+            blendOffset + 8
+          );
+
+          // Alpha blend component
+          blendStatesBuffer.writeUInt32LE(
+            blendOperationMap[alphaBlend.operation ?? "add"] ?? 0x01,
+            blendOffset + 12
+          );
+          blendStatesBuffer.writeUInt32LE(
+            blendFactorMap[alphaBlend.srcFactor ?? "one"] ?? 0x02,
+            blendOffset + 16
+          );
+          blendStatesBuffer.writeUInt32LE(
+            blendFactorMap[alphaBlend.dstFactor ?? "zero"] ?? 0x01,
+            blendOffset + 20
+          );
 
           targetsBuffer.writeBigUInt64LE(
             BigInt((ptr(blendStatesBuffer) as unknown as number) + blendOffset),
@@ -2363,6 +2425,7 @@ export interface SurfaceConfiguration {
   height: number;
   presentMode?: number;
   alphaMode?: number;
+  viewFormats?: number[];
 }
 
 /**
@@ -2373,6 +2436,18 @@ export function configureSurface(surface: WGPUSurface, config: SurfaceConfigurat
   const usage = config.usage ?? WGPUTextureUsage.RenderAttachment;
   const presentMode = config.presentMode ?? WGPUPresentMode.Fifo;
   const alphaMode = config.alphaMode ?? WGPUCompositeAlphaMode.Opaque;
+  const viewFormats = config.viewFormats ?? [];
+
+  // Create viewFormats buffer if needed
+  let viewFormatsPtr = BigInt(0);
+  let viewFormatsBuffer: Buffer | null = null;
+  if (viewFormats.length > 0) {
+    viewFormatsBuffer = Buffer.alloc(viewFormats.length * 4);
+    for (let i = 0; i < viewFormats.length; i++) {
+      viewFormatsBuffer.writeUInt32LE(viewFormats[i]!, i * 4);
+    }
+    viewFormatsPtr = BigInt(ptr(viewFormatsBuffer) as unknown as number);
+  }
 
   // WGPUSurfaceConfiguration struct layout:
   // { nextInChain: ptr(8), device: ptr(8), format: u32(4), padding(4),
@@ -2395,15 +2470,18 @@ export function configureSurface(surface: WGPUSurface, config: SurfaceConfigurat
   offset += 4;
   configBuffer.writeUInt32LE(config.height, offset); // height
   offset += 4;
-  configBuffer.writeBigUInt64LE(BigInt(0), offset); // viewFormatCount
+  configBuffer.writeBigUInt64LE(BigInt(viewFormats.length), offset); // viewFormatCount
   offset += 8;
-  configBuffer.writeBigUInt64LE(BigInt(0), offset); // viewFormats
+  configBuffer.writeBigUInt64LE(viewFormatsPtr, offset); // viewFormats
   offset += 8;
   configBuffer.writeUInt32LE(alphaMode, offset); // alphaMode
   offset += 4;
   configBuffer.writeUInt32LE(presentMode, offset); // presentMode
 
   dawn.wgpuSurfaceConfigure(surface, ptr(configBuffer));
+
+  // Keep viewFormatsBuffer alive until configure completes (prevent GC)
+  void viewFormatsBuffer;
 }
 
 /**

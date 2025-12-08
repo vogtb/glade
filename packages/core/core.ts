@@ -24,6 +24,7 @@ export interface WebGPUContext extends EventTarget {
   device: GPUDevice;
   queue: GPUQueue;
   context: GPUCanvasContext;
+  format: GPUTextureFormat;
   width: number;
   height: number;
   destroy(): void;

@@ -32,6 +32,7 @@ import {
   tickDevice,
   DawnGPUDevice,
   DawnGPUCanvasContext,
+  textureFormatToString,
 } from "./webgpu.ts";
 import {
   type WGPUInstance,
@@ -312,7 +313,8 @@ export async function createWebGPUContext(
     throw new Error("No supported surface formats");
   }
 
-  // Use first (preferred) format from capabilities
+  // Use the first (preferred) format from capabilities
+  // On macOS with Dawn, this is typically BGRA8Unorm (0x1b)
   const preferredFormat = capabilities.formats[0]!;
   const preferredPresentMode =
     capabilities.presentModes.length > 0 ? capabilities.presentModes[0]! : undefined;
@@ -330,6 +332,7 @@ export async function createWebGPUContext(
   // winSize is logical screen coordinates (e.g., 800x600)
   const fbSize = glfw.getFramebufferSize(window);
   const winSize = glfw.getWindowSize(window);
+
   configureSurface(surface, {
     device,
     format: preferredFormat,
@@ -344,10 +347,18 @@ export async function createWebGPUContext(
 
   // Create wrapped GPU device and context
   const wrappedDevice = new DawnGPUDevice(device, queue);
-  const wrappedContext = new DawnGPUCanvasContext(surface, fbSize.width, fbSize.height);
+  const wrappedContext = new DawnGPUCanvasContext(
+    surface,
+    fbSize.width,
+    fbSize.height,
+    preferredFormat
+  );
 
   // Stub GPU object (not fully implemented)
   const gpu = {} as GPU;
+
+  // Convert numeric format to string for WebGPU API compatibility
+  const formatString = (textureFormatToString[preferredFormat] ?? "bgra8unorm") as GPUTextureFormat;
 
   return {
     gpu,
@@ -355,6 +366,7 @@ export async function createWebGPUContext(
     device: wrappedDevice as unknown as GPUDevice,
     queue: wrappedDevice.queue as unknown as GPUQueue,
     context: wrappedContext as unknown as GPUCanvasContext,
+    format: formatString,
     window,
     // width/height are framebuffer size (physical pixels) for GPU operations
     width: fbSize.width,

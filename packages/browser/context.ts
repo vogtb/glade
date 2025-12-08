@@ -378,6 +378,7 @@ export async function createWebGPUContext(
     device,
     queue,
     context,
+    format,
     canvas,
     // width/height are framebuffer size (physical pixels) for GPU operations
     width: physicalWidth,

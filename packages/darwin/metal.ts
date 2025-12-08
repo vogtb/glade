@@ -3,7 +3,7 @@
  * windows to WebGPU/Dawn.
  */
 
-import type { Pointer } from "bun:ffi";
+import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
 import {
   getClass,
   getSelector,
@@ -13,6 +13,34 @@ import {
   objcSendReturnDouble,
   objcSendOneDouble,
 } from "./objc.ts";
+
+// CoreFoundation for CFString creation
+const coreFoundation = dlopen(
+  "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+  {
+    CFStringCreateWithCString: {
+      args: [FFIType.ptr, FFIType.ptr, FFIType.u32],
+      returns: FFIType.ptr,
+    },
+    CFRelease: { args: [FFIType.ptr], returns: FFIType.void },
+  }
+);
+
+// CoreGraphics framework for colorspace functions
+const coreGraphics = dlopen("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", {
+  CGColorSpaceCreateWithName: { args: [FFIType.ptr], returns: FFIType.ptr },
+  CGColorSpaceRelease: { args: [FFIType.ptr], returns: FFIType.void },
+});
+
+// Create sRGB colorspace name CFString for use when setting up Metal layers
+// kCFStringEncodingUTF8 = 0x08000100
+const kCFStringEncodingUTF8 = 0x08000100;
+const srgbNameBuffer = Buffer.from("kCGColorSpaceSRGB\0");
+const srgbNameCFString = coreFoundation.symbols.CFStringCreateWithCString(
+  null,
+  ptr(srgbNameBuffer),
+  kCFStringEncodingUTF8
+);
 
 // Selector cache
 const selectors = {
@@ -24,6 +52,7 @@ const selectors = {
   setContentsScale: getSelector("setContentsScale:"),
   backingScaleFactor: getSelector("backingScaleFactor"),
   window: getSelector("window"),
+  setColorspace: getSelector("setColorspace:"),
 };
 
 // Class cache
@@ -78,6 +107,22 @@ export function createMetalLayerForView(nsView: Pointer): Pointer {
   const resultLayer = objcSendNoArgs.symbols.objc_msgSend(nsView, selectors.layer);
   if (!resultLayer) {
     throw new Error("Failed to get layer from view");
+  }
+
+  // Set colorspace to sRGB for proper color management
+  // This ensures colors are displayed correctly and match browser WebGPU behavior
+  // Without this, macOS doesn't perform color management and colors may appear incorrect
+  if (srgbNameCFString) {
+    const srgbColorspace = coreGraphics.symbols.CGColorSpaceCreateWithName(srgbNameCFString);
+    console.log(
+      `Metal layer colorspace: cfString=${srgbNameCFString}, colorspace=${srgbColorspace}`
+    );
+    if (srgbColorspace) {
+      objcSendOnePtr.symbols.objc_msgSend(resultLayer, selectors.setColorspace, srgbColorspace);
+      coreGraphics.symbols.CGColorSpaceRelease(srgbColorspace);
+    }
+  } else {
+    console.log("Warning: srgbNameCFString is null, colorspace not set");
   }
 
   return resultLayer;
