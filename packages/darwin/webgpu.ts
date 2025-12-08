@@ -956,16 +956,22 @@ export class DawnGPUQueue {
     dataOffset?: number,
     size?: number
   ) {
-    let byteOffset = dataOffset ?? 0;
     let dataView: Uint8Array;
 
     if (data instanceof ArrayBuffer) {
+      // For ArrayBuffer, dataOffset and size are in bytes
+      const byteOffset = dataOffset ?? 0;
       const dataSize = size ?? data.byteLength - byteOffset;
       dataView = new Uint8Array(data, byteOffset, dataSize);
     } else if (ArrayBuffer.isView(data)) {
-      byteOffset += data.byteOffset;
-      const dataSize = size ?? data.byteLength - (dataOffset ?? 0);
-      dataView = new Uint8Array(data.buffer as ArrayBuffer, byteOffset, dataSize);
+      // For TypedArrays, dataOffset and size are in ELEMENTS, not bytes!
+      // This matches the WebGPU spec behavior
+      const bytesPerElement = (data as unknown as { BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT;
+      const elementOffset = dataOffset ?? 0;
+      const elementCount = size ?? data.byteLength / bytesPerElement - elementOffset;
+      const byteOffset = data.byteOffset + elementOffset * bytesPerElement;
+      const byteSize = elementCount * bytesPerElement;
+      dataView = new Uint8Array(data.buffer as ArrayBuffer, byteOffset, byteSize);
     } else {
       throw new Error("Invalid data type for writeBuffer");
     }

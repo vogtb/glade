@@ -3,16 +3,130 @@
  *
  * Demonstrates the Flash UI framework's GPU-accelerated rendering
  * with rectangles, rounded corners, borders, and shadows.
+ * Now using the div() element API with Tailwind-like styling.
  */
 
 import type { WebGPUContext } from "@glade/core";
-import { FlashScene, FlashRenderer, RectPipeline, ShadowPipeline, rgb, rgba } from "@glade/flash";
+import {
+  FlashScene,
+  FlashRenderer,
+  RectPipeline,
+  ShadowPipeline,
+  rgb,
+  rgba,
+  div,
+  type FlashDiv,
+  type Bounds,
+  type Color,
+  SHADOW_DEFINITIONS,
+} from "@glade/flash";
 
 export interface FlashDemoResources {
   renderer: FlashRenderer;
   rectPipeline: RectPipeline;
   shadowPipeline: ShadowPipeline;
   scene: FlashScene;
+}
+
+/**
+ * Simple layout/paint system for the demo.
+ * This directly renders div trees to the scene without the full FlashApp framework.
+ */
+interface DivRenderContext {
+  scene: FlashScene;
+  mouseX: number;
+  mouseY: number;
+  mouseDown: boolean;
+}
+
+/**
+ * Render a div element tree directly to the scene.
+ * This is a simplified version of what FlashWindow does.
+ */
+function renderDiv(element: FlashDiv, bounds: Bounds, ctx: DivRenderContext): void {
+  // Access internal styles via a workaround (in a real app, we'd use the proper paint context)
+  // TypeScript's private is only compile-time, so runtime access works
+  const elementAny = element as unknown as {
+    styles: Record<string, unknown>;
+    hoverStyles: Record<string, unknown> | null;
+    activeStyles: Record<string, unknown> | null;
+  };
+  const styles = elementAny.styles || {};
+
+  const isHovered =
+    ctx.mouseX >= bounds.x &&
+    ctx.mouseX < bounds.x + bounds.width &&
+    ctx.mouseY >= bounds.y &&
+    ctx.mouseY < bounds.y + bounds.height;
+
+  const isActive = isHovered && ctx.mouseDown;
+
+  // Get effective styles (apply hover/active overrides)
+  let effectiveStyles = { ...styles };
+  const hoverStyles = elementAny.hoverStyles;
+  const activeStyles = elementAny.activeStyles;
+
+  if (isHovered && hoverStyles) {
+    effectiveStyles = { ...effectiveStyles, ...hoverStyles };
+  }
+  if (isActive && activeStyles) {
+    effectiveStyles = { ...effectiveStyles, ...activeStyles };
+  }
+
+  // Paint shadow
+  const shadow = effectiveStyles.shadow as string | undefined;
+  if (shadow && shadow !== "none") {
+    const def = SHADOW_DEFINITIONS[shadow as keyof typeof SHADOW_DEFINITIONS];
+    if (def) {
+      ctx.scene.addShadow({
+        x: bounds.x,
+        y: bounds.y + def.offsetY,
+        width: bounds.width,
+        height: bounds.height,
+        cornerRadius: (effectiveStyles.borderRadius as number) ?? 0,
+        color: { r: 0, g: 0, b: 0, a: def.opacity },
+        blur: def.blur,
+        offsetX: 0,
+        offsetY: def.offsetY,
+      });
+    }
+  }
+
+  // Paint background
+  const bgColor = effectiveStyles.backgroundColor as Color | undefined;
+
+  // Debug: count renders per frame
+  const debugState = renderDiv as unknown as { debugCount: number; logged: boolean };
+  debugState.debugCount = (debugState.debugCount || 0) + 1;
+
+  if (bgColor) {
+    ctx.scene.addRect({
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      color: bgColor,
+      cornerRadius: (effectiveStyles.borderRadius as number) ?? 0,
+      borderWidth: (effectiveStyles.borderWidth as number) ?? 0,
+      borderColor: (effectiveStyles.borderColor as Color) ?? { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // Paint border (if no background but has border)
+  const borderWidth = effectiveStyles.borderWidth as number | undefined;
+  const borderColor = effectiveStyles.borderColor as Color | undefined;
+  if (borderWidth && borderColor && !bgColor) {
+    ctx.scene.addRect({
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      color: { r: 0, g: 0, b: 0, a: 0 },
+      cornerRadius: (effectiveStyles.borderRadius as number) ?? 0,
+      borderWidth,
+      borderColor,
+    });
+  }
 }
 
 /**
@@ -63,11 +177,23 @@ export function renderFlashDemo(
   scene.clear();
 
   // Build UI scene
-  buildDemoScene(scene, ctx.width, ctx.height, time, mouseX, mouseY);
+  // Reset debug counter each frame
+  const debugState = renderDiv as unknown as { debugCount: number; logged: boolean };
+  debugState.debugCount = 0;
 
-  // Render scene
+  // Use logical coordinates (window size) for UI, not framebuffer size
+  // For native contexts, windowWidth/windowHeight are logical coordinates
+  // For browser contexts, width/height are already logical (canvas dimensions)
+  // Mouse coordinates from GLFW are always in window (logical) coordinates
+  const ctxAny = ctx as { windowWidth?: number; windowHeight?: number };
+  const logicalWidth = ctxAny.windowWidth ?? ctx.width;
+  const logicalHeight = ctxAny.windowHeight ?? ctx.height;
+
+  buildDemoScene(scene, logicalWidth, logicalHeight, time, mouseX, mouseY);
+
+  // Render scene - use logical coordinates for UI, framebuffer size for GPU viewport
   const textureView = context.getCurrentTexture().createView();
-  renderer.render(scene, textureView, ctx.width, ctx.height);
+  renderer.render(scene, textureView, logicalWidth, logicalHeight, ctx.width, ctx.height);
 
   // Present if needed (native contexts)
   if ("present" in context && typeof context.present === "function") {
@@ -77,6 +203,7 @@ export function renderFlashDemo(
 
 /**
  * Build the demo UI scene with various Flash elements.
+ * Demonstrates both low-level scene primitives and div() element API.
  */
 function buildDemoScene(
   scene: FlashScene,
@@ -89,124 +216,83 @@ function buildDemoScene(
   const centerX = width / 2;
   const centerY = height / 2;
 
-  // Background panel with shadow
-  scene.addShadow({
-    x: centerX - 300,
-    y: centerY - 200,
-    width: 600,
-    height: 400,
-    cornerRadius: 16,
-    color: { r: 0, g: 0, b: 0, a: 0.5 },
-    blur: 30,
-    offsetX: 0,
-    offsetY: 10,
-  });
+  // Create render context for div elements
+  const ctx: DivRenderContext = { scene, mouseX, mouseY, mouseDown: false };
 
-  scene.addRect({
-    x: centerX - 300,
-    y: centerY - 200,
-    width: 600,
-    height: 400,
-    color: { r: 0.15, g: 0.15, b: 0.2, a: 1 },
-    cornerRadius: 16,
-    borderWidth: 1,
-    borderColor: { r: 0.3, g: 0.3, b: 0.4, a: 1 },
-  });
+  // ============ Main Window Panel (using div API) ============
 
-  // Title bar
-  scene.addRect({
-    x: centerX - 300,
-    y: centerY - 200,
-    width: 600,
-    height: 50,
-    color: { r: 0.12, g: 0.12, b: 0.18, a: 1 },
-    cornerRadius: 16,
-    borderWidth: 0,
-    borderColor: { r: 0, g: 0, b: 0, a: 0 },
-  });
+  // Background panel using div with shadow
+  const panelX = centerX - 300;
+  const panelY = centerY - 200;
+
+  const panel = div()
+    .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+    .rounded(16)
+    .border(1)
+    .borderColor({ r: 0.3, g: 0.3, b: 0.4, a: 1 })
+    .shadowLg();
+
+  renderDiv(panel, { x: panelX, y: panelY, width: 600, height: 400 }, ctx);
+
+  // Title bar using div
+  const titleBar = div().bg({ r: 0.12, g: 0.12, b: 0.18, a: 1 }).rounded(16);
+
+  renderDiv(titleBar, { x: panelX, y: panelY, width: 600, height: 50 }, ctx);
 
   // Cover bottom corners of title bar
-  scene.addRect({
-    x: centerX - 300,
-    y: centerY - 160,
-    width: 600,
-    height: 10,
-    color: { r: 0.12, g: 0.12, b: 0.18, a: 1 },
-    cornerRadius: 0,
-    borderWidth: 0,
-    borderColor: { r: 0, g: 0, b: 0, a: 0 },
-  });
+  const titleBarBottom = div().bg({ r: 0.12, g: 0.12, b: 0.18, a: 1 });
 
-  // Window controls (circles)
+  renderDiv(titleBarBottom, { x: panelX, y: panelY + 40, width: 600, height: 10 }, ctx);
+
+  // ============ Window Controls (using div API for circles) ============
+
   const controlColors = [
-    rgb(0xff5f56), // Red
-    rgb(0xffbd2e), // Yellow
-    rgb(0x27c93f), // Green
+    rgb(0xff5f56), // Red - close
+    rgb(0xffbd2e), // Yellow - minimize
+    rgb(0x27c93f), // Green - maximize
   ];
 
   for (let i = 0; i < 3; i++) {
-    const size = 28; // Doubled size for testing
-    scene.addRect({
-      x: centerX - 280 + i * 40,
-      y: centerY - 190,
-      width: size,
-      height: size,
-      color: controlColors[i]!,
-      cornerRadius: size / 2,
-      borderWidth: 0,
-      borderColor: { r: 0, g: 0, b: 0, a: 0 },
-    });
+    const size = 18;
+    const controlX = panelX + 20 + i * 24;
+    const controlY = panelY + 18;
+
+    const control = div().bg(controlColors[i]!).roundedFull(); // Makes it a circle
+
+    renderDiv(control, { x: controlX, y: controlY, width: size, height: size }, ctx);
   }
 
-  // Animated buttons row
+  // ============ Interactive Buttons (using div with hover states) ============
+
   const buttonWidth = 120;
   const buttonHeight = 40;
   const buttonSpacing = 20;
   const buttonsStartX = centerX - (3 * buttonWidth + 2 * buttonSpacing) / 2;
   const buttonsY = centerY - 80;
 
-  const buttonColors = [
-    { bg: rgb(0x3b82f6), hover: rgb(0x2563eb) }, // Blue
-    { bg: rgb(0x10b981), hover: rgb(0x059669) }, // Green
-    { bg: rgb(0xf59e0b), hover: rgb(0xd97706) }, // Amber
+  const buttonConfigs = [
+    { bg: rgb(0x3b82f6), hover: rgb(0x2563eb), label: "Primary" },
+    { bg: rgb(0x10b981), hover: rgb(0x059669), label: "Success" },
+    { bg: rgb(0xf59e0b), hover: rgb(0xd97706), label: "Warning" },
   ];
 
   for (let i = 0; i < 3; i++) {
     const btnX = buttonsStartX + i * (buttonWidth + buttonSpacing);
-    const isHovered =
-      mouseX >= btnX &&
-      mouseX <= btnX + buttonWidth &&
-      mouseY >= buttonsY &&
-      mouseY <= buttonsY + buttonHeight;
+    const config = buttonConfigs[i]!;
 
-    // Button shadow
-    scene.addShadow({
-      x: btnX,
-      y: buttonsY,
-      width: buttonWidth,
-      height: buttonHeight,
-      cornerRadius: 8,
-      color: { r: 0, g: 0, b: 0, a: 0.3 },
-      blur: isHovered ? 15 : 8,
-      offsetX: 0,
-      offsetY: isHovered ? 4 : 2,
-    });
+    // Create button with hover effect using div API
+    const button = div()
+      .bg(config.bg)
+      .roundedLg()
+      .shadowMd()
+      .cursorPointer()
+      .hover((s) => s.bg(config.hover).shadow("lg"));
 
-    // Button rect
-    const btnColor = buttonColors[i]!;
-    scene.addRect({
-      x: btnX,
-      y: buttonsY + (isHovered ? -2 : 0),
-      width: buttonWidth,
-      height: buttonHeight,
-      color: isHovered ? btnColor.hover : btnColor.bg,
-      cornerRadius: 8,
-      borderWidth: 0,
-      borderColor: { r: 0, g: 0, b: 0, a: 0 },
-    });
+    renderDiv(button, { x: btnX, y: buttonsY, width: buttonWidth, height: buttonHeight }, ctx);
   }
 
-  // Card grid
+  // ============ Animated Cards (mix of div API and direct primitives) ============
+
   const cardWidth = 160;
   const cardHeight = 100;
   const cardSpacing = 20;
@@ -215,65 +301,44 @@ function buildDemoScene(
 
   for (let i = 0; i < 3; i++) {
     const cardX = cardsStartX + i * (cardWidth + cardSpacing);
-
-    // Animated offset based on time
     const phase = time * 2 + i * 0.8;
     const yOffset = Math.sin(phase) * 5;
 
-    // Card shadow
-    scene.addShadow({
-      x: cardX,
-      y: cardsY + yOffset,
-      width: cardWidth,
-      height: cardHeight,
-      cornerRadius: 12,
-      color: { r: 0, g: 0, b: 0, a: 0.25 },
-      blur: 20,
-      offsetX: 0,
-      offsetY: 8,
-    });
-
-    // Card background
+    // Animated hue
     const hue = (i * 0.15 + time * 0.1) % 1;
     const cardColor = hslToRgb(hue, 0.6, 0.5);
 
-    scene.addRect({
-      x: cardX,
-      y: cardsY + yOffset,
-      width: cardWidth,
-      height: cardHeight,
-      color: cardColor,
-      cornerRadius: 12,
-      borderWidth: 2,
-      borderColor: { ...cardColor, a: 0.3 },
-    });
+    // Card using div API
+    const card = div()
+      .bg(cardColor)
+      .roundedXl()
+      .border(2)
+      .borderColor({ ...cardColor, a: 0.3 })
+      .shadowLg();
 
-    // Inner decoration
-    scene.addRect({
-      x: cardX + 15,
-      y: cardsY + yOffset + 15,
-      width: cardWidth - 30,
-      height: 8,
-      color: { r: 1, g: 1, b: 1, a: 0.3 },
-      cornerRadius: 4,
-      borderWidth: 0,
-      borderColor: { r: 0, g: 0, b: 0, a: 0 },
-    });
+    renderDiv(card, { x: cardX, y: cardsY + yOffset, width: cardWidth, height: cardHeight }, ctx);
 
-    scene.addRect({
-      x: cardX + 15,
-      y: cardsY + yOffset + 30,
-      width: (cardWidth - 30) * 0.6,
-      height: 6,
-      color: { r: 1, g: 1, b: 1, a: 0.2 },
-      cornerRadius: 3,
-      borderWidth: 0,
-      borderColor: { r: 0, g: 0, b: 0, a: 0 },
-    });
+    // Inner decorations (skeleton lines) using div
+    const line1 = div().bg({ r: 1, g: 1, b: 1, a: 0.3 }).rounded(4);
+    renderDiv(
+      line1,
+      { x: cardX + 15, y: cardsY + yOffset + 15, width: cardWidth - 30, height: 8 },
+      ctx
+    );
+
+    const line2 = div().bg({ r: 1, g: 1, b: 1, a: 0.2 }).rounded(3);
+    renderDiv(
+      line2,
+      { x: cardX + 15, y: cardsY + yOffset + 30, width: (cardWidth - 30) * 0.6, height: 6 },
+      ctx
+    );
   }
 
-  // Mouse follower circle
+  // ============ Mouse Follower (using div for the circle) ============
+
   const followerSize = 30 + Math.sin(time * 3) * 5;
+
+  // Glow effect (still using primitives for blur)
   scene.addShadow({
     x: mouseX - followerSize / 2,
     y: mouseY - followerSize / 2,
@@ -286,18 +351,26 @@ function buildDemoScene(
     offsetY: 0,
   });
 
-  scene.addRect({
-    x: mouseX - followerSize / 2,
-    y: mouseY - followerSize / 2,
-    width: followerSize,
-    height: followerSize,
-    color: rgb(0x6366f1),
-    cornerRadius: followerSize / 2,
-    borderWidth: 2,
-    borderColor: { r: 1, g: 1, b: 1, a: 0.5 },
-  });
+  // Follower circle using div
+  const follower = div()
+    .bg(rgb(0x6366f1))
+    .roundedFull()
+    .border(2)
+    .borderColor({ r: 1, g: 1, b: 1, a: 0.5 });
 
-  // Corner decorations (animated)
+  renderDiv(
+    follower,
+    {
+      x: mouseX - followerSize / 2,
+      y: mouseY - followerSize / 2,
+      width: followerSize,
+      height: followerSize,
+    },
+    ctx
+  );
+
+  // ============ Corner Decorations (using div with animation) ============
+
   const cornerSize = 60;
   const corners = [
     { x: 20, y: 20 },
@@ -310,16 +383,35 @@ function buildDemoScene(
     const corner = corners[i]!;
     const pulse = 0.8 + Math.sin(time * 2 + i * 1.5) * 0.2;
 
-    scene.addRect({
-      x: corner.x,
-      y: corner.y,
-      width: cornerSize,
-      height: cornerSize,
-      color: { r: 0.2 * pulse, g: 0.2 * pulse, b: 0.3 * pulse, a: 0.5 },
-      cornerRadius: 12,
-      borderWidth: 1,
-      borderColor: { r: 0.4, g: 0.4, b: 0.6, a: 0.5 * pulse },
-    });
+    const cornerDiv = div()
+      .bg({ r: 0.2 * pulse, g: 0.2 * pulse, b: 0.3 * pulse, a: 0.5 })
+      .roundedXl()
+      .border(1)
+      .borderColor({ r: 0.4, g: 0.4, b: 0.6, a: 0.5 * pulse });
+
+    renderDiv(cornerDiv, { x: corner.x, y: corner.y, width: cornerSize, height: cornerSize }, ctx);
+  }
+
+  // ============ Status Bar at Bottom (new element using div) ============
+
+  const statusBar = div().bg({ r: 0.1, g: 0.1, b: 0.15, a: 0.9 }).roundedLg();
+
+  renderDiv(statusBar, { x: panelX + 20, y: panelY + 350, width: 560, height: 30 }, ctx);
+
+  // Status indicators
+  const statusColors = [
+    { color: rgb(0x22c55e), label: "Online" },
+    { color: rgb(0xeab308), label: "Syncing" },
+    { color: rgb(0x3b82f6), label: "Ready" },
+  ];
+
+  for (let i = 0; i < 3; i++) {
+    const dotX = panelX + 40 + i * 80;
+    const dotY = panelY + 358;
+
+    const statusDot = div().bg(statusColors[i]!.color).roundedFull();
+
+    renderDiv(statusDot, { x: dotX, y: dotY, width: 12, height: 12 }, ctx);
   }
 }
 

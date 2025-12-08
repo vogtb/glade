@@ -54,6 +54,9 @@ export interface DarwinWebGLContext extends WebGLContext {
 // WebGPU context interface
 export interface DarwinWebGPUContext extends WebGPUContext {
   window: GLFWwindow;
+  // Logical window size (in screen coordinates, e.g., 800x600)
+  windowWidth: number;
+  windowHeight: number;
   // Dawn-specific handles for advanced usage
   wgpuInstance: WGPUInstance;
   wgpuAdapter: WGPUAdapter;
@@ -323,7 +326,10 @@ export async function createWebGPUContext(
   const queue = getDeviceQueue(device);
 
   // Configure surface with capabilities-derived values
+  // fbSize is physical pixels (e.g., 1600x1200 on Retina)
+  // winSize is logical screen coordinates (e.g., 800x600)
   const fbSize = glfw.getFramebufferSize(window);
+  const winSize = glfw.getWindowSize(window);
   configureSurface(surface, {
     device,
     format: preferredFormat,
@@ -350,8 +356,12 @@ export async function createWebGPUContext(
     queue: wrappedDevice.queue as unknown as GPUQueue,
     context: wrappedContext as unknown as GPUCanvasContext,
     window,
+    // width/height are framebuffer size (physical pixels) for GPU operations
     width: fbSize.width,
     height: fbSize.height,
+    // windowWidth/windowHeight are logical screen coordinates for UI
+    windowWidth: winSize.width,
+    windowHeight: winSize.height,
     wgpuInstance: instance,
     wgpuAdapter: adapter,
     wgpuDevice: device,

@@ -61,22 +61,27 @@ fn vs_main(
   let expanded_pos = instance.pos_size.xy - vec2<f32>(spread);
   let expanded_size = instance.pos_size.zw + vec2<f32>(spread * 2.0);
 
-  // Calculate world position
+  // Calculate world position in logical coordinates
   let world_pos = expanded_pos + quad_pos * expanded_size;
 
+  // Scale from logical to framebuffer coordinates using DPR (scale factor)
+  let scaled_pos = world_pos * uniforms.scale;
+
   // Convert to clip space (-1 to 1)
+  // viewport_size is now framebuffer size
   let clip_pos = vec2<f32>(
-    (world_pos.x / uniforms.viewport_size.x) * 2.0 - 1.0,
-    1.0 - (world_pos.y / uniforms.viewport_size.y) * 2.0
+    (scaled_pos.x / uniforms.viewport_size.x) * 2.0 - 1.0,
+    1.0 - (scaled_pos.y / uniforms.viewport_size.y) * 2.0
   );
 
   out.position = vec4<f32>(clip_pos, 0.0, 1.0);
   // Local position relative to original rect (can be negative due to spread)
-  out.local_pos = quad_pos * expanded_size - vec2<f32>(spread);
-  out.rect_size = instance.pos_size.zw;
+  // Scale to framebuffer coordinates for proper SDF calculations
+  out.local_pos = (quad_pos * expanded_size - vec2<f32>(spread)) * uniforms.scale;
+  out.rect_size = instance.pos_size.zw * uniforms.scale;
   out.color = instance.color;
-  out.corner_radius = instance.params.x;
-  out.blur = blur;
+  out.corner_radius = instance.params.x * uniforms.scale;
+  out.blur = blur * uniforms.scale;
 
   return out;
 }

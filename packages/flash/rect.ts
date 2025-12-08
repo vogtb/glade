@@ -60,25 +60,29 @@ fn vs_main(
   let rect_pos = instance.pos_size.xy;
   let rect_size = instance.pos_size.zw;
 
-  // Calculate world position
+  // Calculate world position in logical coordinates
   let world_pos = rect_pos + quad_pos * rect_size;
 
+  // Scale from logical to framebuffer coordinates using DPR (scale factor)
+  let scaled_pos = world_pos * uniforms.scale;
+
   // Convert to clip space (-1 to 1)
+  // viewport_size is now framebuffer size
   let clip_pos = vec2<f32>(
-    (world_pos.x / uniforms.viewport_size.x) * 2.0 - 1.0,
-    1.0 - (world_pos.y / uniforms.viewport_size.y) * 2.0
+    (scaled_pos.x / uniforms.viewport_size.x) * 2.0 - 1.0,
+    1.0 - (scaled_pos.y / uniforms.viewport_size.y) * 2.0
   );
 
   out.position = vec4<f32>(clip_pos, 0.0, 1.0);
   // Pass position relative to rect center (not origin)
   // quad_pos goes 0->1, so (quad_pos - 0.5) goes -0.5->0.5
-  // Multiply by rect_size to get pixel offset from center
-  out.local_pos = (quad_pos - vec2<f32>(0.5, 0.5)) * rect_size;
-  out.half_size = rect_size * 0.5;
+  // Multiply by rect_size and scale to get pixel offset from center in framebuffer coords
+  out.local_pos = (quad_pos - vec2<f32>(0.5, 0.5)) * rect_size * uniforms.scale;
+  out.half_size = rect_size * 0.5 * uniforms.scale;
   out.color = instance.color;
   out.border_color = instance.border_color;
-  out.corner_radius = instance.corner_border.x;
-  out.border_width = instance.corner_border.y;
+  out.corner_radius = instance.corner_border.x * uniforms.scale;
+  out.border_width = instance.corner_border.y * uniforms.scale;
 
   return out;
 }

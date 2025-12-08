@@ -116,10 +116,30 @@ export class FlashRenderer {
 
   /**
    * Render a scene to a texture view.
+   * @param width - Logical width for UI coordinate system
+   * @param height - Logical height for UI coordinate system
+   * @param framebufferWidth - Optional physical framebuffer width (defaults to width)
+   * @param framebufferHeight - Optional physical framebuffer height (defaults to height)
    */
-  render(scene: FlashScene, textureView: GPUTextureView, width: number, height: number): void {
-    // Update viewport
-    this.updateViewport(width, height, 1.0);
+  render(
+    scene: FlashScene,
+    textureView: GPUTextureView,
+    width: number,
+    height: number,
+    framebufferWidth?: number,
+    framebufferHeight?: number
+  ): void {
+    const fbWidth = framebufferWidth ?? width;
+    const fbHeight = framebufferHeight ?? height;
+
+    // Calculate DPR (device pixel ratio) for scaling
+    const dprX = fbWidth / width;
+    const dprY = fbHeight / height;
+    const dpr = Math.max(dprX, dprY);
+
+    // Update viewport uniform with framebuffer size and scale factor
+    // The shader will use framebuffer coordinates, and we scale positions by DPR
+    this.updateViewport(fbWidth, fbHeight, dpr);
 
     const encoder = this.device.createCommandEncoder();
 
@@ -133,6 +153,10 @@ export class FlashRenderer {
         },
       ],
     });
+
+    // Set viewport to full framebuffer but scale coordinates
+    // This ensures we render to the full texture
+    pass.setViewport(0, 0, fbWidth, fbHeight, 0, 1);
 
     // Render each layer
     for (const layer of scene.getLayers()) {
