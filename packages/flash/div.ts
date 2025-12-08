@@ -18,7 +18,7 @@ import type { Bounds, Color, TransformationMatrix, ScrollOffset } from "./types.
 import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
 import { overflowClipsContent } from "./styles.ts";
 import type { LayoutId } from "./layout.ts";
-import type { Styles } from "./styles.ts";
+import type { Styles, Cursor } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import type {
   EventHandlers,
@@ -510,7 +510,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
   // ============ Interactivity ============
 
-  cursor(v: "pointer" | "default" | "text" | "grab" | "grabbing" | "not-allowed"): this {
+  cursor(v: Cursor): this {
     this.styles.cursor = v;
     return this;
   }
@@ -715,8 +715,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   ): DivPrepaintState {
     const { childLayoutIds, childElementIds, childRequestStates } = requestState;
 
-    // Create hitbox for this element
-    const hitbox = cx.insertHitbox(bounds, this.hitboxBehaviorValue);
+    // Create hitbox for this element (pass cursor for platform cursor updates)
+    const hitbox = cx.insertHitbox(bounds, this.hitboxBehaviorValue, this.styles.cursor);
 
     // Register with group if this element is in a group
     if (this.groupNameValue) {

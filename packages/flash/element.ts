@@ -12,7 +12,7 @@
 
 import type { Bounds, Color, ContentMask, TransformationMatrix } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
-import type { Styles } from "./styles.ts";
+import type { Styles, Cursor } from "./styles.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { FlashViewContext } from "./context.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
@@ -141,7 +141,7 @@ export interface PrepaintContext {
    * Insert a hitbox for the current frame.
    * Returns the hitbox for later hover/active checking.
    */
-  insertHitbox(bounds: Bounds, behavior?: HitboxBehavior): Hitbox;
+  insertHitbox(bounds: Bounds, behavior?: HitboxBehavior, cursor?: Cursor): Hitbox;
 
   /**
    * Push a hitbox onto a group stack.

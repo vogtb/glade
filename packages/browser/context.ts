@@ -3,6 +3,7 @@ import {
   KeyAction,
   MouseButton,
   ModifierKey,
+  CursorStyle,
   type KeyCallback,
   type CharCallback,
   type MouseButtonCallback,
@@ -256,6 +257,10 @@ export function createWebGLContext(options: BrowserContextOptions = {}): Browser
     onRefresh(_callback: RefreshCallback): () => void {
       // Browser handles refresh automatically, no-op
       return () => {};
+    },
+
+    setCursor(style: CursorStyle): void {
+      canvas.style.cursor = style;
     },
   };
 }
@@ -626,6 +631,10 @@ export async function createWebGPUContext(
     onRefresh(_callback: RefreshCallback): () => void {
       // Browser handles refresh automatically, no-op
       return () => {};
+    },
+
+    setCursor(style: CursorStyle): void {
+      canvas.style.cursor = style;
     },
   };
 }

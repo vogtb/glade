@@ -6,6 +6,7 @@
  */
 
 import type { Bounds, ContentMask } from "./types.ts";
+import type { Cursor } from "./styles.ts";
 
 declare const __hitboxIdBrand: unique symbol;
 export type HitboxId = number & { [__hitboxIdBrand]: true };
@@ -40,6 +41,7 @@ export interface Hitbox {
   readonly bounds: Bounds;
   readonly contentMask: ContentMask | null;
   readonly behavior: HitboxBehavior;
+  readonly cursor: Cursor | undefined;
 }
 
 /**
@@ -50,6 +52,8 @@ export interface HitTest {
   ids: HitboxId[];
   /** Number of hitboxes that should report as hovered (occlusion cutoff). */
   hoverHitboxCount: number;
+  /** Cursor from the topmost hovered hitbox that has a cursor set. */
+  cursor: Cursor | undefined;
 }
 
 /**
@@ -59,6 +63,7 @@ export function createHitTest(): HitTest {
   return {
     ids: [],
     hoverHitboxCount: 0,
+    cursor: undefined,
   };
 }
 
@@ -88,7 +93,8 @@ export function insertHitbox(
   frame: HitboxFrame,
   bounds: Bounds,
   contentMask: ContentMask | null,
-  behavior: HitboxBehavior = HitboxBehavior.Normal
+  behavior: HitboxBehavior = HitboxBehavior.Normal,
+  cursor?: Cursor
 ): Hitbox {
   const id = frame.nextHitboxId++ as HitboxId;
   const hitbox: Hitbox = {
@@ -96,6 +102,7 @@ export function insertHitbox(
     bounds,
     contentMask,
     behavior,
+    cursor,
   };
   frame.hitboxes.push(hitbox);
   return hitbox;
@@ -109,6 +116,7 @@ export function performHitTest(frame: HitboxFrame, x: number, y: number): HitTes
   const result: HitTest = {
     ids: [],
     hoverHitboxCount: 0,
+    cursor: undefined,
   };
 
   let setHoverCount = false;
@@ -158,6 +166,11 @@ export function performHitTest(frame: HitboxFrame, x: number, y: number): HitTes
     }
 
     result.ids.push(hitbox.id);
+
+    // Set cursor from first hitbox that has one (topmost)
+    if (result.cursor === undefined && hitbox.cursor !== undefined) {
+      result.cursor = hitbox.cursor;
+    }
 
     // Handle occlusion
     if (!setHoverCount && hitbox.behavior === HitboxBehavior.BlockMouseExceptScroll) {

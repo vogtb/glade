@@ -6,6 +6,7 @@
 
 import type { Color, TransformationMatrix } from "./types.ts";
 import { scaleTransform, rotateTransform, translateTransform } from "./types.ts";
+import { CursorStyle } from "@glade/core/events.ts";
 
 /**
  * Shadow preset names.
@@ -229,3 +230,26 @@ export const SHADOW_DEFINITIONS: Record<
   xl: { blur: 25, offsetY: 20, opacity: 0.1 },
   "2xl": { blur: 50, offsetY: 25, opacity: 0.25 },
 };
+
+/**
+ * Convert Flash Cursor style to platform CursorStyle.
+ */
+export function cursorToCursorStyle(cursor: Cursor | undefined): CursorStyle {
+  switch (cursor) {
+    case "pointer":
+      return CursorStyle.Pointer;
+    case "text":
+      return CursorStyle.Text;
+    case "grab":
+      return CursorStyle.Grab;
+    case "grabbing":
+      return CursorStyle.Grabbing;
+    case "not-allowed":
+      return CursorStyle.NotAllowed;
+    case "move":
+      return CursorStyle.Move;
+    case "default":
+    default:
+      return CursorStyle.Default;
+  }
+}

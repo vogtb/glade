@@ -34,6 +34,7 @@ export interface FlashDemoResources {
   layoutEngine: FlashLayoutEngine;
   scrollOffset: { x: number; y: number };
   scrollMaxY: number;
+  currentCursor: string;
 }
 
 /**
@@ -45,6 +46,7 @@ interface DivRenderContext {
   mouseX: number;
   mouseY: number;
   mouseDown: boolean;
+  setCursor: (cursor: string) => void;
 }
 
 /**
@@ -92,6 +94,12 @@ function renderDiv(
   }
   if (isActive && activeStyles) {
     effectiveStyles = { ...effectiveStyles, ...activeStyles };
+  }
+
+  // Update cursor if hovered and element has a cursor style
+  const cursor = effectiveStyles.cursor as string | undefined;
+  if (isHovered && cursor) {
+    ctx.setCursor(cursor);
   }
 
   // Paint shadow
@@ -201,6 +209,7 @@ export function initFlashDemo(ctx: WebGPUContext, format: GPUTextureFormat): Fla
     layoutEngine,
     scrollOffset,
     scrollMaxY,
+    currentCursor: "default",
   };
 }
 
@@ -239,6 +248,9 @@ export function renderFlashDemo(
   scene.clear();
   layoutEngine.clear();
 
+  // Reset cursor to default at start of frame
+  resources.currentCursor = "default";
+
   // Build UI scene
   // Reset debug counter each frame
   const debugState = renderDiv as unknown as { debugCount: number; logged: boolean };
@@ -248,7 +260,11 @@ export function renderFlashDemo(
   // For native contexts, windowWidth/windowHeight are logical coordinates
   // For browser contexts, width/height are already logical (canvas dimensions)
   // Mouse coordinates from GLFW are always in window (logical) coordinates
-  const ctxAny = ctx as { windowWidth?: number; windowHeight?: number };
+  const ctxAny = ctx as {
+    windowWidth?: number;
+    windowHeight?: number;
+    setCursor?: (style: string) => void;
+  };
   const logicalWidth = ctxAny.windowWidth ?? ctx.width;
   const logicalHeight = ctxAny.windowHeight ?? ctx.height;
 
@@ -260,8 +276,16 @@ export function renderFlashDemo(
     time,
     mouseX,
     mouseY,
-    scrollOffset
+    scrollOffset,
+    (cursor: string) => {
+      resources.currentCursor = cursor;
+    }
   );
+
+  // Apply cursor to platform
+  if (ctxAny.setCursor) {
+    ctxAny.setCursor(resources.currentCursor);
+  }
 
   // Render scene - use logical coordinates for UI, framebuffer size for GPU viewport
   const texture = context.getCurrentTexture();
@@ -294,13 +318,14 @@ function buildDemoScene(
   time: number,
   mouseX: number,
   mouseY: number,
-  scrollOffset: { x: number; y: number }
+  scrollOffset: { x: number; y: number },
+  setCursor: (cursor: string) => void
 ): void {
   const centerX = width / 2;
   const centerY = height / 2;
 
   // Create render context for div elements
-  const ctx: DivRenderContext = { scene, mouseX, mouseY, mouseDown: false };
+  const ctx: DivRenderContext = { scene, mouseX, mouseY, mouseDown: false, setCursor };
 
   // ============ Main Window Panel (using div API) ============
 
@@ -525,6 +550,10 @@ function buildDemoScene(
   // ============ Hitbox Demo (demonstrates group hover and occlusion) ============
 
   buildHitboxDemo(scene, width, height, time, ctx);
+
+  // ============ Cursor Demo (demonstrates cursor style changes) ============
+
+  buildCursorDemo(scene, width, height, ctx);
 }
 
 /**
@@ -1354,6 +1383,139 @@ function buildScrollDemo(
       width: scrollbarWidth,
       height: thumbHeight,
       color: { r: 0.5, g: 0.6, b: 0.7, a: 0.8 },
+      cornerRadius: 3,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+}
+
+/**
+ * Build a cursor demo to demonstrate different cursor styles.
+ * Shows various interactive elements with different cursor types.
+ */
+function buildCursorDemo(
+  scene: FlashScene,
+  width: number,
+  _height: number,
+  ctx: DivRenderContext
+): void {
+  // Position in the upper middle
+  const panelX = 260;
+  const panelY = 20;
+  const panelWidth = 200;
+  const panelHeight = 180;
+
+  // Panel background
+  const panelBg = div()
+    .bg({ r: 0.12, g: 0.12, b: 0.18, a: 0.95 })
+    .rounded(12)
+    .border(1)
+    .borderColor({ r: 0.3, g: 0.3, b: 0.4, a: 1 })
+    .shadowMd();
+
+  renderDiv(panelBg, { x: panelX, y: panelY, width: panelWidth, height: panelHeight }, ctx);
+
+  // Title background
+  scene.addRect({
+    x: panelX + 10,
+    y: panelY + 8,
+    width: panelWidth - 20,
+    height: 22,
+    color: { r: 0.08, g: 0.08, b: 0.12, a: 1 },
+    cornerRadius: 6,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // Title indicator dots (spell out "CURSORS")
+  for (let i = 0; i < 7; i++) {
+    scene.addRect({
+      x: panelX + 25 + i * 22,
+      y: panelY + 14,
+      width: 10,
+      height: 10,
+      color: hslToRgb(i / 7, 0.7, 0.5),
+      cornerRadius: 5,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // Cursor demo items - each with a different cursor style
+  const cursorItems = [
+    { cursor: "pointer" as const, color: rgb(0x3b82f6), label: "pointer" },
+    { cursor: "text" as const, color: rgb(0x10b981), label: "text" },
+    { cursor: "grab" as const, color: rgb(0xf59e0b), label: "grab" },
+    { cursor: "move" as const, color: rgb(0x8b5cf6), label: "move" },
+    { cursor: "not-allowed" as const, color: rgb(0xef4444), label: "not-allowed" },
+  ];
+
+  const itemWidth = (panelWidth - 30) / 2 - 5;
+  const itemHeight = 28;
+  const startY = panelY + 40;
+
+  for (let i = 0; i < cursorItems.length; i++) {
+    const item = cursorItems[i]!;
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const itemX = panelX + 10 + col * (itemWidth + 10);
+    const itemY = startY + row * (itemHeight + 8);
+
+    // Check if mouse is over this item
+    const isHovered =
+      ctx.mouseX >= itemX &&
+      ctx.mouseX < itemX + itemWidth &&
+      ctx.mouseY >= itemY &&
+      ctx.mouseY < itemY + itemHeight;
+
+    // Create button with appropriate cursor
+    const itemDiv = div()
+      .bg(isHovered ? { ...item.color, a: 0.9 } : { ...item.color, a: 0.7 })
+      .rounded(6)
+      .border(isHovered ? 2 : 1)
+      .borderColor(isHovered ? { r: 1, g: 1, b: 1, a: 0.5 } : { ...item.color, a: 0.3 })
+      .cursor(item.cursor);
+
+    renderDiv(itemDiv, { x: itemX, y: itemY, width: itemWidth, height: itemHeight }, ctx);
+
+    // Label indicator (small icon based on cursor type)
+    const iconSize = 8;
+    const iconX = itemX + itemWidth / 2 - iconSize / 2;
+    const iconY = itemY + itemHeight / 2 - iconSize / 2;
+
+    scene.addRect({
+      x: iconX,
+      y: iconY,
+      width: iconSize,
+      height: iconSize,
+      color: { r: 1, g: 1, b: 1, a: isHovered ? 0.9 : 0.6 },
+      cornerRadius: item.cursor === "pointer" ? iconSize / 2 : 2,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // Info text area at bottom
+  scene.addRect({
+    x: panelX + 10,
+    y: panelY + panelHeight - 30,
+    width: panelWidth - 20,
+    height: 22,
+    color: { r: 0.08, g: 0.08, b: 0.12, a: 0.8 },
+    cornerRadius: 6,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // Hint dots
+  for (let i = 0; i < 3; i++) {
+    scene.addRect({
+      x: panelX + panelWidth / 2 - 20 + i * 15,
+      y: panelY + panelHeight - 22,
+      width: 6,
+      height: 6,
+      color: { r: 0.5, g: 0.5, b: 0.6, a: 0.6 },
       cornerRadius: 3,
       borderWidth: 0,
       borderColor: { r: 0, g: 0, b: 0, a: 0 },

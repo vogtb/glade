@@ -22,6 +22,7 @@ import type {
   ScrollState,
 } from "./types.ts";
 import { createScrollState, clampScrollOffset } from "./types.ts";
+import { CursorStyle } from "@glade/core/events.ts";
 import type { FlashViewHandle, FocusHandle, ScrollHandle } from "./entity.ts";
 import type {
   FlashView,
@@ -45,8 +46,8 @@ import {
   dispatchScrollEvent,
 } from "./dispatch.ts";
 import { FlashScene } from "./scene.ts";
-import type { Styles } from "./styles.ts";
-import { SHADOW_DEFINITIONS } from "./styles.ts";
+import type { Styles, Cursor } from "./styles.ts";
+import { SHADOW_DEFINITIONS, cursorToCursorStyle } from "./styles.ts";
 import { FlashLayoutEngine, type LayoutId } from "./layout.ts";
 import type { Hitbox, HitboxId, HitTest, HitboxFrame } from "./hitbox.ts";
 import {
@@ -110,6 +111,8 @@ export interface FlashRenderTarget {
   onScroll?(
     callback: (x: number, y: number, deltaX: number, deltaY: number, mods: Modifiers) => void
   ): () => void;
+
+  setCursor?(style: CursorStyle): void;
 }
 
 /**
@@ -133,9 +136,10 @@ export class FlashWindow {
 
   // Hitbox tracking
   private hitboxFrame: HitboxFrame = createHitboxFrame();
-  private mouseHitTest: HitTest = { ids: [], hoverHitboxCount: 0 };
+  private mouseHitTest: HitTest = { ids: [], hoverHitboxCount: 0, cursor: undefined };
   private groupHitboxes = new GroupHitboxes();
   private currentContentMask: ContentMask | null = null;
+  private currentCursor: CursorStyle = CursorStyle.Default;
 
   constructor(
     readonly id: WindowId,
@@ -274,8 +278,12 @@ export class FlashWindow {
    * Insert a hitbox for the current frame.
    * Should only be called during prepaint phase.
    */
-  insertHitbox(bounds: Bounds, behavior: HitboxBehavior = HitboxBehavior.Normal): Hitbox {
-    return insertHitbox(this.hitboxFrame, bounds, this.currentContentMask, behavior);
+  insertHitbox(
+    bounds: Bounds,
+    behavior: HitboxBehavior = HitboxBehavior.Normal,
+    cursor?: Cursor
+  ): Hitbox {
+    return insertHitbox(this.hitboxFrame, bounds, this.currentContentMask, behavior, cursor);
   }
 
   /**
@@ -432,6 +440,22 @@ export class FlashWindow {
       this.mousePosition.x,
       this.mousePosition.y
     );
+
+    // Update platform cursor based on hovered element
+    this.updateCursor();
+  }
+
+  private updateCursor(): void {
+    const newCursor = this.mouseHitTest.cursor
+      ? cursorToCursorStyle(this.mouseHitTest.cursor)
+      : CursorStyle.Default;
+
+    if (newCursor !== this.currentCursor) {
+      this.currentCursor = newCursor;
+      if (this.renderTarget.setCursor) {
+        this.renderTarget.setCursor(newCursor);
+      }
+    }
   }
 
   private allocateElementId(): GlobalElementId {
@@ -557,8 +581,8 @@ export class FlashWindow {
         return createPrepaintContext(newElementId);
       },
 
-      insertHitbox: (bounds: Bounds, behavior?: HitboxBehavior): Hitbox => {
-        return insertHitboxFn(bounds, behavior ?? HitboxBehavior.Normal);
+      insertHitbox: (bounds: Bounds, behavior?: HitboxBehavior, cursor?: Cursor): Hitbox => {
+        return insertHitboxFn(bounds, behavior ?? HitboxBehavior.Normal, cursor);
       },
 
       pushGroupHitbox: (groupName: string, hitboxId: HitboxId): void => {

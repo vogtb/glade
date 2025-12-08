@@ -1,6 +1,7 @@
 import type { WebGLContext, WebGPUContext, RenderCallback, ContextOptions } from "@glade/core";
 import {
   KeyAction,
+  CursorStyle,
   type MouseButton,
   type KeyCallback,
   type CharCallback,
@@ -13,7 +14,19 @@ import {
   type CursorEnterCallback,
   type RefreshCallback,
 } from "@glade/core/events.ts";
-import { glfw, type GLFWwindow } from "@glade/glfw";
+import {
+  glfw,
+  type GLFWwindow,
+  type GLFWcursor,
+  GLFW_ARROW_CURSOR,
+  GLFW_IBEAM_CURSOR,
+  GLFW_CROSSHAIR_CURSOR,
+  GLFW_HAND_CURSOR,
+  GLFW_HRESIZE_CURSOR,
+  GLFW_VRESIZE_CURSOR,
+  GLFW_RESIZE_ALL_CURSOR,
+  GLFW_NOT_ALLOWED_CURSOR,
+} from "@glade/glfw";
 import { DarwinWebGL2RenderingContext } from "./opengl.ts";
 import {
   createInstance,
@@ -41,6 +54,60 @@ import {
   type WGPUSurface,
 } from "@glade/dawn";
 import { createMetalLayerForView } from "./metal.ts";
+
+// Map CursorStyle to GLFW cursor shape constants
+function cursorStyleToGLFWShape(style: CursorStyle): number {
+  switch (style) {
+    case CursorStyle.Default:
+      return GLFW_ARROW_CURSOR;
+    case CursorStyle.Pointer:
+      return GLFW_HAND_CURSOR;
+    case CursorStyle.Text:
+      return GLFW_IBEAM_CURSOR;
+    case CursorStyle.Grab:
+    case CursorStyle.Grabbing:
+      return GLFW_HAND_CURSOR; // GLFW doesn't have separate grab cursors
+    case CursorStyle.NotAllowed:
+      return GLFW_NOT_ALLOWED_CURSOR;
+    case CursorStyle.Move:
+      return GLFW_RESIZE_ALL_CURSOR;
+    case CursorStyle.Crosshair:
+      return GLFW_CROSSHAIR_CURSOR;
+    case CursorStyle.EwResize:
+      return GLFW_HRESIZE_CURSOR;
+    case CursorStyle.NsResize:
+      return GLFW_VRESIZE_CURSOR;
+    case CursorStyle.NeswResize:
+    case CursorStyle.NwseResize:
+      return GLFW_HRESIZE_CURSOR; // Fallback for diagonal resize
+    default:
+      return GLFW_ARROW_CURSOR;
+  }
+}
+
+// Cursor cache to avoid recreating cursors repeatedly
+class CursorCache {
+  private cursors = new Map<number, GLFWcursor>();
+
+  get(shape: number): GLFWcursor | null {
+    const cached = this.cursors.get(shape);
+    if (cached) {
+      return cached;
+    }
+    const cursor = glfw.createStandardCursor(shape);
+    if (cursor) {
+      this.cursors.set(shape, cursor);
+    }
+    return cursor;
+  }
+
+  destroy(): void {
+    for (const cursor of this.cursors.values()) {
+      glfw.destroyCursor(cursor);
+    }
+    this.cursors.clear();
+  }
+}
 
 export interface DarwinContextOptions extends ContextOptions {
   title?: string;
@@ -112,6 +179,9 @@ export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWe
   // Track cleanup functions for all registered callbacks
   const cleanups: Array<() => void> = [];
 
+  // Cursor cache
+  const cursorCache = new CursorCache();
+
   return {
     gl,
     window,
@@ -124,6 +194,7 @@ export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWe
         cleanup();
       }
       cleanups.length = 0;
+      cursorCache.destroy();
       glfw.destroyWindow(window);
       glfw.terminate();
     },
@@ -263,6 +334,12 @@ export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWe
         if (idx >= 0) cleanups.splice(idx, 1);
       };
     },
+
+    setCursor(style: CursorStyle): void {
+      const shape = cursorStyleToGLFWShape(style);
+      const cursor = cursorCache.get(shape);
+      glfw.setCursor(window, cursor);
+    },
   };
 }
 
@@ -350,6 +427,9 @@ export async function createWebGPUContext(
 
   // Track cleanup functions for all registered callbacks
   const cleanups: Array<() => void> = [];
+
+  // Cursor cache
+  const cursorCache = new CursorCache();
 
   // Create wrapped GPU device and context
   const wrappedDevice = new DawnGPUDevice(device, queue);
@@ -441,6 +521,7 @@ export async function createWebGPUContext(
         cleanup();
       }
       cleanups.length = 0;
+      cursorCache.destroy();
       releaseSurface(surface);
       releaseQueue(queue);
       releaseDevice(device);
@@ -584,6 +665,12 @@ export async function createWebGPUContext(
         const idx = cleanups.indexOf(cleanup);
         if (idx >= 0) cleanups.splice(idx, 1);
       };
+    },
+
+    setCursor(style: CursorStyle): void {
+      const shape = cursorStyleToGLFWShape(style);
+      const cursor = cursorCache.get(shape);
+      glfw.setCursor(window, cursor);
     },
   };
 

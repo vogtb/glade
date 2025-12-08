@@ -40,7 +40,24 @@ const lib = dlopen(GLFW_PATH, {
   glfwSetWindowFocusCallback: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   glfwSetCursorEnterCallback: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
   glfwSetWindowRefreshCallback: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
+  // Cursor functions
+  glfwCreateStandardCursor: { args: [FFIType.i32], returns: FFIType.ptr },
+  glfwDestroyCursor: { args: [FFIType.ptr], returns: FFIType.void },
+  glfwSetCursor: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.void },
 });
+
+// Standard cursor shapes
+export const GLFW_ARROW_CURSOR = 0x00036001;
+export const GLFW_IBEAM_CURSOR = 0x00036002;
+export const GLFW_CROSSHAIR_CURSOR = 0x00036003;
+export const GLFW_HAND_CURSOR = 0x00036004; // "pointing_hand" in newer GLFW
+export const GLFW_HRESIZE_CURSOR = 0x00036005;
+export const GLFW_VRESIZE_CURSOR = 0x00036006;
+// GLFW 3.4+ cursors (may not be available in older versions)
+export const GLFW_RESIZE_NWSE_CURSOR = 0x00036007;
+export const GLFW_RESIZE_NESW_CURSOR = 0x00036008;
+export const GLFW_RESIZE_ALL_CURSOR = 0x00036009;
+export const GLFW_NOT_ALLOWED_CURSOR = 0x0003600a;
 
 // Callback type definitions for GLFW
 export type GLFWKeyCallback = (
@@ -66,6 +83,7 @@ export type GLFWCursorEnterCallback = (window: Pointer, entered: number) => void
 export type GLFWWindowRefreshCallback = (window: Pointer) => void;
 
 export type GLFWwindow = Pointer;
+export type GLFWcursor = Pointer;
 
 export const glfw = {
   init(): boolean {
@@ -280,5 +298,18 @@ export const glfw = {
       lib.symbols.glfwSetWindowRefreshCallback(window, null);
       cb.close();
     };
+  },
+
+  // Cursor functions
+  createStandardCursor(shape: number): GLFWcursor | null {
+    return lib.symbols.glfwCreateStandardCursor(shape);
+  },
+
+  destroyCursor(cursor: GLFWcursor): void {
+    lib.symbols.glfwDestroyCursor(cursor);
+  },
+
+  setCursor(window: GLFWwindow, cursor: GLFWcursor | null): void {
+    lib.symbols.glfwSetCursor(window, cursor);
   },
 };

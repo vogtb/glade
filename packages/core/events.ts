@@ -103,6 +103,26 @@ export type CursorEnterCallback = (event: CursorEnterEvent) => void;
 export type RefreshCallback = () => void;
 
 /**
+ * Cursor style constants matching CSS cursor values.
+ */
+export const CursorStyle = {
+  Default: "default",
+  Pointer: "pointer",
+  Text: "text",
+  Grab: "grab",
+  Grabbing: "grabbing",
+  NotAllowed: "not-allowed",
+  Move: "move",
+  Crosshair: "crosshair",
+  EwResize: "ew-resize",
+  NsResize: "ns-resize",
+  NeswResize: "nesw-resize",
+  NwseResize: "nwse-resize",
+} as const;
+
+export type CursorStyle = (typeof CursorStyle)[keyof typeof CursorStyle];
+
+/**
  * Event handler interface that contexts can implement.
  * Returns a cleanup function to remove the listener.
  */
@@ -117,4 +137,5 @@ export interface EventTarget {
   onFocus(callback: FocusCallback): () => void;
   onCursorEnter(callback: CursorEnterCallback): () => void;
   onRefresh(callback: RefreshCallback): () => void;
+  setCursor(style: CursorStyle): void;
 }
