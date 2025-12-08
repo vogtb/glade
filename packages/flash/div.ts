@@ -2,9 +2,18 @@
  * FlashDiv - the primary container element.
  *
  * Provides a Tailwind-like chainable API for building UI.
+ * Implements three-phase lifecycle: requestLayout → prepaint → paint
  */
 
-import { FlashContainerElement, type PrepaintContext, type PaintContext } from "./element.ts";
+import {
+  FlashContainerElement,
+  FlashElement,
+  type RequestLayoutContext,
+  type PrepaintContext,
+  type PaintContext,
+  type RequestLayoutResult,
+  type GlobalElementId,
+} from "./element.ts";
 import type { Bounds, Color } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
@@ -20,9 +29,29 @@ import type {
 import type { FocusHandle } from "./entity.ts";
 
 /**
+ * State passed from requestLayout to prepaint for FlashDiv.
+ * Contains child layout IDs and element IDs for recursive processing.
+ */
+interface DivRequestLayoutState {
+  childLayoutIds: LayoutId[];
+  childElementIds: GlobalElementId[];
+  childRequestStates: unknown[];
+}
+
+/**
+ * State passed from prepaint to paint for FlashDiv.
+ * Contains child element IDs and prepaint states for recursive processing.
+ */
+interface DivPrepaintState {
+  childLayoutIds: LayoutId[];
+  childElementIds: GlobalElementId[];
+  childPrepaintStates: unknown[];
+}
+
+/**
  * The primary container element.
  */
-export class FlashDiv extends FlashContainerElement {
+export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPrepaintState> {
   private styles: Partial<Styles> = {};
   private hoverStyles: Partial<Styles> | null = null;
   private activeStyles: Partial<Styles> | null = null;
@@ -556,18 +585,85 @@ export class FlashDiv extends FlashContainerElement {
     return this;
   }
 
-  // ============ Rendering ============
+  // ============ Three-Phase Lifecycle ============
 
-  prepaint(cx: PrepaintContext): LayoutId {
-    // First, prepaint all children
-    this.childLayoutIds = this.children.map((child) => child.prepaint(cx));
+  /**
+   * Phase 1: Request layout for this element and all children.
+   * Creates Taffy layout nodes bottom-up.
+   */
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DivRequestLayoutState> {
+    const childLayoutIds: LayoutId[] = [];
+    const childElementIds: GlobalElementId[] = [];
+    const childRequestStates: unknown[] = [];
 
-    // Request layout for this element with its children
-    return cx.requestLayout(this.styles, this.childLayoutIds);
+    for (const child of this.children) {
+      const childId = cx.allocateChildId();
+      const childCx: RequestLayoutContext = {
+        ...cx,
+        elementId: childId,
+      };
+      const result = child.requestLayout(childCx);
+      childLayoutIds.push(result.layoutId);
+      childElementIds.push(childId);
+      childRequestStates.push(result.requestState);
+    }
+
+    this.childLayoutIds = childLayoutIds;
+
+    const layoutId = cx.requestLayout(this.styles, childLayoutIds);
+
+    return {
+      layoutId,
+      requestState: {
+        childLayoutIds,
+        childElementIds,
+        childRequestStates,
+      },
+    };
   }
 
-  paint(cx: PaintContext, bounds: Bounds, childLayoutIds: LayoutId[]): void {
-    // Determine effective styles based on state
+  /**
+   * Phase 2: Prepaint - runs after layout computation.
+   * Can be used for post-layout processing before painting.
+   */
+  prepaint(
+    cx: PrepaintContext,
+    bounds: Bounds,
+    requestState: DivRequestLayoutState
+  ): DivPrepaintState {
+    const { childLayoutIds, childElementIds, childRequestStates } = requestState;
+    const childBounds = cx.getChildLayouts(bounds, childLayoutIds);
+    const childPrepaintStates: unknown[] = [];
+
+    for (let i = 0; i < this.children.length; i++) {
+      const child = this.children[i]!;
+      const childId = childElementIds[i]!;
+      const childBound = childBounds[i]!;
+      const childRequestState = childRequestStates[i];
+
+      const childCx = cx.withElementId(childId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const prepaintState = (child as FlashElement<any, any>).prepaint(
+        childCx,
+        childBound,
+        childRequestState
+      );
+      childPrepaintStates.push(prepaintState);
+    }
+
+    return {
+      childLayoutIds,
+      childElementIds,
+      childPrepaintStates,
+    };
+  }
+
+  /**
+   * Phase 3: Paint - emit GPU primitives.
+   */
+  paint(cx: PaintContext, bounds: Bounds, prepaintState: DivPrepaintState): void {
+    const { childLayoutIds, childElementIds, childPrepaintStates } = prepaintState;
+
     const isHovered = cx.isHovered(bounds);
     const isActive = cx.isActive(bounds);
     const isFocused = this.focusHandleRef ? cx.isFocused(this.focusHandleRef) : false;
@@ -583,34 +679,34 @@ export class FlashDiv extends FlashContainerElement {
       effectiveStyles = { ...effectiveStyles, ...this.focusedStyles };
     }
 
-    // Paint shadow (if any)
     if (effectiveStyles.shadow && effectiveStyles.shadow !== "none") {
       cx.paintShadow(bounds, effectiveStyles);
     }
 
-    // Paint background rectangle
     if (effectiveStyles.backgroundColor) {
       cx.paintRect(bounds, effectiveStyles);
     }
 
-    // Paint border
     if (effectiveStyles.borderWidth && effectiveStyles.borderColor) {
       cx.paintBorder(bounds, effectiveStyles);
     }
 
-    // Paint children
     const childBounds = cx.getChildLayouts(bounds, childLayoutIds);
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i]!;
+      const childId = childElementIds[i]!;
       const childBound = childBounds[i]!;
-      child.paint(cx, childBound, []);
+      const childPrepaintState = childPrepaintStates[i];
+
+      const childCx = cx.withElementId(childId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (child as FlashElement<any, any>).paint(childCx, childBound, childPrepaintState);
     }
   }
 
   hitTest(bounds: Bounds, childBounds: Bounds[]): HitTestNode {
     const childNodes: HitTestNode[] = [];
 
-    // Hit test children (in reverse order for proper z-order)
     for (let i = this.children.length - 1; i >= 0; i--) {
       const child = this.children[i];
       const childBound = childBounds[i];

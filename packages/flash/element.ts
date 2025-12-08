@@ -3,6 +3,11 @@
  *
  * Elements are lightweight, declarative descriptions of UI.
  * They're created fresh each render and converted to GPU primitives.
+ *
+ * Three-phase lifecycle (inspired by GPUI):
+ * 1. requestLayout() - Create layout nodes, return LayoutId + RequestLayoutState
+ * 2. prepaint() - Run after layout computation, return PrepaintState
+ * 3. paint() - Emit GPU primitives using PrepaintState
  */
 
 import type { Bounds, Color } from "./types.ts";
@@ -12,6 +17,29 @@ import type { HitTestNode } from "./dispatch.ts";
 import type { FlashViewContext } from "./context.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { FlashScene } from "./scene.ts";
+
+// ============ Element Identity Types ============
+
+declare const __globalElementIdBrand: unique symbol;
+export type GlobalElementId = number & { [__globalElementIdBrand]: true };
+
+declare const __dispatchNodeIdBrand: unique symbol;
+export type DispatchNodeId = number & { [__dispatchNodeIdBrand]: true };
+
+/**
+ * Marker type for elements that don't need state between phases.
+ */
+export type NoState = void;
+
+/**
+ * Result of the requestLayout phase.
+ */
+export interface RequestLayoutResult<R> {
+  layoutId: LayoutId;
+  requestState: R;
+}
+
+// ============ View Traits ============
 
 /**
  * A view is an entity that can render a tree of elements.
@@ -29,11 +57,18 @@ export interface FlashRenderOnce {
   render(cx: FlashViewContext<never>): FlashElement;
 }
 
+// ============ Phase Contexts ============
+
 /**
- * Context for the prepaint phase.
- * Provides access to layout computation.
+ * Context for the requestLayout phase.
+ * Creates layout nodes in the Taffy tree.
  */
-export interface PrepaintContext {
+export interface RequestLayoutContext {
+  /**
+   * Stable identity for the current element in this frame.
+   */
+  readonly elementId: GlobalElementId;
+
   /**
    * Request layout for an element with the given styles and children.
    * Returns a layout ID that can be used to get computed bounds.
@@ -42,12 +77,62 @@ export interface PrepaintContext {
 
   /**
    * Measure text with the given options.
-   * (Stubbed until text system is implemented)
    */
   measureText(
     text: string,
     options: { fontSize: number; fontFamily: string; fontWeight: number }
   ): { width: number; height: number };
+
+  /**
+   * Get persistent state cached across frames for this element.
+   */
+  getPersistentState<T = unknown>(): T | undefined;
+
+  /**
+   * Set persistent state to cache across frames for this element.
+   */
+  setPersistentState<T = unknown>(state: T): void;
+
+  /**
+   * Allocate a new element ID for a child element.
+   */
+  allocateChildId(): GlobalElementId;
+}
+
+/**
+ * Context for the prepaint phase.
+ * Runs after layout computation, before painting.
+ */
+export interface PrepaintContext {
+  /**
+   * Stable identity for the current element.
+   */
+  readonly elementId: GlobalElementId;
+
+  /**
+   * Get the computed bounds for a layout ID.
+   */
+  getBounds(layoutId: LayoutId): Bounds;
+
+  /**
+   * Get the computed bounds for child layout IDs.
+   */
+  getChildLayouts(parentBounds: Bounds, childLayoutIds: LayoutId[]): Bounds[];
+
+  /**
+   * Get persistent state cached across frames for this element.
+   */
+  getPersistentState<T = unknown>(): T | undefined;
+
+  /**
+   * Set persistent state to cache across frames for this element.
+   */
+  setPersistentState<T = unknown>(state: T): void;
+
+  /**
+   * Create a child context with a specific element ID.
+   */
+  withElementId(elementId: GlobalElementId): PrepaintContext;
 }
 
 /**
@@ -60,6 +145,9 @@ export interface PaintContext {
 
   /** The device pixel ratio. */
   devicePixelRatio: number;
+
+  /** Stable identity for the current element. */
+  readonly elementId: GlobalElementId;
 
   /**
    * Check if the given bounds are currently hovered.
@@ -98,7 +186,6 @@ export interface PaintContext {
 
   /**
    * Paint text glyphs.
-   * (Stubbed until text system is implemented)
    */
   paintGlyphs(
     text: string,
@@ -106,23 +193,69 @@ export interface PaintContext {
     color: Color,
     options: { fontSize: number; fontFamily: string; fontWeight: number }
   ): void;
+
+  /**
+   * Get persistent state cached across frames for this element.
+   */
+  getPersistentState<T = unknown>(): T | undefined;
+
+  /**
+   * Set persistent state to cache across frames for this element.
+   */
+  setPersistentState<T = unknown>(state: T): void;
+
+  /**
+   * Create a child context with a specific element ID.
+   */
+  withElementId(elementId: GlobalElementId): PaintContext;
 }
+
+// ============ Element Base Classes ============
 
 /**
  * Base class for all Flash elements.
  * Elements are lightweight, declarative descriptions of UI.
  * They're created fresh each render and converted to GPU primitives.
+ *
+ * Three-phase lifecycle:
+ * 1. requestLayout() - Create layout nodes, return state for prepaint
+ * 2. prepaint() - Post-layout processing, return state for paint
+ * 3. paint() - Emit GPU primitives
+ *
+ * @typeParam RequestLayoutState - State returned from requestLayout, passed to prepaint
+ * @typeParam PrepaintState - State returned from prepaint, passed to paint
  */
-export abstract class FlashElement {
+export abstract class FlashElement<RequestLayoutState = NoState, PrepaintState = NoState> {
   /**
-   * Prepaint phase: request layout, return layout ID.
+   * Phase 1: Request layout.
+   *
+   * Create Taffy nodes for this element and its children.
+   * Returns a LayoutId plus any state needed for prepaint.
    */
-  abstract prepaint(cx: PrepaintContext): LayoutId;
+  abstract requestLayout(cx: RequestLayoutContext): RequestLayoutResult<RequestLayoutState>;
 
   /**
-   * Paint phase: given computed bounds, emit GPU primitives.
+   * Phase 2: Prepaint - runs after layout is computed.
+   *
+   * @param cx - The prepaint context
+   * @param bounds - The computed bounds for this element
+   * @param requestState - The state returned from requestLayout
+   * @returns State needed for the paint phase
    */
-  abstract paint(cx: PaintContext, bounds: Bounds, childLayoutIds: LayoutId[]): void;
+  abstract prepaint(
+    cx: PrepaintContext,
+    bounds: Bounds,
+    requestState: RequestLayoutState
+  ): PrepaintState;
+
+  /**
+   * Phase 3: Paint - emit GPU primitives.
+   *
+   * @param cx - The paint context
+   * @param bounds - The computed bounds for this element
+   * @param prepaintState - The state returned from prepaint
+   */
+  abstract paint(cx: PaintContext, bounds: Bounds, prepaintState: PrepaintState): void;
 
   /**
    * Build hit test tree for event dispatch.
@@ -133,7 +266,10 @@ export abstract class FlashElement {
 /**
  * An element that can contain children.
  */
-export abstract class FlashContainerElement extends FlashElement {
+export abstract class FlashContainerElement<
+  RequestLayoutState = NoState,
+  PrepaintState = NoState,
+> extends FlashElement<RequestLayoutState, PrepaintState> {
   protected children: FlashElement[] = [];
   protected childLayoutIds: LayoutId[] = [];
 
@@ -169,11 +305,13 @@ export abstract class FlashContainerElement extends FlashElement {
   }
 }
 
+// ============ Text Element ============
+
 /**
- * Simple text element placeholder.
+ * Simple text element.
  * Full text rendering will be added when text system is implemented.
  */
-export class FlashTextElement extends FlashElement {
+export class FlashTextElement extends FlashElement<NoState, NoState> {
   private textColor: Color = { r: 1, g: 1, b: 1, a: 1 };
   private fontSize = 14;
   private fontFamily = "system-ui";
@@ -203,23 +341,29 @@ export class FlashTextElement extends FlashElement {
     return this;
   }
 
-  prepaint(cx: PrepaintContext): LayoutId {
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
     const metrics = cx.measureText(this.text, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: this.fontWeight,
     });
 
-    return cx.requestLayout(
+    const layoutId = cx.requestLayout(
       {
         width: metrics.width,
         height: metrics.height,
       },
       []
     );
+
+    return { layoutId, requestState: undefined };
   }
 
-  paint(cx: PaintContext, bounds: Bounds, _childLayoutIds: LayoutId[]): void {
+  prepaint(_cx: PrepaintContext, _bounds: Bounds, _requestState: NoState): NoState {
+    return undefined;
+  }
+
+  paint(cx: PaintContext, bounds: Bounds, _prepaintState: NoState): void {
     cx.paintGlyphs(this.text, bounds, this.textColor, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
@@ -228,7 +372,6 @@ export class FlashTextElement extends FlashElement {
   }
 
   hitTest(_bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
-    // Text elements don't receive events by default
     return null;
   }
 }

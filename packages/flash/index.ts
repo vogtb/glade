@@ -70,7 +70,17 @@ export type {
 export { StyleBuilder, SHADOW_DEFINITIONS } from "./styles.ts";
 
 // Elements
-export type { FlashView, FlashRenderOnce, PrepaintContext, PaintContext } from "./element.ts";
+export type {
+  FlashView,
+  FlashRenderOnce,
+  RequestLayoutContext,
+  PrepaintContext,
+  PaintContext,
+  GlobalElementId,
+  DispatchNodeId,
+  NoState,
+  RequestLayoutResult,
+} from "./element.ts";
 
 export { FlashElement, FlashContainerElement, FlashTextElement, text } from "./element.ts";
 

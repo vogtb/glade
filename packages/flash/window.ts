@@ -2,12 +2,21 @@
  * FlashWindow - manages a rendering surface and event handling.
  *
  * Windows own a render target, handle input events, and coordinate
- * the render cycle for their root view.
+ * the three-phase render cycle for their root view:
+ * 1. requestLayout - build layout tree
+ * 2. prepaint - post-layout processing
+ * 3. paint - emit GPU primitives
  */
 
 import type { WindowId, EntityId, FocusId, Point, Bounds, Color } from "./types.ts";
 import type { FlashViewHandle, FocusHandle } from "./entity.ts";
-import type { FlashView, PrepaintContext, PaintContext } from "./element.ts";
+import type {
+  FlashView,
+  RequestLayoutContext,
+  PrepaintContext,
+  PaintContext,
+  GlobalElementId,
+} from "./element.ts";
 import type { FlashContext } from "./context.ts";
 import type { HitTestNode, FlashMouseEvent, FlashClickEvent, Modifiers } from "./dispatch.ts";
 import { hitTest, dispatchMouseEvent, dispatchClickEvent } from "./dispatch.ts";
@@ -79,6 +88,10 @@ export class FlashWindow {
   private mouseDown = false;
   private eventCleanups: Array<() => void> = [];
 
+  private elementState = new Map<GlobalElementId, unknown>();
+  private visitedElementIds = new Set<GlobalElementId>();
+  private nextElementId = 1;
+
   constructor(
     readonly id: WindowId,
     private platform: FlashPlatform,
@@ -144,7 +157,7 @@ export class FlashWindow {
   }
 
   /**
-   * Render the window.
+   * Render the window using the three-phase lifecycle.
    */
   render(
     createViewContext: <V extends FlashView>(
@@ -153,6 +166,8 @@ export class FlashWindow {
       window: FlashWindow
     ) => import("./context.ts").FlashViewContext<V>
   ): void {
+    this.beginFrame();
+
     this.scene.clear();
     this.layoutEngine.clear();
     this.layoutEngine.setScaleFactor(this.renderTarget.devicePixelRatio);
@@ -161,20 +176,28 @@ export class FlashWindow {
     const cx = createViewContext(this.rootView.id, this.id, this);
     const element = view.render(cx);
 
-    const prepaintCx = this.createPrepaintContext();
-    const rootLayoutId = element.prepaint(prepaintCx);
+    const rootElementId = this.allocateElementId();
+    const requestLayoutCx = this.createRequestLayoutContext(rootElementId);
+    const { layoutId: rootLayoutId, requestState: rootRequestState } =
+      element.requestLayout(requestLayoutCx);
 
     this.layoutEngine.computeLayout(rootLayoutId, this.width, this.height);
 
     const rootBounds = this.layoutEngine.layoutBounds(rootLayoutId);
-    const paintCx = this.createPaintContext();
-    element.paint(paintCx, rootBounds, []);
+    const prepaintCx = this.createPrepaintContext(rootElementId);
+    const rootPrepaintState = element.prepaint(prepaintCx, rootBounds, rootRequestState);
+
+    const paintCx = this.createPaintContext(rootElementId);
+    element.paint(paintCx, rootBounds, rootPrepaintState);
 
     this.hitTestTree = [];
-    const hitNode = element.hitTest(rootBounds, []);
+    const childBounds = this.layoutEngine.layoutBounds(rootLayoutId);
+    const hitNode = element.hitTest(rootBounds, [childBounds]);
     if (hitNode) {
       this.hitTestTree.push(hitNode);
     }
+
+    this.endFrame();
   }
 
   /**
@@ -200,6 +223,25 @@ export class FlashWindow {
    */
   getLayoutEngine(): FlashLayoutEngine {
     return this.layoutEngine;
+  }
+
+  private beginFrame(): void {
+    this.visitedElementIds.clear();
+    this.nextElementId = 1;
+  }
+
+  private endFrame(): void {
+    for (const id of this.elementState.keys()) {
+      if (!this.visitedElementIds.has(id)) {
+        this.elementState.delete(id);
+      }
+    }
+  }
+
+  private allocateElementId(): GlobalElementId {
+    const id = this.nextElementId++ as GlobalElementId;
+    this.visitedElementIds.add(id);
+    return id;
   }
 
   private setupEventListeners(): void {
@@ -242,10 +284,16 @@ export class FlashWindow {
     }
   }
 
-  private createPrepaintContext(): PrepaintContext {
+  private createRequestLayoutContext(elementId: GlobalElementId): RequestLayoutContext {
+    const layoutEngine = this.layoutEngine;
+    const elementState = this.elementState;
+    const allocateElementId = this.allocateElementId.bind(this);
+
     return {
+      elementId,
+
       requestLayout: (styles: Partial<Styles>, childLayoutIds: LayoutId[]): LayoutId => {
-        return this.layoutEngine.requestLayout(styles, childLayoutIds);
+        return layoutEngine.requestLayout(styles, childLayoutIds);
       },
 
       measureText: (
@@ -258,16 +306,67 @@ export class FlashWindow {
           height: options.fontSize * 1.2,
         };
       },
+
+      getPersistentState: <T = unknown>(): T | undefined => {
+        return elementState.get(elementId) as T | undefined;
+      },
+
+      setPersistentState: <T = unknown>(state: T): void => {
+        elementState.set(elementId, state);
+      },
+
+      allocateChildId: (): GlobalElementId => {
+        return allocateElementId();
+      },
     };
   }
 
-  private createPaintContext(): PaintContext {
+  private createPrepaintContext(elementId: GlobalElementId): PrepaintContext {
+    const layoutEngine = this.layoutEngine;
+    const elementState = this.elementState;
+    const createPrepaintContext = this.createPrepaintContext.bind(this);
+
     return {
-      scene: this.scene,
+      elementId,
+
+      getBounds: (layoutId: LayoutId): Bounds => {
+        return layoutEngine.layoutBounds(layoutId);
+      },
+
+      getChildLayouts: (_parentBounds: Bounds, childLayoutIds: LayoutId[]): Bounds[] => {
+        return childLayoutIds.map((id) => layoutEngine.layoutBounds(id));
+      },
+
+      getPersistentState: <T = unknown>(): T | undefined => {
+        return elementState.get(elementId) as T | undefined;
+      },
+
+      setPersistentState: <T = unknown>(state: T): void => {
+        elementState.set(elementId, state);
+      },
+
+      withElementId: (newElementId: GlobalElementId): PrepaintContext => {
+        return createPrepaintContext(newElementId);
+      },
+    };
+  }
+
+  private createPaintContext(elementId: GlobalElementId): PaintContext {
+    const scene = this.scene;
+    const layoutEngine = this.layoutEngine;
+    const elementState = this.elementState;
+    const mousePosition = this.mousePosition;
+    const isFocused = this.isFocused.bind(this);
+    const createPaintContext = this.createPaintContext.bind(this);
+    const getMouseDown = () => this.mouseDown;
+
+    return {
+      scene,
       devicePixelRatio: this.renderTarget.devicePixelRatio,
+      elementId,
 
       isHovered: (bounds: Bounds): boolean => {
-        const { x, y } = this.mousePosition;
+        const { x, y } = mousePosition;
         return (
           x >= bounds.x &&
           x < bounds.x + bounds.width &&
@@ -277,8 +376,8 @@ export class FlashWindow {
       },
 
       isActive: (bounds: Bounds): boolean => {
-        if (!this.mouseDown) return false;
-        const { x, y } = this.mousePosition;
+        if (!getMouseDown()) return false;
+        const { x, y } = mousePosition;
         return (
           x >= bounds.x &&
           x < bounds.x + bounds.width &&
@@ -288,16 +387,16 @@ export class FlashWindow {
       },
 
       isFocused: (handle: FocusHandle): boolean => {
-        return this.isFocused(handle.id);
+        return isFocused(handle.id);
       },
 
       getChildLayouts: (_parentBounds: Bounds, childLayoutIds: LayoutId[]): Bounds[] => {
-        return childLayoutIds.map((id) => this.layoutEngine.layoutBounds(id));
+        return childLayoutIds.map((id) => layoutEngine.layoutBounds(id));
       },
 
       paintRect: (bounds: Bounds, styles: Partial<Styles>): void => {
         if (!styles.backgroundColor) return;
-        this.scene.addRect({
+        scene.addRect({
           x: bounds.x,
           y: bounds.y,
           width: bounds.width,
@@ -312,7 +411,7 @@ export class FlashWindow {
       paintShadow: (bounds: Bounds, styles: Partial<Styles>): void => {
         if (!styles.shadow || styles.shadow === "none") return;
         const def = SHADOW_DEFINITIONS[styles.shadow];
-        this.scene.addShadow({
+        scene.addShadow({
           x: bounds.x,
           y: bounds.y + def.offsetY,
           width: bounds.width,
@@ -327,7 +426,7 @@ export class FlashWindow {
 
       paintBorder: (bounds: Bounds, styles: Partial<Styles>): void => {
         if (!styles.borderWidth || !styles.borderColor) return;
-        this.scene.addRect({
+        scene.addRect({
           x: bounds.x,
           y: bounds.y,
           width: bounds.width,
@@ -348,7 +447,7 @@ export class FlashWindow {
         const charWidth = options.fontSize * 0.6;
         let x = bounds.x;
         for (let i = 0; i < text.length; i++) {
-          this.scene.addGlyph({
+          scene.addGlyph({
             x,
             y: bounds.y,
             width: charWidth,
@@ -361,6 +460,18 @@ export class FlashWindow {
           });
           x += charWidth;
         }
+      },
+
+      getPersistentState: <T = unknown>(): T | undefined => {
+        return elementState.get(elementId) as T | undefined;
+      },
+
+      setPersistentState: <T = unknown>(state: T): void => {
+        elementState.set(elementId, state);
+      },
+
+      withElementId: (newElementId: GlobalElementId): PaintContext => {
+        return createPaintContext(newElementId);
       },
     };
   }
