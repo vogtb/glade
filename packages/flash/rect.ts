@@ -24,7 +24,7 @@ struct RectInstance {
   @location(0) pos_size: vec4<f32>,       // x, y, width, height
   @location(1) color: vec4<f32>,           // rgba (premultiplied)
   @location(2) border_color: vec4<f32>,    // rgba (premultiplied)
-  @location(3) corner_border: vec4<f32>,   // corner_radius, border_width, 0, 0
+  @location(3) corner_border: vec4<f32>,   // corner_radius, border_width, z_index, 0
 }
 
 struct VertexOutput {
@@ -73,7 +73,11 @@ fn vs_main(
     1.0 - (scaled_pos.y / uniforms.viewport_size.y) * 2.0
   );
 
-  out.position = vec4<f32>(clip_pos, 0.0, 1.0);
+  // Use z_index for depth ordering (higher z_index = closer to camera = smaller depth value)
+  // Normalize z_index to 0-1 range (assuming max 10000 instances)
+  let z_depth = 1.0 - (instance.corner_border.z / 10000.0);
+
+  out.position = vec4<f32>(clip_pos, z_depth, 1.0);
   // Pass position relative to rect center (not origin)
   // quad_pos goes 0->1, so (quad_pos - 0.5) goes -0.5->0.5
   // Multiply by rect_size and scale to get pixel offset from center in framebuffer coords
@@ -216,6 +220,11 @@ export class RectPipeline {
       primitive: {
         topology: "triangle-list",
       },
+      depthStencil: {
+        format: "depth24plus",
+        depthWriteEnabled: true,
+        depthCompare: "less",
+      },
     });
   }
 
@@ -252,10 +261,10 @@ export class RectPipeline {
       this.instanceData[offset + 10] = rect.borderColor.b * ba;
       this.instanceData[offset + 11] = ba;
 
-      // corner_border
+      // corner_border (corner_radius, border_width, z_index, 0)
       this.instanceData[offset + 12] = rect.cornerRadius;
       this.instanceData[offset + 13] = rect.borderWidth;
-      this.instanceData[offset + 14] = 0;
+      this.instanceData[offset + 14] = i; // z_index = instance order (later = on top)
       this.instanceData[offset + 15] = 0;
     }
 

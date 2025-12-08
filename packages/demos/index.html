@@ -19,6 +19,10 @@
       }
       canvas {
         border-radius: 4px;
+        /* Prevent browser from applying smoothing/interpolation */
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
       }
     </style>
   </head>

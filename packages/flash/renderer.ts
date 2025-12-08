@@ -4,7 +4,7 @@
  * Coordinates GPU pipelines and renders scenes to the screen.
  */
 
-import { GPUBufferUsage, GPUShaderStage } from "@glade/webgpu";
+import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/webgpu";
 import type { FlashScene, SceneLayer } from "./scene.ts";
 import type { RectPipeline } from "./rect.ts";
 import type { ShadowPipeline } from "./shadow.ts";
@@ -38,6 +38,12 @@ export class FlashRenderer {
   private uniformBuffer: GPUBuffer | null = null;
   private uniformBindGroup: GPUBindGroup | null = null;
   private uniformBindGroupLayout: GPUBindGroupLayout | null = null;
+
+  // Depth buffer for proper z-ordering of instanced draws
+  private depthTexture: GPUTexture | null = null;
+  private depthTextureView: GPUTextureView | null = null;
+  private depthTextureWidth = 0;
+  private depthTextureHeight = 0;
 
   // Pipelines (initialized lazily)
   private rectPipeline: RectPipeline | null = null;
@@ -107,10 +113,44 @@ export class FlashRenderer {
   }
 
   /**
+   * Ensure depth texture exists and matches the required size.
+   */
+  private ensureDepthTexture(width: number, height: number): void {
+    if (
+      this.depthTexture &&
+      this.depthTextureWidth === width &&
+      this.depthTextureHeight === height
+    ) {
+      return;
+    }
+
+    // Destroy old texture if it exists
+    if (this.depthTexture) {
+      this.depthTexture.destroy();
+    }
+
+    // Create new depth texture
+    this.depthTexture = this.device.createTexture({
+      size: { width, height },
+      format: "depth24plus",
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    this.depthTextureView = this.depthTexture.createView();
+    this.depthTextureWidth = width;
+    this.depthTextureHeight = height;
+  }
+
+  /**
    * Update viewport uniforms.
    */
   updateViewport(width: number, height: number, scale: number): void {
     const data = new Float32Array([width, height, scale, 0]);
+    // Debug: log uniform data once
+    const uniformDebug = FlashRenderer as unknown as { loggedUniform?: boolean };
+    if (!uniformDebug.loggedUniform) {
+      uniformDebug.loggedUniform = true;
+      console.log(`Uniform data: viewport=${width}x${height}, scale=${scale}`);
+    }
     this.device.queue.writeBuffer(this.uniformBuffer!, 0, data);
   }
 
@@ -137,9 +177,20 @@ export class FlashRenderer {
     const dprY = fbHeight / height;
     const dpr = Math.max(dprX, dprY);
 
+    // Debug: log once
+    const debugKey = `${width}x${height}-${fbWidth}x${fbHeight}`;
+    const rendererDebug = FlashRenderer as unknown as { lastDebugKey?: string };
+    if (rendererDebug.lastDebugKey !== debugKey) {
+      rendererDebug.lastDebugKey = debugKey;
+      console.log(`Renderer: logical=${width}x${height}, fb=${fbWidth}x${fbHeight}, dpr=${dpr}`);
+    }
+
     // Update viewport uniform with framebuffer size and scale factor
     // The shader will use framebuffer coordinates, and we scale positions by DPR
     this.updateViewport(fbWidth, fbHeight, dpr);
+
+    // Ensure depth buffer exists and is correct size
+    this.ensureDepthTexture(fbWidth, fbHeight);
 
     const encoder = this.device.createCommandEncoder();
 
@@ -152,6 +203,12 @@ export class FlashRenderer {
           storeOp: "store",
         },
       ],
+      depthStencilAttachment: {
+        view: this.depthTextureView!,
+        depthClearValue: 1.0,
+        depthLoadOp: "clear",
+        depthStoreOp: "store",
+      },
     });
 
     // Set viewport to full framebuffer but scale coordinates

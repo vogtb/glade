@@ -192,7 +192,16 @@ export function renderFlashDemo(
   buildDemoScene(scene, logicalWidth, logicalHeight, time, mouseX, mouseY);
 
   // Render scene - use logical coordinates for UI, framebuffer size for GPU viewport
-  const textureView = context.getCurrentTexture().createView();
+  const texture = context.getCurrentTexture();
+  // Debug: log texture size once
+  const flashDebug = renderFlashDemo as unknown as { loggedTextureSize?: boolean };
+  if (!flashDebug.loggedTextureSize) {
+    flashDebug.loggedTextureSize = true;
+    console.log(
+      `Texture size: ${texture.width}x${texture.height}, ctx.size: ${ctx.width}x${ctx.height}`
+    );
+  }
+  const textureView = texture.createView();
   renderer.render(scene, textureView, logicalWidth, logicalHeight, ctx.width, ctx.height);
 
   // Present if needed (native contexts)

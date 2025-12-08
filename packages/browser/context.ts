@@ -34,6 +34,9 @@ export interface BrowserWebGLContext extends WebGLContext {
 // WebGPU context interface
 export interface BrowserWebGPUContext extends WebGPUContext {
   canvas: HTMLCanvasElement;
+  // Logical window size (CSS pixels, e.g., 800x600)
+  windowWidth: number;
+  windowHeight: number;
 }
 
 // Creates a WebGL2 context for browser rendering. Automatically appends canvas
@@ -259,11 +262,26 @@ export async function createWebGPUContext(
   options: BrowserWebGPUContextOptions = {}
 ): Promise<BrowserWebGPUContext> {
   const canvas = options.canvas ?? document.createElement("canvas");
-  const width = options.width ?? 800;
-  const height = options.height ?? 600;
+  const logicalWidth = options.width ?? 800;
+  const logicalHeight = options.height ?? 600;
 
-  canvas.width = width;
-  canvas.height = height;
+  // Account for device pixel ratio for crisp rendering on high-DPI displays
+  const dpr = window.devicePixelRatio || 1;
+  const physicalWidth = Math.floor(logicalWidth * dpr);
+  const physicalHeight = Math.floor(logicalHeight * dpr);
+
+  // Set canvas buffer size to physical pixels
+  canvas.width = physicalWidth;
+  canvas.height = physicalHeight;
+
+  // Set CSS size to logical pixels so it displays at the correct size
+  canvas.style.width = `${logicalWidth}px`;
+  canvas.style.height = `${logicalHeight}px`;
+
+  // Debug: log canvas setup
+  console.log(
+    `Canvas setup: buffer=${canvas.width}x${canvas.height}, CSS=${canvas.style.width}x${canvas.style.height}, dpr=${dpr}`
+  );
 
   if (!options.canvas) {
     document.body.appendChild(canvas);
@@ -361,8 +379,12 @@ export async function createWebGPUContext(
     queue,
     context,
     canvas,
-    width,
-    height,
+    // width/height are framebuffer size (physical pixels) for GPU operations
+    width: physicalWidth,
+    height: physicalHeight,
+    // windowWidth/windowHeight are logical CSS pixels for UI
+    windowWidth: logicalWidth,
+    windowHeight: logicalHeight,
 
     destroy() {
       device.destroy();

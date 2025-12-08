@@ -22,7 +22,7 @@ struct Uniforms {
 struct ShadowInstance {
   @location(0) pos_size: vec4<f32>,       // x, y, width, height (after offset)
   @location(1) color: vec4<f32>,           // rgba (premultiplied)
-  @location(2) params: vec4<f32>,          // corner_radius, blur, 0, 0
+  @location(2) params: vec4<f32>,          // corner_radius, blur, z_index, 0
 }
 
 struct VertexOutput {
@@ -74,7 +74,11 @@ fn vs_main(
     1.0 - (scaled_pos.y / uniforms.viewport_size.y) * 2.0
   );
 
-  out.position = vec4<f32>(clip_pos, 0.0, 1.0);
+  // Use z_index for depth ordering (higher z_index = closer to camera = smaller depth value)
+  // Normalize z_index to 0-1 range (assuming max 10000 instances)
+  let z_depth = 1.0 - (instance.params.z / 10000.0);
+
+  out.position = vec4<f32>(clip_pos, z_depth, 1.0);
   // Local position relative to original rect (can be negative due to spread)
   // Scale to framebuffer coordinates for proper SDF calculations
   out.local_pos = (quad_pos * expanded_size - vec2<f32>(spread)) * uniforms.scale;
@@ -210,6 +214,11 @@ export class ShadowPipeline {
       primitive: {
         topology: "triangle-list",
       },
+      depthStencil: {
+        format: "depth24plus",
+        depthWriteEnabled: true,
+        depthCompare: "less",
+      },
     });
   }
 
@@ -243,10 +252,10 @@ export class ShadowPipeline {
       this.instanceData[offset + 6] = shadow.color.b * a;
       this.instanceData[offset + 7] = a;
 
-      // params
+      // params (corner_radius, blur, z_index, 0)
       this.instanceData[offset + 8] = shadow.cornerRadius;
       this.instanceData[offset + 9] = shadow.blur;
-      this.instanceData[offset + 10] = 0;
+      this.instanceData[offset + 10] = i; // z_index = instance order (later = on top)
       this.instanceData[offset + 11] = 0;
     }
 

@@ -134,8 +134,16 @@ async function main() {
 
   console.log("demos initialized, rendering...");
 
-  let mouseX = ctx.width / 2;
-  let mouseY = ctx.height / 2;
+  // Use logical window size for mouse position (not framebuffer size)
+  const ctxAny = ctx as { windowWidth?: number; windowHeight?: number };
+  const logicalWidth = ctxAny.windowWidth ?? ctx.width;
+  const logicalHeight = ctxAny.windowHeight ?? ctx.height;
+  console.log(
+    `Context: framebuffer=${ctx.width}x${ctx.height}, logical=${logicalWidth}x${logicalHeight}`
+  );
+
+  let mouseX = logicalWidth / 2;
+  let mouseY = logicalHeight / 2;
 
   ctx.onCursorMove((event) => {
     mouseX = event.x;

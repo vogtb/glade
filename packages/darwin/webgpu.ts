@@ -681,6 +681,44 @@ export class DawnGPUCommandEncoder {
       }
     }
 
+    // Build depth stencil attachment if provided
+    let depthStencilAttachmentBuffer: Buffer | null = null;
+    if (descriptor.depthStencilAttachment) {
+      const dsa = descriptor.depthStencilAttachment;
+      // WGPURenderPassDepthStencilAttachment struct layout (48 bytes):
+      // { nextInChain: ptr(8), view: ptr(8), depthLoadOp: u32(4), depthStoreOp: u32(4),
+      //   depthClearValue: f32(4), depthReadOnly: u32(4), stencilLoadOp: u32(4),
+      //   stencilStoreOp: u32(4), stencilClearValue: u32(4), stencilReadOnly: u32(4) }
+      depthStencilAttachmentBuffer = Buffer.alloc(48);
+      depthStencilAttachmentBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain = NULL
+      const dsaView = dsa.view as unknown as DawnGPUTextureView;
+      depthStencilAttachmentBuffer.writeBigUInt64LE(
+        BigInt(dsaView._handle as unknown as number),
+        8
+      ); // view
+      depthStencilAttachmentBuffer.writeUInt32LE(
+        loadOpMap[dsa.depthLoadOp ?? "load"] ?? WGPULoadOp.Load,
+        16
+      ); // depthLoadOp
+      depthStencilAttachmentBuffer.writeUInt32LE(
+        storeOpMap[dsa.depthStoreOp ?? "store"] ?? WGPUStoreOp.Store,
+        20
+      ); // depthStoreOp
+      depthStencilAttachmentBuffer.writeFloatLE(dsa.depthClearValue ?? 1.0, 24); // depthClearValue
+      depthStencilAttachmentBuffer.writeUInt32LE(dsa.depthReadOnly ? 1 : 0, 28); // depthReadOnly
+      // stencilLoadOp/stencilStoreOp: use Undefined (0) if not specified (for depth-only formats)
+      depthStencilAttachmentBuffer.writeUInt32LE(
+        dsa.stencilLoadOp ? (loadOpMap[dsa.stencilLoadOp] ?? 0) : 0,
+        32
+      ); // stencilLoadOp (0 = Undefined)
+      depthStencilAttachmentBuffer.writeUInt32LE(
+        dsa.stencilStoreOp ? (storeOpMap[dsa.stencilStoreOp] ?? 0) : 0,
+        36
+      ); // stencilStoreOp (0 = Undefined)
+      depthStencilAttachmentBuffer.writeUInt32LE(dsa.stencilClearValue ?? 0, 40); // stencilClearValue
+      depthStencilAttachmentBuffer.writeUInt32LE(dsa.stencilReadOnly ? 1 : 0, 44); // stencilReadOnly
+    }
+
     // WGPURenderPassDescriptor struct
     const descriptorBuffer = Buffer.alloc(80);
     descriptorBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
@@ -688,7 +726,10 @@ export class DawnGPUCommandEncoder {
     descriptorBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length = WGPU_STRLEN
     descriptorBuffer.writeBigUInt64LE(BigInt(numColorAttachments), 24); // colorAttachmentCount
     descriptorBuffer.writeBigUInt64LE(BigInt(ptr(colorAttachmentsBuffer)), 32); // colorAttachments
-    descriptorBuffer.writeBigUInt64LE(BigInt(0), 40); // depthStencilAttachment = NULL
+    descriptorBuffer.writeBigUInt64LE(
+      depthStencilAttachmentBuffer ? BigInt(ptr(depthStencilAttachmentBuffer)) : BigInt(0),
+      40
+    ); // depthStencilAttachment
     descriptorBuffer.writeBigUInt64LE(BigInt(0), 48); // occlusionQuerySet = NULL
     descriptorBuffer.writeBigUInt64LE(BigInt(0), 56); // timestampWrites = NULL
 
@@ -1644,8 +1685,59 @@ export class DawnGPUDevice {
     offset += 4;
     offset += 4; // padding
 
-    // depthStencil: ptr (NULL)
-    descBuffer.writeBigUInt64LE(BigInt(0), offset);
+    // depthStencil: ptr
+    let depthStencilBuffer: Buffer | null = null;
+    if (descriptor.depthStencil) {
+      const ds = descriptor.depthStencil;
+      // WGPUDepthStencilState struct layout (72 bytes):
+      // { nextInChain: ptr(8), format: u32(4), depthWriteEnabled: u32(4), depthCompare: u32(4),
+      //   stencilFront: WGPUStencilFaceState(16), stencilBack: WGPUStencilFaceState(16),
+      //   stencilReadMask: u32(4), stencilWriteMask: u32(4), depthBias: i32(4),
+      //   depthBiasSlopeScale: f32(4), depthBiasClamp: f32(4) }
+      // WGPUStencilFaceState: { compare: u32(4), failOp: u32(4), depthFailOp: u32(4), passOp: u32(4) }
+      depthStencilBuffer = Buffer.alloc(72);
+      let dsOffset = 0;
+      depthStencilBuffer.writeBigUInt64LE(BigInt(0), dsOffset); // nextInChain
+      dsOffset += 8;
+      depthStencilBuffer.writeUInt32LE(
+        textureFormatMap[ds.format] ?? 0x00000030, // default depth24plus
+        dsOffset
+      ); // format
+      dsOffset += 4;
+      // depthWriteEnabled: WGPUOptionalBool (0=false, 1=true, 2=undefined)
+      depthStencilBuffer.writeUInt32LE(ds.depthWriteEnabled ? 1 : 0, dsOffset);
+      dsOffset += 4;
+      depthStencilBuffer.writeUInt32LE(
+        compareFunctionMap[ds.depthCompare ?? "always"] ?? 0x00000008,
+        dsOffset
+      ); // depthCompare
+      dsOffset += 4;
+      // stencilFront (16 bytes) - use defaults (undefined = 0)
+      depthStencilBuffer.writeUInt32LE(0, dsOffset); // compare = undefined
+      depthStencilBuffer.writeUInt32LE(0, dsOffset + 4); // failOp = undefined
+      depthStencilBuffer.writeUInt32LE(0, dsOffset + 8); // depthFailOp = undefined
+      depthStencilBuffer.writeUInt32LE(0, dsOffset + 12); // passOp = undefined
+      dsOffset += 16;
+      // stencilBack (16 bytes) - use defaults (undefined = 0)
+      depthStencilBuffer.writeUInt32LE(0, dsOffset); // compare = undefined
+      depthStencilBuffer.writeUInt32LE(0, dsOffset + 4); // failOp = undefined
+      depthStencilBuffer.writeUInt32LE(0, dsOffset + 8); // depthFailOp = undefined
+      depthStencilBuffer.writeUInt32LE(0, dsOffset + 12); // passOp = undefined
+      dsOffset += 16;
+      depthStencilBuffer.writeUInt32LE(ds.stencilReadMask ?? 0xffffffff, dsOffset); // stencilReadMask
+      dsOffset += 4;
+      depthStencilBuffer.writeUInt32LE(ds.stencilWriteMask ?? 0xffffffff, dsOffset); // stencilWriteMask
+      dsOffset += 4;
+      depthStencilBuffer.writeInt32LE(ds.depthBias ?? 0, dsOffset); // depthBias
+      dsOffset += 4;
+      depthStencilBuffer.writeFloatLE(ds.depthBiasSlopeScale ?? 0, dsOffset); // depthBiasSlopeScale
+      dsOffset += 4;
+      depthStencilBuffer.writeFloatLE(ds.depthBiasClamp ?? 0, dsOffset); // depthBiasClamp
+    }
+    descBuffer.writeBigUInt64LE(
+      depthStencilBuffer ? BigInt(ptr(depthStencilBuffer)) : BigInt(0),
+      offset
+    );
     offset += 8;
 
     // multisample: WGPUMultisampleState (inline, 24 bytes)
