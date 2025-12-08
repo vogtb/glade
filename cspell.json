@@ -23,6 +23,7 @@
     "RAYMARCH",
     "raymarching",
     "multisampled",
-    "prepaint"
+    "prepaint",
+    "unfilterable"
   ]
 }

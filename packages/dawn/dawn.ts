@@ -604,7 +604,80 @@ export const lib = dlopen(DAWN_PATH, {
     args: [FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.u32],
     returns: FFIType.void,
   },
+  wgpuComputePassEncoderDispatchWorkgroupsIndirect: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64],
+    returns: FFIType.void,
+  },
+  wgpuComputePassEncoderPushDebugGroup: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64], // label as WGPUStringView (data, length)
+    returns: FFIType.void,
+  },
+  wgpuComputePassEncoderPopDebugGroup: {
+    args: [FFIType.ptr],
+    returns: FFIType.void,
+  },
+  wgpuComputePassEncoderInsertDebugMarker: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64], // label as WGPUStringView
+    returns: FFIType.void,
+  },
+
+  // RenderPassEncoder debug
+  wgpuRenderPassEncoderPushDebugGroup: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderPopDebugGroup: {
+    args: [FFIType.ptr],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderInsertDebugMarker: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderBeginOcclusionQuery: {
+    args: [FFIType.ptr, FFIType.u32],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderEndOcclusionQuery: {
+    args: [FFIType.ptr],
+    returns: FFIType.void,
+  },
+  wgpuRenderPassEncoderExecuteBundles: {
+    args: [FFIType.ptr, FFIType.u64, FFIType.ptr],
+    returns: FFIType.void,
+  },
+
+  // CommandEncoder debug
+  wgpuCommandEncoderPushDebugGroup: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64],
+    returns: FFIType.void,
+  },
+  wgpuCommandEncoderPopDebugGroup: {
+    args: [FFIType.ptr],
+    returns: FFIType.void,
+  },
+  wgpuCommandEncoderInsertDebugMarker: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u64],
+    returns: FFIType.void,
+  },
+  wgpuCommandEncoderResolveQuerySet: {
+    args: [FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.ptr, FFIType.u64],
+    returns: FFIType.void,
+  },
+
+  // Buffer mapping
+  wgpuBufferMapAsync: {
+    args: [FFIType.ptr, FFIType.u64, FFIType.u64, FFIType.u64, FFIType.ptr],
+    returns: FFIType.void,
+  },
 });
+
+// Buffer map mode
+export const WGPUMapMode = {
+  None: 0x00000000,
+  Read: 0x00000001,
+  Write: 0x00000002,
+} as const;
 
 // Helper to create a WGPUStringView struct
 export function createStringView(str: string | null): Buffer {

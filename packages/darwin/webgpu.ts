@@ -1,4 +1,4 @@
-import { ptr, JSCallback, FFIType, type Pointer } from "bun:ffi";
+import { ptr, JSCallback, FFIType, toArrayBuffer, type Pointer } from "bun:ffi";
 import {
   WGPUSType,
   WGPUCallbackMode,
@@ -19,6 +19,7 @@ import {
   WGPULoadOp,
   WGPUStoreOp,
   WGPUIndexFormat,
+  WGPUMapMode,
   type WGPUDevice,
   type WGPUQueue,
   type WGPUBuffer,
@@ -35,6 +36,7 @@ import {
   type WGPUTexture,
   type WGPUTextureView,
   type WGPUSurface,
+  type WGPUQuerySet,
   WGPUSurfaceGetCurrentTextureStatus,
 } from "@glade/dawn";
 
@@ -262,7 +264,9 @@ export class DawnGPUBuffer {
   readonly label: string;
   readonly size: number;
   readonly usage: number;
-  readonly mapState: string = "unmapped";
+  private _mapState: "unmapped" | "pending" | "mapped" = "unmapped";
+  private _mappedOffset: number = 0;
+  private _mappedSize: number = 0;
 
   constructor(
     public readonly _handle: WGPUBuffer,
@@ -271,18 +275,109 @@ export class DawnGPUBuffer {
     this.label = descriptor.label ?? "";
     this.size = descriptor.size;
     this.usage = descriptor.usage;
+    if (descriptor.mappedAtCreation) {
+      this._mapState = "mapped";
+      this._mappedOffset = 0;
+      this._mappedSize = descriptor.size;
+    }
   }
 
-  getMappedRange(_offset?: number, _size?: number): ArrayBuffer {
-    throw new Error("getMappedRange not implemented");
+  get mapState(): "unmapped" | "pending" | "mapped" {
+    return this._mapState;
   }
 
-  async mapAsync(_mode: number, _offset?: number, _size?: number): Promise<undefined> {
-    throw new Error("mapAsync not implemented");
+  getMappedRange(offset?: number, size?: number): ArrayBuffer {
+    if (this._mapState !== "mapped") {
+      throw new Error("Buffer is not mapped");
+    }
+    const actualOffset = offset ?? 0;
+    const actualSize = size ?? this.size - actualOffset;
+
+    const mappedPtr = dawn.wgpuBufferGetMappedRange(
+      this._handle,
+      BigInt(actualOffset),
+      BigInt(actualSize)
+    );
+    if (!mappedPtr) {
+      throw new Error("Failed to get mapped range");
+    }
+
+    return toArrayBuffer(mappedPtr, 0, actualSize);
+  }
+
+  async mapAsync(mode: number, offset?: number, size?: number): Promise<undefined> {
+    if (this._mapState !== "unmapped") {
+      throw new Error("Buffer is already mapped or pending");
+    }
+
+    this._mapState = "pending";
+    const actualOffset = offset ?? 0;
+    const actualSize = size ?? this.size - actualOffset;
+
+    const dawnMode = mode === 1 ? WGPUMapMode.Read : WGPUMapMode.Write;
+
+    return new Promise((resolve, reject) => {
+      let callbackCalled = false;
+
+      const callback = new JSCallback(
+        (status: number) => {
+          callbackCalled = true;
+          if (status === 1) {
+            this._mapState = "mapped";
+            this._mappedOffset = actualOffset;
+            this._mappedSize = actualSize;
+            resolve(undefined);
+          } else {
+            this._mapState = "unmapped";
+            reject(new Error(`Buffer mapping failed with status ${status}`));
+          }
+        },
+        {
+          args: [FFIType.u32, FFIType.ptr, FFIType.ptr],
+          returns: FFIType.void,
+        }
+      );
+
+      const callbackInfo = Buffer.alloc(40);
+      callbackInfo.writeBigUInt64LE(BigInt(0), 0);
+      callbackInfo.writeUInt32LE(WGPUCallbackMode.AllowSpontaneous, 8);
+      callbackInfo.writeBigUInt64LE(BigInt(callback.ptr!), 16);
+      callbackInfo.writeBigUInt64LE(BigInt(0), 24);
+      callbackInfo.writeBigUInt64LE(BigInt(0), 32);
+
+      dawn.wgpuBufferMapAsync(
+        this._handle,
+        BigInt(dawnMode),
+        BigInt(actualOffset),
+        BigInt(actualSize),
+        ptr(callbackInfo)
+      );
+
+      const startTime = Date.now();
+      const timeout = 5000;
+
+      const poll = () => {
+        if (callbackCalled) {
+          callback.close();
+          return;
+        }
+        if (Date.now() - startTime > timeout) {
+          callback.close();
+          this._mapState = "unmapped";
+          reject(new Error("Buffer mapping timed out"));
+          return;
+        }
+        setTimeout(poll, 1);
+      };
+      poll();
+    });
   }
 
   unmap() {
     dawn.wgpuBufferUnmap(this._handle);
+    this._mapState = "unmapped";
+    this._mappedOffset = 0;
+    this._mappedSize = 0;
   }
 
   destroy() {
@@ -304,7 +399,9 @@ export class DawnGPUShaderModule {
   }
 
   getCompilationInfo(): Promise<GPUCompilationInfo> {
-    throw new Error("getCompilationInfo not implemented");
+    return Promise.resolve({
+      messages: [],
+    } as unknown as GPUCompilationInfo);
   }
 }
 
@@ -548,18 +645,34 @@ export class DawnGPURenderPassEncoder {
     colorBuffer.writeDoubleLE(colorDict.a, 24);
     dawn.wgpuRenderPassEncoderSetBlendConstant(this._handle, ptr(colorBuffer));
   }
+
   setStencilReference(reference: number) {
     dawn.wgpuRenderPassEncoderSetStencilReference(this._handle, reference);
   }
-  beginOcclusionQuery(_queryIndex: number) {
-    // TODO implement
+
+  beginOcclusionQuery(queryIndex: number) {
+    dawn.wgpuRenderPassEncoderBeginOcclusionQuery(this._handle, queryIndex);
   }
+
   endOcclusionQuery() {
-    // TODO implement
+    dawn.wgpuRenderPassEncoderEndOcclusionQuery(this._handle);
   }
-  executeBundles(_bundles: Iterable<GPURenderBundle>) {
-    // TODO implement
+
+  executeBundles(bundles: Iterable<GPURenderBundle>) {
+    const bundleArray = Array.from(bundles);
+    if (bundleArray.length === 0) return;
+    const handles = new BigUint64Array(bundleArray.length);
+    for (let i = 0; i < bundleArray.length; i++) {
+      const bundle = bundleArray[i] as unknown as { _handle: Pointer };
+      handles[i] = BigInt(bundle._handle as unknown as number);
+    }
+    dawn.wgpuRenderPassEncoderExecuteBundles(
+      this._handle,
+      BigInt(bundleArray.length),
+      ptr(handles)
+    );
   }
+
   drawIndirect(indirectBuffer: DawnGPUBuffer, indirectOffset: number) {
     dawn.wgpuRenderPassEncoderDrawIndirect(
       this._handle,
@@ -567,6 +680,7 @@ export class DawnGPURenderPassEncoder {
       BigInt(indirectOffset)
     );
   }
+
   drawIndexedIndirect(indirectBuffer: DawnGPUBuffer, indirectOffset: number) {
     dawn.wgpuRenderPassEncoderDrawIndexedIndirect(
       this._handle,
@@ -574,14 +688,26 @@ export class DawnGPURenderPassEncoder {
       BigInt(indirectOffset)
     );
   }
-  pushDebugGroup(_groupLabel: string) {
-    // TODO implement
+  pushDebugGroup(groupLabel: string) {
+    const labelBuffer = Buffer.from(groupLabel + "\0", "utf8");
+    dawn.wgpuRenderPassEncoderPushDebugGroup(
+      this._handle,
+      ptr(labelBuffer),
+      BigInt(groupLabel.length)
+    );
   }
+
   popDebugGroup() {
-    // TODO implement
+    dawn.wgpuRenderPassEncoderPopDebugGroup(this._handle);
   }
-  insertDebugMarker(_markerLabel: string) {
-    // TODO implement
+
+  insertDebugMarker(markerLabel: string) {
+    const labelBuffer = Buffer.from(markerLabel + "\0", "utf8");
+    dawn.wgpuRenderPassEncoderInsertDebugMarker(
+      this._handle,
+      ptr(labelBuffer),
+      BigInt(markerLabel.length)
+    );
   }
 }
 
@@ -630,25 +756,38 @@ export class DawnGPUComputePassEncoder {
     );
   }
 
-  dispatchWorkgroupsIndirect(_indirectBuffer: DawnGPUBuffer, _indirectOffset: number) {
-    // TODO implement - would need wgpuComputePassEncoderDispatchWorkgroupsIndirect
-    throw new Error("dispatchWorkgroupsIndirect not implemented");
+  dispatchWorkgroupsIndirect(indirectBuffer: DawnGPUBuffer, indirectOffset: number) {
+    dawn.wgpuComputePassEncoderDispatchWorkgroupsIndirect(
+      this._handle,
+      indirectBuffer._handle,
+      BigInt(indirectOffset)
+    );
   }
 
   end() {
     dawn.wgpuComputePassEncoderEnd(this._handle);
   }
 
-  pushDebugGroup(_groupLabel: string) {
-    // TODO implement
+  pushDebugGroup(groupLabel: string) {
+    const labelBuffer = Buffer.from(groupLabel + "\0", "utf8");
+    dawn.wgpuComputePassEncoderPushDebugGroup(
+      this._handle,
+      ptr(labelBuffer),
+      BigInt(groupLabel.length)
+    );
   }
 
   popDebugGroup() {
-    // TODO implement
+    dawn.wgpuComputePassEncoderPopDebugGroup(this._handle);
   }
 
-  insertDebugMarker(_markerLabel: string) {
-    // TODO implement
+  insertDebugMarker(markerLabel: string) {
+    const labelBuffer = Buffer.from(markerLabel + "\0", "utf8");
+    dawn.wgpuComputePassEncoderInsertDebugMarker(
+      this._handle,
+      ptr(labelBuffer),
+      BigInt(markerLabel.length)
+    );
   }
 }
 
@@ -946,22 +1085,40 @@ export class DawnGPUCommandEncoder {
     );
   }
   resolveQuerySet(
-    _querySet: GPUQuerySet,
-    _firstQuery: number,
-    _queryCount: number,
-    _destination: DawnGPUBuffer,
-    _destinationOffset: number
+    querySet: GPUQuerySet,
+    firstQuery: number,
+    queryCount: number,
+    destination: DawnGPUBuffer,
+    destinationOffset: number
   ) {
-    // TODO implement
+    const qs = querySet as unknown as { _handle: WGPUQuerySet };
+    dawn.wgpuCommandEncoderResolveQuerySet(
+      this._handle,
+      qs._handle,
+      firstQuery,
+      queryCount,
+      destination._handle,
+      BigInt(destinationOffset)
+    );
   }
-  pushDebugGroup(_groupLabel: string) {
-    // TODO implement
+  pushDebugGroup(groupLabel: string) {
+    const labelBuffer = Buffer.from(groupLabel + "\0", "utf8");
+    dawn.wgpuCommandEncoderPushDebugGroup(
+      this._handle,
+      ptr(labelBuffer),
+      BigInt(groupLabel.length)
+    );
   }
   popDebugGroup() {
-    // TODO implement
+    dawn.wgpuCommandEncoderPopDebugGroup(this._handle);
   }
-  insertDebugMarker(_markerLabel: string) {
-    // TODO implement
+  insertDebugMarker(markerLabel: string) {
+    const labelBuffer = Buffer.from(markerLabel + "\0", "utf8");
+    dawn.wgpuCommandEncoderInsertDebugMarker(
+      this._handle,
+      ptr(labelBuffer),
+      BigInt(markerLabel.length)
+    );
   }
 }
 
