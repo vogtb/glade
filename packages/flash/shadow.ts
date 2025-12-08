@@ -23,6 +23,8 @@ struct ShadowInstance {
   @location(0) pos_size: vec4<f32>,       // x, y, width, height (after offset)
   @location(1) color: vec4<f32>,           // rgba (premultiplied)
   @location(2) params: vec4<f32>,          // corner_radius, blur, z_index, 0
+  @location(3) clip_bounds: vec4<f32>,     // clip_x, clip_y, clip_width, clip_height
+  @location(4) clip_params: vec4<f32>,     // clip_corner_radius, has_clip, 0, 0
 }
 
 struct VertexOutput {
@@ -32,6 +34,9 @@ struct VertexOutput {
   @location(2) color: vec4<f32>,
   @location(3) corner_radius: f32,
   @location(4) blur: f32,
+  @location(5) @interpolate(flat) clip_bounds: vec4<f32>,
+  @location(6) @interpolate(flat) clip_corner_radius: f32,
+  @location(7) @interpolate(flat) has_clip: f32,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -87,6 +92,16 @@ fn vs_main(
   out.corner_radius = instance.params.x * uniforms.scale;
   out.blur = blur * uniforms.scale;
 
+  // Pass clip bounds scaled to framebuffer coordinates
+  out.clip_bounds = vec4<f32>(
+    instance.clip_bounds.x * uniforms.scale,
+    instance.clip_bounds.y * uniforms.scale,
+    instance.clip_bounds.z * uniforms.scale,
+    instance.clip_bounds.w * uniforms.scale
+  );
+  out.clip_corner_radius = instance.clip_params.x * uniforms.scale;
+  out.has_clip = instance.clip_params.y;
+
   return out;
 }
 
@@ -127,8 +142,28 @@ fn shadow_alpha(dist: f32, blur: f32) -> f32 {
   return 0.5 - 0.5 * erf_approx(dist / (sigma * sqrt(2.0)));
 }
 
+// SDF for clip region (used for rounded clip bounds)
+fn clip_sdf(pos: vec2<f32>, clip_bounds: vec4<f32>, corner_radius: f32) -> f32 {
+  let clip_origin = clip_bounds.xy;
+  let clip_size = clip_bounds.zw;
+  let clip_half_size = clip_size * 0.5;
+  let clip_center = clip_origin + clip_half_size;
+  let local_pos = pos - clip_center;
+  let q = abs(local_pos) - clip_half_size + vec2<f32>(corner_radius);
+  return min(max(q.x, q.y), 0.0) + length(max(q, vec2<f32>(0.0))) - corner_radius;
+}
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+  // Apply clip bounds if present
+  if in.has_clip > 0.5 {
+    let frag_pos = in.position.xy;
+    let clip_dist = clip_sdf(frag_pos, in.clip_bounds, in.clip_corner_radius);
+    if clip_dist > 0.0 {
+      discard;
+    }
+  }
+
   let radius = min(in.corner_radius, min(in.rect_size.x, in.rect_size.y) * 0.5);
   let dist = sdf_rounded_rect(in.local_pos, in.rect_size, radius);
 
@@ -143,9 +178,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 `;
 
 /**
- * Instance data layout: 12 floats per instance.
+ * Instance data layout: 20 floats per instance.
+ * - pos_size: 4 floats (x, y, width, height)
+ * - color: 4 floats (r, g, b, a)
+ * - params: 4 floats (corner_radius, blur, z_index, 0)
+ * - clip_bounds: 4 floats (x, y, width, height)
+ * - clip_params: 4 floats (corner_radius, has_clip, 0, 0)
  */
-const FLOATS_PER_INSTANCE = 12;
+const FLOATS_PER_INSTANCE = 20;
 const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
 
 /**
@@ -197,6 +237,8 @@ export class ShadowPipeline {
               { shaderLocation: 0, offset: 0, format: "float32x4" }, // pos_size
               { shaderLocation: 1, offset: 16, format: "float32x4" }, // color
               { shaderLocation: 2, offset: 32, format: "float32x4" }, // params
+              { shaderLocation: 3, offset: 48, format: "float32x4" }, // clip_bounds
+              { shaderLocation: 4, offset: 64, format: "float32x4" }, // clip_params
             ],
           },
         ],
@@ -257,6 +299,19 @@ export class ShadowPipeline {
       this.instanceData[offset + 9] = shadow.blur;
       this.instanceData[offset + 10] = i; // z_index = instance order (later = on top)
       this.instanceData[offset + 11] = 0;
+
+      // clip_bounds (x, y, width, height)
+      const clip = shadow.clipBounds;
+      this.instanceData[offset + 12] = clip?.x ?? 0;
+      this.instanceData[offset + 13] = clip?.y ?? 0;
+      this.instanceData[offset + 14] = clip?.width ?? 0;
+      this.instanceData[offset + 15] = clip?.height ?? 0;
+
+      // clip_params (corner_radius, has_clip, 0, 0)
+      this.instanceData[offset + 16] = clip?.cornerRadius ?? 0;
+      this.instanceData[offset + 17] = clip ? 1.0 : 0.0;
+      this.instanceData[offset + 18] = 0;
+      this.instanceData[offset + 19] = 0;
     }
 
     // Upload instance data

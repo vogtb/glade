@@ -8,7 +8,7 @@
  * 3. paint - emit GPU primitives
  */
 
-import type { WindowId, EntityId, FocusId, Point, Bounds, Color } from "./types.ts";
+import type { WindowId, EntityId, FocusId, Point, Bounds, Color, ContentMask } from "./types.ts";
 import type { FlashViewHandle, FocusHandle } from "./entity.ts";
 import type {
   FlashView,
@@ -472,6 +472,15 @@ export class FlashWindow {
 
       withElementId: (newElementId: GlobalElementId): PaintContext => {
         return createPaintContext(newElementId);
+      },
+
+      withContentMask: (mask: ContentMask, callback: () => void): void => {
+        scene.pushContentMask(mask);
+        try {
+          callback();
+        } finally {
+          scene.popContentMask();
+        }
       },
     };
   }

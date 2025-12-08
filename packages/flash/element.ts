@@ -10,7 +10,7 @@
  * 3. paint() - Emit GPU primitives using PrepaintState
  */
 
-import type { Bounds, Color } from "./types.ts";
+import type { Bounds, Color, ContentMask } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import type { HitTestNode } from "./dispatch.ts";
@@ -208,6 +208,12 @@ export interface PaintContext {
    * Create a child context with a specific element ID.
    */
   withElementId(elementId: GlobalElementId): PaintContext;
+
+  /**
+   * Execute a callback with content clipped to the given mask.
+   * Content painted inside the callback will be clipped to the mask bounds.
+   */
+  withContentMask(mask: ContentMask, callback: () => void): void;
 }
 
 // ============ Element Base Classes ============

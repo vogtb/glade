@@ -21,9 +21,10 @@ export type {
   Bounds,
   Color,
   FlashTask,
+  ContentMask,
 } from "./types.ts";
 
-export { rgb, rgba, color, boundsContains } from "./types.ts";
+export { rgb, rgba, color, boundsContains, boundsIntersect, boundsIsEmpty } from "./types.ts";
 
 // Layout engine
 export type { LayoutId, AvailableSpace, AvailableSpaceValue } from "./layout.ts";

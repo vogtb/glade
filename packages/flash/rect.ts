@@ -25,6 +25,8 @@ struct RectInstance {
   @location(1) color: vec4<f32>,           // rgba (premultiplied)
   @location(2) border_color: vec4<f32>,    // rgba (premultiplied)
   @location(3) corner_border: vec4<f32>,   // corner_radius, border_width, z_index, 0
+  @location(4) clip_bounds: vec4<f32>,     // clip_x, clip_y, clip_width, clip_height
+  @location(5) clip_params: vec4<f32>,     // clip_corner_radius, has_clip, 0, 0
 }
 
 struct VertexOutput {
@@ -35,6 +37,9 @@ struct VertexOutput {
   @location(3) @interpolate(flat) border_color: vec4<f32>,
   @location(4) @interpolate(flat) corner_radius: f32,
   @location(5) @interpolate(flat) border_width: f32,
+  @location(6) @interpolate(flat) clip_bounds: vec4<f32>,  // in framebuffer coords
+  @location(7) @interpolate(flat) clip_corner_radius: f32,
+  @location(8) @interpolate(flat) has_clip: f32,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -87,6 +92,16 @@ fn vs_main(
   out.corner_radius = corner_radius * uniforms.scale;
   out.border_width = instance.corner_border.y * uniforms.scale;
 
+  // Pass clip bounds scaled to framebuffer coordinates
+  out.clip_bounds = vec4<f32>(
+    instance.clip_bounds.x * uniforms.scale,
+    instance.clip_bounds.y * uniforms.scale,
+    instance.clip_bounds.z * uniforms.scale,
+    instance.clip_bounds.w * uniforms.scale
+  );
+  out.clip_corner_radius = instance.clip_params.x * uniforms.scale;
+  out.has_clip = instance.clip_params.y;
+
   return out;
 }
 
@@ -113,8 +128,27 @@ fn quad_sdf(p: vec2<f32>, half_size: vec2<f32>, corner_radius: f32) -> f32 {
   return length(max(q, vec2<f32>(0.0, 0.0))) + min(max(q.x, q.y), 0.0) - corner_radius;
 }
 
+// SDF for clip region (used for rounded clip bounds)
+fn clip_sdf(pos: vec2<f32>, clip_bounds: vec4<f32>, corner_radius: f32) -> f32 {
+  let clip_origin = clip_bounds.xy;
+  let clip_size = clip_bounds.zw;
+  let clip_half_size = clip_size * 0.5;
+  let clip_center = clip_origin + clip_half_size;
+  let local_pos = pos - clip_center;
+  return quad_sdf(local_pos, clip_half_size, corner_radius);
+}
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+  // Apply clip bounds if present
+  if in.has_clip > 0.5 {
+    let frag_pos = in.position.xy;
+    let clip_dist = clip_sdf(frag_pos, in.clip_bounds, in.clip_corner_radius);
+    if clip_dist > 0.0 {
+      discard;
+    }
+  }
+
   // Compute local position from fragment screen position (like Zed/GPUI)
   // in.position.xy is the fragment's screen position in framebuffer coords
   let point = in.position.xy - in.rect_origin;
@@ -158,9 +192,15 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 `;
 
 /**
- * Instance data layout: 16 floats per instance.
+ * Instance data layout: 24 floats per instance.
+ * - pos_size: 4 floats (x, y, width, height)
+ * - color: 4 floats (r, g, b, a)
+ * - border_color: 4 floats (r, g, b, a)
+ * - corner_border: 4 floats (corner_radius, border_width, z_index, 0)
+ * - clip_bounds: 4 floats (x, y, width, height)
+ * - clip_params: 4 floats (corner_radius, has_clip, 0, 0)
  */
-const FLOATS_PER_INSTANCE = 16;
+const FLOATS_PER_INSTANCE = 24;
 const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
 
 /**
@@ -213,6 +253,8 @@ export class RectPipeline {
               { shaderLocation: 1, offset: 16, format: "float32x4" }, // color
               { shaderLocation: 2, offset: 32, format: "float32x4" }, // border_color
               { shaderLocation: 3, offset: 48, format: "float32x4" }, // corner_border
+              { shaderLocation: 4, offset: 64, format: "float32x4" }, // clip_bounds
+              { shaderLocation: 5, offset: 80, format: "float32x4" }, // clip_params
             ],
           },
         ],
@@ -287,6 +329,19 @@ export class RectPipeline {
       this.instanceData[offset + 13] = rect.borderWidth;
       this.instanceData[offset + 14] = i; // z_index = instance order (later = on top)
       this.instanceData[offset + 15] = 0;
+
+      // clip_bounds (x, y, width, height)
+      const clip = rect.clipBounds;
+      this.instanceData[offset + 16] = clip?.x ?? 0;
+      this.instanceData[offset + 17] = clip?.y ?? 0;
+      this.instanceData[offset + 18] = clip?.width ?? 0;
+      this.instanceData[offset + 19] = clip?.height ?? 0;
+
+      // clip_params (corner_radius, has_clip, 0, 0)
+      this.instanceData[offset + 20] = clip?.cornerRadius ?? 0;
+      this.instanceData[offset + 21] = clip ? 1.0 : 0.0;
+      this.instanceData[offset + 22] = 0;
+      this.instanceData[offset + 23] = 0;
     }
 
     // Upload instance data

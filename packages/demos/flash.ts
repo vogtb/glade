@@ -440,9 +440,105 @@ function buildDemoScene(
     renderDiv(statusDot, { x: dotX, y: dotY, width: 12, height: 12 }, ctx);
   }
 
+  // ============ Clipping Demo (demonstrates content masking) ============
+
+  buildClippingDemo(scene, width, time, ctx);
+
   // ============ Flexbox Layout Demo (using Taffy layout engine) ============
 
   buildFlexboxDemo(scene, layoutEngine, width, height, time, ctx);
+}
+
+/**
+ * Build a clipping demo to demonstrate content masking.
+ * Shows content being clipped to a rounded rectangle region.
+ */
+function buildClippingDemo(
+  scene: FlashScene,
+  width: number,
+  time: number,
+  _ctx: DivRenderContext
+): void {
+  // Position on the left side
+  const clipDemoX = 20;
+  const clipDemoY = 100;
+  const clipWidth = 200;
+  const clipHeight = 140;
+
+  // Draw the clip container background (this is NOT clipped - shows the boundary)
+  scene.addRect({
+    x: clipDemoX,
+    y: clipDemoY,
+    width: clipWidth,
+    height: clipHeight,
+    color: { r: 0.15, g: 0.15, b: 0.2, a: 1 },
+    cornerRadius: 16,
+    borderWidth: 2,
+    borderColor: { r: 0.4, g: 0.4, b: 0.6, a: 1 },
+  });
+
+  // Push a content mask - everything after this will be clipped
+  scene.pushContentMask({
+    bounds: { x: clipDemoX, y: clipDemoY, width: clipWidth, height: clipHeight },
+    cornerRadius: 16,
+  });
+
+  // Draw animated bars that extend beyond the clip region
+  const numBars = 8;
+  const barHeight = 20;
+  const barGap = 5;
+
+  for (let i = 0; i < numBars; i++) {
+    const phase = time * 2 + i * 0.4;
+    const barWidth = 80 + Math.sin(phase) * 60;
+    const barX = clipDemoX - 20 + Math.cos(phase * 0.7) * 30;
+    const barY = clipDemoY + 10 + i * (barHeight + barGap);
+
+    const hue = (i / numBars + time * 0.1) % 1;
+    const barColor = hslToRgb(hue, 0.7, 0.5);
+
+    scene.addRect({
+      x: barX,
+      y: barY,
+      width: barWidth,
+      height: barHeight,
+      color: barColor,
+      cornerRadius: 4,
+      borderWidth: 0,
+      borderColor: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
+  // Draw a circle that moves in and out of the clip region
+  const circleRadius = 25;
+  const circleX = clipDemoX + clipWidth / 2 + Math.sin(time * 1.5) * 120;
+  const circleY = clipDemoY + clipHeight / 2;
+
+  scene.addRect({
+    x: circleX - circleRadius,
+    y: circleY - circleRadius,
+    width: circleRadius * 2,
+    height: circleRadius * 2,
+    color: { r: 1, g: 1, b: 1, a: 0.9 },
+    cornerRadius: circleRadius,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
+
+  // Pop the content mask - back to normal rendering
+  scene.popContentMask();
+
+  // Label below the demo (not clipped)
+  scene.addRect({
+    x: clipDemoX,
+    y: clipDemoY + clipHeight + 10,
+    width: clipWidth,
+    height: 24,
+    color: { r: 0.1, g: 0.1, b: 0.15, a: 0.8 },
+    cornerRadius: 4,
+    borderWidth: 0,
+    borderColor: { r: 0, g: 0, b: 0, a: 0 },
+  });
 }
 
 /**
