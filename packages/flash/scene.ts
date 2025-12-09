@@ -55,6 +55,7 @@ export interface ShadowPrimitive {
 
 /**
  * Glyph primitive for text rendering.
+ * Compatible with GlyphInstance from text.ts.
  */
 export interface GlyphPrimitive {
   x: number;
@@ -66,6 +67,22 @@ export interface GlyphPrimitive {
   atlasWidth: number;
   atlasHeight: number;
   color: Color;
+  clipBounds?: ClipBounds;
+}
+
+/**
+ * Text primitive for high-level text rendering.
+ * Used to queue text that will be shaped and converted to glyphs.
+ */
+export interface TextPrimitive {
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  lineHeight: number;
+  color: Color;
+  fontFamily: string;
+  maxWidth?: number;
 }
 
 /**
@@ -273,7 +290,15 @@ export class FlashScene {
    * Add a glyph to the current layer.
    */
   addGlyph(glyph: GlyphPrimitive): void {
-    this.currentLayer.glyphs.push(glyph);
+    const bounds = { x: glyph.x, y: glyph.y, width: glyph.width, height: glyph.height };
+    if (this.isClippedOut(bounds)) {
+      return;
+    }
+    const clipBounds = this.getCurrentClipBounds();
+    this.currentLayer.glyphs.push({
+      ...glyph,
+      clipBounds,
+    });
   }
 
   /**

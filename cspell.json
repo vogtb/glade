@@ -26,6 +26,8 @@
     "prepaint",
     "unfilterable",
     "flexbox",
-    "inlines"
+    "inlines",
+    "hoverable",
+    "keymap"
   ]
 }

@@ -11,6 +11,7 @@ import { initPostProcessDemo, renderPostProcess } from "./postprocess";
 import { initTerrainDemo } from "./terrain";
 import {
   initFlashDemo,
+  loadFlashDemoFonts,
   renderFlashDemo,
   handleFlashScroll,
   type FlashDemoResources,
@@ -163,6 +164,11 @@ async function main() {
       handleFlashScroll(flashDemo.resources, event.deltaX, event.deltaY);
     }
   });
+
+  // Load fonts for Flash demo (synchronous, uses embedded font data)
+  if (flashDemo) {
+    loadFlashDemoFonts(flashDemo.resources);
+  }
 
   let currentDemoIndex = 0;
   console.log(`Current demo: ${demos[currentDemoIndex]!.name} (use left/right arrows to navigate)`);

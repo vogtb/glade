@@ -1,0 +1,34 @@
+{
+  "name": "@glade/shaper",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "ts/shaper.ts",
+  "types": "ts/shaper.ts",
+  "exports": {
+    ".": {
+      "types": "./ts/shaper.ts",
+      "default": "./ts/shaper.ts"
+    },
+    "./embed": {
+      "types": "./ts/embed.ts",
+      "default": "./ts/embed.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "embed": [
+        "./ts/embed.ts"
+      ]
+    }
+  },
+  "files": [
+    "ts",
+    "pkg"
+  ],
+  "scripts": {
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build": "bun run build:wasm",
+    "typecheck": "bunx tsc --noEmit",
+    "clean": "rm -rf pkg"
+  }
+}

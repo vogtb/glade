@@ -13,28 +13,50 @@ import {
   RectPipeline,
   ShadowPipeline,
   FlashLayoutEngine,
+  TextSystem,
+  TextPipeline,
   rgb,
   rgba,
   div,
   type FlashDiv,
   type Bounds,
   type Color,
+  type GlyphInstance,
   SHADOW_DEFINITIONS,
   rotateAroundTransform,
   scaleAroundTransform,
   multiplyTransform,
   type TransformationMatrix,
 } from "@glade/flash";
+import { embedAsBase64 } from "./embed" with { type: "macro" };
+
+// Embed font as base64 at build time via Bun macro
+const interFontBase64 = embedAsBase64("../../assets/InterVariable.ttf") as unknown as string;
+
+/**
+ * Decode base64 to Uint8Array (works in both browser and Node/Bun)
+ */
+function base64ToBytes(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
 
 export interface FlashDemoResources {
   renderer: FlashRenderer;
   rectPipeline: RectPipeline;
   shadowPipeline: ShadowPipeline;
+  textPipeline: TextPipeline | null;
+  textSystem: TextSystem | null;
   scene: FlashScene;
   layoutEngine: FlashLayoutEngine;
   scrollOffset: { x: number; y: number };
   scrollMaxY: number;
   currentCursor: string;
+  fontLoaded: boolean;
 }
 
 /**
@@ -180,6 +202,11 @@ export function initFlashDemo(ctx: WebGPUContext, format: GPUTextureFormat): Fla
   renderer.setRectPipeline(rectPipeline);
   renderer.setShadowPipeline(shadowPipeline);
 
+  // Create text system and pipeline (will initialize font asynchronously)
+  const textSystem = new TextSystem(device);
+  const textPipeline = new TextPipeline(device, format, textSystem);
+  renderer.setTextPipeline(textPipeline, textSystem);
+
   // Create scene
   const scene = new FlashScene();
 
@@ -205,12 +232,33 @@ export function initFlashDemo(ctx: WebGPUContext, format: GPUTextureFormat): Fla
     renderer,
     rectPipeline,
     shadowPipeline,
+    textPipeline,
+    textSystem,
     scene,
     layoutEngine,
     scrollOffset,
     scrollMaxY,
     currentCursor: "default",
+    fontLoaded: false,
   };
+}
+
+/**
+ * Load fonts for the Flash demo.
+ * Call this once after initFlashDemo.
+ * Uses embedded font data (via Bun macro) for cross-platform compatibility.
+ */
+export function loadFlashDemoFonts(resources: FlashDemoResources): void {
+  if (resources.fontLoaded || !resources.textSystem) return;
+
+  try {
+    const fontData = base64ToBytes(interFontBase64);
+    resources.textSystem.registerFont("Inter", fontData);
+    resources.fontLoaded = true;
+    console.log("Loaded Inter font for text rendering");
+  } catch (e) {
+    console.warn("Failed to load font:", e);
+  }
 }
 
 /**
@@ -279,7 +327,9 @@ export function renderFlashDemo(
     scrollOffset,
     (cursor: string) => {
       resources.currentCursor = cursor;
-    }
+    },
+    resources.textSystem,
+    resources.fontLoaded
   );
 
   // Apply cursor to platform
@@ -319,7 +369,9 @@ function buildDemoScene(
   mouseX: number,
   mouseY: number,
   scrollOffset: { x: number; y: number },
-  setCursor: (cursor: string) => void
+  setCursor: (cursor: string) => void,
+  textSystem: TextSystem | null,
+  fontLoaded: boolean
 ): void {
   const centerX = width / 2;
   const centerY = height / 2;
@@ -377,6 +429,54 @@ function buildDemoScene(
     }
 
     renderDiv(control, { x: controlX, y: controlY, width: size, height: size }, ctx);
+  }
+
+  // ============ Text Demo ============
+  // Render text if font is loaded
+  if (fontLoaded && textSystem) {
+    // Title text
+    const titleGlyphs = textSystem.prepareGlyphInstances(
+      "Flash Text Rendering",
+      panelX + 100,
+      panelY + 30,
+      18,
+      24,
+      { r: 1, g: 1, b: 1, a: 1 },
+      "Inter"
+    );
+    for (const glyph of titleGlyphs) {
+      scene.addGlyph(glyph as GlyphInstance);
+    }
+
+    // Description text
+    const descGlyphs = textSystem.prepareGlyphInstances(
+      "GPU-accelerated text with cosmic-text shaping",
+      panelX + 20,
+      panelY + 70,
+      14,
+      20,
+      { r: 0.7, g: 0.7, b: 0.8, a: 1 },
+      "Inter"
+    );
+    for (const glyph of descGlyphs) {
+      scene.addGlyph(glyph as GlyphInstance);
+    }
+
+    // Animated text with color
+    const animHue = (time * 0.2) % 1;
+    const animColor = hslToRgb(animHue, 0.8, 0.6);
+    const animGlyphs = textSystem.prepareGlyphInstances(
+      "Rainbow Text Demo ✨",
+      panelX + 20,
+      panelY + 100,
+      16,
+      22,
+      animColor,
+      "Inter"
+    );
+    for (const glyph of animGlyphs) {
+      scene.addGlyph(glyph as GlyphInstance);
+    }
   }
 
   // ============ Interactive Buttons (using div with hover states) ============

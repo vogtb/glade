@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["packages/layout"]
+members = ["packages/layout", "packages/shaper"]
 
 [workspace.package]
 edition = "2021"

@@ -63,6 +63,7 @@
       "dependencies": {
         "@glade/core": "workspace:*",
         "@glade/layout": "workspace:*",
+        "@glade/shaper": "workspace:*",
         "@glade/webgpu": "workspace:*",
       },
     },
@@ -85,6 +86,10 @@
         "@glade/core": "workspace:*",
         "@glade/darwin": "workspace:*",
       },
+    },
+    "packages/shaper": {
+      "name": "@glade/shaper",
+      "version": "0.0.1",
     },
     "packages/webgpu": {
       "name": "@glade/webgpu",
@@ -127,6 +132,8 @@
     "@glade/layout": ["@glade/layout@workspace:packages/layout"],
 
     "@glade/platform": ["@glade/platform@workspace:packages/platform"],
+
+    "@glade/shaper": ["@glade/shaper@workspace:packages/shaper"],
 
     "@glade/webgpu": ["@glade/webgpu@workspace:packages/webgpu"],
 

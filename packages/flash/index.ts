@@ -121,11 +121,24 @@ export type {
   RectPrimitive,
   ShadowPrimitive,
   GlyphPrimitive,
+  TextPrimitive,
   ImagePrimitive,
   SceneLayer,
 } from "./scene.ts";
 
 export { FlashScene } from "./scene.ts";
+
+// Text system
+export type {
+  GlyphCacheKey,
+  CachedGlyph,
+  TextRun,
+  ShapedText,
+  GlyphInstance,
+  GlyphAtlasConfig,
+} from "./text.ts";
+
+export { GlyphAtlas, TextSystem, TextPipeline } from "./text.ts";
 
 // Event dispatch
 export type {

@@ -63,6 +63,7 @@ import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./toolt
 import { FlashRenderer } from "./renderer.ts";
 import { RectPipeline } from "./rect.ts";
 import { ShadowPipeline } from "./shadow.ts";
+import { TextSystem, TextPipeline } from "./text.ts";
 
 /**
  * Options for creating a window.
@@ -162,6 +163,7 @@ export class FlashWindow {
 
   // Renderer
   private renderer: FlashRenderer;
+  private textSystem: TextSystem;
   private didRenderThisFrame = false;
 
   constructor(
@@ -197,6 +199,12 @@ export class FlashWindow {
     this.renderer.setRectPipeline(rectPipeline);
     this.renderer.setShadowPipeline(shadowPipeline);
 
+    // Initialize text system
+    this.textSystem = new TextSystem(device);
+    this.textSystem.setDevicePixelRatio(renderTarget.devicePixelRatio);
+    const textPipeline = new TextPipeline(device, format, this.textSystem);
+    this.renderer.setTextPipeline(textPipeline, this.textSystem);
+
     this.setupEventListeners();
   }
 
@@ -212,6 +220,20 @@ export class FlashWindow {
    */
   get height(): number {
     return this.renderTarget.height;
+  }
+
+  /**
+   * Register a font for text rendering.
+   */
+  registerFont(name: string, data: Uint8Array): void {
+    this.textSystem.registerFont(name, data);
+  }
+
+  /**
+   * Get the text system for advanced text operations.
+   */
+  getTextSystem(): TextSystem {
+    return this.textSystem;
   }
 
   /**
@@ -757,11 +779,11 @@ export class FlashWindow {
         text: string,
         options: { fontSize: number; fontFamily: string; fontWeight: number }
       ): { width: number; height: number } => {
-        const charWidth = options.fontSize * 0.6;
-        return {
-          width: text.length * charWidth,
-          height: options.fontSize * 1.2,
-        };
+        const lineHeight = options.fontSize * 1.2;
+        return this.textSystem.measureText(text, options.fontSize, lineHeight, undefined, {
+          family: options.fontFamily,
+          weight: options.fontWeight,
+        });
       },
 
       getPersistentState: <T = unknown>(): T | undefined => {
@@ -948,21 +970,19 @@ export class FlashWindow {
         color: Color,
         options: { fontSize: number; fontFamily: string; fontWeight: number }
       ): void => {
-        const charWidth = options.fontSize * 0.6;
-        let x = bounds.x;
-        for (let i = 0; i < text.length; i++) {
-          scene.addGlyph({
-            x,
-            y: bounds.y,
-            width: charWidth,
-            height: options.fontSize,
-            atlasX: 0,
-            atlasY: 0,
-            atlasWidth: charWidth,
-            atlasHeight: options.fontSize,
-            color,
-          });
-          x += charWidth;
+        const lineHeight = options.fontSize * 1.2;
+        const glyphs = this.textSystem.prepareGlyphInstances(
+          text,
+          bounds.x,
+          bounds.y,
+          options.fontSize,
+          lineHeight,
+          color,
+          options.fontFamily,
+          { family: options.fontFamily, weight: options.fontWeight }
+        );
+        for (const glyph of glyphs) {
+          scene.addGlyph(glyph);
         }
       },
 

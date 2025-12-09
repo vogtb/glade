@@ -8,6 +8,7 @@ import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/webgpu";
 import type { FlashScene, SceneLayer } from "./scene.ts";
 import type { RectPipeline } from "./rect.ts";
 import type { ShadowPipeline } from "./shadow.ts";
+import type { TextPipeline, TextSystem, GlyphInstance } from "./text.ts";
 
 /**
  * Renderer configuration.
@@ -48,6 +49,8 @@ export class FlashRenderer {
   // Pipelines (initialized lazily)
   private rectPipeline: RectPipeline | null = null;
   private shadowPipeline: ShadowPipeline | null = null;
+  private textPipeline: TextPipeline | null = null;
+  private textSystem: TextSystem | null = null;
 
   constructor(
     private device: GPUDevice,
@@ -110,6 +113,22 @@ export class FlashRenderer {
    */
   setShadowPipeline(pipeline: ShadowPipeline): void {
     this.shadowPipeline = pipeline;
+  }
+
+  /**
+   * Set the text pipeline and text system.
+   */
+  setTextPipeline(pipeline: TextPipeline, textSystem: TextSystem): void {
+    this.textPipeline = pipeline;
+    this.textSystem = textSystem;
+    pipeline.createBindGroup(this.uniformBuffer!);
+  }
+
+  /**
+   * Get the text system for text rendering.
+   */
+  getTextSystem(): TextSystem | null {
+    return this.textSystem;
   }
 
   /**
@@ -238,7 +257,11 @@ export class FlashRenderer {
       this.rectPipeline.render(pass, layer.rects, this.uniformBindGroup!);
     }
 
-    // TODO: Draw glyphs when text pipeline is implemented
+    // Draw glyphs (text)
+    if (layer.glyphs.length > 0 && this.textPipeline) {
+      this.textPipeline.render(pass, layer.glyphs as GlyphInstance[], layer.rects.length);
+    }
+
     // TODO: Draw images when image pipeline is implemented
   }
 
