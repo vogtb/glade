@@ -287,12 +287,18 @@ export class FlashWindow {
       state = createScrollState();
       this.scrollStates.set(scrollId, state);
     }
+    const oldOffset = { ...state.offset };
     state.offset = {
       x: state.offset.x + deltaX,
       y: state.offset.y + deltaY,
     };
     const clamped = clampScrollOffset(state);
     state.offset = clamped;
+
+    // Mark window dirty if scroll offset changed
+    if (clamped.x !== oldOffset.x || clamped.y !== oldOffset.y) {
+      this.getContext().markWindowDirty(this.id);
+    }
   }
 
   /**
@@ -826,6 +832,18 @@ export class FlashWindow {
         config: TooltipConfig
       ): void => {
         registerTooltipFn(hitboxId, bounds, builder, config);
+      },
+
+      updateScrollContentSize: (
+        handle: ScrollHandle,
+        contentSize: { width: number; height: number },
+        viewportSize: { width: number; height: number }
+      ): void => {
+        this.updateScrollContentSize(handle.id, contentSize, viewportSize);
+      },
+
+      getScrollOffset: (handle: ScrollHandle): ScrollOffset => {
+        return this.getScrollOffset(handle.id);
       },
     };
   }

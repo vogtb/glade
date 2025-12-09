@@ -805,11 +805,24 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     const childBounds = cx.getChildLayouts(bounds, childLayoutIds);
     const childPrepaintStates: unknown[] = [];
 
+    // Get scroll offset if this is a scroll container
+    const scrollOffset = this.scrollHandleRef ? cx.getScrollOffset(this.scrollHandleRef) : null;
+
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i]!;
       const childId = childElementIds[i]!;
-      const childBound = childBounds[i]!;
+      let childBound = childBounds[i]!;
       const childRequestState = childRequestStates[i];
+
+      // Apply scroll offset to child bounds for hitbox positioning
+      if (scrollOffset) {
+        childBound = {
+          x: childBound.x - scrollOffset.x,
+          y: childBound.y - scrollOffset.y,
+          width: childBound.width,
+          height: childBound.height,
+        };
+      }
 
       const childCx = cx.withElementId(childId);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -819,6 +832,31 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
         childRequestState
       );
       childPrepaintStates.push(prepaintState);
+    }
+
+    // If this is a scroll container, compute content size from children
+    if (this.scrollHandleRef && childBounds.length > 0) {
+      let contentWidth = 0;
+      let contentHeight = 0;
+
+      for (const childBound of childBounds) {
+        const childRight = childBound.x - bounds.x + childBound.width;
+        const childBottom = childBound.y - bounds.y + childBound.height;
+        contentWidth = Math.max(contentWidth, childRight);
+        contentHeight = Math.max(contentHeight, childBottom);
+      }
+
+      // Account for padding
+      const paddingRight = this.styles.paddingRight ?? 0;
+      const paddingBottom = this.styles.paddingBottom ?? 0;
+      contentWidth += paddingRight;
+      contentHeight += paddingBottom;
+
+      cx.updateScrollContentSize(
+        this.scrollHandleRef,
+        { width: contentWidth, height: contentHeight },
+        { width: bounds.width, height: bounds.height }
+      );
     }
 
     // Pop group after children are processed

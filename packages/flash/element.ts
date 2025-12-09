@@ -172,6 +172,21 @@ export interface PrepaintContext {
     builder: (cx: import("./context.ts").FlashContext) => FlashElement<any, any>,
     config: import("./tooltip.ts").TooltipConfig
   ): void;
+
+  /**
+   * Update the content and viewport size for a scroll handle.
+   * This allows proper scroll offset clamping.
+   */
+  updateScrollContentSize(
+    handle: ScrollHandle,
+    contentSize: { width: number; height: number },
+    viewportSize: { width: number; height: number }
+  ): void;
+
+  /**
+   * Get the current scroll offset for a scroll handle.
+   */
+  getScrollOffset(handle: ScrollHandle): ScrollOffset;
 }
 
 /**

@@ -14,13 +14,33 @@ import {
   div,
   rgb,
   type FlashDiv,
+  type ScrollHandle,
 } from "@glade/flash";
+
+/**
+ * Helper to create a hoverable button.
+ */
+function hoverButton(color: number, hoverColor: number): FlashDiv {
+  return div()
+    .h(48)
+    .flexShrink0()
+    .bg(rgb(color))
+    .rounded(8)
+    .cursorPointer()
+    .hover((s) => s.bg(rgb(hoverColor)).shadow("md"));
+}
 
 /**
  * Main demo view - the root view of the application.
  */
 class DemoRootView implements FlashView {
+  private scrollHandle: ScrollHandle | null = null;
+
   render(cx: FlashViewContext<this>): FlashDiv {
+    if (!this.scrollHandle) {
+      this.scrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+
     return div()
       .flex()
       .flexRow()
@@ -30,7 +50,7 @@ class DemoRootView implements FlashView {
       .gap(20)
       .p(20)
       .children_(
-        // Left column - fixed width with hoverable items
+        // Left column - fixed width, scrollable
         div()
           .flex()
           .flexCol()
@@ -39,25 +59,24 @@ class DemoRootView implements FlashView {
           .rounded(12)
           .p(16)
           .gap(12)
+          .overflowHidden()
+          .trackScroll(this.scrollHandle)
           .children_(
-            div()
-              .h(48)
-              .bg(rgb(0x3b82f6))
-              .rounded(8)
-              .cursorPointer()
-              .hover((s) => s.bg(rgb(0x2563eb)).shadow("md")),
-            div()
-              .h(48)
-              .bg(rgb(0x10b981))
-              .rounded(8)
-              .cursorPointer()
-              .hover((s) => s.bg(rgb(0x059669)).shadow("md")),
-            div()
-              .h(48)
-              .bg(rgb(0xf59e0b))
-              .rounded(8)
-              .cursorPointer()
-              .hover((s) => s.bg(rgb(0xd97706)).shadow("md"))
+            hoverButton(0x3b82f6, 0x2563eb),
+            hoverButton(0x10b981, 0x059669),
+            hoverButton(0xf59e0b, 0xd97706),
+            hoverButton(0xef4444, 0xdc2626),
+            hoverButton(0x8b5cf6, 0x7c3aed),
+            hoverButton(0xec4899, 0xdb2777),
+            hoverButton(0x06b6d4, 0x0891b2),
+            hoverButton(0x84cc16, 0x65a30d),
+            hoverButton(0xf97316, 0xea580c),
+            hoverButton(0x6366f1, 0x4f46e5),
+            hoverButton(0x14b8a6, 0x0d9488),
+            hoverButton(0xa855f7, 0x9333ea),
+            hoverButton(0xf43f5e, 0xe11d48),
+            hoverButton(0x22c55e, 0x16a34a),
+            hoverButton(0x0ea5e9, 0x0284c7)
           ),
         // Right column - fills remaining space
         div().flexGrow().bg(rgb(0x2a2a35)).rounded(12)
