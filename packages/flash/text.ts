@@ -446,6 +446,13 @@ export class TextSystem {
 
   /**
    * Register a font from raw data.
+   * The name is used to reference the font when rendering text.
+   * The internal font family name and weight are automatically extracted
+   * so that fonts with different weights (e.g., "JetBrains Mono SemiBold")
+   * are correctly matched during text shaping.
+   *
+   * In browser environments, the font is also registered with the CSS FontFace API
+   * so that Canvas 2D can use it for rasterization.
    */
   registerFont(name: string, data: Uint8Array): FontId {
     const existing = this.fontFamilyToId.get(name);
@@ -453,9 +460,23 @@ export class TextSystem {
       return existing;
     }
 
-    const fontId = this.shaper.registerFont(data);
+    const fontId = this.shaper.registerFontWithName(name, data);
     this.fonts.set(fontId.id, { family: name, data });
     this.fontFamilyToId.set(name, fontId);
+
+    // In browser environments, register with CSS FontFace API for Canvas 2D rendering
+    if (typeof FontFace !== "undefined" && typeof document !== "undefined") {
+      const fontFace = new FontFace(name, data);
+      fontFace
+        .load()
+        .then((loadedFace) => {
+          (document.fonts as FontFaceSet & { add(font: FontFace): void }).add(loadedFace);
+        })
+        .catch((err) => {
+          console.warn(`Failed to load font "${name}" for browser:`, err);
+        });
+    }
+
     return fontId;
   }
 

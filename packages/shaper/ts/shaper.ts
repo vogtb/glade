@@ -203,6 +203,24 @@ export class TextShaper {
   }
 
   /**
+   * Register a font with a custom name.
+   * This allows using any name to reference the font, regardless of its internal family name.
+   * The internal family name and weight are extracted from the font file and stored
+   * so that shaping uses the correct internal properties.
+   */
+  registerFontWithName(name: string, fontData: Uint8Array): FontId {
+    return this.inner.register_font_with_name(name, fontData);
+  }
+
+  /**
+   * Get the internal font info for a registered name.
+   * Returns the internal family name and weight if found, or null if not found.
+   */
+  getFontInfo(name: string): { family: string; weight: number } | null {
+    return this.inner.get_font_info(name) as { family: string; weight: number } | null;
+  }
+
+  /**
    * Get the number of registered fonts.
    */
   fontCount(): number {

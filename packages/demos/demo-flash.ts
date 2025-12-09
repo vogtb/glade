@@ -19,8 +19,14 @@ import {
 } from "@glade/flash";
 import { embedAsBase64 } from "./embed" with { type: "macro" };
 
-// Embed font as base64 at build time via Bun macro
+// Embed fonts as base64 at build time via Bun macro
 const interFontBase64 = embedAsBase64("../../assets/InterVariable.ttf") as unknown as string;
+const jetBrainsMonoRegularBase64 = embedAsBase64(
+  "../../assets/JetBrainsMono-Regular.ttf"
+) as unknown as string;
+const jetBrainsMonoSemiBoldBase64 = embedAsBase64(
+  "../../assets/JetBrainsMono-SemiBold.ttf"
+) as unknown as string;
 
 /**
  * Decode base64 to Uint8Array (works in both browser and Node/Bun)
@@ -115,18 +121,53 @@ class DemoRootView implements FlashView {
               .size(16)
               .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
             div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
-            text("The Inter font is embedded at build time using Bun macros.")
+
+            // Inter font section
+            text("Inter Variable Font")
+              .font("Inter")
+              .size(18)
+              .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text("The quick brown fox jumps over the lazy dog.")
               .font("Inter")
               .size(14)
-              .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
-            text("Text shaping is handled by cosmic-text compiled to WASM.")
-              .font("Inter")
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+
+            div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+            // JetBrains Mono section
+            text("JetBrains Mono Regular")
+              .font("JetBrains Mono")
+              .size(18)
+              .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text("const greeting = 'Hello, World!';")
+              .font("JetBrains Mono")
               .size(14)
-              .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
-            text("Glyphs are rasterized to a GPU texture atlas for efficient rendering.")
-              .font("Inter")
+              .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 }),
+            text("function fibonacci(n: number): number {")
+              .font("JetBrains Mono")
               .size(14)
-              .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              .color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+            text("  return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);")
+              .font("JetBrains Mono")
+              .size(14)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("}").font("JetBrains Mono").size(14).color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+
+            div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+            // JetBrains Mono SemiBold section
+            text("JetBrains Mono SemiBold")
+              .font("JetBrains Mono SemiBold")
+              .size(18)
+              .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text("0O 1lI |! {} [] () <> => != === // /* */")
+              .font("JetBrains Mono SemiBold")
+              .size(16)
+              .color({ r: 0.5, g: 0.8, b: 1, a: 1 }),
+            text("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
+              .font("JetBrains Mono SemiBold")
+              .size(14)
+              .color({ r: 0.8, g: 0.6, b: 0.9, a: 1 })
           )
       );
   }
@@ -150,10 +191,11 @@ async function main() {
     cx.newView<DemoRootView>(() => new DemoRootView())
   );
 
-  // Load embedded font
-  const fontData = base64ToBytes(interFontBase64);
-  window.registerFont("Inter", fontData);
-  console.log("Loaded Inter font for text rendering");
+  // Load embedded fonts
+  window.registerFont("Inter", base64ToBytes(interFontBase64));
+  window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoRegularBase64));
+  window.registerFont("JetBrains Mono SemiBold", base64ToBytes(jetBrainsMonoSemiBoldBase64));
+  console.log("Loaded fonts: Inter, JetBrains Mono, JetBrains Mono SemiBold");
 
   console.log("Flash App initialized, starting render loop...");
 

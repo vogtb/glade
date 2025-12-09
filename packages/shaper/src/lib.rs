@@ -98,6 +98,15 @@ pub struct FontStyleInput {
     pub stretch: Option<String>,
 }
 
+/// Internal font properties extracted from font file.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct FontInfo {
+    /// The internal family name from the font file
+    family: String,
+    /// The weight from the font file (400 = normal, 700 = bold, 600 = semibold, etc.)
+    weight: u16,
+}
+
 /// Text shaping engine using cosmic-text.
 #[wasm_bindgen]
 pub struct TextShaper {
@@ -107,6 +116,8 @@ pub struct TextShaper {
     shape_buffer: ShapeBuffer,
     font_data: HashMap<u32, Vec<u8>>,
     next_font_id: u32,
+    /// Maps our registration name to internal font properties
+    font_name_to_info: HashMap<String, FontInfo>,
 }
 
 #[wasm_bindgen]
@@ -123,6 +134,7 @@ impl TextShaper {
             shape_buffer: ShapeBuffer::default(),
             font_data: HashMap::new(),
             next_font_id: 0,
+            font_name_to_info: HashMap::new(),
         }
     }
 
@@ -138,6 +150,68 @@ impl TextShaper {
         self.font_system.db_mut().load_font_data(font_data.to_vec());
 
         Ok(FontId(id))
+    }
+
+    /// Register a font with a custom name.
+    /// This allows using any name to reference the font, regardless of its internal family name.
+    /// The internal family name and weight are extracted from the font file and stored
+    /// so that shaping uses the correct internal properties.
+    #[wasm_bindgen]
+    pub fn register_font_with_name(
+        &mut self,
+        name: &str,
+        font_data: &[u8],
+    ) -> Result<FontId, JsValue> {
+        let count_before = self.font_system.db().len();
+
+        let id = self.next_font_id;
+        self.next_font_id += 1;
+
+        self.font_data.insert(id, font_data.to_vec());
+
+        self.font_system
+            .db_mut()
+            .load_font_data(font_data.to_vec());
+
+        // Find the newly added font(s) and extract their properties
+        let db = self.font_system.db();
+        let faces: Vec<_> = db.faces().collect();
+
+        if faces.len() > count_before {
+            // Get the last added face
+            let face = &faces[faces.len() - 1];
+
+            // Get the English family name (first in the list)
+            let family = face
+                .families
+                .first()
+                .map(|(name, _)| name.clone())
+                .unwrap_or_else(|| name.to_string());
+
+            let weight = face.weight.0;
+
+            self.font_name_to_info.insert(
+                name.to_string(),
+                FontInfo {
+                    family,
+                    weight,
+                },
+            );
+        }
+
+        Ok(FontId(id))
+    }
+
+    /// Get the internal font info for a registered name.
+    /// Returns the internal family name and weight if found.
+    #[wasm_bindgen]
+    pub fn get_font_info(&self, name: &str) -> Result<JsValue, JsValue> {
+        if let Some(info) = self.font_name_to_info.get(name) {
+            serde_wasm_bindgen::to_value(info)
+                .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
+        } else {
+            Ok(JsValue::NULL)
+        }
     }
 
     /// Get the number of registered fonts.
@@ -407,14 +481,30 @@ impl TextShaper {
     fn build_attrs(&self, style: &FontStyleInput) -> Attrs<'static> {
         let mut attrs = Attrs::new();
 
-        if let Some(ref family) = style.family {
+        // Check if the family name is a registered name with internal font info
+        let (actual_family, internal_weight) = if let Some(ref family) = style.family {
+            if let Some(info) = self.font_name_to_info.get(family) {
+                // Use the internal family name and weight from the font file
+                (Some(info.family.clone()), Some(info.weight))
+            } else {
+                // Use the family name as-is
+                (Some(family.clone()), None)
+            }
+        } else {
+            (None, None)
+        };
+
+        if let Some(ref family) = actual_family {
             // We need to leak the string to get a 'static lifetime
             // This is acceptable for font family names as they are typically long-lived
             let family_static: &'static str = Box::leak(family.clone().into_boxed_str());
             attrs = attrs.family(Family::Name(family_static));
         }
 
+        // Use explicit weight from style, or fall back to internal weight from font file
         if let Some(weight) = style.weight {
+            attrs = attrs.weight(Weight(weight));
+        } else if let Some(weight) = internal_weight {
             attrs = attrs.weight(Weight(weight));
         }
 
