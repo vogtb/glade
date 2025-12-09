@@ -14,7 +14,7 @@ import {
   type FocusCallback,
   type CursorEnterCallback,
   type RefreshCallback,
-} from "@glade/core/events.ts";
+} from "@glade/core/events";
 
 export interface BrowserContextOptions extends ContextOptions {
   canvas?: HTMLCanvasElement;

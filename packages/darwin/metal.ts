@@ -12,7 +12,7 @@ import {
   objcSendOneBool,
   objcSendReturnDouble,
   objcSendOneDouble,
-} from "./objc.ts";
+} from "./objc";
 
 // CoreFoundation for CFString creation
 const coreFoundation = dlopen(

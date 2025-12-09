@@ -13,7 +13,7 @@ import {
   type FocusCallback,
   type CursorEnterCallback,
   type RefreshCallback,
-} from "@glade/core/events.ts";
+} from "@glade/core/events";
 import {
   glfw,
   type GLFWwindow,
@@ -27,7 +27,7 @@ import {
   GLFW_RESIZE_ALL_CURSOR,
   GLFW_NOT_ALLOWED_CURSOR,
 } from "@glade/glfw";
-import { DarwinWebGL2RenderingContext } from "./opengl.ts";
+import { DarwinWebGL2RenderingContext } from "./opengl";
 import {
   createInstance,
   requestAdapter,

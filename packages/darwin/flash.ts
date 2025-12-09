@@ -7,7 +7,7 @@
 import type { WebGPUContext, CursorStyle } from "@glade/core";
 import type { FlashPlatform, FlashRenderTarget, Modifiers, DecodedImageData } from "@glade/flash";
 import { coreModsToFlashMods } from "@glade/flash";
-import { decodePNG, decodeJPEG } from "./image-decoders.ts";
+import { decodePNG, decodeJPEG } from "./image";
 
 /**
  * Darwin platform implementation for Flash.

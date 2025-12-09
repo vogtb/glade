@@ -23,4 +23,4 @@ export const GLSL_VERSION = "#version 300 es";
 export const GLSL_PRECISION = "precision highp float;";
 
 // Flash platform
-export { createFlashPlatform } from "./flash-platform.ts";
+export { createFlashPlatform } from "./flash";

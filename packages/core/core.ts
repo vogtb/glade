@@ -1,7 +1,7 @@
 // Re-export all event types
 export * from "./events.ts";
 
-import type { EventTarget } from "./events.ts";
+import type { EventTarget } from "./events";
 
 /**
  * Platform-agnostic WebGL context interface. The gl property is the standard

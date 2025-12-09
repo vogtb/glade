@@ -9,10 +9,10 @@ export {
   type DarwinWebGLContext,
   type DarwinWebGPUContext,
   type DarwinContextOptions,
-} from "./context.ts";
+} from "./context";
 export { glfw } from "@glade/glfw";
-export { lib, DarwinWebGL2RenderingContext, GLSL_VERSION, GLSL_PRECISION } from "./opengl.ts";
-export * from "./webgpu.ts";
+export { lib, DarwinWebGL2RenderingContext, GLSL_VERSION, GLSL_PRECISION } from "./opengl";
+export * from "./webgpu";
 
 // Flash platform
-export { createFlashPlatform, type DarwinFlashPlatformInstance } from "./flash-platform.ts";
+export { createFlashPlatform, type DarwinFlashPlatformInstance } from "./flash";
