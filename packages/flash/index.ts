@@ -277,7 +277,7 @@ export { UnderlinePipeline } from "./underline.ts";
 // Image rendering
 export type { ImageId, DecodedImage, ImageTile, ImageInstance, ImageAtlasConfig } from "./image.ts";
 
-export { ImageAtlas, ImagePipeline, decodePNG, decodeJPEG } from "./image.ts";
+export { ImageAtlas, ImagePipeline } from "./image.ts";
 
 // Buffer utilities
 export {
