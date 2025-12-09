@@ -272,6 +272,19 @@ export interface PaintContext {
   ): void;
 
   /**
+   * Paint an image primitive.
+   */
+  paintImage(
+    tile: import("./image.ts").ImageTile,
+    bounds: Bounds,
+    options?: {
+      cornerRadius?: number;
+      opacity?: number;
+      grayscale?: boolean;
+    }
+  ): void;
+
+  /**
    * Get persistent state cached across frames for this element.
    */
   getPersistentState<T = unknown>(): T | undefined;
@@ -500,4 +513,109 @@ export class FlashTextElement extends FlashElement<NoState, NoState> {
  */
 export function text(content: string): FlashTextElement {
   return new FlashTextElement(content);
+}
+
+// ============ Image Element ============
+
+/**
+ * Image element for rendering pre-uploaded images.
+ * Images must be uploaded to the atlas first via window.uploadImage().
+ */
+export class FlashImageElement extends FlashElement<NoState, NoState> {
+  private cornerRadiusValue = 0;
+  private opacityValue = 1;
+  private grayscaleValue = false;
+  private displayWidth?: number;
+  private displayHeight?: number;
+
+  constructor(private tile: import("./image.ts").ImageTile) {
+    super();
+  }
+
+  /**
+   * Set the corner radius for rounded image corners.
+   */
+  rounded(radius: number): this {
+    this.cornerRadiusValue = radius;
+    return this;
+  }
+
+  /**
+   * Set the opacity (0-1).
+   */
+  opacity(value: number): this {
+    this.opacityValue = value;
+    return this;
+  }
+
+  /**
+   * Enable grayscale rendering.
+   */
+  grayscale(enabled = true): this {
+    this.grayscaleValue = enabled;
+    return this;
+  }
+
+  /**
+   * Set the display width. If not set, uses the image's natural width.
+   */
+  width(w: number): this {
+    this.displayWidth = w;
+    return this;
+  }
+
+  /**
+   * Set the display height. If not set, uses the image's natural height.
+   */
+  height(h: number): this {
+    this.displayHeight = h;
+    return this;
+  }
+
+  /**
+   * Set both width and height.
+   */
+  size(w: number, h: number): this {
+    this.displayWidth = w;
+    this.displayHeight = h;
+    return this;
+  }
+
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
+    const width = this.displayWidth ?? this.tile.width;
+    const height = this.displayHeight ?? this.tile.height;
+
+    const layoutId = cx.requestLayout(
+      {
+        width,
+        height,
+      },
+      []
+    );
+
+    return { layoutId, requestState: undefined };
+  }
+
+  prepaint(_cx: PrepaintContext, _bounds: Bounds, _requestState: NoState): NoState {
+    return undefined;
+  }
+
+  paint(cx: PaintContext, bounds: Bounds, _prepaintState: NoState): void {
+    cx.paintImage(this.tile, bounds, {
+      cornerRadius: this.cornerRadiusValue,
+      opacity: this.opacityValue,
+      grayscale: this.grayscaleValue,
+    });
+  }
+
+  hitTest(_bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
+    return null;
+  }
+}
+
+/**
+ * Factory function to create an image element from a tile.
+ */
+export function img(tile: import("./image.ts").ImageTile): FlashImageElement {
+  return new FlashImageElement(tile);
 }

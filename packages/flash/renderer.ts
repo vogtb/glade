@@ -11,6 +11,7 @@ import type { ShadowPipeline } from "./shadow.ts";
 import type { TextPipeline, TextSystem, GlyphInstance } from "./text.ts";
 import type { PathPipeline } from "./path.ts";
 import type { UnderlinePipeline } from "./underline.ts";
+import type { ImagePipeline, ImageInstance } from "./image.ts";
 
 /**
  * Renderer configuration.
@@ -55,6 +56,7 @@ export class FlashRenderer {
   private textSystem: TextSystem | null = null;
   private pathPipeline: PathPipeline | null = null;
   private underlinePipeline: UnderlinePipeline | null = null;
+  private imagePipeline: ImagePipeline | null = null;
 
   constructor(
     private device: GPUDevice,
@@ -147,6 +149,14 @@ export class FlashRenderer {
    */
   setUnderlinePipeline(pipeline: UnderlinePipeline): void {
     this.underlinePipeline = pipeline;
+  }
+
+  /**
+   * Set the image pipeline.
+   */
+  setImagePipeline(pipeline: ImagePipeline): void {
+    this.imagePipeline = pipeline;
+    pipeline.createBindGroup(this.uniformBuffer!);
   }
 
   /**
@@ -301,7 +311,11 @@ export class FlashRenderer {
       this.textPipeline.render(pass, sorted as GlyphInstance[], 0);
     }
 
-    // TODO: Draw images when image pipeline is implemented
+    // Draw images
+    if (layer.images.length > 0 && this.imagePipeline) {
+      const sorted = layer.images.slice().sort(byOrder);
+      this.imagePipeline.render(pass, sorted as ImageInstance[]);
+    }
   }
 
   /**
@@ -313,6 +327,7 @@ export class FlashRenderer {
     this.shadowPipeline?.destroy();
     this.pathPipeline?.destroy();
     this.underlinePipeline?.destroy();
+    this.imagePipeline?.destroy();
   }
 }
 

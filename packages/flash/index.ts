@@ -112,7 +112,14 @@ export type {
   RequestLayoutResult,
 } from "./element.ts";
 
-export { FlashElement, FlashContainerElement, FlashTextElement, text } from "./element.ts";
+export {
+  FlashElement,
+  FlashContainerElement,
+  FlashTextElement,
+  FlashImageElement,
+  text,
+  img,
+} from "./element.ts";
 
 // Div element
 export { FlashDiv, div } from "./div.ts";
@@ -184,7 +191,12 @@ export {
 } from "./hitbox.ts";
 
 // Window
-export type { WindowOptions, FlashPlatform, FlashRenderTarget } from "./window.ts";
+export type {
+  WindowOptions,
+  FlashPlatform,
+  FlashRenderTarget,
+  DecodedImageData,
+} from "./window.ts";
 
 export { FlashWindow } from "./window.ts";
 
@@ -261,6 +273,11 @@ export { PathBuilder, PathPipeline, path } from "./path.ts";
 
 // Underline rendering
 export { UnderlinePipeline } from "./underline.ts";
+
+// Image rendering
+export type { ImageId, DecodedImage, ImageTile, ImageInstance, ImageAtlasConfig } from "./image.ts";
+
+export { ImageAtlas, ImagePipeline, decodePNG, decodeJPEG } from "./image.ts";
 
 // Buffer utilities
 export {

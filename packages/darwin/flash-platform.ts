@@ -5,8 +5,8 @@
  */
 
 import type { WebGPUContext, CursorStyle } from "@glade/core";
-import type { FlashPlatform, FlashRenderTarget, Modifiers } from "@glade/flash";
-import { coreModsToFlashMods } from "@glade/flash";
+import type { FlashPlatform, FlashRenderTarget, Modifiers, DecodedImageData } from "@glade/flash";
+import { coreModsToFlashMods, decodePNG, decodeJPEG } from "@glade/flash";
 
 /**
  * Darwin platform implementation for Flash.
@@ -67,6 +67,25 @@ class DarwinFlashPlatform implements FlashPlatform {
       callback(time);
     }
   }
+
+  async decodeImage(data: Uint8Array): Promise<DecodedImageData> {
+    if (isPNG(data)) {
+      return decodePNG(data);
+    } else if (isJPEG(data)) {
+      return decodeJPEG(data);
+    }
+    throw new Error("Unsupported image format");
+  }
+}
+
+function isPNG(data: Uint8Array): boolean {
+  return (
+    data.length >= 8 && data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47
+  );
+}
+
+function isJPEG(data: Uint8Array): boolean {
+  return data.length >= 2 && data[0] === 0xff && data[1] === 0xd8;
 }
 
 /**

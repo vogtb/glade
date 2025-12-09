@@ -5,7 +5,7 @@
  */
 
 import type { WebGPUContext, CursorStyle } from "@glade/core";
-import type { FlashPlatform, FlashRenderTarget, Modifiers } from "@glade/flash";
+import type { FlashPlatform, FlashRenderTarget, Modifiers, DecodedImageData } from "@glade/flash";
 import { coreModsToFlashMods } from "@glade/flash";
 
 /**
@@ -50,6 +50,24 @@ class BrowserFlashPlatform implements FlashPlatform {
 
   cancelAnimationFrame(id: number): void {
     window.cancelAnimationFrame(id);
+  }
+
+  async decodeImage(data: Uint8Array): Promise<DecodedImageData> {
+    const blob = new Blob([data]);
+    const imageBitmap = await createImageBitmap(blob);
+
+    const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(imageBitmap, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, imageBitmap.width, imageBitmap.height);
+    imageBitmap.close();
+
+    return {
+      width: imageData.width,
+      height: imageData.height,
+      data: new Uint8Array(imageData.data.buffer),
+    };
   }
 }
 

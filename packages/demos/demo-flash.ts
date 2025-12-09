@@ -15,8 +15,10 @@ import {
   rgb,
   text,
   path,
+  img,
   type FlashDiv,
   type ScrollHandle,
+  type ImageTile,
   FlashElement,
   type RequestLayoutContext,
   type PrepaintContext,
@@ -34,6 +36,14 @@ const jetBrainsMonoRegularBase64 = embedAsBase64(
 const jetBrainsMonoSemiBoldBase64 = embedAsBase64(
   "../../assets/JetBrainsMono-SemiBold.ttf"
 ) as unknown as string;
+
+// Embed images as base64 at build time
+const demoPngBase64 = embedAsBase64("../../assets/image.png") as unknown as string;
+const flowerJpgBase64 = embedAsBase64("../../assets/flower.jpg") as unknown as string;
+
+// Global image tiles - set after window is created
+let demoImageTile: ImageTile | null = null;
+let flowerImageTile: ImageTile | null = null;
 
 /**
  * Decode base64 to Uint8Array (works in both browser and Node/Bun)
@@ -281,6 +291,9 @@ class DemoRootView implements FlashView {
     }
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!demoImageTile) {
+      throw new Error("demo image should have loaded before render");
     }
 
     return div()
@@ -667,6 +680,162 @@ class DemoRootView implements FlashView {
                   .itemsCenter()
                   .justifyCenter()
                   .child(text("▢").font("Inter").size(16).color({ r: 1, g: 0.8, b: 0.2, a: 1 }))
+              ),
+
+            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+            // Image Demo section
+            div()
+              .flexShrink0()
+              .child(
+                text("Image Rendering").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("PNG and JPEG decoding with GPU-accelerated rendering")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
+
+            // Row of images with different styles
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(16)
+              .flexWrap()
+              .children_(
+                // Original image (scaled down)
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(demoImageTile).size(150, 100),
+                    text("Original").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  ),
+                // Rounded corners
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(demoImageTile!).size(150, 100).rounded(16),
+                    text("Rounded").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  ),
+                // Grayscale
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(demoImageTile).size(150, 100).grayscale(),
+                    text("Grayscale").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  ),
+                // Semi-transparent
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(demoImageTile).size(150, 100).opacity(0.5),
+                    text("50% Opacity")
+                      .font("Inter")
+                      .size(11)
+                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  ),
+                // Circle crop
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(demoImageTile).size(100, 100).rounded(50),
+                    text("Circle").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  )
+              ),
+
+            // JPEG Images row
+            div()
+              .flexShrink0()
+              .child(
+                text("JPEG Format").font("Inter").size(16).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(16)
+              .flexWrap()
+              .children_(
+                // JPEG original
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(flowerImageTile!).size(150, 100),
+                    text("JPEG Original")
+                      .font("Inter")
+                      .size(11)
+                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  ),
+                // JPEG rounded
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(flowerImageTile!).size(150, 100).rounded(16),
+                    text("JPEG Rounded")
+                      .font("Inter")
+                      .size(11)
+                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  ),
+                // JPEG grayscale
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(flowerImageTile!).size(150, 100).grayscale(),
+                    text("JPEG Grayscale")
+                      .font("Inter")
+                      .size(11)
+                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  ),
+                // JPEG circle
+                div()
+                  .flexShrink0()
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .itemsCenter()
+                  .children_(
+                    img(flowerImageTile!).size(100, 100).rounded(50),
+                    text("JPEG Circle")
+                      .font("Inter")
+                      .size(11)
+                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  )
               )
           )
       );
@@ -696,6 +865,18 @@ async function main() {
   window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoRegularBase64));
   window.registerFont("JetBrains Mono SemiBold", base64ToBytes(jetBrainsMonoSemiBoldBase64));
   console.log("Loaded fonts: Inter, JetBrains Mono, JetBrains Mono SemiBold");
+
+  // Decode and upload PNG demo image
+  const pngData = base64ToBytes(demoPngBase64);
+  const decodedPng = await platform.decodeImage(pngData);
+  demoImageTile = window.uploadImage(decodedPng);
+  console.log(`Loaded PNG: ${decodedPng.width}x${decodedPng.height}`);
+
+  // Decode and upload JPEG flower image
+  const jpgData = base64ToBytes(flowerJpgBase64);
+  const decodedJpg = await platform.decodeImage(jpgData);
+  flowerImageTile = window.uploadImage(decodedJpg);
+  console.log(`Loaded JPEG: ${decodedJpg.width}x${decodedJpg.height}`);
 
   console.log("Flash App initialized, starting render loop...");
 

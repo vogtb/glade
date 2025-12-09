@@ -66,6 +66,7 @@ import { ShadowPipeline } from "./shadow.ts";
 import { TextSystem, TextPipeline } from "./text.ts";
 import { PathPipeline } from "./path.ts";
 import { UnderlinePipeline } from "./underline.ts";
+import { ImageAtlas, ImagePipeline, type ImageTile, type DecodedImage } from "./image.ts";
 
 /**
  * Options for creating a window.
@@ -74,6 +75,15 @@ export interface WindowOptions {
   title?: string;
   width: number;
   height: number;
+}
+
+/**
+ * Decoded image data ready for GPU upload.
+ */
+export interface DecodedImageData {
+  width: number;
+  height: number;
+  data: Uint8Array;
 }
 
 /**
@@ -92,6 +102,8 @@ export interface FlashPlatform {
   now(): number;
   requestAnimationFrame(callback: (time: number) => void): number;
   cancelAnimationFrame(id: number): void;
+
+  decodeImage(data: Uint8Array): Promise<DecodedImageData>;
 }
 
 /**
@@ -166,6 +178,7 @@ export class FlashWindow {
   // Renderer
   private renderer: FlashRenderer;
   private textSystem: TextSystem;
+  private imageAtlas: ImageAtlas;
   private didRenderThisFrame = false;
 
   constructor(
@@ -223,6 +236,11 @@ export class FlashWindow {
     );
     this.renderer.setUnderlinePipeline(underlinePipeline);
 
+    // Initialize image atlas and pipeline
+    this.imageAtlas = new ImageAtlas(device);
+    const imagePipeline = new ImagePipeline(device, format, this.imageAtlas);
+    this.renderer.setImagePipeline(imagePipeline);
+
     this.setupEventListeners();
   }
 
@@ -245,6 +263,20 @@ export class FlashWindow {
    */
   registerFont(name: string, data: Uint8Array): void {
     this.textSystem.registerFont(name, data);
+  }
+
+  /**
+   * Upload an image to the atlas and return its tile for rendering.
+   */
+  uploadImage(image: DecodedImage): ImageTile {
+    return this.imageAtlas.uploadImage(image);
+  }
+
+  /**
+   * Get the image atlas for direct access.
+   */
+  getImageAtlas(): ImageAtlas {
+    return this.imageAtlas;
   }
 
   /**
@@ -1030,6 +1062,31 @@ export class FlashWindow {
           style,
           wavelength: options?.wavelength,
           amplitude: options?.amplitude,
+        });
+      },
+
+      paintImage: (
+        tile: ImageTile,
+        bounds: Bounds,
+        options?: {
+          cornerRadius?: number;
+          opacity?: number;
+          grayscale?: boolean;
+        }
+      ): void => {
+        const atlasSize = this.imageAtlas.getSize();
+        scene.addImage({
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+          atlasX: tile.atlasX / atlasSize.width,
+          atlasY: tile.atlasY / atlasSize.height,
+          atlasWidth: tile.width / atlasSize.width,
+          atlasHeight: tile.height / atlasSize.height,
+          cornerRadius: options?.cornerRadius ?? 0,
+          opacity: options?.opacity ?? 1,
+          grayscale: options?.grayscale ? 1 : 0,
         });
       },
 

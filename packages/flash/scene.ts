@@ -105,15 +105,32 @@ export interface TextPrimitive {
 
 /**
  * Image primitive for rendering textures.
+ * Matches ImageInstance from image.ts for GPU rendering.
  */
 export interface ImagePrimitive {
+  /** Screen position X */
   x: number;
+  /** Screen position Y */
   y: number;
+  /** Display width */
   width: number;
+  /** Display height */
   height: number;
-  textureId: number;
+  /** Atlas coordinates (normalized 0-1) */
+  atlasX: number;
+  atlasY: number;
+  atlasWidth: number;
+  atlasHeight: number;
+  /** Corner radius for rounded images */
   cornerRadius: number;
+  /** Opacity (0-1) */
   opacity: number;
+  /** Whether to render as grayscale */
+  grayscale?: number;
+  /** Clip bounds */
+  clipBounds?: ClipBounds;
+  /** Transform matrix */
+  transform?: TransformationMatrix;
   /** Draw order for z-sorting. Assigned automatically by FlashScene. */
   order?: DrawOrder;
 }
@@ -386,8 +403,23 @@ export class FlashScene {
    * Add an image to the current layer.
    */
   addImage(image: ImagePrimitive): void {
+    const bounds = { x: image.x, y: image.y, width: image.width, height: image.height };
+    if (this.isClippedOut(bounds)) {
+      return;
+    }
+    const clipBounds = this.getCurrentClipBounds();
+    const transform = this.getCurrentTransform();
+    const hasTransform =
+      transform.a !== 1 ||
+      transform.b !== 0 ||
+      transform.c !== 0 ||
+      transform.d !== 1 ||
+      transform.tx !== 0 ||
+      transform.ty !== 0;
     this.currentLayer.images.push({
       ...image,
+      clipBounds: clipBounds ?? image.clipBounds,
+      transform: hasTransform ? transform : image.transform,
       order: this.assignDrawOrder(),
     });
   }
