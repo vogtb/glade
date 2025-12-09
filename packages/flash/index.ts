@@ -136,9 +136,13 @@ export type {
   UnderlinePrimitive,
   UnderlineStyle,
   SceneLayer,
+  DrawOrder,
 } from "./scene.ts";
 
 export { FlashScene } from "./scene.ts";
+
+// Spatial indexing
+export { BoundsTree } from "./bounds_tree.ts";
 
 // Text system
 export type {

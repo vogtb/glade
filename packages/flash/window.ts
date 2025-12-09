@@ -1142,6 +1142,15 @@ export class FlashWindow {
       canDropOnHitbox: (hitbox: Hitbox): boolean => {
         return this.canDropOnHitbox(hitbox.id);
       },
+
+      withStackingContext: (bounds: Bounds, zIndex: number, callback: () => void): void => {
+        scene.pushStackingContext(bounds, zIndex);
+        try {
+          callback();
+        } finally {
+          scene.popStackingContext();
+        }
+      },
     };
   }
 }

@@ -336,6 +336,17 @@ export interface PaintContext {
    * Check if the current drag can be dropped on this element.
    */
   canDropOnHitbox(hitbox: Hitbox): boolean;
+
+  /**
+   * Execute a callback within a stacking context.
+   * Stacking contexts are created for elements with z-index, transforms, or opacity < 1.
+   * All primitives painted inside the callback use the stacking context for z-ordering.
+   *
+   * @param bounds - The bounds of the stacking context
+   * @param zIndex - The z-index for this stacking context
+   * @param callback - The paint callback to execute within the stacking context
+   */
+  withStackingContext(bounds: Bounds, zIndex: number, callback: () => void): void;
 }
 
 // ============ Element Base Classes ============

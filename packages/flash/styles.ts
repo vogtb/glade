@@ -150,6 +150,9 @@ export interface Styles {
 
   // Interactivity
   cursor?: Cursor;
+
+  // Stacking
+  zIndex?: number;
 }
 
 /**
@@ -205,6 +208,11 @@ export class StyleBuilder {
 
   transform(matrix: TransformationMatrix): this {
     this.styles.transform = matrix;
+    return this;
+  }
+
+  zIndex(v: number): this {
+    this.styles.zIndex = v;
     return this;
   }
 

@@ -7,12 +7,9 @@
 
 import type { Color, ContentMask, Bounds, TransformationMatrix } from "./types.ts";
 import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
+import { BoundsTree, type DrawOrder } from "./bounds_tree.ts";
 
-/**
- * Draw order for primitives.
- * Lower values are drawn first (behind), higher values are drawn last (in front).
- */
-export type DrawOrder = number;
+export type { DrawOrder } from "./bounds_tree.ts";
 
 /**
  * Clip bounds for shader-based clipping.
@@ -197,7 +194,19 @@ export interface SceneLayer {
 }
 
 /**
+ * Stacking context entry on the layer stack.
+ * Used to track stacking context z-index offsets for proper ordering.
+ */
+interface StackingContext {
+  /** Base draw order for this stacking context */
+  baseOrder: DrawOrder;
+  /** Z-index offset applied within this context */
+  zIndex: number;
+}
+
+/**
  * Scene collects all primitives for a frame.
+ * Uses BoundsTree for spatial indexing and automatic draw order assignment.
  * Layers provide z-ordering (painter's algorithm).
  */
 export class FlashScene {
@@ -205,14 +214,26 @@ export class FlashScene {
   private currentLayerIndex = 0;
   private clipStack: ContentMask[] = [];
   private transformStack: TransformationMatrix[] = [];
-  private nextDrawOrder: DrawOrder = 0;
+  private primitiveBounds: BoundsTree = new BoundsTree();
+  private layerStack: StackingContext[] = [];
 
   constructor() {
     this.pushLayer();
   }
 
-  private assignDrawOrder(): DrawOrder {
-    return this.nextDrawOrder++;
+  /**
+   * Assign draw order for a primitive based on its bounds and current stacking context.
+   * Uses BoundsTree for spatial indexing - overlapping primitives get sequential orders.
+   */
+  private assignDrawOrder(bounds: Bounds): DrawOrder {
+    const spatialOrder = this.primitiveBounds.insert(bounds);
+
+    if (this.layerStack.length > 0) {
+      const ctx = this.layerStack[this.layerStack.length - 1]!;
+      return ctx.baseOrder + ctx.zIndex * 10000 + spatialOrder;
+    }
+
+    return spatialOrder;
   }
 
   private get currentLayer(): SceneLayer {
@@ -334,6 +355,41 @@ export class FlashScene {
   }
 
   /**
+   * Push a stacking context for proper z-ordering.
+   * Creates a new stacking context with the given bounds and optional z-index.
+   *
+   * Stacking contexts are created automatically for:
+   * - Elements with z-index set
+   * - Elements with transforms
+   * - Elements with opacity < 1
+   * - Elements with filters
+   *
+   * @param bounds - The bounds of the stacking context
+   * @param zIndex - Optional z-index (default 0)
+   */
+  pushStackingContext(bounds: Bounds, zIndex = 0): void {
+    const baseOrder = this.primitiveBounds.insert(bounds);
+    this.layerStack.push({ baseOrder, zIndex });
+  }
+
+  /**
+   * Pop the current stacking context.
+   */
+  popStackingContext(): void {
+    this.layerStack.pop();
+  }
+
+  /**
+   * Get the current stacking context z-index, or 0 if not in a stacking context.
+   */
+  getCurrentZIndex(): number {
+    if (this.layerStack.length === 0) {
+      return 0;
+    }
+    return this.layerStack[this.layerStack.length - 1]!.zIndex;
+  }
+
+  /**
    * Add a rectangle to the current layer.
    */
   addRect(rect: RectPrimitive): void {
@@ -354,7 +410,7 @@ export class FlashScene {
       ...rect,
       clipBounds,
       transform: hasTransform ? transform : undefined,
-      order: this.assignDrawOrder(),
+      order: this.assignDrawOrder(bounds),
     });
   }
 
@@ -379,7 +435,7 @@ export class FlashScene {
       ...shadow,
       clipBounds,
       transform: hasTransform ? transform : undefined,
-      order: this.assignDrawOrder(),
+      order: this.assignDrawOrder(bounds),
     });
   }
 
@@ -395,7 +451,7 @@ export class FlashScene {
     this.currentLayer.glyphs.push({
       ...glyph,
       clipBounds,
-      order: this.assignDrawOrder(),
+      order: this.assignDrawOrder(bounds),
     });
   }
 
@@ -420,7 +476,7 @@ export class FlashScene {
       ...image,
       clipBounds: clipBounds ?? image.clipBounds,
       transform: hasTransform ? transform : image.transform,
-      order: this.assignDrawOrder(),
+      order: this.assignDrawOrder(bounds),
     });
   }
 
@@ -444,7 +500,7 @@ export class FlashScene {
       ...path,
       clipBounds,
       transform: hasTransform ? transform : undefined,
-      order: this.assignDrawOrder(),
+      order: this.assignDrawOrder(path.bounds),
     });
   }
 
@@ -474,7 +530,7 @@ export class FlashScene {
       ...underline,
       clipBounds,
       transform: hasTransform ? transform : undefined,
-      order: this.assignDrawOrder(),
+      order: this.assignDrawOrder(bounds),
     });
   }
 
@@ -486,7 +542,8 @@ export class FlashScene {
     this.currentLayerIndex = 0;
     this.clipStack = [];
     this.transformStack = [];
-    this.nextDrawOrder = 0;
+    this.primitiveBounds.clear();
+    this.layerStack = [];
     this.pushLayer();
   }
 

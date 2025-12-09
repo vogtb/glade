@@ -491,6 +491,12 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  // Z-Index (creates a stacking context)
+  zIndex(v: number): this {
+    this.styles.zIndex = v;
+    return this;
+  }
+
   // ============ Text Styles ============
 
   textColor(color: Color): this {
@@ -966,46 +972,62 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       effectiveStyles = { ...effectiveStyles, ...this.dragOverStyles };
     }
 
-    if (effectiveStyles.shadow && effectiveStyles.shadow !== "none") {
-      cx.paintShadow(bounds, effectiveStyles);
-    }
+    // Determine if we need a stacking context
+    // Stacking contexts are created for: z-index, transform, or opacity < 1
+    const needsStackingContext =
+      effectiveStyles.zIndex !== undefined ||
+      effectiveStyles.transform !== undefined ||
+      (effectiveStyles.opacity !== undefined && effectiveStyles.opacity < 1);
 
-    if (effectiveStyles.backgroundColor) {
-      cx.paintRect(bounds, effectiveStyles);
-    }
+    const paintContent = () => {
+      if (effectiveStyles.shadow && effectiveStyles.shadow !== "none") {
+        cx.paintShadow(bounds, effectiveStyles);
+      }
 
-    if (effectiveStyles.borderWidth && effectiveStyles.borderColor) {
-      cx.paintBorder(bounds, effectiveStyles);
-    }
+      if (effectiveStyles.backgroundColor) {
+        cx.paintRect(bounds, effectiveStyles);
+      }
 
-    // Use child bounds from prepaint (already adjusted for scroll)
-    // Determine if we need to apply clipping
-    const shouldClip = overflowClipsContent(effectiveStyles.overflow);
+      if (effectiveStyles.borderWidth && effectiveStyles.borderColor) {
+        cx.paintBorder(bounds, effectiveStyles);
+      }
 
-    // Paint children with optional clipping
-    const paintChildren = () => {
-      for (let i = 0; i < this.children.length; i++) {
-        const child = this.children[i]!;
-        const childId = childElementIds[i]!;
-        const childBound = childBounds[i]!;
-        const childPrepaintState = childPrepaintStates[i];
+      // Use child bounds from prepaint (already adjusted for scroll)
+      // Determine if we need to apply clipping
+      const shouldClip = overflowClipsContent(effectiveStyles.overflow);
 
-        const childCx = cx.withElementId(childId);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (child as FlashElement<any, any>).paint(childCx, childBound, childPrepaintState);
+      // Paint children with optional clipping
+      const paintChildren = () => {
+        for (let i = 0; i < this.children.length; i++) {
+          const child = this.children[i]!;
+          const childId = childElementIds[i]!;
+          const childBound = childBounds[i]!;
+          const childPrepaintState = childPrepaintStates[i];
+
+          const childCx = cx.withElementId(childId);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (child as FlashElement<any, any>).paint(childCx, childBound, childPrepaintState);
+        }
+      };
+
+      if (shouldClip) {
+        cx.withContentMask(
+          {
+            bounds,
+            cornerRadius: effectiveStyles.borderRadius ?? 0,
+          },
+          paintChildren
+        );
+      } else {
+        paintChildren();
       }
     };
 
-    if (shouldClip) {
-      cx.withContentMask(
-        {
-          bounds,
-          cornerRadius: effectiveStyles.borderRadius ?? 0,
-        },
-        paintChildren
-      );
+    // Wrap content in stacking context if needed
+    if (needsStackingContext) {
+      cx.withStackingContext(bounds, effectiveStyles.zIndex ?? 0, paintContent);
     } else {
-      paintChildren();
+      paintContent();
     }
   }
 
