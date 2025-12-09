@@ -263,31 +263,42 @@ export class FlashRenderer {
 
   /**
    * Render a single layer.
+   * Primitives are rendered type-by-type (shadows, rects, paths, underlines, glyphs)
+   * to maintain proper type hierarchy. Within each type, primitives are sorted by
+   * draw order for correct depth ordering.
    */
   private renderLayer(pass: GPURenderPassEncoder, layer: SceneLayer): void {
+    const byOrder = (a: { order?: number }, b: { order?: number }) =>
+      (a.order ?? 0) - (b.order ?? 0);
+
     // Draw shadows first (they go behind everything)
     if (layer.shadows.length > 0 && this.shadowPipeline) {
-      this.shadowPipeline.render(pass, layer.shadows, this.uniformBindGroup!);
+      const sorted = layer.shadows.slice().sort(byOrder);
+      this.shadowPipeline.render(pass, sorted, this.uniformBindGroup!);
     }
 
     // Draw rectangles
     if (layer.rects.length > 0 && this.rectPipeline) {
-      this.rectPipeline.render(pass, layer.rects, this.uniformBindGroup!);
-    }
-
-    // Draw glyphs (text)
-    if (layer.glyphs.length > 0 && this.textPipeline) {
-      this.textPipeline.render(pass, layer.glyphs as GlyphInstance[], layer.rects.length);
+      const sorted = layer.rects.slice().sort(byOrder);
+      this.rectPipeline.render(pass, sorted, this.uniformBindGroup!);
     }
 
     // Draw paths
     if (layer.paths.length > 0 && this.pathPipeline) {
-      this.pathPipeline.render(pass, layer.paths, this.uniformBindGroup!);
+      const sorted = layer.paths.slice().sort(byOrder);
+      this.pathPipeline.render(pass, sorted, this.uniformBindGroup!);
     }
 
     // Draw underlines
     if (layer.underlines.length > 0 && this.underlinePipeline) {
-      this.underlinePipeline.render(pass, layer.underlines, this.uniformBindGroup!);
+      const sorted = layer.underlines.slice().sort(byOrder);
+      this.underlinePipeline.render(pass, sorted, this.uniformBindGroup!);
+    }
+
+    // Draw glyphs (text)
+    if (layer.glyphs.length > 0 && this.textPipeline) {
+      const sorted = layer.glyphs.slice().sort(byOrder);
+      this.textPipeline.render(pass, sorted as GlyphInstance[], 0);
     }
 
     // TODO: Draw images when image pipeline is implemented

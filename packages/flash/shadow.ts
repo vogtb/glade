@@ -323,7 +323,7 @@ export class ShadowPipeline {
       // params (corner_radius, blur, z_index, 0)
       this.instanceData[offset + 8] = shadow.cornerRadius;
       this.instanceData[offset + 9] = shadow.blur;
-      this.instanceData[offset + 10] = i; // z_index = instance order (later = on top)
+      this.instanceData[offset + 10] = shadow.order ?? i; // z_index from global draw order
       this.instanceData[offset + 11] = 0;
 
       // clip_bounds (x, y, width, height)

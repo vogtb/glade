@@ -336,7 +336,7 @@ export class UnderlinePipeline {
       this.instanceData[offset + 8] = wavelength;
       this.instanceData[offset + 9] = amplitude;
       this.instanceData[offset + 10] = isWavy;
-      this.instanceData[offset + 11] = i; // z_index
+      this.instanceData[offset + 11] = underline.order ?? i; // z_index from global draw order
 
       // clip_bounds
       const clip = underline.clipBounds;

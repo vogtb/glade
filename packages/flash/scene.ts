@@ -9,6 +9,12 @@ import type { Color, ContentMask, Bounds, TransformationMatrix } from "./types.t
 import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
 
 /**
+ * Draw order for primitives.
+ * Lower values are drawn first (behind), higher values are drawn last (in front).
+ */
+export type DrawOrder = number;
+
+/**
  * Clip bounds for shader-based clipping.
  * When present, fragments outside these bounds are discarded.
  */
@@ -40,6 +46,8 @@ export interface RectPrimitive {
   borderGapLength?: number;
   clipBounds?: ClipBounds;
   transform?: TransformationMatrix;
+  /** Draw order for z-sorting. Assigned automatically by FlashScene. */
+  order?: DrawOrder;
 }
 
 /**
@@ -57,6 +65,8 @@ export interface ShadowPrimitive {
   offsetY: number;
   clipBounds?: ClipBounds;
   transform?: TransformationMatrix;
+  /** Draw order for z-sorting. Assigned automatically by FlashScene. */
+  order?: DrawOrder;
 }
 
 /**
@@ -74,6 +84,8 @@ export interface GlyphPrimitive {
   atlasHeight: number;
   color: Color;
   clipBounds?: ClipBounds;
+  /** Draw order for z-sorting. Assigned automatically by FlashScene. */
+  order?: DrawOrder;
 }
 
 /**
@@ -102,6 +114,8 @@ export interface ImagePrimitive {
   textureId: number;
   cornerRadius: number;
   opacity: number;
+  /** Draw order for z-sorting. Assigned automatically by FlashScene. */
+  order?: DrawOrder;
 }
 
 /**
@@ -123,6 +137,8 @@ export interface PathPrimitive {
   bounds: Bounds;
   clipBounds?: ClipBounds;
   transform?: TransformationMatrix;
+  /** Draw order for z-sorting. Assigned automatically by FlashScene. */
+  order?: DrawOrder;
 }
 
 /**
@@ -147,6 +163,8 @@ export interface UnderlinePrimitive {
   amplitude?: number;
   clipBounds?: ClipBounds;
   transform?: TransformationMatrix;
+  /** Draw order for z-sorting. Assigned automatically by FlashScene. */
+  order?: DrawOrder;
 }
 
 /**
@@ -170,9 +188,14 @@ export class FlashScene {
   private currentLayerIndex = 0;
   private clipStack: ContentMask[] = [];
   private transformStack: TransformationMatrix[] = [];
+  private nextDrawOrder: DrawOrder = 0;
 
   constructor() {
     this.pushLayer();
+  }
+
+  private assignDrawOrder(): DrawOrder {
+    return this.nextDrawOrder++;
   }
 
   private get currentLayer(): SceneLayer {
@@ -314,6 +337,7 @@ export class FlashScene {
       ...rect,
       clipBounds,
       transform: hasTransform ? transform : undefined,
+      order: this.assignDrawOrder(),
     });
   }
 
@@ -338,6 +362,7 @@ export class FlashScene {
       ...shadow,
       clipBounds,
       transform: hasTransform ? transform : undefined,
+      order: this.assignDrawOrder(),
     });
   }
 
@@ -353,6 +378,7 @@ export class FlashScene {
     this.currentLayer.glyphs.push({
       ...glyph,
       clipBounds,
+      order: this.assignDrawOrder(),
     });
   }
 
@@ -360,7 +386,10 @@ export class FlashScene {
    * Add an image to the current layer.
    */
   addImage(image: ImagePrimitive): void {
-    this.currentLayer.images.push(image);
+    this.currentLayer.images.push({
+      ...image,
+      order: this.assignDrawOrder(),
+    });
   }
 
   /**
@@ -383,6 +412,7 @@ export class FlashScene {
       ...path,
       clipBounds,
       transform: hasTransform ? transform : undefined,
+      order: this.assignDrawOrder(),
     });
   }
 
@@ -412,6 +442,7 @@ export class FlashScene {
       ...underline,
       clipBounds,
       transform: hasTransform ? transform : undefined,
+      order: this.assignDrawOrder(),
     });
   }
 
@@ -423,6 +454,7 @@ export class FlashScene {
     this.currentLayerIndex = 0;
     this.clipStack = [];
     this.transformStack = [];
+    this.nextDrawOrder = 0;
     this.pushLayer();
   }
 

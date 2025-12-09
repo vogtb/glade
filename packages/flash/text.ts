@@ -115,6 +115,7 @@ export interface GlyphInstance {
   atlasHeight: number;
   color: Color;
   clipBounds?: GlyphClipBounds;
+  order?: number;
 }
 
 /**
@@ -871,7 +872,7 @@ export class TextPipeline {
       this.instanceData[offset + 11] = a;
 
       const hasClip = glyph.clipBounds ? 1 : 0;
-      this.instanceData[offset + 12] = zIndexStart + i;
+      this.instanceData[offset + 12] = glyph.order ?? zIndexStart + i; // z_index from global draw order
       this.instanceData[offset + 13] = hasClip;
       this.instanceData[offset + 14] = 0;
       this.instanceData[offset + 15] = 0;
