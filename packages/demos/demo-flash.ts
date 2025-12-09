@@ -102,37 +102,34 @@ class PathDemoElement extends FlashElement<void, void> {
   }
 
   private drawHeart(p: ReturnType<typeof path>, cx: number, cy: number, size: number): void {
-    const scale = size / 50;
-    p.moveTo(cx, cy + 20 * scale);
-    p.cubicTo(
-      cx - 35 * scale,
-      cy - 5 * scale,
-      cx - 35 * scale,
-      cy - 35 * scale,
-      cx,
-      cy - 20 * scale
-    );
-    p.cubicTo(
-      cx + 35 * scale,
-      cy - 35 * scale,
-      cx + 35 * scale,
-      cy - 5 * scale,
-      cx,
-      cy + 20 * scale
-    );
+    const r = size * 0.22;
+    const offsetX = r * 0.7;
+    const offsetY = r * 0.5;
+
+    p.circle(cx - offsetX, cy - offsetY, r);
+    p.circle(cx + offsetX, cy - offsetY, r);
+
+    const triangleTop = cy - offsetY + r * 0.3;
+    const triangleBottom = cy + size * 0.35;
+    const triangleHalfWidth = r + offsetX;
+    p.moveTo(cx - triangleHalfWidth, triangleTop);
+    p.lineTo(cx + triangleHalfWidth, triangleTop);
+    p.lineTo(cx, triangleBottom);
     p.close();
   }
 
   private drawArrow(p: ReturnType<typeof path>, cx: number, cy: number, size: number): void {
-    const scale = size / 50;
-    p.moveTo(cx + 30 * scale, cy);
-    p.lineTo(cx, cy - 20 * scale);
-    p.lineTo(cx, cy - 8 * scale);
-    p.lineTo(cx - 30 * scale, cy - 8 * scale);
-    p.lineTo(cx - 30 * scale, cy + 8 * scale);
-    p.lineTo(cx, cy + 8 * scale);
-    p.lineTo(cx, cy + 20 * scale);
+    const s = size * 0.4;
+    const headWidth = s * 0.9;
+    const shaftWidth = s * 0.35;
+    const headX = cx + s * 0.3;
+
+    p.moveTo(cx + s, cy);
+    p.lineTo(headX, cy - headWidth);
+    p.lineTo(headX, cy + headWidth);
     p.close();
+
+    p.rect(cx - s, cy - shaftWidth, headX - (cx - s) + shaftWidth * 0.5, shaftWidth * 2);
   }
 
   hitTest(_bounds: Bounds, _childBounds: Bounds[]): null {

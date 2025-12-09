@@ -241,16 +241,28 @@ export class PathBuilder {
    * Tessellate the path into triangles.
    */
   tessellate(): TessellatedPath {
-    const points = this.flattenToPoints();
-    if (points.length < 3) {
+    const subpaths = this.flattenToSubpaths();
+    if (subpaths.length === 0) {
       return { vertices: [], indices: [], bounds: { x: 0, y: 0, width: 0, height: 0 } };
     }
 
-    const bounds = computeBounds(points);
-    const indices = triangulate(points);
-    const vertices = points.map((p) => ({ x: p.x, y: p.y }));
+    const allVertices: Array<{ x: number; y: number }> = [];
+    const allIndices: number[] = [];
+    let vertexOffset = 0;
 
-    return { vertices, indices, bounds };
+    for (const points of subpaths) {
+      if (points.length < 3) continue;
+
+      const indices = triangulate(points);
+      for (const idx of indices) {
+        allIndices.push(idx + vertexOffset);
+      }
+      allVertices.push(...points);
+      vertexOffset += points.length;
+    }
+
+    const bounds = computeBounds(allVertices);
+    return { vertices: allVertices, indices: allIndices, bounds };
   }
 
   /**
@@ -267,30 +279,33 @@ export class PathBuilder {
   }
 
   /**
-   * Flatten the path commands into a list of points.
-   * Curves are approximated with line segments.
+   * Flatten the path commands into separate subpaths.
+   * Each subpath starts with a moveTo and ends with close or the next moveTo.
    */
-  private flattenToPoints(): Array<{ x: number; y: number }> {
-    const points: Array<{ x: number; y: number }> = [];
+  private flattenToSubpaths(): Array<Array<{ x: number; y: number }>> {
+    const subpaths: Array<Array<{ x: number; y: number }>> = [];
+    let points: Array<{ x: number; y: number }> = [];
     let currentX = 0;
     let currentY = 0;
     let startX = 0;
     let startY = 0;
 
+    const finishSubpath = () => {
+      if (points.length >= 3) {
+        subpaths.push(points);
+      }
+      points = [];
+    };
+
     for (const cmd of this.commands) {
       switch (cmd.type) {
         case "moveTo":
+          finishSubpath();
           currentX = cmd.x;
           currentY = cmd.y;
           startX = cmd.x;
           startY = cmd.y;
-          if (
-            points.length === 0 ||
-            points[points.length - 1]!.x !== cmd.x ||
-            points[points.length - 1]!.y !== cmd.y
-          ) {
-            points.push({ x: cmd.x, y: cmd.y });
-          }
+          points.push({ x: cmd.x, y: cmd.y });
           break;
 
         case "lineTo":
@@ -345,13 +360,15 @@ export class PathBuilder {
           if (points.length > 0 && (currentX !== startX || currentY !== startY)) {
             points.push({ x: startX, y: startY });
           }
+          finishSubpath();
           currentX = startX;
           currentY = startY;
           break;
       }
     }
 
-    return points;
+    finishSubpath();
+    return subpaths;
   }
 }
 
