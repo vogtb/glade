@@ -54,7 +54,6 @@
         "@glade/core": "workspace:*",
         "@glade/flash": "workspace:*",
         "@glade/platform": "workspace:*",
-        "@glade/webgpu": "workspace:*",
       },
     },
     "packages/flash": {
@@ -64,7 +63,6 @@
         "@glade/core": "workspace:*",
         "@glade/layout": "workspace:*",
         "@glade/shaper": "workspace:*",
-        "@glade/webgpu": "workspace:*",
       },
     },
     "packages/glfw": {
@@ -89,10 +87,6 @@
     },
     "packages/shaper": {
       "name": "@glade/shaper",
-      "version": "0.0.1",
-    },
-    "packages/webgpu": {
-      "name": "@glade/webgpu",
       "version": "0.0.1",
     },
   },
@@ -134,8 +128,6 @@
     "@glade/platform": ["@glade/platform@workspace:packages/platform"],
 
     "@glade/shaper": ["@glade/shaper@workspace:packages/shaper"],
-
-    "@glade/webgpu": ["@glade/webgpu@workspace:packages/webgpu"],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

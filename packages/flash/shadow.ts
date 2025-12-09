@@ -5,7 +5,7 @@
  * Shadows are rendered before rectangles so they appear behind content.
  */
 
-import { GPUBufferUsage } from "@glade/webgpu";
+import { GPUBufferUsage } from "@glade/core/webgpu";
 import type { ShadowPrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 

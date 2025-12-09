@@ -10,7 +10,6 @@
   "dependencies": {
     "@glade/core": "workspace:*",
     "@glade/layout": "workspace:*",
-    "@glade/shaper": "workspace:*",
-    "@glade/webgpu": "workspace:*"
+    "@glade/shaper": "workspace:*"
   }
 }

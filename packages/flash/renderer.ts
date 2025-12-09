@@ -4,7 +4,7 @@
  * Coordinates GPU pipelines and renders scenes to the screen.
  */
 
-import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/webgpu";
+import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
 import type { FlashScene, SceneLayer } from "./scene.ts";
 import type { RectPipeline } from "./rect.ts";
 import type { ShadowPipeline } from "./shadow.ts";

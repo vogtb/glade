@@ -5,7 +5,7 @@
  * Inspired by Zed's GPUI polychrome sprite system.
  */
 
-import { GPUBufferUsage, GPUTextureUsage } from "@glade/webgpu";
+import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
 import type { TransformationMatrix } from "./types.ts";
 import type { ClipBounds } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";

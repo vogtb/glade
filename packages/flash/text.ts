@@ -5,7 +5,7 @@
  * Inspired by Zed's GPUI text system architecture.
  */
 
-import { GPUBufferUsage, GPUTextureUsage } from "@glade/webgpu";
+import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
 import {
   createTextShaper,
   type TextShaper,

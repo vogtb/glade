@@ -1,5 +1,5 @@
 import type { WebGPUContext } from "@glade/core";
-import { GPUBufferUsage, GPUShaderStage } from "@glade/webgpu";
+import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
 import type { DemoResources } from "./common";
 
 const VERTEX_SHADER = `

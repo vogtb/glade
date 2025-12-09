@@ -4,7 +4,7 @@
  * Provides pooling and dynamic resizing for GPU buffers used in rendering.
  */
 
-import { GPUBufferUsage } from "@glade/webgpu";
+import { GPUBufferUsage } from "@glade/core/webgpu";
 
 /**
  * A dynamically resizing GPU buffer.

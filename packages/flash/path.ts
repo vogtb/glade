@@ -5,7 +5,7 @@
  * for rendering them. Paths are tessellated into triangles using ear clipping.
  */
 
-import { GPUBufferUsage } from "@glade/webgpu";
+import { GPUBufferUsage } from "@glade/core/webgpu";
 import type { Color, Bounds } from "./types.ts";
 import type { PathPrimitive, PathVertex } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";

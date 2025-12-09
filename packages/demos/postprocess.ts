@@ -1,5 +1,5 @@
 import type { WebGPUContext } from "@glade/core";
-import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/webgpu";
+import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
 import type { DemoResources } from "./common";
 
 // Post-processing demo: Render a scene to a texture, then apply effects

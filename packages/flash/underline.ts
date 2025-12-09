@@ -5,7 +5,7 @@
  * Uses instanced rendering for efficient batch processing.
  */
 
-import { GPUBufferUsage } from "@glade/webgpu";
+import { GPUBufferUsage } from "@glade/core/webgpu";
 import type { UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 
