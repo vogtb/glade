@@ -300,3 +300,54 @@ export function dispatchScrollEvent(
     }
   }
 }
+
+/**
+ * Build the key context chain from a hit test path.
+ * Collects all keyContext values from nodes, ordered from root to leaf.
+ * This determines which context-specific key bindings are active.
+ */
+export function buildKeyContextChain(path: HitTestNode[]): string[] {
+  const contexts: string[] = [];
+  for (const node of path) {
+    if (node.keyContext) {
+      contexts.push(node.keyContext);
+    }
+  }
+  return contexts;
+}
+
+/**
+ * Get the focused path from the hit test tree.
+ * Returns the path to the deepest focused element.
+ */
+export function getFocusedPath(roots: HitTestNode[]): HitTestNode[] {
+  const path: HitTestNode[] = [];
+
+  function walk(node: HitTestNode): boolean {
+    path.push(node);
+
+    for (let i = node.children.length - 1; i >= 0; i--) {
+      const child = node.children[i];
+      if (child?.focusHandle) {
+        if (walk(child)) {
+          return true;
+        }
+      }
+    }
+
+    if (node.focusHandle) {
+      return true;
+    }
+
+    path.pop();
+    return false;
+  }
+
+  for (const root of roots) {
+    if (walk(root)) {
+      return path;
+    }
+  }
+
+  return [];
+}

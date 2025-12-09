@@ -178,6 +178,8 @@ export {
   dispatchClickEvent,
   dispatchKeyEvent,
   dispatchScrollEvent,
+  buildKeyContextChain,
+  getFocusedPath,
 } from "./dispatch.ts";
 
 // Hitbox system

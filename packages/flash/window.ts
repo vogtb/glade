@@ -44,7 +44,14 @@ import {
   dispatchMouseEvent,
   dispatchClickEvent,
   dispatchScrollEvent,
+  dispatchKeyEvent,
+  buildKeyContextChain,
+  getFocusedPath,
+  type FlashKeyEvent,
 } from "./dispatch.ts";
+import type { KeyEvent } from "@glade/core";
+import { ActionRegistry, Keymap, KeyDispatcher } from "./actions.ts";
+import { coreModsToFlashMods } from "./keyboard.ts";
 import { FlashScene } from "./scene.ts";
 import type { Styles, Cursor } from "./styles.ts";
 import { SHADOW_DEFINITIONS, cursorToCursorStyle } from "./styles.ts";
@@ -133,6 +140,7 @@ export interface FlashRenderTarget {
     callback: (x: number, y: number, deltaX: number, deltaY: number, mods: Modifiers) => void
   ): () => void;
   onResize?(callback: (width: number, height: number) => void): () => void;
+  onKey?(callback: (event: import("@glade/core").KeyEvent) => void): () => void;
 
   setCursor?(style: CursorStyle): void;
 }
@@ -174,6 +182,11 @@ export class FlashWindow {
 
   // Tooltips
   private tooltipManager = new TooltipManager();
+
+  // Key dispatch
+  private actionRegistry = new ActionRegistry();
+  private keymap = new Keymap();
+  private keyDispatcher: KeyDispatcher;
 
   // Renderer
   private renderer: FlashRenderer;
@@ -240,6 +253,9 @@ export class FlashWindow {
     this.imageAtlas = new ImageAtlas(device);
     const imagePipeline = new ImagePipeline(device, format, this.imageAtlas);
     this.renderer.setImagePipeline(imagePipeline);
+
+    // Initialize key dispatcher
+    this.keyDispatcher = new KeyDispatcher(this.keymap, this.actionRegistry);
 
     this.setupEventListeners();
   }
@@ -317,6 +333,40 @@ export class FlashWindow {
    */
   isFocused(focusId: FocusId): boolean {
     return this.focusStack.includes(focusId);
+  }
+
+  // ============ Key Context & Actions ============
+
+  /**
+   * Get the action registry for registering actions.
+   */
+  getActionRegistry(): ActionRegistry {
+    return this.actionRegistry;
+  }
+
+  /**
+   * Get the keymap for binding keys to actions.
+   */
+  getKeymap(): Keymap {
+    return this.keymap;
+  }
+
+  /**
+   * Dispatch an action by name.
+   */
+  dispatchAction(name: string): boolean {
+    return this.actionRegistry.dispatch(name, this.getContext(), this);
+  }
+
+  /**
+   * Get the current key context chain based on focus.
+   */
+  getKeyContextChain(): string[] {
+    let path = getFocusedPath(this.hitTestTree);
+    if (path.length === 0) {
+      path = hitTest(this.hitTestTree, this.mousePosition);
+    }
+    return buildKeyContextChain(path);
   }
 
   // ============ Scroll State Management ============
@@ -815,6 +865,44 @@ export class FlashWindow {
       });
       this.eventCleanups.push(cleanup);
     }
+
+    if (target.onKey) {
+      const cleanup = target.onKey((event: KeyEvent) => {
+        this.handleKeyEvent(event);
+      });
+      this.eventCleanups.push(cleanup);
+    }
+  }
+
+  private handleKeyEvent(event: KeyEvent): void {
+    const cx = this.getContext();
+
+    // Get the path from focused element (or use mouse position as fallback)
+    let path = getFocusedPath(this.hitTestTree);
+    if (path.length === 0) {
+      path = hitTest(this.hitTestTree, this.mousePosition);
+    }
+
+    // Build context chain from the path
+    const contextChain = buildKeyContextChain(path);
+
+    // Try action dispatch first
+    const result = this.keyDispatcher.dispatch(event, contextChain, cx, this);
+    if (result.handled) {
+      return;
+    }
+
+    // If action dispatch didn't handle it, dispatch as regular key event
+    const mods = coreModsToFlashMods(event.mods);
+    const flashEvent: FlashKeyEvent = {
+      key: String.fromCharCode(event.key),
+      code: event.scancode.toString(),
+      modifiers: mods,
+      repeat: event.action === 2,
+    };
+
+    const type = event.action === 0 ? "keyUp" : "keyDown";
+    dispatchKeyEvent(type, flashEvent, path, this, cx);
   }
 
   private createRequestLayoutContext(elementId: GlobalElementId): RequestLayoutContext {
