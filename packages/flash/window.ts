@@ -522,12 +522,14 @@ export class FlashWindow {
     const texture = this.renderTarget.getCurrentTexture();
     const textureView = texture.createView();
 
-    // Calculate framebuffer dimensions (physical pixels)
-    const logicalWidth = this.renderTarget.width;
-    const logicalHeight = this.renderTarget.height;
+    // Use actual texture dimensions to avoid mismatch with depth buffer
+    const fbWidth = texture.width;
+    const fbHeight = texture.height;
+
+    // Calculate logical dimensions from actual texture size
     const dpr = this.renderTarget.devicePixelRatio;
-    const fbWidth = Math.floor(logicalWidth * dpr);
-    const fbHeight = Math.floor(logicalHeight * dpr);
+    const logicalWidth = fbWidth / dpr;
+    const logicalHeight = fbHeight / dpr;
 
     this.renderer.render(this.scene, textureView, logicalWidth, logicalHeight, fbWidth, fbHeight);
     this.didRenderThisFrame = true;
