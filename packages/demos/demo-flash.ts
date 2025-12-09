@@ -30,8 +30,37 @@ class DemoRootView implements FlashView {
       .gap(20)
       .p(20)
       .children_(
-        div().flexGrow().bg(rgb(0x3b82f6)).rounded(12),
-        div().flexGrow().bg(rgb(0x10b981)).rounded(12)
+        // Left column - fixed width with hoverable items
+        div()
+          .flex()
+          .flexCol()
+          .w(240)
+          .bg(rgb(0x1f1f28))
+          .rounded(12)
+          .p(16)
+          .gap(12)
+          .children_(
+            div()
+              .h(48)
+              .bg(rgb(0x3b82f6))
+              .rounded(8)
+              .cursorPointer()
+              .hover((s) => s.bg(rgb(0x2563eb)).shadow("md")),
+            div()
+              .h(48)
+              .bg(rgb(0x10b981))
+              .rounded(8)
+              .cursorPointer()
+              .hover((s) => s.bg(rgb(0x059669)).shadow("md")),
+            div()
+              .h(48)
+              .bg(rgb(0xf59e0b))
+              .rounded(8)
+              .cursorPointer()
+              .hover((s) => s.bg(rgb(0xd97706)).shadow("md"))
+          ),
+        // Right column - fills remaining space
+        div().flexGrow().bg(rgb(0x2a2a35)).rounded(12)
       );
   }
 }

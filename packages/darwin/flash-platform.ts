@@ -79,12 +79,33 @@ interface DarwinWebGPUContextExt extends WebGPUContext {
 
 /**
  * Render target for Darwin/GLFW.
+ *
+ * Note: GLFW only allows one callback per event type per window.
+ * We use a single shared cursor position tracker and dispatch to multiple listeners.
  */
 class DarwinRenderTarget implements FlashRenderTarget {
   private ctx: DarwinWebGPUContextExt;
 
+  private cursorX = 0;
+  private cursorY = 0;
+  private cursorCallbackRegistered = false;
+  private cursorMoveListeners: Array<(x: number, y: number) => void> = [];
+
   constructor(ctx: WebGPUContext) {
     this.ctx = ctx as DarwinWebGPUContextExt;
+  }
+
+  private ensureCursorTracking(): void {
+    if (this.cursorCallbackRegistered) return;
+    this.cursorCallbackRegistered = true;
+
+    this.ctx.onCursorMove((event) => {
+      this.cursorX = event.x;
+      this.cursorY = event.y;
+      for (const listener of this.cursorMoveListeners) {
+        listener(event.x, event.y);
+      }
+    });
   }
 
   get width(): number {
@@ -130,69 +151,55 @@ class DarwinRenderTarget implements FlashRenderTarget {
   onMouseDown(
     callback: (x: number, y: number, button: number, mods: Modifiers) => void
   ): () => void {
-    // Track cursor position since GLFW mouse button events don't include position
-    let cursorX = 0;
-    let cursorY = 0;
-
-    const cursorCleanup = this.ctx.onCursorMove((event) => {
-      cursorX = event.x;
-      cursorY = event.y;
-    });
+    this.ensureCursorTracking();
 
     const buttonCleanup = this.ctx.onMouseButton((event) => {
       if (event.action === 1) {
         // Press
-        callback(cursorX, cursorY, event.button, coreModsToFlashMods(event.mods));
+        callback(this.cursorX, this.cursorY, event.button, coreModsToFlashMods(event.mods));
       }
     });
 
     return () => {
-      cursorCleanup();
       buttonCleanup();
     };
   }
 
   onMouseUp(callback: (x: number, y: number, button: number, mods: Modifiers) => void): () => void {
-    let cursorX = 0;
-    let cursorY = 0;
-
-    const cursorCleanup = this.ctx.onCursorMove((event) => {
-      cursorX = event.x;
-      cursorY = event.y;
-    });
+    this.ensureCursorTracking();
 
     const buttonCleanup = this.ctx.onMouseButton((event) => {
       if (event.action === 0) {
         // Release
-        callback(cursorX, cursorY, event.button, coreModsToFlashMods(event.mods));
+        callback(this.cursorX, this.cursorY, event.button, coreModsToFlashMods(event.mods));
       }
     });
 
     return () => {
-      cursorCleanup();
       buttonCleanup();
     };
   }
 
   onMouseMove(callback: (x: number, y: number) => void): () => void {
-    return this.ctx.onCursorMove((event) => {
-      callback(event.x, event.y);
-    });
+    this.ensureCursorTracking();
+    this.cursorMoveListeners.push(callback);
+
+    return () => {
+      const idx = this.cursorMoveListeners.indexOf(callback);
+      if (idx >= 0) {
+        this.cursorMoveListeners.splice(idx, 1);
+      }
+    };
   }
 
   onClick(
     callback: (x: number, y: number, clickCount: number, mods: Modifiers) => void
   ): () => void {
-    let cursorX = 0;
-    let cursorY = 0;
+    this.ensureCursorTracking();
+
     let lastClickTime = 0;
     let clickCount = 0;
     const DOUBLE_CLICK_TIME = 300;
-
-    const cursorCleanup = this.ctx.onCursorMove((event) => {
-      cursorX = event.x;
-      cursorY = event.y;
-    });
 
     const buttonCleanup = this.ctx.onMouseButton((event) => {
       if (event.action === 0 && event.button === 0) {
@@ -204,12 +211,11 @@ class DarwinRenderTarget implements FlashRenderTarget {
           clickCount = 1;
         }
         lastClickTime = now;
-        callback(cursorX, cursorY, clickCount, coreModsToFlashMods(event.mods));
+        callback(this.cursorX, this.cursorY, clickCount, coreModsToFlashMods(event.mods));
       }
     });
 
     return () => {
-      cursorCleanup();
       buttonCleanup();
     };
   }
@@ -217,16 +223,10 @@ class DarwinRenderTarget implements FlashRenderTarget {
   onScroll(
     callback: (x: number, y: number, deltaX: number, deltaY: number, mods: Modifiers) => void
   ): () => void {
-    let cursorX = 0;
-    let cursorY = 0;
-
-    const cursorCleanup = this.ctx.onCursorMove((event) => {
-      cursorX = event.x;
-      cursorY = event.y;
-    });
+    this.ensureCursorTracking();
 
     const scrollCleanup = this.ctx.onScroll((event) => {
-      callback(cursorX, cursorY, event.deltaX, event.deltaY, {
+      callback(this.cursorX, this.cursorY, event.deltaX, event.deltaY, {
         alt: false,
         ctrl: false,
         meta: false,
@@ -235,7 +235,6 @@ class DarwinRenderTarget implements FlashRenderTarget {
     });
 
     return () => {
-      cursorCleanup();
       scrollCleanup();
     };
   }

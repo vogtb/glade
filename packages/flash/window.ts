@@ -614,6 +614,8 @@ export class FlashWindow {
     if (target.onMouseMove) {
       const cleanup = target.onMouseMove((x, y) => {
         this.mousePosition = { x, y };
+        // Mark window dirty to trigger re-render for hover effects
+        this.getContext().markWindowDirty(this.id);
         // Update drag position if active
         if (this.pendingDragStart || this.dragTracker.getActiveDrag()) {
           const isDragging = this.dragTracker.updatePosition({ x, y });
