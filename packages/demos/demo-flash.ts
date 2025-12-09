@@ -935,6 +935,26 @@ async function main() {
     cx.newView<DemoRootView>(() => new DemoRootView())
   );
 
+  // Register inspector toggle action (press 'I' to toggle inspector mode)
+  window.getActionRegistry().register({
+    name: "inspector:toggle",
+    label: "Toggle Inspector",
+    handler: (_cx, win) => {
+      win.toggleInspector();
+      const enabled = win.isInspectorEnabled();
+      console.log(`Inspector ${enabled ? "enabled" : "disabled"}`);
+      if (enabled) {
+        console.log("  - Click on any element to select it");
+        console.log("  - Selected element info will be logged to console");
+        console.log("  - Press 'I' again to disable");
+      }
+    },
+  });
+
+  // Bind 'I' key to toggle inspector
+  window.getKeymap().bind("i", "inspector:toggle");
+  console.log("Inspector: Press 'I' to toggle debug mode");
+
   // Load embedded fonts
   window.registerFont("Inter", base64ToBytes(interFontBase64));
   window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoRegularBase64));

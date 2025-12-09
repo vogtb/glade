@@ -74,6 +74,7 @@ import { TextSystem, TextPipeline } from "./text.ts";
 import { PathPipeline } from "./path.ts";
 import { UnderlinePipeline } from "./underline.ts";
 import { ImageAtlas, ImagePipeline, type ImageTile, type DecodedImage } from "./image.ts";
+import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 
 /**
  * Options for creating a window.
@@ -194,6 +195,9 @@ export class FlashWindow {
   private imageAtlas: ImageAtlas;
   private didRenderThisFrame = false;
 
+  // Inspector/Debug Mode
+  private inspector: Inspector;
+
   constructor(
     readonly id: WindowId,
     private platform: FlashPlatform,
@@ -256,6 +260,9 @@ export class FlashWindow {
 
     // Initialize key dispatcher
     this.keyDispatcher = new KeyDispatcher(this.keymap, this.actionRegistry);
+
+    // Initialize inspector
+    this.inspector = new Inspector();
 
     this.setupEventListeners();
   }
@@ -600,6 +607,67 @@ export class FlashWindow {
     return this.currentContentMask;
   }
 
+  // ============ Inspector/Debug Mode ============
+
+  /**
+   * Get the inspector instance.
+   */
+  getInspector(): Inspector {
+    return this.inspector;
+  }
+
+  /**
+   * Toggle inspector mode on/off.
+   */
+  toggleInspector(): void {
+    this.inspector.toggle();
+    this.getContext().markWindowDirty(this.id);
+  }
+
+  /**
+   * Check if inspector is enabled.
+   */
+  isInspectorEnabled(): boolean {
+    return this.inspector.isEnabled();
+  }
+
+  /**
+   * Set inspector enabled state.
+   */
+  setInspectorEnabled(enabled: boolean): void {
+    this.inspector.setEnabled(enabled);
+    this.getContext().markWindowDirty(this.id);
+  }
+
+  /**
+   * Get inspector state for UI display.
+   */
+  getInspectorState(): Readonly<InspectorState> {
+    return this.inspector.getState();
+  }
+
+  /**
+   * Update inspector options.
+   */
+  updateInspectorOptions(options: Partial<InspectorState>): void {
+    this.inspector.updateOptions(options);
+    this.getContext().markWindowDirty(this.id);
+  }
+
+  /**
+   * Get info about the currently selected element in inspector.
+   */
+  getSelectedElementInfo(): ElementDebugInfo | null {
+    return this.inspector.getSelectedElement();
+  }
+
+  /**
+   * Log selected element info to console (for debugging).
+   */
+  logSelectedElement(): void {
+    this.inspector.logSelectedElement();
+  }
+
   /**
    * Render the window using the three-phase lifecycle.
    */
@@ -642,6 +710,15 @@ export class FlashWindow {
       this.hitTestTree.push(prepaintStateWithHitTest.hitTestNode);
     }
 
+    // Build inspector debug info from hit test tree if inspector is enabled
+    if (this.inspector.isEnabled()) {
+      this.inspector.beginFrame();
+      this.inspectorNextId = 0;
+      this.buildInspectorFromHitTestTree(this.hitTestTree, 0);
+      this.inspector.handleMouseMove(this.mousePosition);
+      this.inspector.renderOverlay(this.scene, this.width, this.height);
+    }
+
     this.endFrame();
 
     // Get texture and render scene to GPU
@@ -659,6 +736,33 @@ export class FlashWindow {
 
     this.renderer.render(this.scene, textureView, logicalWidth, logicalHeight, fbWidth, fbHeight);
     this.didRenderThisFrame = true;
+  }
+
+  private inspectorNextId = 0;
+
+  /**
+   * Build inspector debug info recursively from hit test tree.
+   * The hit test tree has correctly computed bounds from the layout phase.
+   */
+  private buildInspectorFromHitTestTree(nodes: HitTestNode[], depth: number): void {
+    for (const node of nodes) {
+      const info: ElementDebugInfo = {
+        elementId: this.inspectorNextId++ as GlobalElementId,
+        bounds: node.bounds,
+        styles: {},
+        typeName: "Element",
+        sourceLocation: undefined,
+        children: [],
+        depth,
+      };
+
+      this.inspector.registerElement(info);
+
+      // Recursively process children
+      if (node.children.length > 0) {
+        this.buildInspectorFromHitTestTree(node.children, depth + 1);
+      }
+    }
   }
 
   /**
@@ -842,6 +946,16 @@ export class FlashWindow {
 
     if (target.onClick) {
       const cleanup = target.onClick((x, y, clickCount, mods) => {
+        // If inspector is enabled, handle click for element selection
+        if (this.inspector.isEnabled()) {
+          const handled = this.inspector.handleClick({ x, y });
+          if (handled) {
+            this.inspector.logSelectedElement();
+            this.getContext().markWindowDirty(this.id);
+            return;
+          }
+        }
+
         const event: FlashClickEvent = { x, y, clickCount, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
         dispatchClickEvent(event, path, this, this.getContext());

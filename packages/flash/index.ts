@@ -110,6 +110,7 @@ export type {
   DispatchNodeId,
   NoState,
   RequestLayoutResult,
+  ElementDebugMeta,
 } from "./element.ts";
 
 export {
@@ -293,3 +294,8 @@ export {
   UniformBufferManager,
   BufferFactory,
 } from "./buffers.ts";
+
+// Inspector/Debug Mode
+export type { ElementDebugInfo, InspectorState } from "./inspector.ts";
+
+export { Inspector, INSPECTOR_COLORS, createInspector, createInspectorState } from "./inspector.ts";

@@ -270,6 +270,12 @@ class DarwinRenderTarget implements FlashRenderTarget {
       callback(event.width / dpr, event.height / dpr);
     });
   }
+
+  onKey(callback: (event: import("@glade/core").KeyEvent) => void): () => void {
+    return this.ctx.onKey((event) => {
+      callback(event);
+    });
+  }
 }
 
 /**

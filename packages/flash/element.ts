@@ -21,6 +21,18 @@ import type { FlashScene } from "./scene.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import type { HitboxBehavior } from "./hitbox.ts";
 
+// ============ Debug Info Types ============
+
+/**
+ * Debug information attached to elements for inspector mode.
+ */
+export interface ElementDebugMeta {
+  /** Optional source location (file:line) for debugging */
+  sourceLocation?: string;
+  /** Optional custom debug label */
+  debugLabel?: string;
+}
+
 // ============ Element Identity Types ============
 
 declare const __globalElementIdBrand: unique symbol;
@@ -364,6 +376,38 @@ export interface PaintContext {
  * @typeParam PrepaintState - State returned from prepaint, passed to paint
  */
 export abstract class FlashElement<RequestLayoutState = NoState, PrepaintState = NoState> {
+  /** Debug metadata for inspector mode */
+  protected debugMeta: ElementDebugMeta = {};
+
+  /**
+   * Set debug source location (for inspector).
+   */
+  debugSource(location: string): this {
+    this.debugMeta.sourceLocation = location;
+    return this;
+  }
+
+  /**
+   * Set debug label (for inspector).
+   */
+  debugLabel(label: string): this {
+    this.debugMeta.debugLabel = label;
+    return this;
+  }
+
+  /**
+   * Get debug metadata.
+   */
+  getDebugMeta(): Readonly<ElementDebugMeta> {
+    return this.debugMeta;
+  }
+
+  /**
+   * Get the element type name for debugging.
+   */
+  getTypeName(): string {
+    return this.constructor.name;
+  }
   /**
    * Phase 1: Request layout.
    *
