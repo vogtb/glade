@@ -259,6 +259,19 @@ export interface PaintContext {
   paintPath(path: import("./path.ts").PathBuilder, color: Color): void;
 
   /**
+   * Paint an underline primitive.
+   */
+  paintUnderline(
+    x: number,
+    y: number,
+    width: number,
+    thickness: number,
+    color: Color,
+    style: "solid" | "wavy",
+    options?: { wavelength?: number; amplitude?: number }
+  ): void;
+
+  /**
    * Get persistent state cached across frames for this element.
    */
   getPersistentState<T = unknown>(): T | undefined;

@@ -146,6 +146,112 @@ function pathShape(
 }
 
 /**
+ * Custom element that renders text with an underline.
+ */
+class UnderlinedTextElement extends FlashElement<{ textWidth: number; textHeight: number }, void> {
+  private textContent: string;
+  private underlineStyle: "solid" | "wavy";
+  private textColor: { r: number; g: number; b: number; a: number };
+  private underlineColor: { r: number; g: number; b: number; a: number };
+  private fontSize: number;
+  private fontFamily: string;
+  private thickness: number;
+  private wavelength?: number;
+  private amplitude?: number;
+
+  constructor(
+    text: string,
+    options: {
+      style: "solid" | "wavy";
+      textColor: { r: number; g: number; b: number; a: number };
+      underlineColor?: { r: number; g: number; b: number; a: number };
+      fontSize?: number;
+      fontFamily?: string;
+      thickness?: number;
+      wavelength?: number;
+      amplitude?: number;
+    }
+  ) {
+    super();
+    this.textContent = text;
+    this.underlineStyle = options.style;
+    this.textColor = options.textColor;
+    this.underlineColor = options.underlineColor ?? options.textColor;
+    this.fontSize = options.fontSize ?? 14;
+    this.fontFamily = options.fontFamily ?? "Inter";
+    this.thickness = options.thickness ?? 1;
+    this.wavelength = options.wavelength;
+    this.amplitude = options.amplitude;
+  }
+
+  requestLayout(
+    cx: RequestLayoutContext
+  ): RequestLayoutResult<{ textWidth: number; textHeight: number }> {
+    const metrics = cx.measureText(this.textContent, {
+      fontSize: this.fontSize,
+      fontFamily: this.fontFamily,
+      fontWeight: 400,
+    });
+    const underlineSpace =
+      this.underlineStyle === "wavy"
+        ? this.thickness + (this.amplitude ?? 1) * 2 + 2
+        : this.thickness + 2;
+    const layoutId = cx.requestLayout(
+      { width: metrics.width, height: metrics.height + underlineSpace },
+      []
+    );
+    return { layoutId, requestState: { textWidth: metrics.width, textHeight: metrics.height } };
+  }
+
+  prepaint(
+    _cx: PrepaintContext,
+    _bounds: Bounds,
+    _requestState: { textWidth: number; textHeight: number }
+  ): void {}
+
+  paint(cx: PaintContext, bounds: Bounds, _prepaintState: void): void {
+    // Paint the text
+    cx.paintGlyphs(this.textContent, bounds, this.textColor, {
+      fontSize: this.fontSize,
+      fontFamily: this.fontFamily,
+      fontWeight: 400,
+    });
+
+    // Paint underline below the text baseline
+    const underlineY = bounds.y + this.fontSize * 1.1;
+    cx.paintUnderline(
+      bounds.x,
+      underlineY,
+      bounds.width,
+      this.thickness,
+      this.underlineColor,
+      this.underlineStyle,
+      { wavelength: this.wavelength, amplitude: this.amplitude }
+    );
+  }
+
+  hitTest(_bounds: Bounds, _childBounds: Bounds[]): null {
+    return null;
+  }
+}
+
+function underlinedText(
+  text: string,
+  options: {
+    style: "solid" | "wavy";
+    textColor: { r: number; g: number; b: number; a: number };
+    underlineColor?: { r: number; g: number; b: number; a: number };
+    fontSize?: number;
+    fontFamily?: string;
+    thickness?: number;
+    wavelength?: number;
+    amplitude?: number;
+  }
+): UnderlinedTextElement {
+  return new UnderlinedTextElement(text, options);
+}
+
+/**
  * Helper to create a hoverable button with text label.
  */
 function hoverButton(label: string, color: number, hoverColor: number): FlashDiv {
@@ -240,6 +346,91 @@ class DemoRootView implements FlashView {
                   .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
               ),
             div().h(1).flexShrink0().bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+            // Underline Demo section (early in content so it's visible without scrolling)
+            div()
+              .flexShrink0()
+              .child(
+                text("Text Underlines").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("Solid and wavy underlines for text decoration")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
+
+            // Underlined text examples
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(24)
+              .flexWrap()
+              .itemsEnd()
+              .children_(
+                underlinedText("Hyperlink", {
+                  style: "solid",
+                  textColor: { r: 0.3, g: 0.7, b: 1, a: 1 },
+                  fontSize: 16,
+                  thickness: 1,
+                }),
+                underlinedText("Important", {
+                  style: "solid",
+                  textColor: { r: 0.5, g: 1, b: 0.5, a: 1 },
+                  fontSize: 16,
+                  thickness: 2,
+                }),
+                underlinedText("Speling Error", {
+                  style: "wavy",
+                  textColor: { r: 0.9, g: 0.9, b: 0.9, a: 1 },
+                  underlineColor: { r: 1, g: 0.3, b: 0.3, a: 1 },
+                  fontSize: 16,
+                  thickness: 1.5,
+                  wavelength: 4,
+                  amplitude: 1.5,
+                }),
+                underlinedText("Grammer Issue", {
+                  style: "wavy",
+                  textColor: { r: 0.9, g: 0.9, b: 0.9, a: 1 },
+                  underlineColor: { r: 0.3, g: 0.6, b: 1, a: 1 },
+                  fontSize: 16,
+                  thickness: 1.5,
+                  wavelength: 5,
+                  amplitude: 1.5,
+                })
+              ),
+
+            // Larger text with underlines
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(32)
+              .flexWrap()
+              .itemsEnd()
+              .children_(
+                underlinedText("Title Text", {
+                  style: "solid",
+                  textColor: { r: 1, g: 0.8, b: 0.3, a: 1 },
+                  fontSize: 24,
+                  thickness: 2,
+                }),
+                underlinedText("Code Identifier", {
+                  style: "wavy",
+                  textColor: { r: 0.6, g: 0.9, b: 0.6, a: 1 },
+                  underlineColor: { r: 1, g: 0.6, b: 0.2, a: 1 },
+                  fontFamily: "JetBrains Mono",
+                  fontSize: 18,
+                  thickness: 2,
+                  wavelength: 6,
+                  amplitude: 2,
+                })
+              ),
+
+            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
 
             // Inter font section
             div()
@@ -378,6 +569,104 @@ class DemoRootView implements FlashView {
                 pathShape("arrow", { r: 0.3, g: 0.7, b: 0.9, a: 1 }, 32),
                 pathShape("star", { r: 0.9, g: 0.4, b: 0.4, a: 1 }, 32),
                 pathShape("polygon", { r: 0.4, g: 0.9, b: 0.4, a: 1 }, 32)
+              ),
+
+            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+            // Border Styles Demo section
+            div()
+              .flexShrink0()
+              .child(
+                text("Border Styles Demo")
+                  .font("Inter")
+                  .size(18)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("Solid and dashed border rendering")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
+
+            // Row of border style boxes
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(16)
+              .flexWrap()
+              .children_(
+                // Solid border box
+                div()
+                  .w(80)
+                  .h(60)
+                  .rounded(8)
+                  .border(2)
+                  .borderColor({ r: 0.3, g: 0.8, b: 1, a: 1 })
+                  .borderSolid()
+                  .flex()
+                  .itemsCenter()
+                  .justifyCenter()
+                  .child(
+                    text("Solid").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+                  ),
+                // Dashed border box
+                div()
+                  .w(80)
+                  .h(60)
+                  .rounded(8)
+                  .border(2)
+                  .borderColor({ r: 1, g: 0.5, b: 0.3, a: 1 })
+                  .borderDashed()
+                  .flex()
+                  .itemsCenter()
+                  .justifyCenter()
+                  .child(
+                    text("Dashed").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+                  ),
+                // Custom dash pattern
+                div()
+                  .w(100)
+                  .h(60)
+                  .rounded(12)
+                  .border(3)
+                  .borderColor({ r: 0.9, g: 0.3, b: 0.6, a: 1 })
+                  .borderDashed()
+                  .borderDashLength(12)
+                  .borderGapLength(6)
+                  .flex()
+                  .itemsCenter()
+                  .justifyCenter()
+                  .child(
+                    text("Custom").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+                  ),
+                // Square solid border
+                div()
+                  .w(60)
+                  .h(60)
+                  .border(2)
+                  .borderColor({ r: 0.5, g: 1, b: 0.5, a: 1 })
+                  .borderSolid()
+                  .flex()
+                  .itemsCenter()
+                  .justifyCenter()
+                  .child(text("■").font("Inter").size(16).color({ r: 0.5, g: 1, b: 0.5, a: 1 })),
+                // Square dashed border
+                div()
+                  .w(60)
+                  .h(60)
+                  .border(2)
+                  .borderColor({ r: 1, g: 0.8, b: 0.2, a: 1 })
+                  .borderDashed()
+                  .borderDashLength(8)
+                  .borderGapLength(4)
+                  .flex()
+                  .itemsCenter()
+                  .justifyCenter()
+                  .child(text("▢").font("Inter").size(16).color({ r: 1, g: 0.8, b: 0.2, a: 1 }))
               )
           )
       );

@@ -89,6 +89,7 @@ export type {
   TextAlign,
   Cursor,
   ShadowPreset,
+  BorderStyle,
 } from "./styles.ts";
 
 export {
@@ -125,6 +126,8 @@ export type {
   ImagePrimitive,
   PathPrimitive,
   PathVertex,
+  UnderlinePrimitive,
+  UnderlineStyle,
   SceneLayer,
 } from "./scene.ts";
 
@@ -255,6 +258,9 @@ export { ShadowPipeline } from "./shadow.ts";
 export type { PathCommand, TessellatedPath } from "./path.ts";
 
 export { PathBuilder, PathPipeline, path } from "./path.ts";
+
+// Underline rendering
+export { UnderlinePipeline } from "./underline.ts";
 
 // Buffer utilities
 export {

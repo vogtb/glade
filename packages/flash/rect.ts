@@ -24,9 +24,9 @@ struct RectInstance {
   @location(0) pos_size: vec4<f32>,       // x, y, width, height
   @location(1) color: vec4<f32>,           // rgba (premultiplied)
   @location(2) border_color: vec4<f32>,    // rgba (premultiplied)
-  @location(3) corner_border: vec4<f32>,   // corner_radius, border_width, z_index, 0
+  @location(3) corner_border: vec4<f32>,   // corner_radius, border_width, z_index, is_dashed
   @location(4) clip_bounds: vec4<f32>,     // clip_x, clip_y, clip_width, clip_height
-  @location(5) clip_params: vec4<f32>,     // clip_corner_radius, has_clip, 0, 0
+  @location(5) clip_params: vec4<f32>,     // clip_corner_radius, has_clip, dash_length, gap_length
   @location(6) transform_ab: vec4<f32>,    // a, b, tx, has_transform
   @location(7) transform_cd: vec4<f32>,    // c, d, ty, 0
 }
@@ -42,6 +42,8 @@ struct VertexOutput {
   @location(6) @interpolate(flat) clip_bounds: vec4<f32>,  // in framebuffer coords
   @location(7) @interpolate(flat) clip_corner_radius: f32,
   @location(8) @interpolate(flat) has_clip: f32,
+  @location(9) @interpolate(flat) is_dashed: f32,
+  @location(10) @interpolate(flat) dash_params: vec2<f32>, // dash_length, gap_length
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -128,6 +130,11 @@ fn vs_main(
   );
   out.clip_corner_radius = instance.clip_params.x * uniforms.scale;
   out.has_clip = instance.clip_params.y;
+  out.is_dashed = instance.corner_border.w;
+  out.dash_params = vec2<f32>(
+    instance.clip_params.z * uniforms.scale,
+    instance.clip_params.w * uniforms.scale
+  );
 
   return out;
 }
@@ -211,7 +218,58 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let inner_radius = max(0.0, sdf_radius - in.border_width);
     let inner_dist = quad_sdf(local_pos, inner_half_size, inner_radius);
     let border_alpha = smoothstep(-0.5, 0.5, inner_dist);
-    final_color = mix(in.color, in.border_color, border_alpha);
+    
+    // Handle dashed borders
+    if in.is_dashed > 0.5 && border_alpha > 0.0 {
+      // Calculate position along the border perimeter
+      let dash_length = in.dash_params.x;
+      let gap_length = in.dash_params.y;
+      let cycle_length = dash_length + gap_length;
+      
+      // Calculate perimeter position based on which edge we're on
+      // Use the point relative to rect center to determine edge and position
+      var perimeter_pos: f32 = 0.0;
+      let abs_local = abs(local_pos);
+      let half_w = half_size.x;
+      let half_h = half_size.y;
+      
+      // Determine which edge we're on and compute perimeter position
+      // Start from top-left corner, go clockwise
+      if abs_local.y > abs_local.x * (half_h / half_w) {
+        // Top or bottom edge
+        if local_pos.y < 0.0 {
+          // Top edge: position from left to right
+          perimeter_pos = half_w + local_pos.x;
+        } else {
+          // Bottom edge: position from right to left
+          perimeter_pos = half_w * 2.0 + half_h * 2.0 + (half_w - local_pos.x);
+        }
+      } else {
+        // Left or right edge
+        if local_pos.x > 0.0 {
+          // Right edge: position from top to bottom
+          perimeter_pos = half_w * 2.0 + half_h + local_pos.y;
+        } else {
+          // Left edge: position from bottom to top
+          perimeter_pos = half_w * 2.0 + half_h * 2.0 + half_w * 2.0 + (half_h - local_pos.y);
+        }
+      }
+      
+      // Apply dash pattern
+      let pos_in_cycle = perimeter_pos % cycle_length;
+      let is_in_gap = pos_in_cycle > dash_length;
+      
+      if is_in_gap {
+        // In gap - don't show border
+        final_color = in.color;
+      } else {
+        // In dash - show border
+        final_color = mix(in.color, in.border_color, border_alpha);
+      }
+    } else {
+      // Solid border
+      final_color = mix(in.color, in.border_color, border_alpha);
+    }
   }
 
   return final_color * alpha;
@@ -223,9 +281,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
  * - pos_size: 4 floats (x, y, width, height)
  * - color: 4 floats (r, g, b, a)
  * - border_color: 4 floats (r, g, b, a)
- * - corner_border: 4 floats (corner_radius, border_width, z_index, 0)
+ * - corner_border: 4 floats (corner_radius, border_width, z_index, is_dashed)
  * - clip_bounds: 4 floats (x, y, width, height)
- * - clip_params: 4 floats (corner_radius, has_clip, 0, 0)
+ * - clip_params: 4 floats (corner_radius, has_clip, dash_length, gap_length)
  * - transform_ab: 4 floats (a, b, tx, has_transform)
  * - transform_cd: 4 floats (c, d, ty, 0)
  */
@@ -355,11 +413,11 @@ export class RectPipeline {
       this.instanceData[offset + 10] = rect.borderColor.b * ba;
       this.instanceData[offset + 11] = ba;
 
-      // corner_border (corner_radius, border_width, z_index, 0)
+      // corner_border (corner_radius, border_width, z_index, is_dashed)
       this.instanceData[offset + 12] = rect.cornerRadius;
       this.instanceData[offset + 13] = rect.borderWidth;
       this.instanceData[offset + 14] = i; // z_index = instance order (later = on top)
-      this.instanceData[offset + 15] = 0;
+      this.instanceData[offset + 15] = rect.borderDashed ?? 0;
 
       // clip_bounds (x, y, width, height)
       const clip = rect.clipBounds;
@@ -368,11 +426,11 @@ export class RectPipeline {
       this.instanceData[offset + 18] = clip?.width ?? 0;
       this.instanceData[offset + 19] = clip?.height ?? 0;
 
-      // clip_params (corner_radius, has_clip, 0, 0)
+      // clip_params (corner_radius, has_clip, dash_length, gap_length)
       this.instanceData[offset + 20] = clip?.cornerRadius ?? 0;
       this.instanceData[offset + 21] = clip ? 1.0 : 0.0;
-      this.instanceData[offset + 22] = 0;
-      this.instanceData[offset + 23] = 0;
+      this.instanceData[offset + 22] = rect.borderDashLength ?? 6;
+      this.instanceData[offset + 23] = rect.borderGapLength ?? 4;
 
       // transform_ab (a, b, tx, has_transform)
       const transform = rect.transform;

@@ -446,6 +446,22 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     this.styles.borderColor = color;
     return this;
   }
+  borderSolid(): this {
+    this.styles.borderStyle = "solid";
+    return this;
+  }
+  borderDashed(): this {
+    this.styles.borderStyle = "dashed";
+    return this;
+  }
+  borderDashLength(length: number): this {
+    this.styles.borderDashLength = length;
+    return this;
+  }
+  borderGapLength(length: number): this {
+    this.styles.borderGapLength = length;
+    return this;
+  }
 
   // Shadow
   shadow(): this {

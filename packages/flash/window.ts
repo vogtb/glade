@@ -65,6 +65,7 @@ import { RectPipeline } from "./rect.ts";
 import { ShadowPipeline } from "./shadow.ts";
 import { TextSystem, TextPipeline } from "./text.ts";
 import { PathPipeline } from "./path.ts";
+import { UnderlinePipeline } from "./underline.ts";
 
 /**
  * Options for creating a window.
@@ -213,6 +214,14 @@ export class FlashWindow {
       this.renderer.getUniformBindGroupLayout()
     );
     this.renderer.setPathPipeline(pathPipeline);
+
+    // Initialize underline pipeline
+    const underlinePipeline = new UnderlinePipeline(
+      device,
+      format,
+      this.renderer.getUniformBindGroupLayout()
+    );
+    this.renderer.setUnderlinePipeline(underlinePipeline);
 
     this.setupEventListeners();
   }
@@ -970,6 +979,9 @@ export class FlashWindow {
           cornerRadius: styles.borderRadius ?? 0,
           borderWidth: styles.borderWidth,
           borderColor: styles.borderColor,
+          borderDashed: styles.borderStyle === "dashed" ? 1 : 0,
+          borderDashLength: styles.borderDashLength,
+          borderGapLength: styles.borderGapLength,
         });
       },
 
@@ -998,6 +1010,27 @@ export class FlashWindow {
       paintPath: (pathBuilder: import("./path.ts").PathBuilder, color: Color): void => {
         const pathPrimitive = pathBuilder.build(color);
         scene.addPath(pathPrimitive);
+      },
+
+      paintUnderline: (
+        x: number,
+        y: number,
+        width: number,
+        thickness: number,
+        color: Color,
+        style: "solid" | "wavy",
+        options?: { wavelength?: number; amplitude?: number }
+      ): void => {
+        scene.addUnderline({
+          x,
+          y,
+          width,
+          thickness,
+          color,
+          style,
+          wavelength: options?.wavelength,
+          amplitude: options?.amplitude,
+        });
       },
 
       getPersistentState: <T = unknown>(): T | undefined => {

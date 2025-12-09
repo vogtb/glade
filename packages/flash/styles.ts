@@ -70,6 +70,11 @@ export type TextAlign = "left" | "center" | "right" | "justify";
 export type Cursor = "default" | "pointer" | "text" | "grab" | "grabbing" | "not-allowed" | "move";
 
 /**
+ * Border style.
+ */
+export type BorderStyle = "solid" | "dashed";
+
+/**
  * Complete style definition for a Flash element.
  */
 export interface Styles {
@@ -123,6 +128,11 @@ export interface Styles {
   borderRadius?: number;
   borderWidth?: number;
   borderColor?: Color;
+  borderStyle?: BorderStyle;
+  /** Dash length for dashed borders. Default is 6. */
+  borderDashLength?: number;
+  /** Gap length between dashes. Default is 4. */
+  borderGapLength?: number;
   shadow?: ShadowPreset;
   opacity?: number;
 
