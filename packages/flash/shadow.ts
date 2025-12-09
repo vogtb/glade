@@ -195,7 +195,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     discard;
   }
 
-  return vec4<f32>(in.color.rgb, in.color.a * alpha);
+  // in.color is already premultiplied (rgb * a), so we need to scale
+  // both RGB and A by the shadow alpha for correct blending
+  return vec4<f32>(in.color.rgb * alpha, in.color.a * alpha);
 }
 `;
 
@@ -284,7 +286,7 @@ export class ShadowPipeline {
       },
       depthStencil: {
         format: "depth24plus",
-        depthWriteEnabled: true,
+        depthWriteEnabled: false, // Shadows are transparent - don't write to depth buffer
         depthCompare: "less",
       },
     });
