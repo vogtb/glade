@@ -146,15 +146,9 @@ export interface PrepaintContext {
   insertHitbox(bounds: Bounds, behavior?: HitboxBehavior, cursor?: Cursor): Hitbox;
 
   /**
-   * Push a hitbox onto a group stack.
-   * Use for group hover effects.
+   * Add a hitbox to a group for coordinated hover/active effects.
    */
-  pushGroupHitbox(groupName: string, hitboxId: HitboxId): void;
-
-  /**
-   * Pop a hitbox from a group stack.
-   */
-  popGroupHitbox(groupName: string): void;
+  addGroupHitbox(groupName: string, hitboxId: HitboxId): void;
 
   /**
    * Register a drop target for drag and drop.
@@ -321,6 +315,11 @@ export interface PaintContext {
    * Check if a group is hovered.
    */
   isGroupHovered(groupName: string): boolean;
+
+  /**
+   * Check if a group is active (hovered with mouse down).
+   */
+  isGroupActive(groupName: string): boolean;
 
   /**
    * Check if there's an active drag operation.

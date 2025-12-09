@@ -279,6 +279,36 @@ function hoverButton(label: string, color: number, hoverColor: number): FlashDiv
 }
 
 /**
+ * Helper to create a button that participates in a group hover/active.
+ * All buttons in the same group will react when any one is hovered or pressed.
+ */
+function groupButton(
+  label: string,
+  groupName: string,
+  baseColor: number,
+  hoverColor: number,
+  activeColor: number
+): FlashDiv {
+  return div()
+    .w(80)
+    .h(44)
+    .bg(rgb(baseColor))
+    .rounded(8)
+    .border(2)
+    .borderColor({ r: 0.4, g: 0.4, b: 0.5, a: 1 })
+    .cursorPointer()
+    .group(groupName)
+    .groupHover(groupName, (s) => s.bg(rgb(hoverColor)).borderColor(rgb(0x6366f1)))
+    .groupActive(groupName, (s) => s.bg(rgb(activeColor)).borderColor(rgb(0xa5b4fc)))
+    .hover((s) => s.bg(rgb(hoverColor)).borderColor(rgb(0x818cf8)).shadow("md"))
+    .active((s) => s.bg(rgb(activeColor)).borderColor(rgb(0xc7d2fe)))
+    .flex()
+    .itemsCenter()
+    .justifyCenter()
+    .child(text(label).font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 }));
+}
+
+/**
  * Main demo view - the root view of the application.
  */
 class DemoRootView implements FlashView {
@@ -441,6 +471,51 @@ class DemoRootView implements FlashView {
                   wavelength: 6,
                   amplitude: 2,
                 })
+              ),
+
+            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+            // Group Styles Demo section
+            div()
+              .flexShrink0()
+              .child(
+                text("Group Styles").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("Coordinated hover and active effects across related elements")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
+
+            // Group A - three buttons that highlight together
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(12)
+              .itemsCenter()
+              .children_(
+                text("Group A:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                groupButton("One", "group-a", 0x3730a3, 0x4338ca, 0x6366f1),
+                groupButton("Two", "group-a", 0x3730a3, 0x4338ca, 0x6366f1),
+                groupButton("Three", "group-a", 0x3730a3, 0x4338ca, 0x6366f1)
+              ),
+
+            // Group B - different colored group
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(12)
+              .itemsCenter()
+              .children_(
+                text("Group B:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                groupButton("Alpha", "group-b", 0x166534, 0x15803d, 0x22c55e),
+                groupButton("Beta", "group-b", 0x166534, 0x15803d, 0x22c55e),
+                groupButton("Gamma", "group-b", 0x166534, 0x15803d, 0x22c55e)
               ),
 
             div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),

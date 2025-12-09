@@ -924,12 +924,23 @@ function buildHitboxDemo(
       ctx.mouseY >= groupY &&
       ctx.mouseY < groupY + buttonHeight;
 
-    // Group hover: all buttons get subtle highlight when any is hovered
+    // Group hover/active: all buttons get subtle highlight when any is hovered/clicked
     // Individual hover: the specific button gets stronger highlight
+    const isAnyActive = isAnyHovered && ctx.mouseDown;
+    const isThisActive = isThisHovered && ctx.mouseDown;
+
     let buttonColor: Color;
     let borderColor: Color;
 
-    if (isThisHovered) {
+    if (isThisActive) {
+      // Direct active (mouse down) - brightest
+      buttonColor = rgb(0x818cf8);
+      borderColor = rgb(0xc7d2fe);
+    } else if (isAnyActive) {
+      // Group active - medium bright
+      buttonColor = rgb(0x6366f1);
+      borderColor = rgb(0xa5b4fc);
+    } else if (isThisHovered) {
       // Direct hover - bright highlight
       buttonColor = rgb(0x6366f1);
       borderColor = rgb(0xa5b4fc);
@@ -943,28 +954,34 @@ function buildHitboxDemo(
       borderColor = { r: 0.3, g: 0.3, b: 0.5, a: 1 };
     }
 
-    // Create button using div() with group hover styling
+    // Create button using div() with group hover/active styling
     // Note: This demo shows the visual effect manually since renderDiv doesn't
     // use the full FlashApp framework with hitbox tracking
+    // In the full framework, you would use:
+    //   .group("button-group")
+    //   .groupHover("button-group", s => s.bg(rgb(0x4338ca)))
+    //   .groupActive("button-group", s => s.bg(rgb(0x6366f1)))
     const button = div()
       .bg(buttonColor)
       .rounded(8)
       .border(2)
       .borderColor(borderColor)
       .group("button-group")
-      .groupHover("button-group", (s) => s.bg(rgb(0x4338ca)).borderColor(rgb(0x6366f1)));
+      .groupHover("button-group", (s) => s.bg(rgb(0x4338ca)).borderColor(rgb(0x6366f1)))
+      .groupActive("button-group", (s) => s.bg(rgb(0x6366f1)).borderColor(rgb(0xa5b4fc)));
 
     renderDiv(button, { x: btnX, y: groupY, width: buttonWidth, height: buttonHeight }, ctx);
 
-    // Inner label indicator
+    // Inner label indicator - brighter when active, medium when hovered
     const labelWidth = buttonWidth - 16;
     const labelHeight = 8;
+    const labelAlpha = isThisActive ? 0.7 : isThisHovered ? 0.5 : isAnyActive ? 0.4 : 0.2;
     scene.addRect({
       x: btnX + 8,
       y: groupY + (buttonHeight - labelHeight) / 2,
       width: labelWidth,
       height: labelHeight,
-      color: { r: 1, g: 1, b: 1, a: isThisHovered ? 0.5 : 0.2 },
+      color: { r: 1, g: 1, b: 1, a: labelAlpha },
       cornerRadius: 4,
       borderWidth: 0,
       borderColor: { r: 0, g: 0, b: 0, a: 0 },

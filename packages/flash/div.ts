@@ -70,6 +70,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private focusedStyles: Partial<Styles> | null = null;
   private dragOverStyles: Partial<Styles> | null = null;
   private groupHoverStylesMap: Map<string, Partial<Styles>> = new Map();
+  private groupActiveStylesMap: Map<string, Partial<Styles>> = new Map();
   private handlers: EventHandlers = {};
   private focusHandleRef: FocusHandle | null = null;
   private scrollHandleRef: ScrollHandle | null = null;
@@ -760,6 +761,15 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  /**
+   * Apply styles when any element in the named group is active (mouse down).
+   * Use for coordinated active effects across multiple elements.
+   */
+  groupActive(groupName: string, f: (s: StyleBuilder) => StyleBuilder): this {
+    this.groupActiveStylesMap.set(groupName, f(new StyleBuilder()).build());
+    return this;
+  }
+
   // ============ Three-Phase Lifecycle ============
 
   /**
@@ -825,7 +835,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
     // Register with group if this element is in a group
     if (this.groupNameValue) {
-      cx.pushGroupHitbox(this.groupNameValue, hitbox.id);
+      cx.addGroupHitbox(this.groupNameValue, hitbox.id);
     }
 
     // Get our original layout bounds and compute the delta from the passed bounds.
@@ -902,11 +912,6 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       );
     }
 
-    // Pop group after children are processed
-    if (this.groupNameValue) {
-      cx.popGroupHitbox(this.groupNameValue);
-    }
-
     // Build hit test node with scroll-adjusted child bounds
     const childHitTestNodes: HitTestNode[] = [];
     for (let i = this.children.length - 1; i >= 0; i--) {
@@ -952,6 +957,13 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     // Apply group hover styles
     for (const [groupName, groupStyles] of this.groupHoverStylesMap) {
       if (cx.isGroupHovered(groupName)) {
+        effectiveStyles = { ...effectiveStyles, ...groupStyles };
+      }
+    }
+
+    // Apply group active styles
+    for (const [groupName, groupStyles] of this.groupActiveStylesMap) {
+      if (cx.isGroupActive(groupName)) {
         effectiveStyles = { ...effectiveStyles, ...groupStyles };
       }
     }

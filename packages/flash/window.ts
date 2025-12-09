@@ -428,33 +428,37 @@ export class FlashWindow {
   }
 
   /**
-   * Push a group hitbox.
+   * Add a hitbox to a group.
    */
-  pushGroupHitbox(groupName: string, hitboxId: HitboxId): void {
-    this.groupHitboxes.push(groupName, hitboxId);
+  addGroupHitbox(groupName: string, hitboxId: HitboxId): void {
+    this.groupHitboxes.add(groupName, hitboxId);
   }
 
   /**
-   * Pop a group hitbox.
-   */
-  popGroupHitbox(groupName: string): void {
-    this.groupHitboxes.pop(groupName);
-  }
-
-  /**
-   * Get the topmost hitbox ID for a group.
-   */
-  getGroupHitbox(groupName: string): HitboxId | null {
-    return this.groupHitboxes.get(groupName);
-  }
-
-  /**
-   * Check if a group is hovered.
+   * Check if a group is hovered (any hitbox in the group is hovered).
    */
   isGroupHovered(groupName: string): boolean {
-    const hitboxId = this.groupHitboxes.get(groupName);
-    if (hitboxId === null) return false;
-    return isHitboxHovered(this.mouseHitTest, hitboxId);
+    const hitboxIds = this.groupHitboxes.getAll(groupName);
+    for (const hitboxId of hitboxIds) {
+      if (isHitboxHovered(this.mouseHitTest, hitboxId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Check if a group is active (any hitbox in the group is hovered with mouse down).
+   */
+  isGroupActive(groupName: string): boolean {
+    if (!this.mouseDown) return false;
+    const hitboxIds = this.groupHitboxes.getAll(groupName);
+    for (const hitboxId of hitboxIds) {
+      if (isHitboxHovered(this.mouseHitTest, hitboxId)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -855,8 +859,7 @@ export class FlashWindow {
     const elementState = this.elementState;
     const createPrepaintContext = this.createPrepaintContext.bind(this);
     const insertHitboxFn = this.insertHitbox.bind(this);
-    const pushGroupHitboxFn = this.pushGroupHitbox.bind(this);
-    const popGroupHitboxFn = this.popGroupHitbox.bind(this);
+    const addGroupHitboxFn = this.addGroupHitbox.bind(this);
     const registerDropTargetFn = this.registerDropTarget.bind(this);
     const registerTooltipFn = this.registerTooltip.bind(this);
 
@@ -887,12 +890,8 @@ export class FlashWindow {
         return insertHitboxFn(bounds, behavior ?? HitboxBehavior.Normal, cursor);
       },
 
-      pushGroupHitbox: (groupName: string, hitboxId: HitboxId): void => {
-        pushGroupHitboxFn(groupName, hitboxId);
-      },
-
-      popGroupHitbox: (groupName: string): void => {
-        popGroupHitboxFn(groupName);
+      addGroupHitbox: (groupName: string, hitboxId: HitboxId): void => {
+        addGroupHitboxFn(groupName, hitboxId);
       },
 
       registerDropTarget: (hitboxId: HitboxId, canDrop: boolean): void => {
@@ -1129,6 +1128,10 @@ export class FlashWindow {
 
       isGroupHovered: (groupName: string): boolean => {
         return this.isGroupHovered(groupName);
+      },
+
+      isGroupActive: (groupName: string): boolean => {
+        return this.isGroupActive(groupName);
       },
 
       isDragging: (): boolean => {

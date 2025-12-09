@@ -215,46 +215,32 @@ export function shouldHitboxHandleScroll(hitTest: HitTest, id: HitboxId): boolea
 
 /**
  * Group hitbox tracking for group hover effects.
- * Maps group names to stacks of hitbox IDs.
+ * Collects all hitboxes per group for the frame.
  */
 export class GroupHitboxes {
   private groups = new Map<string, HitboxId[]>();
 
   /**
-   * Get the topmost hitbox ID for a group.
+   * Get all hitbox IDs for a group.
    */
-  get(groupName: string): HitboxId | null {
-    const stack = this.groups.get(groupName);
-    if (!stack || stack.length === 0) {
-      return null;
-    }
-    return stack[stack.length - 1]!;
+  getAll(groupName: string): readonly HitboxId[] {
+    return this.groups.get(groupName) ?? [];
   }
 
   /**
-   * Push a hitbox ID onto a group's stack.
+   * Add a hitbox ID to a group.
    */
-  push(groupName: string, hitboxId: HitboxId): void {
-    let stack = this.groups.get(groupName);
-    if (!stack) {
-      stack = [];
-      this.groups.set(groupName, stack);
+  add(groupName: string, hitboxId: HitboxId): void {
+    let hitboxes = this.groups.get(groupName);
+    if (!hitboxes) {
+      hitboxes = [];
+      this.groups.set(groupName, hitboxes);
     }
-    stack.push(hitboxId);
+    hitboxes.push(hitboxId);
   }
 
   /**
-   * Pop a hitbox ID from a group's stack.
-   */
-  pop(groupName: string): void {
-    const stack = this.groups.get(groupName);
-    if (stack && stack.length > 0) {
-      stack.pop();
-    }
-  }
-
-  /**
-   * Clear all groups.
+   * Clear all groups (called at frame start).
    */
   clear(): void {
     this.groups.clear();
