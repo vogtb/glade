@@ -14,7 +14,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color, TransformationMatrix, ScrollOffset } from "./types.ts";
+import type { Bounds, Color, TransformationMatrix } from "./types.ts";
 import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
 import { overflowClipsContent } from "./styles.ts";
 import type { LayoutId } from "./layout.ts";
@@ -41,6 +41,7 @@ import { HitboxBehavior } from "./hitbox.ts";
  * Contains child layout IDs and element IDs for recursive processing.
  */
 interface DivRequestLayoutState {
+  layoutId: LayoutId;
   childLayoutIds: LayoutId[];
   childElementIds: GlobalElementId[];
   childRequestStates: unknown[];
@@ -54,6 +55,7 @@ interface DivPrepaintState {
   childLayoutIds: LayoutId[];
   childElementIds: GlobalElementId[];
   childPrepaintStates: unknown[];
+  childBounds: Bounds[];
   hitbox: Hitbox | null;
 }
 
@@ -765,6 +767,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return {
       layoutId,
       requestState: {
+        layoutId,
         childLayoutIds,
         childElementIds,
         childRequestStates,
@@ -781,7 +784,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     bounds: Bounds,
     requestState: DivRequestLayoutState
   ): DivPrepaintState {
-    const { childLayoutIds, childElementIds, childRequestStates } = requestState;
+    const { layoutId, childLayoutIds, childElementIds, childRequestStates } = requestState;
 
     // Create hitbox for this element (pass cursor for platform cursor updates)
     const hitbox = cx.insertHitbox(bounds, this.hitboxBehaviorValue, this.styles.cursor);
@@ -802,8 +805,15 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       cx.pushGroupHitbox(this.groupNameValue, hitbox.id);
     }
 
-    const childBounds = cx.getChildLayouts(bounds, childLayoutIds);
+    // Get our original layout bounds and compute the delta from the passed bounds.
+    // This delta accounts for scroll offsets from ancestor scroll containers.
+    const originalBounds = cx.getBounds(layoutId);
+    const deltaX = bounds.x - originalBounds.x;
+    const deltaY = bounds.y - originalBounds.y;
+
+    const layoutChildBounds = cx.getChildLayouts(bounds, childLayoutIds);
     const childPrepaintStates: unknown[] = [];
+    const adjustedChildBounds: Bounds[] = [];
 
     // Get scroll offset if this is a scroll container
     const scrollOffset = this.scrollHandleRef ? cx.getScrollOffset(this.scrollHandleRef) : null;
@@ -811,10 +821,18 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i]!;
       const childId = childElementIds[i]!;
-      let childBound = childBounds[i]!;
+      let childBound = layoutChildBounds[i]!;
       const childRequestState = childRequestStates[i];
 
-      // Apply scroll offset to child bounds for hitbox positioning
+      // Apply the delta from ancestor scroll to propagate scroll offset to children
+      childBound = {
+        x: childBound.x + deltaX,
+        y: childBound.y + deltaY,
+        width: childBound.width,
+        height: childBound.height,
+      };
+
+      // Apply this element's scroll offset to child bounds
       if (scrollOffset) {
         childBound = {
           x: childBound.x - scrollOffset.x,
@@ -823,6 +841,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
           height: childBound.height,
         };
       }
+
+      adjustedChildBounds.push(childBound);
 
       const childCx = cx.withElementId(childId);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -834,12 +854,12 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       childPrepaintStates.push(prepaintState);
     }
 
-    // If this is a scroll container, compute content size from children
-    if (this.scrollHandleRef && childBounds.length > 0) {
+    // If this is a scroll container, compute content size from children (using original layout bounds)
+    if (this.scrollHandleRef && layoutChildBounds.length > 0) {
       let contentWidth = 0;
       let contentHeight = 0;
 
-      for (const childBound of childBounds) {
+      for (const childBound of layoutChildBounds) {
         const childRight = childBound.x - bounds.x + childBound.width;
         const childBottom = childBound.y - bounds.y + childBound.height;
         contentWidth = Math.max(contentWidth, childRight);
@@ -868,6 +888,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       childLayoutIds,
       childElementIds,
       childPrepaintStates,
+      childBounds: adjustedChildBounds,
       hitbox,
     };
   }
@@ -876,7 +897,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
    * Phase 3: Paint - emit GPU primitives.
    */
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DivPrepaintState): void {
-    const { childLayoutIds, childElementIds, childPrepaintStates, hitbox } = prepaintState;
+    const { childElementIds, childPrepaintStates, childBounds, hitbox } = prepaintState;
 
     // Use hitbox for hover/active detection (with occlusion support)
     const isHovered = hitbox ? cx.isHitboxHovered(hitbox) : false;
@@ -920,35 +941,17 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       cx.paintBorder(bounds, effectiveStyles);
     }
 
-    const childBounds = cx.getChildLayouts(bounds, childLayoutIds);
-
-    // Determine if we need to apply scroll and/or clipping
+    // Use child bounds from prepaint (already adjusted for scroll)
+    // Determine if we need to apply clipping
     const shouldClip = overflowClipsContent(effectiveStyles.overflow);
-    const isScrollContainer = this.scrollHandleRef != null;
 
-    // Get scroll offset if this is a scroll container
-    let scrollOffset: ScrollOffset | null = null;
-    if (isScrollContainer && this.scrollHandleRef) {
-      scrollOffset = cx.getScrollOffset(this.scrollHandleRef);
-    }
-
-    // Paint children with optional clipping and scroll transform
+    // Paint children with optional clipping
     const paintChildren = () => {
       for (let i = 0; i < this.children.length; i++) {
         const child = this.children[i]!;
         const childId = childElementIds[i]!;
-        let childBound = childBounds[i]!;
+        const childBound = childBounds[i]!;
         const childPrepaintState = childPrepaintStates[i];
-
-        // Apply scroll offset to child bounds
-        if (scrollOffset) {
-          childBound = {
-            x: childBound.x - scrollOffset.x,
-            y: childBound.y - scrollOffset.y,
-            width: childBound.width,
-            height: childBound.height,
-          };
-        }
 
         const childCx = cx.withElementId(childId);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
