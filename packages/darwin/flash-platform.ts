@@ -34,21 +34,12 @@ class DarwinFlashPlatform implements FlashPlatform {
     return this.ctx.format;
   }
 
-  createRenderTarget(options: {
+  createRenderTarget(_options: {
     width: number;
     height: number;
     title?: string;
   }): FlashRenderTarget {
-    const ctx = this.ctx;
-    const ctxAny = ctx as {
-      windowWidth?: number;
-      windowHeight?: number;
-    };
-    const width = ctxAny.windowWidth ?? options.width;
-    const height = ctxAny.windowHeight ?? options.height;
-    const dpr = ctx.width / width;
-
-    return new DarwinRenderTarget(ctx, width, height, dpr);
+    return new DarwinRenderTarget(this.ctx);
   }
 
   now(): number {
@@ -79,31 +70,38 @@ class DarwinFlashPlatform implements FlashPlatform {
 }
 
 /**
+ * Extended context type with window dimensions.
+ */
+interface DarwinWebGPUContextExt extends WebGPUContext {
+  windowWidth?: number;
+  windowHeight?: number;
+}
+
+/**
  * Render target for Darwin/GLFW.
  */
 class DarwinRenderTarget implements FlashRenderTarget {
-  private ctx: WebGPUContext;
-  private _width: number;
-  private _height: number;
-  private _dpr: number;
+  private ctx: DarwinWebGPUContextExt;
 
-  constructor(ctx: WebGPUContext, width: number, height: number, dpr: number) {
-    this.ctx = ctx;
-    this._width = width;
-    this._height = height;
-    this._dpr = dpr;
+  constructor(ctx: WebGPUContext) {
+    this.ctx = ctx as DarwinWebGPUContextExt;
   }
 
   get width(): number {
-    return this._width;
+    // Use window dimensions if available, else fall back to framebuffer / dpr
+    return this.ctx.windowWidth ?? this.ctx.width / this.devicePixelRatio;
   }
 
   get height(): number {
-    return this._height;
+    return this.ctx.windowHeight ?? this.ctx.height / this.devicePixelRatio;
   }
 
   get devicePixelRatio(): number {
-    return this._dpr;
+    // Compute DPR from framebuffer size vs window size
+    if (this.ctx.windowWidth && this.ctx.windowWidth > 0) {
+      return this.ctx.width / this.ctx.windowWidth;
+    }
+    return 1;
   }
 
   configure(_device: GPUDevice, _format: GPUTextureFormat): void {
@@ -121,9 +119,8 @@ class DarwinRenderTarget implements FlashRenderTarget {
     }
   }
 
-  resize(width: number, height: number): void {
-    this._width = width;
-    this._height = height;
+  resize(_width: number, _height: number): void {
+    // Dimensions are queried dynamically from ctx
   }
 
   destroy(): void {
@@ -245,6 +242,14 @@ class DarwinRenderTarget implements FlashRenderTarget {
 
   setCursor(style: CursorStyle): void {
     this.ctx.setCursor(style);
+  }
+
+  onResize(callback: (width: number, height: number) => void): () => void {
+    return this.ctx.onResize((event) => {
+      // onResize gives framebuffer size, convert to logical
+      const dpr = this.devicePixelRatio;
+      callback(event.width / dpr, event.height / dpr);
+    });
   }
 }
 

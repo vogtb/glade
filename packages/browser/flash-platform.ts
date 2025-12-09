@@ -32,21 +32,12 @@ class BrowserFlashPlatform implements FlashPlatform {
     return this.ctx.format;
   }
 
-  createRenderTarget(options: {
+  createRenderTarget(_options: {
     width: number;
     height: number;
     title?: string;
   }): FlashRenderTarget {
-    const ctx = this.ctx;
-    const ctxAny = ctx as {
-      windowWidth?: number;
-      windowHeight?: number;
-    };
-    const width = ctxAny.windowWidth ?? options.width;
-    const height = ctxAny.windowHeight ?? options.height;
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio : 1;
-
-    return new BrowserRenderTarget(ctx, width, height, dpr);
+    return new BrowserRenderTarget(this.ctx);
   }
 
   now(): number {
@@ -63,31 +54,39 @@ class BrowserFlashPlatform implements FlashPlatform {
 }
 
 /**
+ * Extended context type with canvas element.
+ */
+interface BrowserWebGPUContextExt extends WebGPUContext {
+  canvas?: HTMLCanvasElement;
+}
+
+/**
  * Render target for Browser.
  */
 class BrowserRenderTarget implements FlashRenderTarget {
-  private ctx: WebGPUContext;
-  private _width: number;
-  private _height: number;
-  private _dpr: number;
+  private ctx: BrowserWebGPUContextExt;
 
-  constructor(ctx: WebGPUContext, width: number, height: number, dpr: number) {
-    this.ctx = ctx;
-    this._width = width;
-    this._height = height;
-    this._dpr = dpr;
+  constructor(ctx: WebGPUContext) {
+    this.ctx = ctx as BrowserWebGPUContextExt;
   }
 
   get width(): number {
-    return this._width;
+    // Use canvas clientWidth if available, else framebuffer / dpr
+    if (this.ctx.canvas) {
+      return this.ctx.canvas.clientWidth;
+    }
+    return this.ctx.width / this.devicePixelRatio;
   }
 
   get height(): number {
-    return this._height;
+    if (this.ctx.canvas) {
+      return this.ctx.canvas.clientHeight;
+    }
+    return this.ctx.height / this.devicePixelRatio;
   }
 
   get devicePixelRatio(): number {
-    return this._dpr;
+    return typeof window !== "undefined" ? window.devicePixelRatio : 1;
   }
 
   configure(_device: GPUDevice, _format: GPUTextureFormat): void {
@@ -102,9 +101,8 @@ class BrowserRenderTarget implements FlashRenderTarget {
     // Browser handles presentation automatically
   }
 
-  resize(width: number, height: number): void {
-    this._width = width;
-    this._height = height;
+  resize(_width: number, _height: number): void {
+    // Dimensions are queried dynamically from canvas/ctx
   }
 
   destroy(): void {
@@ -225,6 +223,14 @@ class BrowserRenderTarget implements FlashRenderTarget {
 
   setCursor(style: CursorStyle): void {
     this.ctx.setCursor(style);
+  }
+
+  onResize(callback: (width: number, height: number) => void): () => void {
+    return this.ctx.onResize((event) => {
+      // onResize gives framebuffer size, convert to logical
+      const dpr = this.devicePixelRatio;
+      callback(event.width / dpr, event.height / dpr);
+    });
   }
 }
 

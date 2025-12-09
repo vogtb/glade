@@ -117,6 +117,7 @@ export interface FlashRenderTarget {
   onScroll?(
     callback: (x: number, y: number, deltaX: number, deltaY: number, mods: Modifiers) => void
   ): () => void;
+  onResize?(callback: (width: number, height: number) => void): () => void;
 
   setCursor?(style: CursorStyle): void;
 }
@@ -175,7 +176,8 @@ export class FlashWindow {
   ) {
     this.scene = new FlashScene();
     this.layoutEngine = new FlashLayoutEngine();
-    this.layoutEngine.setScaleFactor(renderTarget.devicePixelRatio);
+    // Layout engine works in logical coordinates, no scaling needed
+    this.layoutEngine.setScaleFactor(1);
     this.renderTarget.configure(device, format);
 
     // Initialize renderer with pipelines
@@ -481,7 +483,7 @@ export class FlashWindow {
 
     this.scene.clear();
     this.layoutEngine.clear();
-    this.layoutEngine.setScaleFactor(this.renderTarget.devicePixelRatio);
+    this.layoutEngine.setScaleFactor(1);
 
     const view = this.readView(this.rootView);
     const cx = createViewContext(this.rootView.id, this.id, this);
@@ -716,6 +718,14 @@ export class FlashWindow {
         const event: FlashScrollEvent = { x, y, deltaX, deltaY, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
         dispatchScrollEvent(event, path, this, this.getContext());
+      });
+      this.eventCleanups.push(cleanup);
+    }
+
+    if (target.onResize) {
+      const cleanup = target.onResize((_width, _height) => {
+        // Mark window dirty to trigger re-render with new dimensions
+        this.getContext().markWindowDirty(this.id);
       });
       this.eventCleanups.push(cleanup);
     }
