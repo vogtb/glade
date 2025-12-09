@@ -99,6 +99,27 @@ export interface ImagePrimitive {
 }
 
 /**
+ * A vertex in a path for GPU rendering.
+ */
+export interface PathVertex {
+  x: number;
+  y: number;
+}
+
+/**
+ * Path primitive for vector rendering.
+ * Paths are tessellated into triangles for GPU rendering.
+ */
+export interface PathPrimitive {
+  vertices: PathVertex[];
+  indices: number[];
+  color: Color;
+  bounds: Bounds;
+  clipBounds?: ClipBounds;
+  transform?: TransformationMatrix;
+}
+
+/**
  * A scene layer containing primitives at the same z-level.
  */
 export interface SceneLayer {
@@ -106,6 +127,7 @@ export interface SceneLayer {
   rects: RectPrimitive[];
   glyphs: GlyphPrimitive[];
   images: ImagePrimitive[];
+  paths: PathPrimitive[];
 }
 
 /**
@@ -225,6 +247,7 @@ export class FlashScene {
       rects: [],
       glyphs: [],
       images: [],
+      paths: [],
     });
     this.currentLayerIndex = this.layers.length - 1;
   }
@@ -309,6 +332,29 @@ export class FlashScene {
   }
 
   /**
+   * Add a path to the current layer.
+   */
+  addPath(path: PathPrimitive): void {
+    if (this.isClippedOut(path.bounds)) {
+      return;
+    }
+    const clipBounds = this.getCurrentClipBounds();
+    const transform = this.getCurrentTransform();
+    const hasTransform =
+      transform.a !== 1 ||
+      transform.b !== 0 ||
+      transform.c !== 0 ||
+      transform.d !== 1 ||
+      transform.tx !== 0 ||
+      transform.ty !== 0;
+    this.currentLayer.paths.push({
+      ...path,
+      clipBounds,
+      transform: hasTransform ? transform : undefined,
+    });
+  }
+
+  /**
    * Clear all layers and reset to initial state.
    */
   clear(): void {
@@ -329,17 +375,26 @@ export class FlashScene {
   /**
    * Get total primitive counts for debugging.
    */
-  getStats(): { rects: number; shadows: number; glyphs: number; images: number; layers: number } {
+  getStats(): {
+    rects: number;
+    shadows: number;
+    glyphs: number;
+    images: number;
+    paths: number;
+    layers: number;
+  } {
     let rects = 0;
     let shadows = 0;
     let glyphs = 0;
     let images = 0;
+    let paths = 0;
     for (const layer of this.layers) {
       rects += layer.rects.length;
       shadows += layer.shadows.length;
       glyphs += layer.glyphs.length;
       images += layer.images.length;
+      paths += layer.paths.length;
     }
-    return { rects, shadows, glyphs, images, layers: this.layers.length };
+    return { rects, shadows, glyphs, images, paths, layers: this.layers.length };
   }
 }

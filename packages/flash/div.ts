@@ -57,6 +57,7 @@ interface DivPrepaintState {
   childPrepaintStates: unknown[];
   childBounds: Bounds[];
   hitbox: Hitbox | null;
+  hitTestNode: HitTestNode;
 }
 
 /**
@@ -884,12 +885,32 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       cx.popGroupHitbox(this.groupNameValue);
     }
 
+    // Build hit test node with scroll-adjusted child bounds
+    const childHitTestNodes: HitTestNode[] = [];
+    for (let i = this.children.length - 1; i >= 0; i--) {
+      const child = this.children[i];
+      const childPrepaintState = childPrepaintStates[i] as DivPrepaintState | undefined;
+      if (child && childPrepaintState?.hitTestNode) {
+        childHitTestNodes.unshift(childPrepaintState.hitTestNode);
+      }
+    }
+
+    const hitTestNode: HitTestNode = {
+      bounds,
+      handlers: this.handlers,
+      focusHandle: this.focusHandleRef,
+      scrollHandle: this.scrollHandleRef,
+      keyContext: this.keyContextValue,
+      children: childHitTestNodes,
+    };
+
     return {
       childLayoutIds,
       childElementIds,
       childPrepaintStates,
       childBounds: adjustedChildBounds,
       hitbox,
+      hitTestNode,
     };
   }
 

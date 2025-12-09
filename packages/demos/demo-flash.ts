@@ -14,8 +14,15 @@ import {
   div,
   rgb,
   text,
+  path,
   type FlashDiv,
   type ScrollHandle,
+  FlashElement,
+  type RequestLayoutContext,
+  type PrepaintContext,
+  type PaintContext,
+  type RequestLayoutResult,
+  type Bounds,
 } from "@glade/flash";
 import { embedAsBase64 } from "./embed" with { type: "macro" };
 
@@ -41,6 +48,107 @@ function base64ToBytes(base64: string): Uint8Array {
 }
 
 /**
+ * Custom element that renders vector paths.
+ */
+class PathDemoElement extends FlashElement<void, void> {
+  private shapeType: "star" | "polygon" | "circle" | "heart" | "arrow";
+  private color: { r: number; g: number; b: number; a: number };
+  private size: number;
+
+  constructor(
+    shapeType: "star" | "polygon" | "circle" | "heart" | "arrow",
+    color: { r: number; g: number; b: number; a: number },
+    size: number
+  ) {
+    super();
+    this.shapeType = shapeType;
+    this.color = color;
+    this.size = size;
+  }
+
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<void> {
+    const layoutId = cx.requestLayout({ width: this.size, height: this.size }, []);
+    return { layoutId, requestState: undefined };
+  }
+
+  prepaint(_cx: PrepaintContext, _bounds: Bounds, _requestState: void): void {}
+
+  paint(cx: PaintContext, bounds: Bounds, _prepaintState: void): void {
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+    const radius = Math.min(bounds.width, bounds.height) / 2 - 4;
+
+    const p = path();
+
+    switch (this.shapeType) {
+      case "star":
+        p.star(centerX, centerY, radius, radius * 0.4, 5);
+        break;
+      case "polygon":
+        p.polygon(centerX, centerY, radius, 6);
+        break;
+      case "circle":
+        p.circle(centerX, centerY, radius);
+        break;
+      case "heart":
+        this.drawHeart(p, centerX, centerY, radius);
+        break;
+      case "arrow":
+        this.drawArrow(p, centerX, centerY, radius);
+        break;
+    }
+
+    cx.paintPath(p, this.color);
+  }
+
+  private drawHeart(p: ReturnType<typeof path>, cx: number, cy: number, size: number): void {
+    const scale = size / 50;
+    p.moveTo(cx, cy + 20 * scale);
+    p.cubicTo(
+      cx - 35 * scale,
+      cy - 5 * scale,
+      cx - 35 * scale,
+      cy - 35 * scale,
+      cx,
+      cy - 20 * scale
+    );
+    p.cubicTo(
+      cx + 35 * scale,
+      cy - 35 * scale,
+      cx + 35 * scale,
+      cy - 5 * scale,
+      cx,
+      cy + 20 * scale
+    );
+    p.close();
+  }
+
+  private drawArrow(p: ReturnType<typeof path>, cx: number, cy: number, size: number): void {
+    const scale = size / 50;
+    p.moveTo(cx + 30 * scale, cy);
+    p.lineTo(cx, cy - 20 * scale);
+    p.lineTo(cx, cy - 8 * scale);
+    p.lineTo(cx - 30 * scale, cy - 8 * scale);
+    p.lineTo(cx - 30 * scale, cy + 8 * scale);
+    p.lineTo(cx, cy + 8 * scale);
+    p.lineTo(cx, cy + 20 * scale);
+    p.close();
+  }
+
+  hitTest(_bounds: Bounds, _childBounds: Bounds[]): null {
+    return null;
+  }
+}
+
+function pathShape(
+  shape: "star" | "polygon" | "circle" | "heart" | "arrow",
+  color: { r: number; g: number; b: number; a: number },
+  size: number
+): PathDemoElement {
+  return new PathDemoElement(shape, color, size);
+}
+
+/**
  * Helper to create a hoverable button with text label.
  */
 function hoverButton(label: string, color: number, hoverColor: number): FlashDiv {
@@ -61,11 +169,15 @@ function hoverButton(label: string, color: number, hoverColor: number): FlashDiv
  * Main demo view - the root view of the application.
  */
 class DemoRootView implements FlashView {
-  private scrollHandle: ScrollHandle | null = null;
+  private leftScrollHandle: ScrollHandle | null = null;
+  private rightScrollHandle: ScrollHandle | null = null;
 
   render(cx: FlashViewContext<this>): FlashDiv {
-    if (!this.scrollHandle) {
-      this.scrollHandle = cx.newScrollHandle(cx.windowId);
+    if (!this.leftScrollHandle) {
+      this.leftScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.rightScrollHandle) {
+      this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
     }
 
     return div()
@@ -87,7 +199,7 @@ class DemoRootView implements FlashView {
           .p(16)
           .gap(12)
           .overflowHidden()
-          .trackScroll(this.scrollHandle)
+          .trackScroll(this.leftScrollHandle)
           .children_(
             hoverButton("Dashboard", 0x3b82f6, 0x2563eb),
             hoverButton("Analytics", 0x10b981, 0x059669),
@@ -105,7 +217,7 @@ class DemoRootView implements FlashView {
             hoverButton("Help", 0x22c55e, 0x16a34a),
             hoverButton("Logout", 0x0ea5e9, 0x0284c7)
           ),
-        // Right column - main content area with text demo
+        // Right column - main content area with text demo (scrollable)
         div()
           .flexGrow()
           .bg(rgb(0x2a2a35))
@@ -114,60 +226,162 @@ class DemoRootView implements FlashView {
           .flex()
           .flexCol()
           .gap(16)
+          .overflowHidden()
+          .trackScroll(this.rightScrollHandle)
           .children_(
-            text("Flash Text Demo").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-            text("GPU-accelerated text rendering with cosmic-text shaping")
-              .font("Inter")
-              .size(16)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-            div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+            div()
+              .flexShrink0()
+              .child(
+                text("Flash Text Demo").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("GPU-accelerated text rendering with cosmic-text shaping")
+                  .font("Inter")
+                  .size(16)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
+            div().h(1).flexShrink0().bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
 
             // Inter font section
-            text("Inter Variable Font")
-              .font("Inter")
-              .size(18)
-              .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-            text("The quick brown fox jumps over the lazy dog.")
-              .font("Inter")
-              .size(14)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            div()
+              .flexShrink0()
+              .child(
+                text("Inter Variable Font")
+                  .font("Inter")
+                  .size(18)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("The quick brown fox jumps over the lazy dog.")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
 
-            div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
 
             // JetBrains Mono section
-            text("JetBrains Mono Regular")
-              .font("JetBrains Mono")
-              .size(18)
-              .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-            text("const greeting = 'Hello, World!';")
-              .font("JetBrains Mono")
-              .size(14)
-              .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 }),
-            text("function fibonacci(n: number): number {")
-              .font("JetBrains Mono")
-              .size(14)
-              .color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
-            text("  return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);")
-              .font("JetBrains Mono")
-              .size(14)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-            text("}").font("JetBrains Mono").size(14).color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+            div()
+              .flexShrink0()
+              .child(
+                text("JetBrains Mono Regular")
+                  .font("JetBrains Mono")
+                  .size(18)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("const greeting = 'Hello, World!';")
+                  .font("JetBrains Mono")
+                  .size(14)
+                  .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("function fibonacci(n: number): number {")
+                  .font("JetBrains Mono")
+                  .size(14)
+                  .color({ r: 0.9, g: 0.7, b: 0.5, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("  return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);")
+                  .font("JetBrains Mono")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("}").font("JetBrains Mono").size(14).color({ r: 0.9, g: 0.7, b: 0.5, a: 1 })
+              ),
 
-            div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
 
             // JetBrains Mono SemiBold section
-            text("JetBrains Mono SemiBold")
-              .font("JetBrains Mono SemiBold")
-              .size(18)
-              .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-            text("0O 1lI |! {} [] () <> => != === // /* */")
-              .font("JetBrains Mono SemiBold")
-              .size(16)
-              .color({ r: 0.5, g: 0.8, b: 1, a: 1 }),
-            text("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
-              .font("JetBrains Mono SemiBold")
-              .size(14)
-              .color({ r: 0.8, g: 0.6, b: 0.9, a: 1 })
+            div()
+              .flexShrink0()
+              .child(
+                text("JetBrains Mono SemiBold")
+                  .font("JetBrains Mono SemiBold")
+                  .size(18)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("0O 1lI |! {} [] () <> => != === // /* */")
+                  .font("JetBrains Mono SemiBold")
+                  .size(16)
+                  .color({ r: 0.5, g: 0.8, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
+                  .font("JetBrains Mono SemiBold")
+                  .size(14)
+                  .color({ r: 0.8, g: 0.6, b: 0.9, a: 1 })
+              ),
+
+            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+            // Path/Vector Demo section
+            div()
+              .flexShrink0()
+              .child(
+                text("Vector Path Rendering")
+                  .font("Inter")
+                  .size(18)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              ),
+            div()
+              .flexShrink0()
+              .child(
+                text("GPU-accelerated vector graphics with tessellation")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              ),
+
+            // Row of vector shapes
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(16)
+              .flexWrap()
+              .children_(
+                pathShape("star", { r: 1, g: 0.8, b: 0.2, a: 1 }, 64),
+                pathShape("polygon", { r: 0.3, g: 0.8, b: 1, a: 1 }, 64),
+                pathShape("circle", { r: 0.9, g: 0.3, b: 0.5, a: 1 }, 64),
+                pathShape("heart", { r: 1, g: 0.3, b: 0.4, a: 1 }, 64),
+                pathShape("arrow", { r: 0.4, g: 0.9, b: 0.5, a: 1 }, 64)
+              ),
+
+            // Smaller shapes row
+            div()
+              .flex()
+              .flexRow()
+              .flexShrink0()
+              .gap(8)
+              .flexWrap()
+              .children_(
+                pathShape("star", { r: 0.9, g: 0.5, b: 0.9, a: 1 }, 32),
+                pathShape("polygon", { r: 0.5, g: 0.9, b: 0.7, a: 1 }, 32),
+                pathShape("circle", { r: 0.9, g: 0.7, b: 0.3, a: 1 }, 32),
+                pathShape("heart", { r: 0.7, g: 0.3, b: 0.9, a: 1 }, 32),
+                pathShape("arrow", { r: 0.3, g: 0.7, b: 0.9, a: 1 }, 32),
+                pathShape("star", { r: 0.9, g: 0.4, b: 0.4, a: 1 }, 32),
+                pathShape("polygon", { r: 0.4, g: 0.9, b: 0.4, a: 1 }, 32)
+              )
           )
       );
   }

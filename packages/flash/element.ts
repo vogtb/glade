@@ -254,6 +254,11 @@ export interface PaintContext {
   ): void;
 
   /**
+   * Paint a path primitive.
+   */
+  paintPath(path: import("./path.ts").PathBuilder, color: Color): void;
+
+  /**
    * Get persistent state cached across frames for this element.
    */
   getPersistentState<T = unknown>(): T | undefined;

@@ -64,6 +64,7 @@ import { FlashRenderer } from "./renderer.ts";
 import { RectPipeline } from "./rect.ts";
 import { ShadowPipeline } from "./shadow.ts";
 import { TextSystem, TextPipeline } from "./text.ts";
+import { PathPipeline } from "./path.ts";
 
 /**
  * Options for creating a window.
@@ -204,6 +205,14 @@ export class FlashWindow {
     this.textSystem.setDevicePixelRatio(renderTarget.devicePixelRatio);
     const textPipeline = new TextPipeline(device, format, this.textSystem);
     this.renderer.setTextPipeline(textPipeline, this.textSystem);
+
+    // Initialize path pipeline
+    const pathPipeline = new PathPipeline(
+      device,
+      format,
+      this.renderer.getUniformBindGroupLayout()
+    );
+    this.renderer.setPathPipeline(pathPipeline);
 
     this.setupEventListeners();
   }
@@ -531,11 +540,11 @@ export class FlashWindow {
     const paintCx = this.createPaintContext(rootElementId);
     element.paint(paintCx, rootBounds, rootPrepaintState);
 
+    // Extract hit test tree from prepaint state (built with scroll-adjusted bounds)
     this.hitTestTree = [];
-    const childBounds = this.layoutEngine.layoutBounds(rootLayoutId);
-    const hitNode = element.hitTest(rootBounds, [childBounds]);
-    if (hitNode) {
-      this.hitTestTree.push(hitNode);
+    const prepaintStateWithHitTest = rootPrepaintState as { hitTestNode?: HitTestNode };
+    if (prepaintStateWithHitTest?.hitTestNode) {
+      this.hitTestTree.push(prepaintStateWithHitTest.hitTestNode);
     }
 
     this.endFrame();
@@ -984,6 +993,11 @@ export class FlashWindow {
         for (const glyph of glyphs) {
           scene.addGlyph(glyph);
         }
+      },
+
+      paintPath: (pathBuilder: import("./path.ts").PathBuilder, color: Color): void => {
+        const pathPrimitive = pathBuilder.build(color);
+        scene.addPath(pathPrimitive);
       },
 
       getPersistentState: <T = unknown>(): T | undefined => {

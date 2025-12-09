@@ -123,6 +123,8 @@ export type {
   GlyphPrimitive,
   TextPrimitive,
   ImagePrimitive,
+  PathPrimitive,
+  PathVertex,
   SceneLayer,
 } from "./scene.ts";
 
@@ -248,6 +250,11 @@ export { FlashRenderer, PREMULTIPLIED_ALPHA_BLEND, STANDARD_ALPHA_BLEND } from "
 export { RectPipeline } from "./rect.ts";
 
 export { ShadowPipeline } from "./shadow.ts";
+
+// Path rendering
+export type { PathCommand, TessellatedPath } from "./path.ts";
+
+export { PathBuilder, PathPipeline, path } from "./path.ts";
 
 // Buffer utilities
 export {

@@ -9,6 +9,7 @@ import type { FlashScene, SceneLayer } from "./scene.ts";
 import type { RectPipeline } from "./rect.ts";
 import type { ShadowPipeline } from "./shadow.ts";
 import type { TextPipeline, TextSystem, GlyphInstance } from "./text.ts";
+import type { PathPipeline } from "./path.ts";
 
 /**
  * Renderer configuration.
@@ -51,6 +52,7 @@ export class FlashRenderer {
   private shadowPipeline: ShadowPipeline | null = null;
   private textPipeline: TextPipeline | null = null;
   private textSystem: TextSystem | null = null;
+  private pathPipeline: PathPipeline | null = null;
 
   constructor(
     private device: GPUDevice,
@@ -129,6 +131,13 @@ export class FlashRenderer {
    */
   getTextSystem(): TextSystem | null {
     return this.textSystem;
+  }
+
+  /**
+   * Set the path pipeline.
+   */
+  setPathPipeline(pipeline: PathPipeline): void {
+    this.pathPipeline = pipeline;
   }
 
   /**
@@ -262,6 +271,11 @@ export class FlashRenderer {
       this.textPipeline.render(pass, layer.glyphs as GlyphInstance[], layer.rects.length);
     }
 
+    // Draw paths
+    if (layer.paths.length > 0 && this.pathPipeline) {
+      this.pathPipeline.render(pass, layer.paths, this.uniformBindGroup!);
+    }
+
     // TODO: Draw images when image pipeline is implemented
   }
 
@@ -272,6 +286,7 @@ export class FlashRenderer {
     this.uniformBuffer?.destroy();
     this.rectPipeline?.destroy();
     this.shadowPipeline?.destroy();
+    this.pathPipeline?.destroy();
   }
 }
 
