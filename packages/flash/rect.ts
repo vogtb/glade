@@ -218,21 +218,21 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let inner_radius = max(0.0, sdf_radius - in.border_width);
     let inner_dist = quad_sdf(local_pos, inner_half_size, inner_radius);
     let border_alpha = smoothstep(-0.5, 0.5, inner_dist);
-    
+
     // Handle dashed borders
     if in.is_dashed > 0.5 && border_alpha > 0.0 {
       // Calculate position along the border perimeter
       let dash_length = in.dash_params.x;
       let gap_length = in.dash_params.y;
       let cycle_length = dash_length + gap_length;
-      
+
       // Calculate perimeter position based on which edge we're on
       // Use the point relative to rect center to determine edge and position
       var perimeter_pos: f32 = 0.0;
       let abs_local = abs(local_pos);
       let half_w = half_size.x;
       let half_h = half_size.y;
-      
+
       // Determine which edge we're on and compute perimeter position
       // Start from top-left corner, go clockwise
       if abs_local.y > abs_local.x * (half_h / half_w) {
@@ -254,11 +254,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
           perimeter_pos = half_w * 2.0 + half_h * 2.0 + half_w * 2.0 + (half_h - local_pos.y);
         }
       }
-      
+
       // Apply dash pattern
       let pos_in_cycle = perimeter_pos % cycle_length;
       let is_in_gap = pos_in_cycle > dash_length;
-      
+
       if is_in_gap {
         // In gap - don't show border
         final_color = in.color;
@@ -373,7 +373,9 @@ export class RectPipeline {
    * Render rectangles.
    */
   render(pass: GPURenderPassEncoder, rects: RectPrimitive[], uniformBindGroup: GPUBindGroup): void {
-    if (rects.length === 0) return;
+    if (rects.length === 0) {
+      return;
+    }
 
     const count = Math.min(rects.length, this.maxInstances);
 

@@ -153,7 +153,9 @@ export class Keymap {
    */
   unbindKey(keystrokeStr: string, context: FocusContext | null = null): void {
     const keystroke = parseKeystroke(keystrokeStr);
-    if (!keystroke) return;
+    if (!keystroke) {
+      return;
+    }
 
     this.bindings = this.bindings.filter(
       (b) =>
@@ -174,7 +176,9 @@ export class Keymap {
    */
   resolve(event: KeyEvent, contextChain: FocusContext[]): string | null {
     // Only handle key press events
-    if (event.action !== 1) return null; // KeyAction.Press
+    if (event.action !== 1) {
+      return null; // KeyAction.Press
+    }
 
     const matches: ResolvedBinding[] = [];
 
@@ -200,7 +204,9 @@ export class Keymap {
       }
     }
 
-    if (matches.length === 0) return null;
+    if (matches.length === 0) {
+      return null;
+    }
 
     // Sort by context depth (deeper = higher priority), then by insertion order (later = higher)
     matches.sort((a, b) => {

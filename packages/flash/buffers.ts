@@ -50,7 +50,9 @@ export class DynamicBuffer {
    * Grows by 2x if needed.
    */
   ensureCapacity(size: number): void {
-    if (size <= this.capacity) return;
+    if (size <= this.capacity) {
+      return;
+    }
 
     // Grow by 2x to amortize allocations
     let newCapacity = this.capacity;

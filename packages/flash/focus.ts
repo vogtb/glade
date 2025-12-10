@@ -146,7 +146,9 @@ export class FocusNavigator {
    * Find the next focusable element in a direction.
    */
   findNext(currentFocusId: FocusId | null, direction: FocusDirection): FocusId | null {
-    if (this.elements.length === 0) return null;
+    if (this.elements.length === 0) {
+      return null;
+    }
 
     const currentIndex = currentFocusId
       ? this.elements.findIndex((e) => e.focusId === currentFocusId)
@@ -182,7 +184,9 @@ export class FocusNavigator {
     direction: "up" | "down" | "left" | "right"
   ): FocusId | null {
     const current = this.elements[currentIndex];
-    if (!current) return null;
+    if (!current) {
+      return null;
+    }
 
     const currentCenter = {
       x: current.bounds.x + current.bounds.width / 2,

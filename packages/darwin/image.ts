@@ -181,8 +181,12 @@ function paethPredictor(a: number, b: number, c: number): number {
   const pa = Math.abs(p - a);
   const pb = Math.abs(p - b);
   const pc = Math.abs(p - c);
-  if (pa <= pb && pa <= pc) return a;
-  if (pb <= pc) return b;
+  if (pa <= pb && pa <= pc) {
+    return a;
+  }
+  if (pb <= pc) {
+    return b;
+  }
   return c;
 }
 
@@ -222,7 +226,9 @@ function convertToRGBA(
       }
       break;
     case 3: // Indexed
-      if (!palette) throw new Error("Missing palette for indexed PNG");
+      if (!palette) {
+        throw new Error("Missing palette for indexed PNG");
+      }
       for (let i = 0; i < pixels; i++) {
         const idx = raw[i]!;
         rgba[i * 4] = palette[idx * 3]!;
@@ -254,16 +260,24 @@ function convertToRGBA(
  */
 function inflate(data: Uint8Array): Uint8Array {
   // Skip zlib header (2 bytes) and verify
-  if (data.length < 2) throw new Error("Invalid zlib data");
+  if (data.length < 2) {
+    throw new Error("Invalid zlib data");
+  }
 
   const cmf = data[0]!;
   const flg = data[1]!;
 
-  if ((cmf & 0x0f) !== 8) throw new Error("Invalid compression method");
-  if (((cmf << 8) | flg) % 31 !== 0) throw new Error("Invalid zlib header checksum");
+  if ((cmf & 0x0f) !== 8) {
+    throw new Error("Invalid compression method");
+  }
+  if (((cmf << 8) | flg) % 31 !== 0) {
+    throw new Error("Invalid zlib header checksum");
+  }
 
   const hasDict = (flg & 0x20) !== 0;
-  if (hasDict) throw new Error("Preset dictionary not supported");
+  if (hasDict) {
+    throw new Error("Preset dictionary not supported");
+  }
 
   // Inflate the deflate stream
   return inflateRaw(data.subarray(2, data.length - 4));
@@ -311,7 +325,9 @@ class BitReader {
   readBits(n: number): number {
     let value = 0;
     for (let i = 0; i < n; i++) {
-      if (this.pos >= this.data.length) throw new Error("Unexpected end of data");
+      if (this.pos >= this.data.length) {
+        throw new Error("Unexpected end of data");
+      }
       value |= ((this.data[this.pos]! >> this.bitPos) & 1) << i;
       this.bitPos++;
       if (this.bitPos === 8) {
@@ -324,7 +340,9 @@ class BitReader {
 
   readByte(): number {
     this.alignToByte();
-    if (this.pos >= this.data.length) throw new Error("Unexpected end of data");
+    if (this.pos >= this.data.length) {
+      throw new Error("Unexpected end of data");
+    }
     return this.data[this.pos++]!;
   }
 
@@ -458,7 +476,9 @@ function decodeSymbol(reader: BitReader, tree: HuffmanNode): number {
   while (node.value === undefined) {
     const bit = reader.readBits(1);
     node = bit ? node.right! : node.left!;
-    if (!node) throw new Error("Invalid Huffman code");
+    if (!node) {
+      throw new Error("Invalid Huffman code");
+    }
   }
   return node.value;
 }
@@ -604,7 +624,9 @@ class JPEGDecoder {
 
   private parseSOF(end: number): void {
     const precision = this.readUint8();
-    if (precision !== 8) throw new Error(`Unsupported bit depth: ${precision}`);
+    if (precision !== 8) {
+      throw new Error(`Unsupported bit depth: ${precision}`);
+    }
 
     this.height = this.readUint16();
     this.width = this.readUint16();

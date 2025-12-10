@@ -508,7 +508,9 @@ export class FlashWindow {
    * Check if a group is active (any hitbox in the group is hovered with mouse down).
    */
   isGroupActive(groupName: string): boolean {
-    if (!this.mouseDown) return false;
+    if (!this.mouseDown) {
+      return false;
+    }
     const hitboxIds = this.groupHitboxes.getAll(groupName);
     for (const hitboxId of hitboxIds) {
       if (isHitboxHovered(this.mouseHitTest, hitboxId)) {
@@ -559,10 +561,16 @@ export class FlashWindow {
    * Check if a hitbox is a valid drop target for the current drag.
    */
   canDropOnHitbox(hitboxId: HitboxId): boolean {
-    if (!this.dragTracker.isDragging()) return false;
+    if (!this.dragTracker.isDragging()) {
+      return false;
+    }
     const target = this.dropTargetHitboxes.get(hitboxId);
-    if (!target) return false;
-    if (!this.isHitboxIdHovered(hitboxId)) return false;
+    if (!target) {
+      return false;
+    }
+    if (!this.isHitboxIdHovered(hitboxId)) {
+      return false;
+    }
     return target.canDrop;
   }
 
@@ -570,7 +578,9 @@ export class FlashWindow {
    * Check if a hitbox is being dragged over.
    */
   isDragOver(hitboxId: HitboxId): boolean {
-    if (!this.dragTracker.isDragging()) return false;
+    if (!this.dragTracker.isDragging()) {
+      return false;
+    }
     return this.isHitboxIdHovered(hitboxId);
   }
 
@@ -1162,7 +1172,9 @@ export class FlashWindow {
       },
 
       isActive: (bounds: Bounds): boolean => {
-        if (!getMouseDown()) return false;
+        if (!getMouseDown()) {
+          return false;
+        }
         const { x, y } = mousePosition;
         return (
           x >= bounds.x &&
@@ -1185,7 +1197,9 @@ export class FlashWindow {
       },
 
       paintRect: (bounds: Bounds, styles: Partial<Styles>): void => {
-        if (!styles.backgroundColor) return;
+        if (!styles.backgroundColor) {
+          return;
+        }
         scene.addRect({
           x: bounds.x,
           y: bounds.y,
@@ -1199,7 +1213,9 @@ export class FlashWindow {
       },
 
       paintShadow: (bounds: Bounds, styles: Partial<Styles>): void => {
-        if (!styles.shadow || styles.shadow === "none") return;
+        if (!styles.shadow || styles.shadow === "none") {
+          return;
+        }
         const def = SHADOW_DEFINITIONS[styles.shadow];
         scene.addShadow({
           x: bounds.x,
@@ -1215,7 +1231,9 @@ export class FlashWindow {
       },
 
       paintBorder: (bounds: Bounds, styles: Partial<Styles>): void => {
-        if (!styles.borderWidth || !styles.borderColor) return;
+        if (!styles.borderWidth || !styles.borderColor) {
+          return;
+        }
         scene.addRect({
           x: bounds.x,
           y: bounds.y,

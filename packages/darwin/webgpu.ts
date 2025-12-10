@@ -660,7 +660,9 @@ export class DawnGPURenderPassEncoder {
 
   executeBundles(bundles: Iterable<GPURenderBundle>) {
     const bundleArray = Array.from(bundles);
-    if (bundleArray.length === 0) return;
+    if (bundleArray.length === 0) {
+      return;
+    }
     const handles = new BigUint64Array(bundleArray.length);
     for (let i = 0; i < bundleArray.length; i++) {
       const bundle = bundleArray[i] as unknown as { _handle: Pointer };

@@ -124,7 +124,9 @@ export class DragTracker {
    * Returns true if the drag threshold has been exceeded.
    */
   updatePosition(position: Point): boolean {
-    if (!this.activeDrag) return false;
+    if (!this.activeDrag) {
+      return false;
+    }
 
     this.activeDrag.position = { ...position };
 
@@ -139,7 +141,9 @@ export class DragTracker {
    * Check if there's an active drag.
    */
   isDragging(): boolean {
-    if (!this.activeDrag) return false;
+    if (!this.activeDrag) {
+      return false;
+    }
 
     const dx = this.activeDrag.position.x - this.activeDrag.startPosition.x;
     const dy = this.activeDrag.position.y - this.activeDrag.startPosition.y;
@@ -224,8 +228,12 @@ export class DragTracker {
    * Check if a drop target can accept the current drag payload.
    */
   canDrop(target: DropTarget, cx: FlashContext): boolean {
-    if (!this.activeDrag) return false;
-    if (!target.canDrop) return true;
+    if (!this.activeDrag) {
+      return false;
+    }
+    if (!target.canDrop) {
+      return true;
+    }
     return target.canDrop(this.activeDrag.payload.data, cx);
   }
 
@@ -233,9 +241,13 @@ export class DragTracker {
    * Check if the current drag is over a valid drop target.
    */
   isOverValidDropTarget(cx: FlashContext): boolean {
-    if (!this.activeDrag) return false;
+    if (!this.activeDrag) {
+      return false;
+    }
     const target = this.findDropTarget(this.activeDrag.position);
-    if (!target) return false;
+    if (!target) {
+      return false;
+    }
     return this.canDrop(target, cx);
   }
 }

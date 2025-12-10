@@ -177,7 +177,9 @@ export class PathBuilder {
    * Add a regular polygon to the path.
    */
   polygon(cx: number, cy: number, radius: number, sides: number): this {
-    if (sides < 3) return this;
+    if (sides < 3) {
+      return this;
+    }
     const angleStep = (Math.PI * 2) / sides;
     const startAngle = -Math.PI / 2; // Start at top
 
@@ -199,7 +201,9 @@ export class PathBuilder {
    * Add a star shape to the path.
    */
   star(cx: number, cy: number, outerRadius: number, innerRadius: number, points: number): this {
-    if (points < 2) return this;
+    if (points < 2) {
+      return this;
+    }
     const angleStep = Math.PI / points;
     const startAngle = -Math.PI / 2;
 
@@ -545,8 +549,12 @@ function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
  */
 function triangulate(points: Array<{ x: number; y: number }>): number[] {
   const n = points.length;
-  if (n < 3) return [];
-  if (n === 3) return [0, 1, 2];
+  if (n < 3) {
+    return [];
+  }
+  if (n === 3) {
+    return [0, 1, 2];
+  }
 
   const indices: number[] = [];
   const remaining = points.map((_, i) => i);
@@ -619,7 +627,9 @@ function isEar(
 
   // Check if triangle is convex
   const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-  if (cross <= 0) return false;
+  if (cross <= 0) {
+    return false;
+  }
 
   // Check if any other vertex is inside the triangle
   for (const idx of remaining) {
@@ -875,7 +885,9 @@ export class PathPipeline {
    * Render paths.
    */
   render(pass: GPURenderPassEncoder, paths: PathPrimitive[], uniformBindGroup: GPUBindGroup): void {
-    if (paths.length === 0) return;
+    if (paths.length === 0) {
+      return;
+    }
 
     let vertexOffset = 0;
     let indexOffset = 0;
@@ -947,7 +959,9 @@ export class PathPipeline {
       baseVertex += numVertices;
     }
 
-    if (indexOffset === 0) return;
+    if (indexOffset === 0) {
+      return;
+    }
 
     this.device.queue.writeBuffer(
       this.vertexBuffer,

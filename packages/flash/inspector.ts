@@ -213,7 +213,9 @@ export class Inspector {
    * Handle mouse move for hover detection.
    */
   handleMouseMove(point: Point): void {
-    if (!this.state.enabled) return;
+    if (!this.state.enabled) {
+      return;
+    }
 
     const element = this.findElementAtPoint(point);
     this.state.hoveredElementId = element?.elementId ?? null;
@@ -223,7 +225,9 @@ export class Inspector {
    * Handle click for element selection.
    */
   handleClick(point: Point): boolean {
-    if (!this.state.enabled) return false;
+    if (!this.state.enabled) {
+      return false;
+    }
 
     const element = this.findElementAtPoint(point);
     if (element) {
@@ -239,7 +243,9 @@ export class Inspector {
    * Get the currently selected element info.
    */
   getSelectedElement(): ElementDebugInfo | null {
-    if (!this.state.selectedElementId) return null;
+    if (!this.state.selectedElementId) {
+      return null;
+    }
     return this.elementRegistry.get(this.state.selectedElementId) ?? null;
   }
 
@@ -247,7 +253,9 @@ export class Inspector {
    * Get the currently hovered element info.
    */
   getHoveredElement(): ElementDebugInfo | null {
-    if (!this.state.hoveredElementId) return null;
+    if (!this.state.hoveredElementId) {
+      return null;
+    }
     return this.elementRegistry.get(this.state.hoveredElementId) ?? null;
   }
 
@@ -260,7 +268,9 @@ export class Inspector {
     viewportHeight: number,
     textSystem?: TextSystem
   ): void {
-    if (!this.state.enabled) return;
+    if (!this.state.enabled) {
+      return;
+    }
 
     scene.pushLayer();
 
@@ -314,7 +324,9 @@ export class Inspector {
    */
   private renderHoverHighlight(scene: FlashScene): void {
     const info = this.getHoveredElement();
-    if (!info) return;
+    if (!info) {
+      return;
+    }
 
     const { bounds } = info;
 
@@ -335,7 +347,9 @@ export class Inspector {
    */
   private renderSelectionHighlight(scene: FlashScene): void {
     const info = this.getSelectedElement();
-    if (!info) return;
+    if (!info) {
+      return;
+    }
 
     const { bounds, styles } = info;
 
@@ -433,7 +447,9 @@ export class Inspector {
     textSystem?: TextSystem
   ): void {
     const info = this.getSelectedElement();
-    if (!info) return;
+    if (!info) {
+      return;
+    }
 
     const panelWidth = 280;
     const panelHeight = 200;
@@ -520,7 +536,9 @@ export class Inspector {
     });
 
     // Render text content
-    if (!textSystem) return;
+    if (!textSystem) {
+      return;
+    }
 
     const fontSize = 12;
     const lineHeight = 16;

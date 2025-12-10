@@ -119,7 +119,9 @@ export class FlashApp {
    * Start the main run loop.
    */
   run(): void {
-    if (this.running) return;
+    if (this.running) {
+      return;
+    }
     this.running = true;
     this.scheduleFrame();
   }
@@ -296,7 +298,9 @@ export class FlashApp {
   }
 
   flushEffects(): void {
-    if (this.isFlushingEffects) return;
+    if (this.isFlushingEffects) {
+      return;
+    }
     this.isFlushingEffects = true;
 
     try {
@@ -334,7 +338,9 @@ export class FlashApp {
 
   private processNotify(entityId: EntityId): void {
     const meta = this.entityMeta.get(entityId);
-    if (!meta) return;
+    if (!meta) {
+      return;
+    }
 
     const cx = this.createContext();
     for (const observer of meta.observers) {
@@ -352,10 +358,14 @@ export class FlashApp {
 
   private processEmit(entityId: EntityId, eventType: string, event: unknown): void {
     const meta = this.entityMeta.get(entityId);
-    if (!meta) return;
+    if (!meta) {
+      return;
+    }
 
     const subscribers = meta.subscribers.get(eventType);
-    if (!subscribers) return;
+    if (!subscribers) {
+      return;
+    }
 
     const cx = this.createContext();
     for (const subscriber of subscribers) {
@@ -381,7 +391,9 @@ export class FlashApp {
 
   private scheduleFrame(): void {
     this.frameId = this.platform.requestAnimationFrame((time) => {
-      if (!this.running) return;
+      if (!this.running) {
+        return;
+      }
       this.frame(time);
       this.scheduleFrame();
     });

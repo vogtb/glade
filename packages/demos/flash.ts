@@ -249,7 +249,9 @@ export function initFlashDemo(ctx: WebGPUContext, format: GPUTextureFormat): Fla
  * Uses embedded font data (via Bun macro) for cross-platform compatibility.
  */
 export function loadFlashDemoFonts(resources: FlashDemoResources): void {
-  if (resources.fontLoaded || !resources.textSystem) return;
+  if (resources.fontLoaded || !resources.textSystem) {
+    return;
+  }
 
   try {
     const fontData = base64ToBytes(interFontBase64);
@@ -1103,9 +1105,15 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
     const hue2rgb = (p: number, q: number, t: number): number => {
       if (t < 0) t += 1;
       if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      if (t < 1 / 6) {
+        return p + (q - p) * 6 * t;
+      }
+      if (t < 1 / 2) {
+        return q;
+      }
+      if (t < 2 / 3) {
+        return p + (q - p) * (2 / 3 - t) * 6;
+      }
       return p;
     };
 

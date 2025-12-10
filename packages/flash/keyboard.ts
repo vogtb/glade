@@ -167,10 +167,14 @@ export function parseKeystroke(str: string): Keystroke | null {
     }
   }
 
-  if (!keyPart) return null;
+  if (!keyPart) {
+    return null;
+  }
 
   const key = keyNameToCode(keyPart);
-  if (key === null) return null;
+  if (key === null) {
+    return null;
+  }
 
   return { key, modifiers };
 }
@@ -228,7 +232,9 @@ function keyNameToCode(name: string): KeyCode | null {
  * Check if a key event matches a keystroke.
  */
 export function matchesKeystroke(event: KeyEvent, keystroke: Keystroke): boolean {
-  if (event.key !== keystroke.key) return false;
+  if (event.key !== keystroke.key) {
+    return false;
+  }
 
   const eventMods = coreModsToFlashMods(event.mods);
   return (

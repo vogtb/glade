@@ -116,7 +116,9 @@ class DarwinRenderTarget implements FlashRenderTarget {
   }
 
   private ensureCursorTracking(): void {
-    if (this.cursorCallbackRegistered) return;
+    if (this.cursorCallbackRegistered) {
+      return;
+    }
     this.cursorCallbackRegistered = true;
 
     this.ctx.onCursorMove((event) => {

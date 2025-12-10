@@ -112,7 +112,7 @@ fn vs_main(
   let z_depth = 0.4 - (instance.wave_params.w / 10000.0);
 
   out.position = vec4<f32>(clip_pos, z_depth, 1.0);
-  
+
   // Local position for fragment shader calculations
   out.local_pos = (quad_pos * expanded_size) * uniforms.scale;
   out.underline_size = underline_size * uniforms.scale;
@@ -164,45 +164,45 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Wavy underline (spell-check style)
     let x = in.local_pos.x;
     let y = in.local_pos.y;
-    
+
     // Center of the wave (middle of expanded region)
     let wave_center_y = amplitude + thickness * 0.5;
-    
+
     // Calculate wave offset at this x position
     let wave_offset = sin(x * 6.28318 / wavelength) * amplitude;
-    
+
     // Distance from fragment to the wave center line
     let wave_y = wave_center_y + wave_offset;
     let dist_to_wave = abs(y - wave_y);
-    
+
     // Anti-aliased thickness
     let half_thickness = thickness * 0.5;
     let alpha = 1.0 - smoothstep(half_thickness - 0.5, half_thickness + 0.5, dist_to_wave);
-    
+
     if alpha <= 0.0 {
       discard;
     }
-    
+
     return in.color * alpha;
   } else {
     // Solid underline - simple rectangle with anti-aliased edges
     let x = in.local_pos.x;
     let y = in.local_pos.y;
-    
+
     // Anti-alias horizontal edges
     let alpha_left = smoothstep(-0.5, 0.5, x);
     let alpha_right = 1.0 - smoothstep(width - 0.5, width + 0.5, x);
-    
+
     // Anti-alias vertical edges
     let alpha_top = smoothstep(-0.5, 0.5, y);
     let alpha_bottom = 1.0 - smoothstep(thickness - 0.5, thickness + 0.5, y);
-    
+
     let alpha = alpha_left * alpha_right * alpha_top * alpha_bottom;
-    
+
     if alpha <= 0.0 {
       discard;
     }
-    
+
     return in.color * alpha;
   }
 }
@@ -308,7 +308,9 @@ export class UnderlinePipeline {
     underlines: UnderlinePrimitive[],
     uniformBindGroup: GPUBindGroup
   ): void {
-    if (underlines.length === 0) return;
+    if (underlines.length === 0) {
+      return;
+    }
 
     const count = Math.min(underlines.length, this.maxInstances);
 

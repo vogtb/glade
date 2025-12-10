@@ -406,9 +406,13 @@ export class TextSystem {
 
     // Set up WASM-based rasterizer for native environments (no OffscreenCanvas)
     this.atlas.setRasterizer((glyphId, fontSize, _fontFamily, fontId, _glyphChar) => {
-      if (!fontId) return null;
+      if (!fontId) {
+        return null;
+      }
       const rasterized = this.shaper.rasterizeGlyph(fontId, glyphId, fontSize);
-      if (!rasterized) return null;
+      if (!rasterized) {
+        return null;
+      }
       return {
         width: rasterized.width,
         height: rasterized.height,
@@ -703,7 +707,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
   }
 
   let alpha = textureSample(glyph_texture, glyph_sampler, in.uv).r;
-  
+
   if alpha < 0.01 {
     discard;
   }
@@ -839,7 +843,9 @@ export class TextPipeline {
    * Render glyph instances.
    */
   render(pass: GPURenderPassEncoder, glyphs: GlyphInstance[], zIndexStart: number = 0): void {
-    if (glyphs.length === 0 || !this.bindGroup) return;
+    if (glyphs.length === 0 || !this.bindGroup) {
+      return;
+    }
 
     const count = Math.min(glyphs.length, this.maxInstances);
 

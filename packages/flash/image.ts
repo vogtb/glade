@@ -524,7 +524,9 @@ export class ImagePipeline {
    * Render image instances.
    */
   render(pass: GPURenderPassEncoder, images: ImageInstance[]): void {
-    if (images.length === 0 || !this.bindGroup) return;
+    if (images.length === 0 || !this.bindGroup) {
+      return;
+    }
 
     const count = Math.min(images.length, this.maxInstances);
 

@@ -163,7 +163,9 @@ export class DragTracker {
    * Update drag position. Returns true if drag is now active.
    */
   updatePosition(position: Point): boolean {
-    if (!this.state) return false;
+    if (!this.state) {
+      return false;
+    }
 
     this.state.currentPosition = { ...position };
 

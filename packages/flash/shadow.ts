@@ -300,7 +300,9 @@ export class ShadowPipeline {
     shadows: ShadowPrimitive[],
     uniformBindGroup: GPUBindGroup
   ): void {
-    if (shadows.length === 0) return;
+    if (shadows.length === 0) {
+      return;
+    }
 
     const count = Math.min(shadows.length, this.maxInstances);
 
