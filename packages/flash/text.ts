@@ -249,20 +249,10 @@ export class GlyphAtlas {
 
     const atlasPos = this.allocate(glyphData.width, glyphData.height);
     if (!atlasPos) {
-      this.clear();
-      const retryPos = this.allocate(glyphData.width, glyphData.height);
-      if (!retryPos) {
-        return null;
-      }
-      return this.uploadAndCache(
-        retryPos,
-        glyphData.width,
-        glyphData.height,
-        glyphData.pixels,
-        glyphData.bearingX,
-        glyphData.bearingY,
-        glyphData.advance
-      );
+      // Atlas is full - don't clear mid-frame as it invalidates existing glyph instances.
+      // Instead, skip this glyph. The atlas should be cleared between frames if needed.
+      console.warn("Glyph atlas full, skipping glyph:", glyphChar);
+      return null;
     }
 
     return this.uploadAndCache(
@@ -555,13 +545,15 @@ export class TextSystem {
     fontFamily: string,
     style?: FontStyle
   ): GlyphInstance[] {
-    const shaped = this.shapeLine(text, fontSize, lineHeight, style);
-    const instances: GlyphInstance[] = [];
-
     const fontId = this.fontFamilyToId.get(fontFamily);
     if (!fontId) {
-      return instances;
+      return [];
     }
+
+    // Ensure font family is included in style for consistent shaping
+    const fullStyle: FontStyle = { family: fontFamily, ...style };
+    const shaped = this.shapeLine(text, fontSize, lineHeight, fullStyle);
+    const instances: GlyphInstance[] = [];
 
     const dpr = this._devicePixelRatio;
     const rasterFontSize = Math.ceil(fontSize * dpr);
@@ -686,8 +678,8 @@ fn vs_main(
     1.0 - (scaled_pos.y / uniforms.viewport_size.y) * 2.0
   );
 
-  let z_depth = 1.0 - (instance.params.x / 10000.0);
-  out.position = vec4<f32>(clip_pos, z_depth, 1.0);
+  // Text uses painter's algorithm (CPU sorting + layer order), no depth testing
+  out.position = vec4<f32>(clip_pos, 0.0, 1.0);
 
   out.uv = instance.atlas_rect.xy + quad_pos * instance.atlas_rect.zw;
   out.color = instance.color;
@@ -816,8 +808,8 @@ export class TextPipeline {
       },
       depthStencil: {
         format: "depth24plus",
-        depthWriteEnabled: true,
-        depthCompare: "less",
+        depthWriteEnabled: false,
+        depthCompare: "always",
       },
     });
   }

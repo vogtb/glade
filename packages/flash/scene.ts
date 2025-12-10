@@ -456,6 +456,23 @@ export class FlashScene {
   }
 
   /**
+   * Add a glyph with a fixed draw order (bypasses BoundsTree).
+   * Useful for overlay content that should always be on top.
+   */
+  addGlyphWithOrder(glyph: GlyphPrimitive, order: DrawOrder): void {
+    const bounds = { x: glyph.x, y: glyph.y, width: glyph.width, height: glyph.height };
+    if (this.isClippedOut(bounds)) {
+      return;
+    }
+    const clipBounds = this.getCurrentClipBounds();
+    this.currentLayer.glyphs.push({
+      ...glyph,
+      clipBounds,
+      order,
+    });
+  }
+
+  /**
    * Add an image to the current layer.
    */
   addImage(image: ImagePrimitive): void {

@@ -13,6 +13,7 @@ import type { Styles } from "./styles.ts";
 import type { GlobalElementId } from "./element.ts";
 import type { FlashScene } from "./scene.ts";
 import type { HitTestNode } from "./dispatch.ts";
+import type { TextSystem } from "./text.ts";
 
 /**
  * Debug info attached to elements during render.
@@ -95,9 +96,19 @@ export class Inspector {
   private state: InspectorState;
   private elementRegistry: Map<GlobalElementId, ElementDebugInfo> = new Map();
   private flatElementList: ElementDebugInfo[] = [];
+  private glyphsWarmedUp = false;
 
   constructor() {
     this.state = createInspectorState();
+  }
+
+  /**
+   * Pre-warm glyph atlas with characters used by the inspector.
+   * Call this once when inspector is first enabled to avoid blinking.
+   */
+  warmUpGlyphs(_textSystem: TextSystem): void {
+    // Disabled for debugging
+    this.glyphsWarmedUp = true;
   }
 
   /**
@@ -243,7 +254,12 @@ export class Inspector {
   /**
    * Render inspector overlay onto the scene.
    */
-  renderOverlay(scene: FlashScene, viewportWidth: number, viewportHeight: number): void {
+  renderOverlay(
+    scene: FlashScene,
+    viewportWidth: number,
+    viewportHeight: number,
+    textSystem?: TextSystem
+  ): void {
     if (!this.state.enabled) return;
 
     scene.pushLayer();
@@ -258,7 +274,7 @@ export class Inspector {
 
     if (this.state.selectedElementId) {
       this.renderSelectionHighlight(scene);
-      this.renderInfoPanel(scene, viewportWidth, viewportHeight);
+      this.renderInfoPanel(scene, viewportWidth, viewportHeight, textSystem);
     }
 
     if (this.state.showIds) {
@@ -410,7 +426,12 @@ export class Inspector {
   /**
    * Render info panel for selected element.
    */
-  private renderInfoPanel(scene: FlashScene, viewportWidth: number, viewportHeight: number): void {
+  private renderInfoPanel(
+    scene: FlashScene,
+    viewportWidth: number,
+    viewportHeight: number,
+    textSystem?: TextSystem
+  ): void {
     const info = this.getSelectedElement();
     if (!info) return;
 
@@ -497,6 +518,12 @@ export class Inspector {
       borderWidth: 0,
       borderColor: { r: 0, g: 0, b: 0, a: 0 },
     });
+
+    // TODO: Text rendering in inspector overlay causes main content glyphs to disappear.
+    // For now, disable inspector text and log to console instead.
+    // The issue is likely related to glyph atlas texture corruption when preparing
+    // new glyph instances mid-frame. Investigation needed.
+    void textSystem;
   }
 
   /**

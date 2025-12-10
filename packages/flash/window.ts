@@ -712,11 +712,12 @@ export class FlashWindow {
 
     // Build inspector debug info from hit test tree if inspector is enabled
     if (this.inspector.isEnabled()) {
+      this.inspector.warmUpGlyphs(this.textSystem);
       this.inspector.beginFrame();
       this.inspectorNextId = 0;
       this.buildInspectorFromHitTestTree(this.hitTestTree, 0);
       this.inspector.handleMouseMove(this.mousePosition);
-      this.inspector.renderOverlay(this.scene, this.width, this.height);
+      this.inspector.renderOverlay(this.scene, this.width, this.height, this.textSystem);
     }
 
     this.endFrame();
@@ -746,11 +747,23 @@ export class FlashWindow {
    */
   private buildInspectorFromHitTestTree(nodes: HitTestNode[], depth: number): void {
     for (const node of nodes) {
+      // Derive type name from node properties
+      let typeName = "Div";
+      if (node.scrollHandle) {
+        typeName = "ScrollContainer";
+      } else if (node.focusHandle) {
+        typeName = "Focusable";
+      } else if (node.handlers.click || node.handlers.mouseDown) {
+        typeName = "Interactive";
+      } else if (node.keyContext) {
+        typeName = `Div (${node.keyContext})`;
+      }
+
       const info: ElementDebugInfo = {
         elementId: this.inspectorNextId++ as GlobalElementId,
         bounds: node.bounds,
         styles: {},
-        typeName: "Element",
+        typeName,
         sourceLocation: undefined,
         children: [],
         depth,
