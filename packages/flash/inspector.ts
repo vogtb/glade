@@ -519,11 +519,65 @@ export class Inspector {
       borderColor: { r: 0, g: 0, b: 0, a: 0 },
     });
 
-    // TODO: Text rendering in inspector overlay causes main content glyphs to disappear.
-    // For now, disable inspector text and log to console instead.
-    // The issue is likely related to glyph atlas texture corruption when preparing
-    // new glyph instances mid-frame. Investigation needed.
-    void textSystem;
+    // Render text content
+    if (!textSystem) return;
+
+    const fontSize = 12;
+    const lineHeight = 16;
+    const textPadding = 12;
+    const fontFamily = "Inter";
+
+    // Header title
+    const headerGlyphs = textSystem.prepareGlyphInstances(
+      info.typeName,
+      panelX + textPadding,
+      panelY + 10,
+      14,
+      18,
+      INSPECTOR_COLORS.text,
+      fontFamily
+    );
+    for (const glyph of headerGlyphs) {
+      scene.addGlyph(glyph);
+    }
+
+    // Content lines
+    let contentY = panelY + headerHeight + textPadding;
+    const lines: string[] = [];
+
+    lines.push(`ID: #${info.elementId}`);
+    lines.push(
+      `Bounds: ${info.bounds.x.toFixed(0)}, ${info.bounds.y.toFixed(0)} ${info.bounds.width.toFixed(0)}×${info.bounds.height.toFixed(0)}`
+    );
+    lines.push(`Depth: ${info.depth}`);
+
+    // Add style info
+    const styleLines = this.formatStyles(info.styles);
+    if (styleLines.length > 0) {
+      lines.push("");
+      lines.push("Styles:");
+      for (const style of styleLines.slice(0, 5)) {
+        lines.push(`  ${style}`);
+      }
+    }
+
+    for (const line of lines) {
+      if (contentY > panelY + panelHeight - lineHeight) break;
+
+      const glyphs = textSystem.prepareGlyphInstances(
+        line,
+        panelX + textPadding,
+        contentY,
+        fontSize,
+        lineHeight,
+        { r: 0.8, g: 0.8, b: 0.9, a: 1 },
+        fontFamily
+      );
+      for (const glyph of glyphs) {
+        scene.addGlyph(glyph);
+      }
+      contentY += lineHeight;
+    }
   }
 
   /**

@@ -545,15 +545,13 @@ export class TextSystem {
     fontFamily: string,
     style?: FontStyle
   ): GlyphInstance[] {
+    const shaped = this.shapeLine(text, fontSize, lineHeight, style);
+    const instances: GlyphInstance[] = [];
+
     const fontId = this.fontFamilyToId.get(fontFamily);
     if (!fontId) {
-      return [];
+      return instances;
     }
-
-    // Ensure font family is included in style for consistent shaping
-    const fullStyle: FontStyle = { family: fontFamily, ...style };
-    const shaped = this.shapeLine(text, fontSize, lineHeight, fullStyle);
-    const instances: GlyphInstance[] = [];
 
     const dpr = this._devicePixelRatio;
     const rasterFontSize = Math.ceil(fontSize * dpr);
@@ -564,8 +562,10 @@ export class TextSystem {
         continue;
       }
 
-      const subpixelX = Math.round((glyph.x % 1) * 6);
-      const subpixelY = Math.round((glyph.y % 1) * 3);
+      // Disable subpixel caching to reduce atlas pressure
+      // Original: subpixelX = Math.round((glyph.x % 1) * 6), subpixelY = Math.round((glyph.y % 1) * 3)
+      const subpixelX = 0;
+      const subpixelY = 0;
 
       const cached = this.atlas.getOrInsert(
         {
