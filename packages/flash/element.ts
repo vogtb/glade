@@ -282,6 +282,16 @@ export interface PaintContext {
   paintPath(path: import("./path.ts").PathBuilder, color: Color): void;
 
   /**
+   * Paint a cached path (pre-tessellated vertices and indices).
+   */
+  paintCachedPath(
+    vertices: Array<{ x: number; y: number }>,
+    indices: number[],
+    bounds: Bounds,
+    color: Color
+  ): void;
+
+  /**
    * Paint an underline primitive.
    */
   paintUnderline(

@@ -16,6 +16,8 @@ import {
   text,
   path,
   img,
+  svg,
+  SvgIcons,
   type FlashDiv,
   type ScrollHandle,
   type ImageTile,
@@ -48,6 +50,9 @@ const jetBrainsMonoSemiBoldBase64 = embedAsBase64(
 const demoPngBase64 = embedAsBase64("../../assets/image.png") as unknown as string;
 const flowerJpgBase64 = embedAsBase64("../../assets/flower.jpg") as unknown as string;
 
+// Embed SVG as base64 at build time
+const gearSvgBase64 = embedAsBase64("../../assets/gear.svg") as unknown as string;
+
 // Global image tiles - set after window is created
 let demoImageTile: ImageTile | null = null;
 let flowerImageTile: ImageTile | null = null;
@@ -66,7 +71,8 @@ type DemoSection =
   | "png-images"
   | "jpg-images"
   | "virtual-scrolling"
-  | "deferred-anchored";
+  | "deferred-anchored"
+  | "svg-icons";
 
 /**
  * Demo button configuration.
@@ -90,6 +96,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "jpg-images", label: "JPG Images", color: 0xf97316, hoverColor: 0xea580c },
   { id: "virtual-scrolling", label: "Virtual Scrolling", color: 0x6366f1, hoverColor: 0x4f46e5 },
   { id: "deferred-anchored", label: "Deferred/Anchored", color: 0xa855f7, hoverColor: 0x9333ea },
+  { id: "svg-icons", label: "SVG Icons", color: 0x14b8a6, hoverColor: 0x0d9488 },
 ];
 
 /**
@@ -103,6 +110,17 @@ function base64ToBytes(base64: string): Uint8Array {
   }
   return bytes;
 }
+
+/**
+ * Decode base64 to string (for SVG files)
+ */
+function base64ToString(base64: string): string {
+  const bytes = base64ToBytes(base64);
+  return new TextDecoder().decode(bytes);
+}
+
+// Decode the embedded gear SVG
+const gearSvgContent = base64ToString(gearSvgBase64);
 
 /**
  * Custom element that renders vector paths.
@@ -457,6 +475,8 @@ class DemoRootView implements FlashView {
         return this.renderVirtualScrollingDemo(cx);
       case "deferred-anchored":
         return this.renderDeferredAnchoredDemo(cx);
+      case "svg-icons":
+        return this.renderSvgIconsDemo();
       default:
         return div();
     }
@@ -1300,6 +1320,229 @@ class DemoRootView implements FlashView {
               .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
           ),
         deferredPopup
+      );
+  }
+
+  private renderSvgIconsDemo(): FlashDiv {
+    const iconEntries = Object.entries(SvgIcons) as Array<[string, string]>;
+
+    const customSvg = `
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="currentColor"/>
+        <rect x="30" y="45" width="40" height="10" fill="currentColor"/>
+        <rect x="45" y="30" width="10" height="40" fill="currentColor"/>
+      </svg>
+    `;
+
+    const complexSvg = `
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/>
+      </svg>
+    `;
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("SVG Icon Rendering").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Material Design icons with color tinting and sizing")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Built-in Icons (24x24)").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .flexWrap()
+          .children_(
+            ...iconEntries.slice(0, 12).map(([name, pathData]) =>
+              div()
+                .flex()
+                .flexCol()
+                .gap(4)
+                .itemsCenter()
+                .children_(
+                  div()
+                    .w(48)
+                    .h(48)
+                    .rounded(8)
+                    .bg({ r: 0.2, g: 0.2, b: 0.28, a: 1 })
+                    .flex()
+                    .itemsCenter()
+                    .justifyCenter()
+                    .child(svg(pathData).color({ r: 0.9, g: 0.9, b: 1, a: 1 }).size(24, 24)),
+                  text(name).font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                )
+            )
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Color Tinting").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .flexWrap()
+          .children_(
+            svg(SvgIcons.star).color({ r: 1, g: 0.84, b: 0, a: 1 }).size(32, 32),
+            svg(SvgIcons.heart).color({ r: 1, g: 0.3, b: 0.4, a: 1 }).size(32, 32),
+            svg(SvgIcons.check).color({ r: 0.3, g: 0.9, b: 0.4, a: 1 }).size(32, 32),
+            svg(SvgIcons.close).color({ r: 1, g: 0.4, b: 0.4, a: 1 }).size(32, 32),
+            svg(SvgIcons.info).color({ r: 0.3, g: 0.7, b: 1, a: 1 }).size(32, 32),
+            svg(SvgIcons.warning).color({ r: 1, g: 0.8, b: 0.2, a: 1 }).size(32, 32),
+            svg(SvgIcons.error).color({ r: 1, g: 0.3, b: 0.3, a: 1 }).size(32, 32),
+            svg(SvgIcons.settings).color({ r: 0.7, g: 0.5, b: 1, a: 1 }).size(32, 32)
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Size Variations").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .itemsEnd()
+          .children_(
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(SvgIcons.home).color({ r: 0.9, g: 0.9, b: 1, a: 1 }).size(16, 16),
+                text("16px").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(SvgIcons.home).color({ r: 0.9, g: 0.9, b: 1, a: 1 }).size(24, 24),
+                text("24px").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(SvgIcons.home).color({ r: 0.9, g: 0.9, b: 1, a: 1 }).size(32, 32),
+                text("32px").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(SvgIcons.home).color({ r: 0.9, g: 0.9, b: 1, a: 1 }).size(48, 48),
+                text("48px").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(SvgIcons.home).color({ r: 0.9, g: 0.9, b: 1, a: 1 }).size(64, 64),
+                text("64px").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              )
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Embedded SVG File (gear.svg)")
+          .font("Inter")
+          .size(18)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .itemsCenter()
+          .children_(
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(gearSvgContent).color({ r: 0.9, g: 0.9, b: 1, a: 1 }).size(32, 32),
+                text("32px").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(gearSvgContent).color({ r: 1, g: 0.6, b: 0.2, a: 1 }).size(48, 48),
+                text("48px Orange").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(gearSvgContent).color({ r: 0.4, g: 0.8, b: 1, a: 1 }).size(64, 64),
+                text("64px Blue").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              )
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Custom SVG Content").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .itemsCenter()
+          .children_(
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(customSvg).color({ r: 0.4, g: 0.8, b: 1, a: 1 }).size(48, 48),
+                text("Custom").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                svg(complexSvg).color({ r: 1, g: 0.7, b: 0.2, a: 1 }).size(48, 48),
+                text("Star Path").font("Inter").size(10).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              )
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .mt(8)
+          .children_(
+            text("Features:").font("Inter").size(14).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text("• Parse SVG path d attribute commands (M, L, C, Q, A, Z, etc.)")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Convert to Flash PathBuilder for GPU rendering")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Support relative and absolute coordinates")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Parse basic SVG elements: path, circle, rect, polygon")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Color tinting and arbitrary sizing")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+          )
       );
   }
 }

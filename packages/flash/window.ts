@@ -1326,6 +1326,20 @@ export class FlashWindow {
         scene.addPath(pathPrimitive);
       },
 
+      paintCachedPath: (
+        vertices: Array<{ x: number; y: number }>,
+        indices: number[],
+        bounds: Bounds,
+        color: Color
+      ): void => {
+        scene.addPath({
+          vertices,
+          indices,
+          bounds,
+          color,
+        });
+      },
+
       paintUnderline: (
         x: number,
         y: number,

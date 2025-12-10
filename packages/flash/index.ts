@@ -329,3 +329,15 @@ export { DeferredElement, deferred } from "./deferred.ts";
 export type { Corner, AnchoredPositionMode, AnchoredFitMode, Edges } from "./anchored.ts";
 
 export { AnchoredElement, anchored, edges } from "./anchored.ts";
+
+// SVG rendering
+export type { SvgPathCommand, ParsedSvgPath, ParsedSvg } from "./svg.ts";
+
+export {
+  SvgElement,
+  svg,
+  parseSvg,
+  parseSvgPathD,
+  svgCommandsToPathBuilder,
+  SvgIcons,
+} from "./svg.ts";
