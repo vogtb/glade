@@ -1,17 +1,10 @@
 export {
-  // WebGL
-  createWebGLContext,
-  runWebGLRenderLoop,
   // WebGPU
   createWebGPUContext,
   runWebGPURenderLoop,
   // Flash
   createFlashPlatform,
-  // Constants
-  GLSL_VERSION,
-  GLSL_PRECISION,
   // Types
-  type BrowserWebGLContext,
   type BrowserWebGPUContext,
   type BrowserContextOptions,
   type BrowserWebGPUContextOptions,

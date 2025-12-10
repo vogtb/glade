@@ -1,4 +1,4 @@
-import type { WebGLContext, WebGPUContext, RenderCallback, ContextOptions } from "@glade/core";
+import type { WebGPUContext, RenderCallback, ContextOptions } from "@glade/core";
 import {
   KeyAction,
   CursorStyle,
@@ -27,7 +27,6 @@ import {
   GLFW_RESIZE_ALL_CURSOR,
   GLFW_NOT_ALLOWED_CURSOR,
 } from "@glade/glfw";
-import { DarwinWebGL2RenderingContext } from "./opengl";
 import {
   createInstance,
   requestAdapter,
@@ -113,12 +112,6 @@ export interface DarwinContextOptions extends ContextOptions {
   title?: string;
 }
 
-// WebGL context interface
-export interface DarwinWebGLContext extends WebGLContext {
-  gl: WebGL2RenderingContext;
-  window: GLFWwindow;
-}
-
 // WebGPU context interface
 export interface DarwinWebGPUContext extends WebGPUContext {
   window: GLFWwindow;
@@ -132,215 +125,6 @@ export interface DarwinWebGPUContext extends WebGPUContext {
   wgpuSurface: WGPUSurface;
   // Resize handler for reconfiguring surface on window resize
   handleResize(): void;
-}
-
-// Creates a native OpenGL context for macOS using GLFW.
-export function createWebGLContext(options: DarwinContextOptions = {}): DarwinWebGLContext {
-  const width = options.width ?? 800;
-  const height = options.height ?? 600;
-  const title = options.title ?? "glade";
-
-  if (!glfw.init()) {
-    throw new Error("Failed to initialize GLFW");
-  }
-
-  // GLFW constants
-  // TODO; move these and other glfw setup into the glfw package
-  const GLFW_CONTEXT_VERSION_MAJOR = 0x00022002;
-  const GLFW_CONTEXT_VERSION_MINOR = 0x00022003;
-  const GLFW_OPENGL_PROFILE = 0x00022008;
-  const GLFW_OPENGL_FORWARD_COMPAT = 0x00022006;
-  const GLFW_OPENGL_CORE_PROFILE = 0x00032001;
-
-  // request OpenGL 3.2 Core Profile for WebGL2 compatibility
-  glfw.windowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfw.windowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfw.windowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfw.windowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
-
-  const window = glfw.createWindow(width, height, title);
-  if (!window) {
-    glfw.terminate();
-    throw new Error("failed to create GLFW window");
-  }
-
-  glfw.makeContextCurrent(window);
-  glfw.swapInterval(1); // enable vsync
-
-  const fbSize = glfw.getFramebufferSize(window);
-
-  // create WebGL2-compatible context
-  const glImpl = new DarwinWebGL2RenderingContext(fbSize.width, fbSize.height);
-  glImpl.viewport(0, 0, fbSize.width, fbSize.height);
-
-  // cast to WebGL2RenderingContext for type compatibility
-  const gl = glImpl as unknown as WebGL2RenderingContext;
-
-  // Track cleanup functions for all registered callbacks
-  const cleanups: Array<() => void> = [];
-
-  // Cursor cache
-  const cursorCache = new CursorCache();
-
-  return {
-    gl,
-    window,
-    width,
-    height,
-
-    destroy() {
-      // Clean up all registered callbacks
-      for (const cleanup of cleanups) {
-        cleanup();
-      }
-      cleanups.length = 0;
-      cursorCache.destroy();
-      glfw.destroyWindow(window);
-      glfw.terminate();
-    },
-
-    onKey(callback: KeyCallback): () => void {
-      const cleanup = glfw.setKeyCallback(window, (_win, key, scancode, action, mods) => {
-        callback({
-          key,
-          scancode,
-          action: action as KeyAction,
-          mods,
-        });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onChar(callback: CharCallback): () => void {
-      const cleanup = glfw.setCharCallback(window, (_win, codepoint) => {
-        callback({
-          codepoint,
-          char: String.fromCodePoint(codepoint),
-        });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onMouseButton(callback: MouseButtonCallback): () => void {
-      const cleanup = glfw.setMouseButtonCallback(window, (_win, button, action, mods) => {
-        callback({
-          button: button as MouseButton,
-          action: action as KeyAction,
-          mods,
-        });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onCursorMove(callback: CursorMoveCallback): () => void {
-      const cleanup = glfw.setCursorPosCallback(window, (_win, x, y) => {
-        callback({ x, y });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onScroll(callback: ScrollCallback): () => void {
-      const cleanup = glfw.setScrollCallback(window, (_win, deltaX, deltaY) => {
-        // GLFW: positive yoffset = scroll up (wheel toward user / trackpad swipe down in natural mode)
-        // Our convention: positive deltaY = scroll down (increase offset, see content below)
-        // So we negate the GLFW values. GLFW gives raw ticks (~1-3), scale up to match pixels.
-        const scale = 3.5;
-        callback({ deltaX: -deltaX * scale, deltaY: -deltaY * scale });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onResize(callback: ResizeCallback): () => void {
-      const cleanup = glfw.setFramebufferSizeCallback(window, (_win, w, h) => {
-        callback({ width: w, height: h });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onClose(callback: CloseCallback): () => void {
-      const cleanup = glfw.setWindowCloseCallback(window, () => {
-        callback();
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onFocus(callback: FocusCallback): () => void {
-      const cleanup = glfw.setWindowFocusCallback(window, (_win, focused) => {
-        callback({ focused: focused !== 0 });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onCursorEnter(callback: CursorEnterCallback): () => void {
-      const cleanup = glfw.setCursorEnterCallback(window, (_win, entered) => {
-        callback({ entered: entered !== 0 });
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    onRefresh(callback: RefreshCallback): () => void {
-      const cleanup = glfw.setWindowRefreshCallback(window, () => {
-        callback();
-      });
-      cleanups.push(cleanup);
-      return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
-      };
-    },
-
-    setCursor(style: CursorStyle): void {
-      const shape = cursorStyleToGLFWShape(style);
-      const cursor = cursorCache.get(shape);
-      glfw.setCursor(window, cursor);
-    },
-  };
 }
 
 /**
@@ -675,28 +459,6 @@ export async function createWebGPUContext(
   };
 
   return ctx;
-}
-
-/**
- * Native render loop for macOS WebGL context.
- * Time values are in seconds.
- */
-export function runWebGLRenderLoop(ctx: DarwinWebGLContext, callback: RenderCallback): void {
-  let lastTime = glfw.getTime();
-
-  while (!glfw.windowShouldClose(ctx.window)) {
-    const time = glfw.getTime();
-    const deltaTime = time - lastTime;
-    lastTime = time;
-
-    const shouldContinue = callback(time, deltaTime);
-    if (shouldContinue === false) {
-      break;
-    }
-
-    glfw.swapBuffers(ctx.window);
-    glfw.pollEvents();
-  }
 }
 
 /**
