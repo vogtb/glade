@@ -299,3 +299,23 @@ export {
 export type { ElementDebugInfo, InspectorState } from "./inspector.ts";
 
 export { Inspector, INSPECTOR_COLORS, createInspector, createInspectorState } from "./inspector.ts";
+
+// Virtual scrolling - UniformList (fixed height)
+export type {
+  ScrollToStrategy,
+  UniformListItemProps,
+  UniformListRenderItem,
+} from "./uniform_list.ts";
+
+export { UniformList, uniformList } from "./uniform_list.ts";
+
+// Virtual scrolling - List (variable height)
+export type {
+  ListAlignment,
+  ListOffset,
+  ListScrollEvent,
+  ListItemProps,
+  ListRenderItem,
+} from "./list.ts";
+
+export { List, ListState, list, createListState, type ListMeasureItem } from "./list.ts";

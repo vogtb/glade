@@ -25,6 +25,10 @@ import {
   type PaintContext,
   type RequestLayoutResult,
   type Bounds,
+  uniformList,
+  list,
+  createListState,
+  type ListState,
 } from "@glade/flash";
 import { embedAsBase64 } from "./embed" with { type: "macro" };
 
@@ -44,6 +48,44 @@ const flowerJpgBase64 = embedAsBase64("../../assets/flower.jpg") as unknown as s
 // Global image tiles - set after window is created
 let demoImageTile: ImageTile | null = null;
 let flowerImageTile: ImageTile | null = null;
+
+/**
+ * Demo section identifiers.
+ */
+type DemoSection =
+  | "inter-text"
+  | "mono-text"
+  | "mono-semibold"
+  | "underlined-text"
+  | "group-styles"
+  | "vector-paths"
+  | "border-styles"
+  | "png-images"
+  | "jpg-images"
+  | "virtual-scrolling";
+
+/**
+ * Demo button configuration.
+ */
+interface DemoButton {
+  id: DemoSection;
+  label: string;
+  color: number;
+  hoverColor: number;
+}
+
+const DEMO_BUTTONS: DemoButton[] = [
+  { id: "inter-text", label: "Inter Text", color: 0x3b82f6, hoverColor: 0x2563eb },
+  { id: "mono-text", label: "Monospace Text", color: 0x10b981, hoverColor: 0x059669 },
+  { id: "mono-semibold", label: "Mono SemiBold", color: 0xf59e0b, hoverColor: 0xd97706 },
+  { id: "underlined-text", label: "Underlined Text", color: 0xef4444, hoverColor: 0xdc2626 },
+  { id: "group-styles", label: "Group Styles", color: 0x8b5cf6, hoverColor: 0x7c3aed },
+  { id: "vector-paths", label: "Vector Paths", color: 0xec4899, hoverColor: 0xdb2777 },
+  { id: "border-styles", label: "Border Styles", color: 0x06b6d4, hoverColor: 0x0891b2 },
+  { id: "png-images", label: "PNG Images", color: 0x84cc16, hoverColor: 0x65a30d },
+  { id: "jpg-images", label: "JPG Images", color: 0xf97316, hoverColor: 0xea580c },
+  { id: "virtual-scrolling", label: "Virtual Scrolling", color: 0x6366f1, hoverColor: 0x4f46e5 },
+];
 
 /**
  * Decode base64 to Uint8Array (works in both browser and Node/Bun)
@@ -220,14 +262,12 @@ class UnderlinedTextElement extends FlashElement<{ textWidth: number; textHeight
   ): void {}
 
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: void): void {
-    // Paint the text
     cx.paintGlyphs(this.textContent, bounds, this.textColor, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: 400,
     });
 
-    // Paint underline below the text baseline
     const underlineY = bounds.y + this.fontSize * 1.1;
     cx.paintUnderline(
       bounds.x,
@@ -246,7 +286,7 @@ class UnderlinedTextElement extends FlashElement<{ textWidth: number; textHeight
 }
 
 function underlinedText(
-  text: string,
+  textContent: string,
   options: {
     style: "solid" | "wavy";
     textColor: { r: number; g: number; b: number; a: number };
@@ -258,29 +298,11 @@ function underlinedText(
     amplitude?: number;
   }
 ): UnderlinedTextElement {
-  return new UnderlinedTextElement(text, options);
-}
-
-/**
- * Helper to create a hoverable button with text label.
- */
-function hoverButton(label: string, color: number, hoverColor: number): FlashDiv {
-  return div()
-    .h(48)
-    .flexShrink0()
-    .bg(rgb(color))
-    .rounded(8)
-    .cursorPointer()
-    .hover((s) => s.bg(rgb(hoverColor)).shadow("md"))
-    .flex()
-    .itemsCenter()
-    .justifyCenter()
-    .child(text(label).font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }));
+  return new UnderlinedTextElement(textContent, options);
 }
 
 /**
  * Helper to create a button that participates in a group hover/active.
- * All buttons in the same group will react when any one is hovered or pressed.
  */
 function groupButton(
   label: string,
@@ -312,15 +334,25 @@ function groupButton(
  * Main demo view - the root view of the application.
  */
 class DemoRootView implements FlashView {
-  private leftScrollHandle: ScrollHandle | null = null;
   private rightScrollHandle: ScrollHandle | null = null;
+  private uniformListScrollHandle: ScrollHandle | null = null;
+  private variableListScrollHandle: ScrollHandle | null = null;
+  private variableListState: ListState | null = null;
+  private selectedDemo: DemoSection = "inter-text";
 
   render(cx: FlashViewContext<this>): FlashDiv {
-    if (!this.leftScrollHandle) {
-      this.leftScrollHandle = cx.newScrollHandle(cx.windowId);
-    }
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.uniformListScrollHandle) {
+      this.uniformListScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.variableListScrollHandle) {
+      this.variableListScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.variableListState) {
+      this.variableListState = createListState();
+      this.variableListState.setScrollHandle(this.variableListScrollHandle!);
     }
     if (!demoImageTile) {
       throw new Error("demo image should have loaded before render");
@@ -334,583 +366,733 @@ class DemoRootView implements FlashView {
       .bg(rgb(0x14141a))
       .gap(20)
       .p(20)
+      .children_(this.renderNavigation(cx), this.renderContent(cx));
+  }
+
+  private renderNavigation(cx: FlashViewContext<this>): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .w(220)
+      .bg(rgb(0x1f1f28))
+      .rounded(12)
+      .p(16)
+      .gap(8)
       .children_(
-        // Left column - fixed width, scrollable
+        text("Flash Demos").font("Inter").size(18).color({ r: 1, g: 1, b: 1, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        ...DEMO_BUTTONS.map((btn) => this.renderNavButton(cx, btn))
+      );
+  }
+
+  private renderNavButton(cx: FlashViewContext<this>, btn: DemoButton): FlashDiv {
+    const isSelected = this.selectedDemo === btn.id;
+    const baseColor = isSelected ? btn.hoverColor : btn.color;
+
+    return div()
+      .h(40)
+      .flexShrink0()
+      .bg(rgb(baseColor))
+      .rounded(8)
+      .cursorPointer()
+      .border(isSelected ? 2 : 0)
+      .borderColor({ r: 1, g: 1, b: 1, a: 0.3 })
+      .hover((s) => s.bg(rgb(btn.hoverColor)).shadow("md"))
+      .active((s) => s.bg(rgb(btn.hoverColor)))
+      .flex()
+      .itemsCenter()
+      .px(12)
+      .onClick(
+        cx.listener((view, _event, _window, ecx) => {
+          view.selectedDemo = btn.id;
+          ecx.notify();
+        })
+      )
+      .child(text(btn.label).font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }));
+  }
+
+  private renderContent(cx: FlashViewContext<this>): FlashDiv {
+    return div()
+      .flexGrow()
+      .bg(rgb(0x2a2a35))
+      .rounded(12)
+      .p(24)
+      .flex()
+      .flexCol()
+      .gap(16)
+      .overflowHidden()
+      .trackScroll(this.rightScrollHandle!)
+      .child(this.renderDemoContent(cx));
+  }
+
+  private renderDemoContent(cx: FlashViewContext<this>): FlashDiv {
+    switch (this.selectedDemo) {
+      case "inter-text":
+        return this.renderInterTextDemo();
+      case "mono-text":
+        return this.renderMonoTextDemo();
+      case "mono-semibold":
+        return this.renderMonoSemiBoldDemo();
+      case "underlined-text":
+        return this.renderUnderlinedTextDemo();
+      case "group-styles":
+        return this.renderGroupStylesDemo();
+      case "vector-paths":
+        return this.renderVectorPathsDemo();
+      case "border-styles":
+        return this.renderBorderStylesDemo();
+      case "png-images":
+        return this.renderPngImagesDemo();
+      case "jpg-images":
+        return this.renderJpgImagesDemo();
+      case "virtual-scrolling":
+        return this.renderVirtualScrollingDemo(cx);
+      default:
+        return div();
+    }
+  }
+
+  private renderInterTextDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Inter Variable Font").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("GPU-accelerated text rendering with cosmic-text shaping")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("The quick brown fox jumps over the lazy dog.")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+        text("abcdefghijklmnopqrstuvwxyz")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+        text("0123456789 !@#$%^&*()_+-=[]{}|;':\",./<>?")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Font Sizes").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("10px: The quick brown fox")
+          .font("Inter")
+          .size(10)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("12px: The quick brown fox")
+          .font("Inter")
+          .size(12)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("14px: The quick brown fox")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+        text("18px: The quick brown fox")
+          .font("Inter")
+          .size(18)
+          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+        text("24px: The quick brown fox")
+          .font("Inter")
+          .size(24)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("32px: The quick brown fox").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 })
+      );
+  }
+
+  private renderMonoTextDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("JetBrains Mono Regular")
+          .font("JetBrains Mono")
+          .size(32)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Monospaced font for code editing")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("const greeting = 'Hello, World!';")
+          .font("JetBrains Mono")
+          .size(14)
+          .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 }),
+        text("function fibonacci(n: number): number {")
+          .font("JetBrains Mono")
+          .size(14)
+          .color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+        text("  return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);")
+          .font("JetBrains Mono")
+          .size(14)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("}").font("JetBrains Mono").size(14).color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Character Disambiguation")
+          .font("Inter")
+          .size(18)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("0O 1lI |! {} [] () <> => != === // /* */")
+          .font("JetBrains Mono")
+          .size(16)
+          .color({ r: 0.5, g: 0.8, b: 1, a: 1 }),
+        text("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
+          .font("JetBrains Mono")
+          .size(14)
+          .color({ r: 0.8, g: 0.6, b: 0.9, a: 1 })
+      );
+  }
+
+  private renderMonoSemiBoldDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("JetBrains Mono SemiBold")
+          .font("JetBrains Mono SemiBold")
+          .size(32)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Heavier weight for emphasis and headers")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("const PI = 3.14159265359;")
+          .font("JetBrains Mono SemiBold")
+          .size(16)
+          .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 }),
+        text("export class FlashElement {")
+          .font("JetBrains Mono SemiBold")
+          .size(16)
+          .color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+        text("  abstract render(): void;")
+          .font("JetBrains Mono SemiBold")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("}").font("JetBrains Mono SemiBold").size(16).color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("0O 1lI |! {} [] () <> => != === // /* */")
+          .font("JetBrains Mono SemiBold")
+          .size(16)
+          .color({ r: 0.5, g: 0.8, b: 1, a: 1 }),
+        text("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
+          .font("JetBrains Mono SemiBold")
+          .size(14)
+          .color({ r: 0.8, g: 0.6, b: 0.9, a: 1 })
+      );
+  }
+
+  private renderUnderlinedTextDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Text Underlines").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Solid and wavy underlines for text decoration")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
         div()
           .flex()
-          .flexCol()
-          .w(240)
-          .bg(rgb(0x1f1f28))
-          .rounded(12)
-          .p(16)
-          .gap(12)
-          .overflowHidden()
-          .trackScroll(this.leftScrollHandle)
+          .flexRow()
+          .gap(24)
+          .flexWrap()
+          .itemsEnd()
           .children_(
-            hoverButton("Dashboard", 0x3b82f6, 0x2563eb),
-            hoverButton("Analytics", 0x10b981, 0x059669),
-            hoverButton("Settings", 0xf59e0b, 0xd97706),
-            hoverButton("Users", 0xef4444, 0xdc2626),
-            hoverButton("Reports", 0x8b5cf6, 0x7c3aed),
-            hoverButton("Messages", 0xec4899, 0xdb2777),
-            hoverButton("Calendar", 0x06b6d4, 0x0891b2),
-            hoverButton("Projects", 0x84cc16, 0x65a30d),
-            hoverButton("Tasks", 0xf97316, 0xea580c),
-            hoverButton("Files", 0x6366f1, 0x4f46e5),
-            hoverButton("Teams", 0x14b8a6, 0x0d9488),
-            hoverButton("Integrations", 0xa855f7, 0x9333ea),
-            hoverButton("Billing", 0xf43f5e, 0xe11d48),
-            hoverButton("Help", 0x22c55e, 0x16a34a),
-            hoverButton("Logout", 0x0ea5e9, 0x0284c7)
+            underlinedText("Hyperlink", {
+              style: "solid",
+              textColor: { r: 0.3, g: 0.7, b: 1, a: 1 },
+              fontSize: 16,
+              thickness: 1,
+            }),
+            underlinedText("Important", {
+              style: "solid",
+              textColor: { r: 0.5, g: 1, b: 0.5, a: 1 },
+              fontSize: 16,
+              thickness: 2,
+            }),
+            underlinedText("Speling Error", {
+              style: "wavy",
+              textColor: { r: 0.9, g: 0.9, b: 0.9, a: 1 },
+              underlineColor: { r: 1, g: 0.3, b: 0.3, a: 1 },
+              fontSize: 16,
+              thickness: 1.5,
+              wavelength: 4,
+              amplitude: 1.5,
+            }),
+            underlinedText("Grammer Issue", {
+              style: "wavy",
+              textColor: { r: 0.9, g: 0.9, b: 0.9, a: 1 },
+              underlineColor: { r: 0.3, g: 0.6, b: 1, a: 1 },
+              fontSize: 16,
+              thickness: 1.5,
+              wavelength: 5,
+              amplitude: 1.5,
+            })
           ),
-        // Right column - main content area with text demo (scrollable)
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Larger Text").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
         div()
-          .flexGrow()
-          .bg(rgb(0x2a2a35))
-          .rounded(12)
-          .p(24)
           .flex()
-          .flexCol()
+          .flexRow()
+          .gap(32)
+          .flexWrap()
+          .itemsEnd()
+          .children_(
+            underlinedText("Title Text", {
+              style: "solid",
+              textColor: { r: 1, g: 0.8, b: 0.3, a: 1 },
+              fontSize: 24,
+              thickness: 2,
+            }),
+            underlinedText("Code Identifier", {
+              style: "wavy",
+              textColor: { r: 0.6, g: 0.9, b: 0.6, a: 1 },
+              underlineColor: { r: 1, g: 0.6, b: 0.2, a: 1 },
+              fontFamily: "JetBrains Mono",
+              fontSize: 18,
+              thickness: 2,
+              wavelength: 6,
+              amplitude: 2,
+            })
+          )
+      );
+  }
+
+  private renderGroupStylesDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Group Styles").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Coordinated hover and active effects across related elements")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Hover or click any button in a group to see coordinated effects")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .itemsCenter()
+          .children_(
+            text("Group A:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+            groupButton("One", "group-a", 0x3730a3, 0x4338ca, 0x6366f1),
+            groupButton("Two", "group-a", 0x3730a3, 0x4338ca, 0x6366f1),
+            groupButton("Three", "group-a", 0x3730a3, 0x4338ca, 0x6366f1)
+          ),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .itemsCenter()
+          .children_(
+            text("Group B:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+            groupButton("Alpha", "group-b", 0x166534, 0x15803d, 0x22c55e),
+            groupButton("Beta", "group-b", 0x166534, 0x15803d, 0x22c55e),
+            groupButton("Gamma", "group-b", 0x166534, 0x15803d, 0x22c55e)
+          ),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .itemsCenter()
+          .children_(
+            text("Group C:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+            groupButton("Red", "group-c", 0x991b1b, 0xb91c1c, 0xef4444),
+            groupButton("Green", "group-c", 0x166534, 0x15803d, 0x22c55e),
+            groupButton("Blue", "group-c", 0x1e40af, 0x1d4ed8, 0x3b82f6)
+          )
+      );
+  }
+
+  private renderVectorPathsDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Vector Path Rendering").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("GPU-accelerated vector graphics with tessellation")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Large Shapes (64px)").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
           .gap(16)
-          .overflowHidden()
-          .trackScroll(this.rightScrollHandle)
+          .flexWrap()
+          .children_(
+            pathShape("star", { r: 1, g: 0.8, b: 0.2, a: 1 }, 64),
+            pathShape("polygon", { r: 0.3, g: 0.8, b: 1, a: 1 }, 64),
+            pathShape("circle", { r: 0.9, g: 0.3, b: 0.5, a: 1 }, 64),
+            pathShape("heart", { r: 1, g: 0.3, b: 0.4, a: 1 }, 64),
+            pathShape("arrow", { r: 0.4, g: 0.9, b: 0.5, a: 1 }, 64)
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Small Shapes (32px)").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(8)
+          .flexWrap()
+          .children_(
+            pathShape("star", { r: 0.9, g: 0.5, b: 0.9, a: 1 }, 32),
+            pathShape("polygon", { r: 0.5, g: 0.9, b: 0.7, a: 1 }, 32),
+            pathShape("circle", { r: 0.9, g: 0.7, b: 0.3, a: 1 }, 32),
+            pathShape("heart", { r: 0.7, g: 0.3, b: 0.9, a: 1 }, 32),
+            pathShape("arrow", { r: 0.3, g: 0.7, b: 0.9, a: 1 }, 32),
+            pathShape("star", { r: 0.9, g: 0.4, b: 0.4, a: 1 }, 32),
+            pathShape("polygon", { r: 0.4, g: 0.9, b: 0.4, a: 1 }, 32)
+          )
+      );
+  }
+
+  private renderBorderStylesDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Border Styles").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Solid and dashed border rendering")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .flexWrap()
           .children_(
             div()
-              .flexShrink0()
-              .child(
-                text("Flash Text Demo").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 })
-              ),
+              .w(80)
+              .h(60)
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 0.3, g: 0.8, b: 1, a: 1 })
+              .borderSolid()
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Solid").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })),
             div()
-              .flexShrink0()
-              .child(
-                text("GPU-accelerated text rendering with cosmic-text shaping")
-                  .font("Inter")
-                  .size(16)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-            div().h(1).flexShrink0().bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+              .w(80)
+              .h(60)
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 1, g: 0.5, b: 0.3, a: 1 })
+              .borderDashed()
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Dashed").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })),
+            div()
+              .w(100)
+              .h(60)
+              .rounded(12)
+              .border(3)
+              .borderColor({ r: 0.9, g: 0.3, b: 0.6, a: 1 })
+              .borderDashed()
+              .borderDashLength(12)
+              .borderGapLength(6)
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Custom").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })),
+            div()
+              .w(60)
+              .h(60)
+              .border(2)
+              .borderColor({ r: 0.5, g: 1, b: 0.5, a: 1 })
+              .borderSolid()
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("■").font("Inter").size(16).color({ r: 0.5, g: 1, b: 0.5, a: 1 })),
+            div()
+              .w(60)
+              .h(60)
+              .border(2)
+              .borderColor({ r: 1, g: 0.8, b: 0.2, a: 1 })
+              .borderDashed()
+              .borderDashLength(8)
+              .borderGapLength(4)
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("▢").font("Inter").size(16).color({ r: 1, g: 0.8, b: 0.2, a: 1 }))
+          )
+      );
+  }
 
-            // Underline Demo section (early in content so it's visible without scrolling)
-            div()
-              .flexShrink0()
-              .child(
-                text("Text Underlines").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("Solid and wavy underlines for text decoration")
-                  .font("Inter")
-                  .size(14)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-
-            // Underlined text examples
+  private renderPngImagesDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("PNG Image Rendering").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("PNG decoding with GPU-accelerated rendering and effects")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .flexWrap()
+          .children_(
             div()
               .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(24)
-              .flexWrap()
-              .itemsEnd()
-              .children_(
-                underlinedText("Hyperlink", {
-                  style: "solid",
-                  textColor: { r: 0.3, g: 0.7, b: 1, a: 1 },
-                  fontSize: 16,
-                  thickness: 1,
-                }),
-                underlinedText("Important", {
-                  style: "solid",
-                  textColor: { r: 0.5, g: 1, b: 0.5, a: 1 },
-                  fontSize: 16,
-                  thickness: 2,
-                }),
-                underlinedText("Speling Error", {
-                  style: "wavy",
-                  textColor: { r: 0.9, g: 0.9, b: 0.9, a: 1 },
-                  underlineColor: { r: 1, g: 0.3, b: 0.3, a: 1 },
-                  fontSize: 16,
-                  thickness: 1.5,
-                  wavelength: 4,
-                  amplitude: 1.5,
-                }),
-                underlinedText("Grammer Issue", {
-                  style: "wavy",
-                  textColor: { r: 0.9, g: 0.9, b: 0.9, a: 1 },
-                  underlineColor: { r: 0.3, g: 0.6, b: 1, a: 1 },
-                  fontSize: 16,
-                  thickness: 1.5,
-                  wavelength: 5,
-                  amplitude: 1.5,
-                })
-              ),
-
-            // Larger text with underlines
-            div()
-              .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(32)
-              .flexWrap()
-              .itemsEnd()
-              .children_(
-                underlinedText("Title Text", {
-                  style: "solid",
-                  textColor: { r: 1, g: 0.8, b: 0.3, a: 1 },
-                  fontSize: 24,
-                  thickness: 2,
-                }),
-                underlinedText("Code Identifier", {
-                  style: "wavy",
-                  textColor: { r: 0.6, g: 0.9, b: 0.6, a: 1 },
-                  underlineColor: { r: 1, g: 0.6, b: 0.2, a: 1 },
-                  fontFamily: "JetBrains Mono",
-                  fontSize: 18,
-                  thickness: 2,
-                  wavelength: 6,
-                  amplitude: 2,
-                })
-              ),
-
-            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-
-            // Group Styles Demo section
-            div()
-              .flexShrink0()
-              .child(
-                text("Group Styles").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("Coordinated hover and active effects across related elements")
-                  .font("Inter")
-                  .size(14)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-
-            // Group A - three buttons that highlight together
-            div()
-              .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(12)
+              .flexCol()
+              .gap(4)
               .itemsCenter()
               .children_(
-                text("Group A:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
-                groupButton("One", "group-a", 0x3730a3, 0x4338ca, 0x6366f1),
-                groupButton("Two", "group-a", 0x3730a3, 0x4338ca, 0x6366f1),
-                groupButton("Three", "group-a", 0x3730a3, 0x4338ca, 0x6366f1)
+                img(demoImageTile!).size(150, 100),
+                text("Original").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
               ),
-
-            // Group B - different colored group
             div()
               .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(12)
+              .flexCol()
+              .gap(4)
               .itemsCenter()
               .children_(
-                text("Group B:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
-                groupButton("Alpha", "group-b", 0x166534, 0x15803d, 0x22c55e),
-                groupButton("Beta", "group-b", 0x166534, 0x15803d, 0x22c55e),
-                groupButton("Gamma", "group-b", 0x166534, 0x15803d, 0x22c55e)
+                img(demoImageTile!).size(150, 100).rounded(16),
+                text("Rounded").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
               ),
-
-            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-
-            // Inter font section
-            div()
-              .flexShrink0()
-              .child(
-                text("Inter Variable Font")
-                  .font("Inter")
-                  .size(18)
-                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("The quick brown fox jumps over the lazy dog.")
-                  .font("Inter")
-                  .size(14)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-
-            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-
-            // JetBrains Mono section
-            div()
-              .flexShrink0()
-              .child(
-                text("JetBrains Mono Regular")
-                  .font("JetBrains Mono")
-                  .size(18)
-                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("const greeting = 'Hello, World!';")
-                  .font("JetBrains Mono")
-                  .size(14)
-                  .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("function fibonacci(n: number): number {")
-                  .font("JetBrains Mono")
-                  .size(14)
-                  .color({ r: 0.9, g: 0.7, b: 0.5, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("  return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);")
-                  .font("JetBrains Mono")
-                  .size(14)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("}").font("JetBrains Mono").size(14).color({ r: 0.9, g: 0.7, b: 0.5, a: 1 })
-              ),
-
-            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-
-            // JetBrains Mono SemiBold section
-            div()
-              .flexShrink0()
-              .child(
-                text("JetBrains Mono SemiBold")
-                  .font("JetBrains Mono SemiBold")
-                  .size(18)
-                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("0O 1lI |! {} [] () <> => != === // /* */")
-                  .font("JetBrains Mono SemiBold")
-                  .size(16)
-                  .color({ r: 0.5, g: 0.8, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
-                  .font("JetBrains Mono SemiBold")
-                  .size(14)
-                  .color({ r: 0.8, g: 0.6, b: 0.9, a: 1 })
-              ),
-
-            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-
-            // Path/Vector Demo section
-            div()
-              .flexShrink0()
-              .child(
-                text("Vector Path Rendering")
-                  .font("Inter")
-                  .size(18)
-                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("GPU-accelerated vector graphics with tessellation")
-                  .font("Inter")
-                  .size(14)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-
-            // Row of vector shapes
             div()
               .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(16)
-              .flexWrap()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
               .children_(
-                pathShape("star", { r: 1, g: 0.8, b: 0.2, a: 1 }, 64),
-                pathShape("polygon", { r: 0.3, g: 0.8, b: 1, a: 1 }, 64),
-                pathShape("circle", { r: 0.9, g: 0.3, b: 0.5, a: 1 }, 64),
-                pathShape("heart", { r: 1, g: 0.3, b: 0.4, a: 1 }, 64),
-                pathShape("arrow", { r: 0.4, g: 0.9, b: 0.5, a: 1 }, 64)
+                img(demoImageTile!).size(150, 100).grayscale(),
+                text("Grayscale").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
               ),
-
-            // Smaller shapes row
             div()
               .flex()
-              .flexRow()
-              .flexShrink0()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                img(demoImageTile!).size(150, 100).opacity(0.5),
+                text("50% Opacity").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                img(demoImageTile!).size(100, 100).rounded(50),
+                text("Circle").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              )
+          )
+      );
+  }
+
+  private renderJpgImagesDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("JPEG Image Rendering").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("JPEG decoding with GPU-accelerated rendering and effects")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .flexWrap()
+          .children_(
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                img(flowerImageTile!).size(150, 100),
+                text("Original").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                img(flowerImageTile!).size(150, 100).rounded(16),
+                text("Rounded").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                img(flowerImageTile!).size(150, 100).grayscale(),
+                text("Grayscale").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                img(flowerImageTile!).size(100, 100).rounded(50),
+                text("Circle").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+              )
+          )
+      );
+  }
+
+  private renderVirtualScrollingDemo(cx: FlashViewContext<this>): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Virtual Scrolling").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Efficient rendering of large lists with fixed and variable height items")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .h(400)
+          .children_(
+            div()
+              .flex()
+              .flexCol()
+              .flex1()
               .gap(8)
-              .flexWrap()
               .children_(
-                pathShape("star", { r: 0.9, g: 0.5, b: 0.9, a: 1 }, 32),
-                pathShape("polygon", { r: 0.5, g: 0.9, b: 0.7, a: 1 }, 32),
-                pathShape("circle", { r: 0.9, g: 0.7, b: 0.3, a: 1 }, 32),
-                pathShape("heart", { r: 0.7, g: 0.3, b: 0.9, a: 1 }, 32),
-                pathShape("arrow", { r: 0.3, g: 0.7, b: 0.9, a: 1 }, 32),
-                pathShape("star", { r: 0.9, g: 0.4, b: 0.4, a: 1 }, 32),
-                pathShape("polygon", { r: 0.4, g: 0.9, b: 0.4, a: 1 }, 32)
-              ),
-
-            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-
-            // Border Styles Demo section
-            div()
-              .flexShrink0()
-              .child(
-                text("Border Styles Demo")
+                text("UniformList (1000 items, 40px each)")
                   .font("Inter")
-                  .size(18)
-                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
-              ),
-            div()
-              .flexShrink0()
-              .child(
-                text("Solid and dashed border rendering")
-                  .font("Inter")
-                  .size(14)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-
-            // Row of border style boxes
-            div()
-              .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(16)
-              .flexWrap()
-              .children_(
-                // Solid border box
-                div()
-                  .w(80)
-                  .h(60)
+                  .size(13)
+                  .color({ r: 0.6, g: 0.8, b: 1, a: 1 }),
+                uniformList<number>((item, props, _cx) =>
+                  div()
+                    .h(36)
+                    .px(12)
+                    .bg(
+                      props.index % 2 === 0
+                        ? { r: 0.15, g: 0.15, b: 0.2, a: 1 }
+                        : { r: 0.12, g: 0.12, b: 0.16, a: 1 }
+                    )
+                    .rounded(4)
+                    .flex()
+                    .itemsCenter()
+                    .justifyBetween()
+                    .children_(
+                      text(`Item ${item}`)
+                        .font("Inter")
+                        .size(13)
+                        .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+                      text(`#${props.index}`)
+                        .font("JetBrains Mono")
+                        .size(11)
+                        .color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+                    )
+                )
+                  .data(Array.from({ length: 1000 }, (_, i) => i + 1))
+                  .itemSize(40)
+                  .setOverdraw(3)
+                  .trackScroll(this.uniformListScrollHandle!)
+                  .setContext(cx)
+                  .flex1()
+                  .bg({ r: 0.1, g: 0.1, b: 0.13, a: 1 })
                   .rounded(8)
-                  .border(2)
-                  .borderColor({ r: 0.3, g: 0.8, b: 1, a: 1 })
-                  .borderSolid()
-                  .flex()
-                  .itemsCenter()
-                  .justifyCenter()
-                  .child(
-                    text("Solid").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-                  ),
-                // Dashed border box
-                div()
-                  .w(80)
-                  .h(60)
-                  .rounded(8)
-                  .border(2)
-                  .borderColor({ r: 1, g: 0.5, b: 0.3, a: 1 })
-                  .borderDashed()
-                  .flex()
-                  .itemsCenter()
-                  .justifyCenter()
-                  .child(
-                    text("Dashed").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-                  ),
-                // Custom dash pattern
-                div()
-                  .w(100)
-                  .h(60)
-                  .rounded(12)
-                  .border(3)
-                  .borderColor({ r: 0.9, g: 0.3, b: 0.6, a: 1 })
-                  .borderDashed()
-                  .borderDashLength(12)
-                  .borderGapLength(6)
-                  .flex()
-                  .itemsCenter()
-                  .justifyCenter()
-                  .child(
-                    text("Custom").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-                  ),
-                // Square solid border
-                div()
-                  .w(60)
-                  .h(60)
-                  .border(2)
-                  .borderColor({ r: 0.5, g: 1, b: 0.5, a: 1 })
-                  .borderSolid()
-                  .flex()
-                  .itemsCenter()
-                  .justifyCenter()
-                  .child(text("■").font("Inter").size(16).color({ r: 0.5, g: 1, b: 0.5, a: 1 })),
-                // Square dashed border
-                div()
-                  .w(60)
-                  .h(60)
-                  .border(2)
-                  .borderColor({ r: 1, g: 0.8, b: 0.2, a: 1 })
-                  .borderDashed()
-                  .borderDashLength(8)
-                  .borderGapLength(4)
-                  .flex()
-                  .itemsCenter()
-                  .justifyCenter()
-                  .child(text("▢").font("Inter").size(16).color({ r: 1, g: 0.8, b: 0.2, a: 1 }))
-              ),
-
-            div().h(1).flexShrink0().bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-
-            // Image Demo section
-            div()
-              .flexShrink0()
-              .child(
-                text("Image Rendering").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+                  .p(4)
               ),
             div()
-              .flexShrink0()
-              .child(
-                text("PNG and JPEG decoding with GPU-accelerated rendering")
+              .flex()
+              .flexCol()
+              .flex1()
+              .gap(8)
+              .children_(
+                text("List (500 items, variable height)")
                   .font("Inter")
-                  .size(14)
-                  .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
-              ),
-
-            // Row of images with different styles
-            div()
-              .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(16)
-              .flexWrap()
-              .children_(
-                // Original image (scaled down)
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(demoImageTile).size(150, 100),
-                    text("Original").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  ),
-                // Rounded corners
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(demoImageTile!).size(150, 100).rounded(16),
-                    text("Rounded").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  ),
-                // Grayscale
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(demoImageTile).size(150, 100).grayscale(),
-                    text("Grayscale").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  ),
-                // Semi-transparent
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(demoImageTile).size(150, 100).opacity(0.5),
-                    text("50% Opacity")
-                      .font("Inter")
-                      .size(11)
-                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  ),
-                // Circle crop
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(demoImageTile).size(100, 100).rounded(50),
-                    text("Circle").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                  .size(13)
+                  .color({ r: 0.6, g: 1, b: 0.8, a: 1 }),
+                list<{ id: number; lines: number }>(
+                  (item, props, _cx) =>
+                    div()
+                      .hMin(30)
+                      .px(12)
+                      .py(8)
+                      .bg(
+                        props.index % 2 === 0
+                          ? { r: 0.13, g: 0.17, b: 0.15, a: 1 }
+                          : { r: 0.1, g: 0.14, b: 0.12, a: 1 }
+                      )
+                      .rounded(4)
+                      .flex()
+                      .flexCol()
+                      .gap(4)
+                      .children_(
+                        div()
+                          .flex()
+                          .flexRow()
+                          .justifyBetween()
+                          .children_(
+                            text(`Message ${item.id}`)
+                              .font("Inter")
+                              .size(13)
+                              .color({ r: 0.8, g: 0.9, b: 0.8, a: 1 }),
+                            text(`${item.lines} line${item.lines > 1 ? "s" : ""}`)
+                              .font("JetBrains Mono")
+                              .size(10)
+                              .color({ r: 0.5, g: 0.6, b: 0.5, a: 1 })
+                          ),
+                        ...Array.from({ length: item.lines }, (_, i) =>
+                          text(`Line ${i + 1} of content for message ${item.id}`)
+                            .font("Inter")
+                            .size(11)
+                            .color({ r: 0.6, g: 0.7, b: 0.6, a: 1 })
+                        )
+                      ),
+                  this.variableListState!
+                )
+                  .data(
+                    Array.from({ length: 500 }, (_, i) => ({
+                      id: i + 1,
+                      lines: 1 + (i % 4),
+                    }))
                   )
-              ),
-
-            // JPEG Images row
-            div()
-              .flexShrink0()
-              .child(
-                text("JPEG Format").font("Inter").size(16).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
-              ),
-            div()
-              .flex()
-              .flexRow()
-              .flexShrink0()
-              .gap(16)
-              .flexWrap()
-              .children_(
-                // JPEG original
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(flowerImageTile!).size(150, 100),
-                    text("JPEG Original")
-                      .font("Inter")
-                      .size(11)
-                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  ),
-                // JPEG rounded
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(flowerImageTile!).size(150, 100).rounded(16),
-                    text("JPEG Rounded")
-                      .font("Inter")
-                      .size(11)
-                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  ),
-                // JPEG grayscale
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(flowerImageTile!).size(150, 100).grayscale(),
-                    text("JPEG Grayscale")
-                      .font("Inter")
-                      .size(11)
-                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  ),
-                // JPEG circle
-                div()
-                  .flexShrink0()
-                  .flex()
-                  .flexCol()
-                  .gap(4)
-                  .itemsCenter()
-                  .children_(
-                    img(flowerImageTile!).size(100, 100).rounded(50),
-                    text("JPEG Circle")
-                      .font("Inter")
-                      .size(11)
-                      .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
-                  )
+                  .estimatedItemHeight(60)
+                  .setOverdraw(3)
+                  .setContext(cx)
+                  .flex1()
+                  .bg({ r: 0.08, g: 0.11, b: 0.09, a: 1 })
+                  .rounded(8)
+                  .p(4)
               )
           )
       );
@@ -935,7 +1117,6 @@ async function main() {
     cx.newView<DemoRootView>(() => new DemoRootView())
   );
 
-  // Register inspector toggle action (press 'I' to toggle inspector mode)
   window.getActionRegistry().register({
     name: "inspector:toggle",
     label: "Toggle Inspector",
@@ -951,23 +1132,19 @@ async function main() {
     },
   });
 
-  // Bind 'I' key to toggle inspector
   window.getKeymap().bind("i", "inspector:toggle");
   console.log("Inspector: Press 'I' to toggle debug mode");
 
-  // Load embedded fonts
   window.registerFont("Inter", base64ToBytes(interFontBase64));
   window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoRegularBase64));
   window.registerFont("JetBrains Mono SemiBold", base64ToBytes(jetBrainsMonoSemiBoldBase64));
   console.log("Loaded fonts: Inter, JetBrains Mono, JetBrains Mono SemiBold");
 
-  // Decode and upload PNG demo image
   const pngData = base64ToBytes(demoPngBase64);
   const decodedPng = await platform.decodeImage(pngData);
   demoImageTile = window.uploadImage(decodedPng);
   console.log(`Loaded PNG: ${decodedPng.width}x${decodedPng.height}`);
 
-  // Decode and upload JPEG flower image
   const jpgData = base64ToBytes(flowerJpgBase64);
   const decodedJpg = await platform.decodeImage(jpgData);
   flowerImageTile = window.uploadImage(decodedJpg);

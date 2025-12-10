@@ -178,6 +178,20 @@ export class FlashLayoutEngine {
     if (style.display !== undefined) result.display = style.display;
     if (style.flexDirection !== undefined) result.flexDirection = style.flexDirection;
     if (style.flexWrap !== undefined) result.flexWrap = style.flexWrap;
+
+    // Handle flex shorthand (e.g., "1 1 0%", "1 1 auto", "none")
+    if (style.flex !== undefined) {
+      if (style.flex === "none") {
+        result.flexGrow = 0;
+        result.flexShrink = 0;
+      } else {
+        const parts = style.flex.split(" ");
+        if (parts.length >= 1) result.flexGrow = parseFloat(parts[0]!);
+        if (parts.length >= 2) result.flexShrink = parseFloat(parts[1]!);
+        // flexBasis from shorthand is typically "0%" or "auto" - we ignore for now
+      }
+    }
+
     if (style.flexGrow !== undefined) result.flexGrow = style.flexGrow;
     if (style.flexShrink !== undefined) result.flexShrink = style.flexShrink;
     if (typeof style.flexBasis === "number") result.flexBasis = style.flexBasis;

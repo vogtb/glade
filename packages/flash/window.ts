@@ -421,11 +421,17 @@ export class FlashWindow {
       x: state.offset.x + deltaX,
       y: state.offset.y + deltaY,
     };
-    const clamped = clampScrollOffset(state);
-    state.offset = clamped;
+
+    // Only clamp if content sizes are known (non-zero).
+    // Virtual lists set content size during prepaint, so if we clamp before that
+    // with zero sizes, scroll would be incorrectly limited.
+    if (state.contentSize.width > 0 || state.contentSize.height > 0) {
+      const clamped = clampScrollOffset(state);
+      state.offset = clamped;
+    }
 
     // Mark window dirty if scroll offset changed
-    if (clamped.x !== oldOffset.x || clamped.y !== oldOffset.y) {
+    if (state.offset.x !== oldOffset.x || state.offset.y !== oldOffset.y) {
       this.getContext().markWindowDirty(this.id);
     }
   }
@@ -1075,6 +1081,10 @@ export class FlashWindow {
 
       allocateChildId: (): GlobalElementId => {
         return allocateElementId();
+      },
+
+      getScrollOffset: (handle: ScrollHandle): ScrollOffset => {
+        return this.getScrollOffset(handle.id);
       },
     };
   }

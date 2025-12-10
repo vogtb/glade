@@ -114,6 +114,12 @@ export interface RequestLayoutContext {
    * Allocate a new element ID for a child element.
    */
   allocateChildId(): GlobalElementId;
+
+  /**
+   * Get the current scroll offset for a scroll handle.
+   * Allows virtual lists to know scroll position during layout.
+   */
+  getScrollOffset(handle: ScrollHandle): ScrollOffset;
 }
 
 /**
