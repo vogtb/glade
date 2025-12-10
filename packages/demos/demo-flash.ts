@@ -29,6 +29,9 @@ import {
   list,
   createListState,
   type ListState,
+  deferred,
+  anchored,
+  type Point,
 } from "@glade/flash";
 import { embedAsBase64 } from "./embed" with { type: "macro" };
 
@@ -62,7 +65,8 @@ type DemoSection =
   | "border-styles"
   | "png-images"
   | "jpg-images"
-  | "virtual-scrolling";
+  | "virtual-scrolling"
+  | "deferred-anchored";
 
 /**
  * Demo button configuration.
@@ -85,6 +89,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "png-images", label: "PNG Images", color: 0x84cc16, hoverColor: 0x65a30d },
   { id: "jpg-images", label: "JPG Images", color: 0xf97316, hoverColor: 0xea580c },
   { id: "virtual-scrolling", label: "Virtual Scrolling", color: 0x6366f1, hoverColor: 0x4f46e5 },
+  { id: "deferred-anchored", label: "Deferred/Anchored", color: 0xa855f7, hoverColor: 0x9333ea },
 ];
 
 /**
@@ -339,6 +344,9 @@ class DemoRootView implements FlashView {
   private variableListScrollHandle: ScrollHandle | null = null;
   private variableListState: ListState | null = null;
   private selectedDemo: DemoSection = "inter-text";
+  private popupVisible = false;
+  private popupPosition: Point = { x: 200, y: 200 };
+  private popupAnchorCorner: "top-left" | "top-right" | "bottom-left" | "bottom-right" = "top-left";
 
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
@@ -447,6 +455,8 @@ class DemoRootView implements FlashView {
         return this.renderJpgImagesDemo();
       case "virtual-scrolling":
         return this.renderVirtualScrollingDemo(cx);
+      case "deferred-anchored":
+        return this.renderDeferredAnchoredDemo(cx);
       default:
         return div();
     }
@@ -1095,6 +1105,201 @@ class DemoRootView implements FlashView {
                   .p(4)
               )
           )
+      );
+  }
+
+  private renderDeferredAnchoredDemo(cx: FlashViewContext<this>): FlashDiv {
+    const corners: Array<"top-left" | "top-right" | "bottom-left" | "bottom-right"> = [
+      "top-left",
+      "top-right",
+      "bottom-left",
+      "bottom-right",
+    ];
+
+    const popupContent = div()
+      .w(200)
+      .bg({ r: 0.15, g: 0.15, b: 0.22, a: 0.98 })
+      .rounded(8)
+      .border(1)
+      .borderColor({ r: 0.4, g: 0.4, b: 0.6, a: 1 })
+      .shadowLg()
+      .p(12)
+      .flex()
+      .flexCol()
+      .gap(8)
+      .children_(
+        text("Popup Menu").font("Inter").size(14).weight(600).color({ r: 1, g: 1, b: 1, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        div()
+          .h(32)
+          .px(8)
+          .bg({ r: 0.2, g: 0.2, b: 0.28, a: 1 })
+          .rounded(4)
+          .cursorPointer()
+          .hover((s) => s.bg({ r: 0.3, g: 0.3, b: 0.4, a: 1 }))
+          .flex()
+          .itemsCenter()
+          .child(text("Option 1").font("Inter").size(13).color({ r: 0.9, g: 0.9, b: 1, a: 1 })),
+        div()
+          .h(32)
+          .px(8)
+          .bg({ r: 0.2, g: 0.2, b: 0.28, a: 1 })
+          .rounded(4)
+          .cursorPointer()
+          .hover((s) => s.bg({ r: 0.3, g: 0.3, b: 0.4, a: 1 }))
+          .flex()
+          .itemsCenter()
+          .child(text("Option 2").font("Inter").size(13).color({ r: 0.9, g: 0.9, b: 1, a: 1 })),
+        div()
+          .h(32)
+          .px(8)
+          .bg({ r: 0.2, g: 0.2, b: 0.28, a: 1 })
+          .rounded(4)
+          .cursorPointer()
+          .hover((s) => s.bg({ r: 0.3, g: 0.3, b: 0.4, a: 1 }))
+          .flex()
+          .itemsCenter()
+          .onClick(
+            cx.listener((view, _event, _window, ecx) => {
+              view.popupVisible = false;
+              ecx.notify();
+            })
+          )
+          .child(text("Close Menu").font("Inter").size(13).color({ r: 1, g: 0.6, b: 0.6, a: 1 }))
+      );
+
+    const deferredPopup = this.popupVisible
+      ? deferred(
+          anchored()
+            .anchor(this.popupAnchorCorner)
+            .position(this.popupPosition)
+            .offset({ x: 8, y: 8 })
+            .snapToWindowWithMargin(16)
+            .setWindowSize({ width: cx.window.width, height: cx.window.height })
+            .child(popupContent)
+        ).priority(1)
+      : null;
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Deferred & Anchored Elements")
+          .font("Inter")
+          .size(32)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Floating overlays with intelligent positioning")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .children_(
+            text("Anchor Corner Selection")
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .flexWrap()
+              .children_(
+                ...corners.map((corner) =>
+                  div()
+                    .h(36)
+                    .px(12)
+                    .bg(
+                      this.popupAnchorCorner === corner
+                        ? rgb(0x6366f1)
+                        : { r: 0.2, g: 0.2, b: 0.28, a: 1 }
+                    )
+                    .rounded(6)
+                    .cursorPointer()
+                    .hover((s) => s.bg(rgb(0x4f46e5)))
+                    .flex()
+                    .itemsCenter()
+                    .onClick(
+                      cx.listener((view, _event, _window, ecx) => {
+                        view.popupAnchorCorner = corner;
+                        ecx.notify();
+                      })
+                    )
+                    .child(text(corner).font("Inter").size(12).color({ r: 1, g: 1, b: 1, a: 1 }))
+                )
+              )
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .children_(
+            text("Click area to position popup")
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            div()
+              .h(300)
+              .bg({ r: 0.12, g: 0.12, b: 0.16, a: 1 })
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 0.3, g: 0.3, b: 0.4, a: 0.8 })
+              .borderDashed()
+              .cursorPointer()
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .onClick(
+                cx.listener((view, event, _window, ecx) => {
+                  view.popupPosition = { x: event.x, y: event.y };
+                  view.popupVisible = true;
+                  ecx.notify();
+                })
+              )
+              .child(
+                this.popupVisible
+                  ? text(
+                      `Popup anchored at (${Math.round(this.popupPosition.x)}, ${Math.round(this.popupPosition.y)})`
+                    )
+                      .font("Inter")
+                      .size(14)
+                      .color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+                  : text("Click anywhere to show anchored popup")
+                      .font("Inter")
+                      .size(14)
+                      .color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+              )
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .children_(
+            text("Features:").font("Inter").size(14).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text("• Deferred elements paint after normal content (always on top)")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Anchored elements position relative to a point")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Smart overflow handling: switch anchor or snap to edges")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Perfect for menus, tooltips, dropdowns, autocomplete")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+          ),
+        deferredPopup
       );
   }
 }

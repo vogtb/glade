@@ -319,3 +319,13 @@ export type {
 } from "./list.ts";
 
 export { List, ListState, list, createListState, type ListMeasureItem } from "./list.ts";
+
+// Deferred element (overlay/popup support)
+export type { DeferredDrawEntry } from "./deferred.ts";
+
+export { DeferredElement, deferred } from "./deferred.ts";
+
+// Anchored element (positioned overlays)
+export type { Corner, AnchoredPositionMode, AnchoredFitMode, Edges } from "./anchored.ts";
+
+export { AnchoredElement, anchored, edges } from "./anchored.ts";

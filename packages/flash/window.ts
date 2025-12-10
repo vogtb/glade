@@ -198,6 +198,9 @@ export class FlashWindow {
   // Inspector/Debug Mode
   private inspector: Inspector;
 
+  // Deferred drawing
+  private deferredDrawQueue: import("./deferred.ts").DeferredDrawEntry[] = [];
+
   constructor(
     readonly id: WindowId,
     private platform: FlashPlatform,
@@ -719,11 +722,21 @@ export class FlashWindow {
     const paintCx = this.createPaintContext(rootElementId);
     element.paint(paintCx, rootBounds, rootPrepaintState);
 
+    // Paint deferred elements in priority order (higher priority on top)
+    this.paintDeferredElements();
+
     // Extract hit test tree from prepaint state (built with scroll-adjusted bounds)
     this.hitTestTree = [];
     const prepaintStateWithHitTest = rootPrepaintState as { hitTestNode?: HitTestNode };
     if (prepaintStateWithHitTest?.hitTestNode) {
       this.hitTestTree.push(prepaintStateWithHitTest.hitTestNode);
+    }
+
+    // Also add deferred element hit test nodes
+    for (const entry of this.deferredDrawQueue) {
+      if (entry.hitTestNode) {
+        this.hitTestTree.push(entry.hitTestNode);
+      }
     }
 
     // Build inspector debug info from hit test tree if inspector is enabled
@@ -832,6 +845,21 @@ export class FlashWindow {
     this.dropTargetHitboxes.clear();
     // Clear tooltip registrations from previous frame
     this.tooltipManager.clearRegistrations();
+    // Clear deferred draw queue from previous frame
+    this.deferredDrawQueue = [];
+  }
+
+  private paintDeferredElements(): void {
+    if (this.deferredDrawQueue.length === 0) {
+      return;
+    }
+
+    this.deferredDrawQueue.sort((a, b) => a.priority - b.priority);
+
+    for (const entry of this.deferredDrawQueue) {
+      const paintCx = this.createPaintContext(entry.childElementId);
+      entry.child.paint(paintCx, entry.bounds, entry.childPrepaintState);
+    }
   }
 
   private endFrame(): void {
@@ -1153,7 +1181,19 @@ export class FlashWindow {
       getScrollOffset: (handle: ScrollHandle): ScrollOffset => {
         return this.getScrollOffset(handle.id);
       },
+
+      registerDeferredDraw: (entry: import("./deferred.ts").DeferredDrawEntry): void => {
+        this.registerDeferredDraw(entry);
+      },
+
+      getWindowSize: (): { width: number; height: number } => {
+        return { width: this.width, height: this.height };
+      },
     };
+  }
+
+  private registerDeferredDraw(entry: import("./deferred.ts").DeferredDrawEntry): void {
+    this.deferredDrawQueue.push(entry);
   }
 
   private createPaintContext(elementId: GlobalElementId): PaintContext {

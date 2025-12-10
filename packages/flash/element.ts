@@ -199,6 +199,17 @@ export interface PrepaintContext {
    * Get the current scroll offset for a scroll handle.
    */
   getScrollOffset(handle: ScrollHandle): ScrollOffset;
+
+  /**
+   * Register a deferred draw entry.
+   * The element will be painted after all normal elements in priority order.
+   */
+  registerDeferredDraw?(entry: import("./deferred.ts").DeferredDrawEntry): void;
+
+  /**
+   * Get the window size for overflow calculations (e.g., anchored elements).
+   */
+  getWindowSize?(): { width: number; height: number };
 }
 
 /**
