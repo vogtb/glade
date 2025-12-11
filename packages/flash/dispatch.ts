@@ -1,10 +1,4 @@
-/**
- * Event dispatch system for Flash.
- *
- * Handles mouse, keyboard, and focus events with capture/bubble phases.
- */
-
-import type { Bounds, Point } from "./types.ts";
+import type { Bounds, Point, FocusId } from "./types.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { FlashContext } from "./context.ts";
 import type { FlashWindow } from "./window.ts";
@@ -318,25 +312,23 @@ export function buildKeyContextChain(path: HitTestNode[]): string[] {
 
 /**
  * Get the focused path from the hit test tree.
- * Returns the path to the deepest focused element.
+ * Returns the path to the element that owns the given focus ID.
  */
-export function getFocusedPath(roots: HitTestNode[]): HitTestNode[] {
+export function getFocusedPath(roots: HitTestNode[], focusId: FocusId | null): HitTestNode[] {
   const path: HitTestNode[] = [];
 
   function walk(node: HitTestNode): boolean {
     path.push(node);
 
-    for (let i = node.children.length - 1; i >= 0; i--) {
-      const child = node.children[i];
-      if (child?.focusHandle) {
-        if (walk(child)) {
-          return true;
-        }
-      }
+    if (node.focusHandle?.id === focusId) {
+      return true;
     }
 
-    if (node.focusHandle) {
-      return true;
+    for (let i = node.children.length - 1; i >= 0; i--) {
+      const child = node.children[i];
+      if (child && walk(child)) {
+        return true;
+      }
     }
 
     path.pop();

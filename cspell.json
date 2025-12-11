@@ -28,6 +28,8 @@
     "flexbox",
     "inlines",
     "hoverable",
-    "keymap"
+    "keymap",
+    "Hitbox",
+    "Hitboxes"
   ]
 }

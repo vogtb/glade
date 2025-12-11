@@ -19,6 +19,7 @@ import {
   svg,
   SvgIcons,
   type FlashDiv,
+  type FocusHandle,
   type ScrollHandle,
   type ImageTile,
   FlashElement,
@@ -367,6 +368,17 @@ class DemoRootView implements FlashView {
   private popupVisible = false;
   private popupPosition: Point = { x: 200, y: 200 };
   private popupAnchorCorner: "top-left" | "top-right" | "bottom-left" | "bottom-right" = "top-left";
+  private focusPrimaryHandle: FocusHandle | null = null;
+  private focusSecondaryHandle: FocusHandle | null = null;
+  private focusDangerHandle: FocusHandle | null = null;
+  private toolbarHandles: FocusHandle[] = [];
+  private toolbarContainerHandle: FocusHandle | null = null;
+  private modalTriggerHandle: FocusHandle | null = null;
+  private modalPrimaryHandle: FocusHandle | null = null;
+  private modalCloseHandle: FocusHandle | null = null;
+  private focusLog = "Click or Tab through the controls.";
+  private focusActionsRegistered = false;
+  private focusModalOpen = false;
 
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
@@ -1550,146 +1562,411 @@ class DemoRootView implements FlashView {
       );
   }
 
-  private renderFocusNavigationDemo(_cx: FlashViewContext<this>): FlashDiv {
+  private renderFocusNavigationDemo(cx: FlashViewContext<this>): FlashDiv {
+    this.ensureFocusDemoHandles(cx);
+    this.registerFocusDemoActions(cx);
+
+    if (
+      !this.focusPrimaryHandle ||
+      !this.focusSecondaryHandle ||
+      !this.focusDangerHandle ||
+      this.toolbarHandles.length === 0 ||
+      !this.toolbarContainerHandle ||
+      !this.modalTriggerHandle ||
+      !this.modalPrimaryHandle ||
+      !this.modalCloseHandle
+    ) {
+      return div();
+    }
+
+    const [toolbarA, toolbarB, toolbarC] = this.toolbarHandles;
+    if (!toolbarA || !toolbarB || !toolbarC) {
+      return div();
+    }
+
+    const contextChain = cx.window.getKeyContextChain();
+    const contextLabel = contextChain.length > 0 ? contextChain.join(" > ") : "None";
+
+    const focusEntries: Array<{ handle: FocusHandle; label: string }> = [
+      { handle: this.focusPrimaryHandle, label: "Primary" },
+      { handle: this.focusSecondaryHandle, label: "Secondary" },
+      { handle: this.focusDangerHandle, label: "Destructive" },
+      { handle: toolbarA, label: "Toolbar 1" },
+      { handle: toolbarB, label: "Toolbar 2" },
+      { handle: toolbarC, label: "Toolbar 3" },
+      { handle: this.modalTriggerHandle, label: "Modal Trigger" },
+      { handle: this.modalPrimaryHandle, label: "Modal Confirm" },
+      { handle: this.modalCloseHandle, label: "Modal Close" },
+    ];
+    const focusedLabel = focusEntries.find((entry) => cx.isFocused(entry.handle))?.label ?? "None";
+
+    const focusButton = (
+      label: string,
+      handle: FocusHandle,
+      color: number,
+      hoverColor: number,
+      tabIndex: number,
+      options?: {
+        group?: string;
+        focusOnPress?: boolean;
+        keyContext?: string;
+        onClickMessage?: string;
+      }
+    ): FlashDiv => {
+      let button = div()
+        .h(44)
+        .px(16)
+        .rounded(10)
+        .bg(rgb(color))
+        .border(2)
+        .borderColor({ r: 1, g: 1, b: 1, a: 0.1 })
+        .cursorPointer()
+        .hover((s) => s.bg(rgb(hoverColor)).shadow("md"))
+        .active((s) => s.bg(rgb(color)))
+        .focused((s) => s.borderColor(rgb(0xfcd34d)).shadow("lg"))
+        .flex()
+        .itemsCenter()
+        .justifyCenter()
+        .trackFocus(handle)
+        .tabStop({ index: tabIndex });
+      if (options?.group) {
+        button = button.focusGroup(options.group);
+      }
+      if (options?.focusOnPress) {
+        button = button.focusOnPress();
+      }
+      if (options?.keyContext) {
+        button = button.keyContext(options.keyContext);
+      }
+      button = button.onClick(
+        cx.listener((view, _event, _window, ecx) => {
+          view.focusLog = options?.onClickMessage ?? `${label} activated`;
+          ecx.notify();
+        })
+      );
+      return button.child(text(label).font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 }));
+    };
+
+    const modalOverlay = this.focusModalOpen ? this.renderFocusModal(cx) : null;
+
     return div()
       .flex()
       .flexCol()
       .gap(16)
+      .keyContext("focus-demo")
       .children_(
         text("Enhanced Focus & Tab Navigation")
           .font("Inter")
           .size(32)
           .color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Keyboard navigation with focus management")
+        text("Tab stops, focus groups, context-aware keybindings, and focus restoration.")
           .font("Inter")
           .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
-        text("Instructions").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+          .color({ r: 0.75, g: 0.78, b: 0.88, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.32, b: 0.38, a: 0.6 }),
         div()
           .flex()
           .flexCol()
           .gap(8)
           .children_(
-            text("• Press Tab to navigate forward between buttons")
+            text("• Tab/Shift+Tab respects custom tab indexes and focus groups.")
               .font("Inter")
               .size(13)
-              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-            text("• Press Shift+Tab to navigate backward")
+              .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 }),
+            text(
+              "• Right arrow in the toolbar uses focusNextSibling(); Home jumps to the first child."
+            )
               .font("Inter")
               .size(13)
-              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-            text("• Focused buttons show a brighter border")
+              .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 }),
+            text(
+              "• Enter logs the current key context chain; Escape closes the modal and restores focus."
+            )
               .font("Inter")
               .size(13)
-              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-            text("• Click any button to set focus manually")
+              .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 }),
+            text("• The red button focuses on mouse down via focusOnPress().")
               .font("Inter")
               .size(13)
-              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+              .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 })
           ),
-        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-        text("Focusable Elements").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .keyContext("focus-demo.controls")
+          .children_(
+            text("Tab Stops").font("Inter").size(18).color({ r: 0.94, g: 0.95, b: 1, a: 1 }),
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .children_(
+                focusButton("Primary Action", this.focusPrimaryHandle, 0x2563eb, 0x1d4ed8, 1, {
+                  onClickMessage: "Primary activated",
+                }),
+                focusButton("Secondary", this.focusSecondaryHandle, 0x10b981, 0x059669, 2, {
+                  onClickMessage: "Secondary activated",
+                }),
+                focusButton("Destructive", this.focusDangerHandle, 0xef4444, 0xdc2626, 3, {
+                  focusOnPress: true,
+                  onClickMessage: "Destructive pressed",
+                })
+              )
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(10)
+          .keyContext("focus-demo.toolbar")
+          .children_(
+            text("Focus Group (Toolbar)")
+              .font("Inter")
+              .size(18)
+              .color({ r: 0.94, g: 0.95, b: 1, a: 1 }),
+            text(
+              "Tab stays in the group first, Right arrow advances with focusNextSibling(), Home jumps to the first child."
+            )
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 }),
+            div()
+              .flex()
+              .flexRow()
+              .gap(10)
+              .trackFocus(this.toolbarContainerHandle)
+              .children_(
+                focusButton("Toolbar A", toolbarA, 0x4f46e5, 0x4338ca, 4, {
+                  group: "toolbar",
+                  onClickMessage: "Toolbar A focused",
+                }),
+                focusButton("Toolbar B", toolbarB, 0x22c55e, 0x16a34a, 5, {
+                  group: "toolbar",
+                  onClickMessage: "Toolbar B focused",
+                }),
+                focusButton("Toolbar C", toolbarC, 0xf59e0b, 0xd97706, 6, {
+                  group: "toolbar",
+                  onClickMessage: "Toolbar C focused",
+                })
+              )
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .keyContext("focus-demo.modal-trigger")
+          .children_(
+            text("Focus Restoration")
+              .font("Inter")
+              .size(18)
+              .color({ r: 0.94, g: 0.95, b: 1, a: 1 }),
+            text(
+              "Open the modal to push focus; Escape or Close restores the previous focused control."
+            )
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 }),
+            focusButton(
+              this.focusModalOpen ? "Modal Open" : "Open Modal",
+              this.modalTriggerHandle,
+              0x0ea5e9,
+              0x0284c7,
+              7,
+              { onClickMessage: "Modal opened" }
+            ).onClick(
+              cx.listener((view, _event, _window, ecx) => {
+                view.modalTriggerHandle?.saveFocus(ecx);
+                view.focusModalOpen = true;
+                view.focusLog = "Modal opened and focus saved";
+                view.modalPrimaryHandle?.focus(ecx);
+                ecx.notify();
+              })
+            )
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(6)
+          .bg({ r: 0.16, g: 0.17, b: 0.22, a: 1 })
+          .rounded(10)
+          .p(12)
+          .children_(
+            text(`Current Focus: ${focusedLabel}`)
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.9, g: 0.92, b: 1, a: 1 }),
+            text(`Key Context Chain: ${contextLabel}`)
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.75, g: 0.78, b: 0.88, a: 1 }),
+            text(`Focus Log: ${this.focusLog}`)
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 })
+          ),
+        modalOverlay
+      );
+  }
+
+  private ensureFocusDemoHandles(cx: FlashViewContext<this>): void {
+    if (!this.focusPrimaryHandle) {
+      this.focusPrimaryHandle = cx.newFocusHandle(cx.windowId);
+    }
+    if (!this.focusSecondaryHandle) {
+      this.focusSecondaryHandle = cx.newFocusHandle(cx.windowId);
+    }
+    if (!this.focusDangerHandle) {
+      this.focusDangerHandle = cx.newFocusHandle(cx.windowId);
+    }
+    if (this.toolbarHandles.length === 0) {
+      this.toolbarHandles = [
+        cx.newFocusHandle(cx.windowId),
+        cx.newFocusHandle(cx.windowId),
+        cx.newFocusHandle(cx.windowId),
+      ];
+    }
+    if (!this.toolbarContainerHandle) {
+      this.toolbarContainerHandle = cx.newFocusHandle(cx.windowId);
+    }
+    if (!this.modalTriggerHandle) {
+      this.modalTriggerHandle = cx.newFocusHandle(cx.windowId);
+    }
+    if (!this.modalPrimaryHandle) {
+      this.modalPrimaryHandle = cx.newFocusHandle(cx.windowId);
+    }
+    if (!this.modalCloseHandle) {
+      this.modalCloseHandle = cx.newFocusHandle(cx.windowId);
+    }
+  }
+
+  private registerFocusDemoActions(cx: FlashViewContext<this>): void {
+    if (this.focusActionsRegistered) {
+      return;
+    }
+
+    const actions = cx.window.getActionRegistry();
+    const keymap = cx.window.getKeymap();
+
+    actions.register({
+      name: "focus-demo:activate",
+      handler: (actionCx, window) => {
+        const chain = window.getKeyContextChain();
+        this.focusLog = chain.length > 0 ? `Enter in ${chain.join(" > ")}` : "Enter pressed";
+        actionCx.markWindowDirty(window.id);
+      },
+    });
+
+    actions.register({
+      name: "focus-demo:toolbar-next",
+      handler: (actionCx, window) => {
+        const active = this.toolbarHandles.find((handle) => actionCx.isFocused(handle));
+        if (active) {
+          active.focusNextSibling(actionCx);
+          this.focusLog = "Toolbar advanced with Right arrow";
+          actionCx.markWindowDirty(window.id);
+        }
+      },
+    });
+
+    actions.register({
+      name: "focus-demo:toolbar-first",
+      handler: (actionCx, window) => {
+        if (this.toolbarContainerHandle) {
+          this.toolbarContainerHandle.focusFirstChild(actionCx);
+          this.focusLog = "Jumped to first toolbar item";
+          actionCx.markWindowDirty(window.id);
+        }
+      },
+    });
+
+    actions.register({
+      name: "focus-demo:close-modal",
+      handler: (actionCx, window) => {
+        if (!this.focusModalOpen) {
+          return;
+        }
+        this.focusModalOpen = false;
+        this.modalTriggerHandle?.restoreFocus(actionCx);
+        this.focusLog = "Modal closed with Escape";
+        actionCx.markWindowDirty(window.id);
+      },
+    });
+
+    keymap.bind("enter", "focus-demo:activate", "focus-demo");
+    keymap.bind("right", "focus-demo:toolbar-next", "focus-demo.toolbar");
+    keymap.bind("home", "focus-demo:toolbar-first", "focus-demo.toolbar");
+    keymap.bind("escape", "focus-demo:close-modal", "focus-demo.modal");
+
+    this.focusActionsRegistered = true;
+  }
+
+  private renderFocusModal(cx: FlashViewContext<this>): FlashDiv {
+    if (!this.modalPrimaryHandle || !this.modalCloseHandle || !this.modalTriggerHandle) {
+      return div();
+    }
+
+    return div()
+      .bg({ r: 0.12, g: 0.13, b: 0.17, a: 0.95 })
+      .border(1)
+      .borderColor({ r: 1, g: 1, b: 1, a: 0.08 })
+      .rounded(12)
+      .p(12)
+      .gap(8)
+      .flex()
+      .flexCol()
+      .keyContext("focus-demo.modal")
+      .children_(
+        text("Modal Focus").font("Inter").size(16).color({ r: 0.95, g: 0.96, b: 1, a: 1 }),
+        text("Tab between modal buttons; Escape or Close restores focus.")
+          .font("Inter")
+          .size(13)
+          .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 }),
+        div().h(1).bg({ r: 0.24, g: 0.26, b: 0.32, a: 1 }),
         div()
           .flex()
           .flexRow()
-          .gap(12)
-          .flexWrap()
+          .gap(10)
           .children_(
             div()
-              .h(44)
-              .px(16)
-              .bg({ r: 0.2, g: 0.5, b: 0.8, a: 1 })
+              .h(40)
+              .px(14)
               .rounded(8)
+              .bg(rgb(0x10b981))
               .border(2)
-              .borderColor({ r: 0.5, g: 0.7, b: 1, a: 1 })
+              .borderColor({ r: 1, g: 1, b: 1, a: 0.12 })
               .cursorPointer()
-              .hover((s) => s.bg({ r: 0.3, g: 0.6, b: 0.9, a: 1 }).shadow("md"))
-              .active((s) => s.bg({ r: 0.1, g: 0.4, b: 0.7, a: 1 }))
-              .flex()
-              .itemsCenter()
-              .justifyCenter()
-              .child(text("Button 1").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
+              .hover((s) => s.bg(rgb(0x059669)).shadow("md"))
+              .focused((s) => s.borderColor(rgb(0xfcd34d)).shadow("lg"))
+              .trackFocus(this.modalPrimaryHandle)
+              .tabStop({ index: 8 })
+              .onClick(
+                cx.listener((view, _event, _window, ecx) => {
+                  view.focusLog = "Modal confirm";
+                  ecx.notify();
+                })
+              )
+              .child(text("Confirm").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
             div()
-              .h(44)
-              .px(16)
-              .bg({ r: 0.2, g: 0.5, b: 0.8, a: 1 })
+              .h(40)
+              .px(14)
               .rounded(8)
+              .bg(rgb(0xef4444))
               .border(2)
-              .borderColor({ r: 0.5, g: 0.7, b: 1, a: 1 })
+              .borderColor({ r: 1, g: 1, b: 1, a: 0.12 })
               .cursorPointer()
-              .hover((s) => s.bg({ r: 0.3, g: 0.6, b: 0.9, a: 1 }).shadow("md"))
-              .active((s) => s.bg({ r: 0.1, g: 0.4, b: 0.7, a: 1 }))
-              .flex()
-              .itemsCenter()
-              .justifyCenter()
-              .child(text("Button 2").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
-            div()
-              .h(44)
-              .px(16)
-              .bg({ r: 0.2, g: 0.5, b: 0.8, a: 1 })
-              .rounded(8)
-              .border(2)
-              .borderColor({ r: 0.5, g: 0.7, b: 1, a: 1 })
-              .cursorPointer()
-              .hover((s) => s.bg({ r: 0.3, g: 0.6, b: 0.9, a: 1 }).shadow("md"))
-              .active((s) => s.bg({ r: 0.1, g: 0.4, b: 0.7, a: 1 }))
-              .flex()
-              .itemsCenter()
-              .justifyCenter()
-              .child(text("Button 3").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
-            div()
-              .h(44)
-              .px(16)
-              .bg({ r: 0.8, g: 0.3, b: 0.2, a: 1 })
-              .rounded(8)
-              .border(2)
-              .borderColor({ r: 1, g: 0.5, b: 0.3, a: 1 })
-              .cursorPointer()
-              .hover((s) => s.bg({ r: 0.9, g: 0.4, b: 0.3, a: 1 }).shadow("md"))
-              .active((s) => s.bg({ r: 0.7, g: 0.2, b: 0.1, a: 1 }))
-              .flex()
-              .itemsCenter()
-              .justifyCenter()
-              .child(text("Button 4").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
-            div()
-              .h(44)
-              .px(16)
-              .bg({ r: 0.2, g: 0.7, b: 0.4, a: 1 })
-              .rounded(8)
-              .border(2)
-              .borderColor({ r: 0.4, g: 1, b: 0.6, a: 1 })
-              .cursorPointer()
-              .hover((s) => s.bg({ r: 0.3, g: 0.8, b: 0.5, a: 1 }).shadow("md"))
-              .active((s) => s.bg({ r: 0.1, g: 0.6, b: 0.3, a: 1 }))
-              .flex()
-              .itemsCenter()
-              .justifyCenter()
-              .child(text("Button 5").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 }))
-          ),
-        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-        text("Phase 6 Features").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-        div()
-          .flex()
-          .flexCol()
-          .gap(8)
-          .children_(
-            text("✓ Tab/Shift+Tab Navigation - Navigate through focusable elements")
-              .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-            text("✓ Focus Groups - Elements can be grouped for collective focus behavior")
-              .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-            text("✓ Tab Index - Set explicit tab order with .tabIndex()")
-              .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-            text("✓ Focus Contexts - Keyboard contexts for nested scopes (Editor > TextInput)")
-              .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              .hover((s) => s.bg(rgb(0xdc2626)).shadow("md"))
+              .focused((s) => s.borderColor(rgb(0xfcd34d)).shadow("lg"))
+              .trackFocus(this.modalCloseHandle)
+              .tabStop({ index: 9 })
+              .onClick(
+                cx.listener((view, _event, _window, ecx) => {
+                  view.focusModalOpen = false;
+                  view.modalTriggerHandle?.restoreFocus(ecx);
+                  view.focusLog = "Modal closed and focus restored";
+                  ecx.notify();
+                })
+              )
+              .child(text("Close").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 }))
           )
       );
   }

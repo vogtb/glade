@@ -107,17 +107,16 @@ export class TabStopRegistry {
       if (group && group.length > 0) {
         const currentIndex = group.findIndex((t) => t.focusId === currentFocusId);
         if (currentIndex >= 0) {
-          // Next in group (wrap around)
-          const nextIndex = (currentIndex + 1) % group.length;
-          return group[nextIndex]?.focusId ?? null;
+          if (currentIndex + 1 < group.length) {
+            return group[currentIndex + 1]?.focusId ?? null;
+          }
         }
       }
     }
 
     // Fall back to global tab order
-    const currentIndex = currentFocusId
-      ? this.tabStops.findIndex((t) => t.focusId === currentFocusId)
-      : -1;
+    const currentIndex =
+      currentFocusId !== null ? this.tabStops.findIndex((t) => t.focusId === currentFocusId) : -1;
 
     if (currentIndex < 0) {
       return this.tabStops[0]?.focusId ?? null;
@@ -141,17 +140,16 @@ export class TabStopRegistry {
       if (group && group.length > 0) {
         const currentIndex = group.findIndex((t) => t.focusId === currentFocusId);
         if (currentIndex >= 0) {
-          // Previous in group (wrap around)
-          const prevIndex = currentIndex <= 0 ? group.length - 1 : currentIndex - 1;
-          return group[prevIndex]?.focusId ?? null;
+          if (currentIndex > 0) {
+            return group[currentIndex - 1]?.focusId ?? null;
+          }
         }
       }
     }
 
     // Fall back to global tab order
-    const currentIndex = currentFocusId
-      ? this.tabStops.findIndex((t) => t.focusId === currentFocusId)
-      : -1;
+    const currentIndex =
+      currentFocusId !== null ? this.tabStops.findIndex((t) => t.focusId === currentFocusId) : -1;
 
     if (currentIndex < 0) {
       return this.tabStops[this.tabStops.length - 1]?.focusId ?? null;

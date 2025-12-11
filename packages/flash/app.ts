@@ -265,6 +265,26 @@ export class FlashApp {
     return window?.isFocused(handle.id) ?? false;
   }
 
+  focusFirstChild(handle: FocusHandle): void {
+    const window = this.windows.get(handle.windowId);
+    window?.focusFirstChild(handle.id);
+  }
+
+  focusNextSibling(handle: FocusHandle): void {
+    const window = this.windows.get(handle.windowId);
+    window?.focusNextSibling(handle.id);
+  }
+
+  saveFocus(windowId: WindowId): void {
+    const window = this.windows.get(windowId);
+    window?.saveFocus();
+  }
+
+  restoreFocus(windowId: WindowId): void {
+    const window = this.windows.get(windowId);
+    window?.restoreFocus();
+  }
+
   // ============ Scroll ============
 
   newScrollHandle(windowId: WindowId): ScrollHandle {
@@ -491,6 +511,22 @@ class FlashAppContext implements FlashContext {
 
   newFocusHandle(windowId: WindowId): FocusHandle {
     return this.app.newFocusHandle(windowId);
+  }
+
+  focusFirstChild(handle: FocusHandle): void {
+    this.app.focusFirstChild(handle);
+  }
+
+  focusNextSibling(handle: FocusHandle): void {
+    this.app.focusNextSibling(handle);
+  }
+
+  saveFocus(windowId: WindowId): void {
+    this.app.saveFocus(windowId);
+  }
+
+  restoreFocus(windowId: WindowId): void {
+    this.app.restoreFocus(windowId);
   }
 
   newScrollHandle(windowId: WindowId): ScrollHandle {

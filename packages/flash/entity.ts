@@ -112,6 +112,34 @@ export class FocusHandle {
   blur(cx: FlashContext): void {
     cx.blur(this);
   }
+
+  /**
+   * Focus the first focusable child of this handle.
+   */
+  focusFirstChild(cx: FlashContext): void {
+    cx.focusFirstChild(this);
+  }
+
+  /**
+   * Focus the next focusable sibling of this handle.
+   */
+  focusNextSibling(cx: FlashContext): void {
+    cx.focusNextSibling(this);
+  }
+
+  /**
+   * Save the current focus in this handle's window.
+   */
+  saveFocus(cx: FlashContext): void {
+    cx.saveFocus(this.windowId);
+  }
+
+  /**
+   * Restore the most recently saved focus in this handle's window.
+   */
+  restoreFocus(cx: FlashContext): void {
+    cx.restoreFocus(this.windowId);
+  }
 }
 
 /**

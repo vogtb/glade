@@ -54,6 +54,9 @@ export async function createWebGPUContext(
   const physicalWidth = Math.floor(logicalWidth * dpr);
   const physicalHeight = Math.floor(logicalHeight * dpr);
 
+  // Ensure canvas can receive focus for keyboard capture
+  canvas.tabIndex = 0;
+
   // Set canvas buffer size to physical pixels
   canvas.width = physicalWidth;
   canvas.height = physicalHeight;
@@ -177,10 +180,25 @@ export async function createWebGPUContext(
   let currentPhysicalHeight = physicalHeight;
   let currentLogicalWidth = logicalWidth;
   let currentLogicalHeight = logicalHeight;
+  let hasKeyboardCapture = false;
 
   // Throttled resize handler
   let resizeTimeout: number | null = null;
   const RESIZE_THROTTLE_MS = 16; // ~60fps
+
+  const focusCanvas = () => {
+    if (document.activeElement !== canvas) {
+      canvas.focus();
+      hasKeyboardCapture = true;
+    }
+  };
+
+  canvas.addEventListener("mousedown", focusCanvas);
+  canvas.addEventListener("pointerdown", focusCanvas);
+  const blurHandler = () => {
+    hasKeyboardCapture = false;
+  };
+  window.addEventListener("blur", blurHandler);
 
   function handleResize() {
     const newLogicalWidth = window.innerWidth;
@@ -263,11 +281,18 @@ export async function createWebGPUContext(
       if (resizeTimeout !== null) {
         clearTimeout(resizeTimeout);
       }
+      canvas.removeEventListener("mousedown", focusCanvas);
+      canvas.removeEventListener("pointerdown", focusCanvas);
+      window.removeEventListener("blur", blurHandler);
       device.destroy();
     },
 
     onKey(callback: KeyCallback): () => void {
       const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Tab" && hasKeyboardCapture) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         callback({
           key: getKeyCode(e),
           scancode: hashCode(e.code),

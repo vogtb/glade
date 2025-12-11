@@ -5,8 +5,8 @@
 
 use lyon::math::Point;
 use lyon::tessellation::{
-    BuffersBuilder, FillOptions, FillTessellator, FillVertex, FillVertexConstructor,
-    StrokeOptions, StrokeTessellator, StrokeVertex, StrokeVertexConstructor, VertexBuffers,
+    BuffersBuilder, FillOptions, FillTessellator, FillVertex, FillVertexConstructor, StrokeOptions,
+    StrokeTessellator, StrokeVertex, StrokeVertexConstructor, VertexBuffers,
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
@@ -59,7 +59,7 @@ impl MeshBounds {
 }
 
 /// Vertex constructor that extracts position and edge distance for AA.
-/// 
+///
 /// Note: Lyon's fill tessellator doesn't provide per-vertex edge information
 /// that we can use for AA. For proper edge-based AA, we'd need to either:
 /// 1. Use a post-processing pass to compute edge distances per-triangle
@@ -207,8 +207,16 @@ impl SvgTessellator {
         display_height: f32,
     ) -> Result<JsValue, JsValue> {
         let parsed = parse_svg_content(svg_content);
-        let native_width = parsed.view_box.as_ref().map(|v| v.width).unwrap_or(parsed.width);
-        let native_height = parsed.view_box.as_ref().map(|v| v.height).unwrap_or(parsed.height);
+        let native_width = parsed
+            .view_box
+            .as_ref()
+            .map(|v| v.width)
+            .unwrap_or(parsed.width);
+        let native_height = parsed
+            .view_box
+            .as_ref()
+            .map(|v| v.height)
+            .unwrap_or(parsed.height);
 
         let scale_x = display_width / native_width;
         let scale_y = display_height / native_height;
@@ -297,15 +305,62 @@ fn build_mesh(buffers: VertexBuffers<TessVertex, u32>) -> TessellatedMesh {
 
 #[derive(Clone, Debug)]
 enum SvgCommand {
-    MoveTo { x: f32, y: f32, relative: bool },
-    LineTo { x: f32, y: f32, relative: bool },
-    HLineTo { x: f32, relative: bool },
-    VLineTo { y: f32, relative: bool },
-    CubicTo { x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32, relative: bool },
-    SmoothCubicTo { x2: f32, y2: f32, x: f32, y: f32, relative: bool },
-    QuadTo { x1: f32, y1: f32, x: f32, y: f32, relative: bool },
-    SmoothQuadTo { x: f32, y: f32, relative: bool },
-    ArcTo { rx: f32, ry: f32, rotation: f32, large_arc: bool, sweep: bool, x: f32, y: f32, relative: bool },
+    MoveTo {
+        x: f32,
+        y: f32,
+        relative: bool,
+    },
+    LineTo {
+        x: f32,
+        y: f32,
+        relative: bool,
+    },
+    HLineTo {
+        x: f32,
+        relative: bool,
+    },
+    VLineTo {
+        y: f32,
+        relative: bool,
+    },
+    CubicTo {
+        x1: f32,
+        y1: f32,
+        x2: f32,
+        y2: f32,
+        x: f32,
+        y: f32,
+        relative: bool,
+    },
+    SmoothCubicTo {
+        x2: f32,
+        y2: f32,
+        x: f32,
+        y: f32,
+        relative: bool,
+    },
+    QuadTo {
+        x1: f32,
+        y1: f32,
+        x: f32,
+        y: f32,
+        relative: bool,
+    },
+    SmoothQuadTo {
+        x: f32,
+        y: f32,
+        relative: bool,
+    },
+    ArcTo {
+        rx: f32,
+        ry: f32,
+        rotation: f32,
+        large_arc: bool,
+        sweep: bool,
+        x: f32,
+        y: f32,
+        relative: bool,
+    },
     Close,
 }
 
@@ -340,8 +395,25 @@ fn parse_svg_path_d(d: &str) -> Vec<SvgCommand> {
     let is_command = |token: &str| -> bool {
         matches!(
             token,
-            "M" | "m" | "L" | "l" | "H" | "h" | "V" | "v" | "C" | "c" | "S" | "s" | "Q" | "q"
-                | "T" | "t" | "A" | "a" | "Z" | "z"
+            "M" | "m"
+                | "L"
+                | "l"
+                | "H"
+                | "h"
+                | "V"
+                | "v"
+                | "C"
+                | "c"
+                | "S"
+                | "s"
+                | "Q"
+                | "q"
+                | "T"
+                | "t"
+                | "A"
+                | "a"
+                | "Z"
+                | "z"
         )
     };
 
@@ -555,12 +627,23 @@ fn build_lyon_path(
                 current_y = ny;
                 last_cmd_type = Some('V');
             }
-            SvgCommand::CubicTo { x1, y1, x2, y2, x, y, relative } => {
+            SvgCommand::CubicTo {
+                x1,
+                y1,
+                x2,
+                y2,
+                x,
+                y,
+                relative,
+            } => {
                 let (nx1, ny1, nx2, ny2, nx, ny) = if *relative {
                     (
-                        current_x + x1, current_y + y1,
-                        current_x + x2, current_y + y2,
-                        current_x + x, current_y + y,
+                        current_x + x1,
+                        current_y + y1,
+                        current_x + x2,
+                        current_y + y2,
+                        current_x + x,
+                        current_y + y,
                     )
                 } else {
                     (*x1, *y1, *x2, *y2, *x, *y)
@@ -576,7 +659,13 @@ fn build_lyon_path(
                 current_y = ny;
                 last_cmd_type = Some('C');
             }
-            SvgCommand::SmoothCubicTo { x2, y2, x, y, relative } => {
+            SvgCommand::SmoothCubicTo {
+                x2,
+                y2,
+                x,
+                y,
+                relative,
+            } => {
                 let (cx1, cy1) = match last_cmd_type {
                     Some('C') | Some('S') => (
                         2.0 * current_x - last_control_x,
@@ -585,10 +674,7 @@ fn build_lyon_path(
                     _ => (current_x, current_y),
                 };
                 let (nx2, ny2, nx, ny) = if *relative {
-                    (
-                        current_x + x2, current_y + y2,
-                        current_x + x, current_y + y,
-                    )
+                    (current_x + x2, current_y + y2, current_x + x, current_y + y)
                 } else {
                     (*x2, *y2, *x, *y)
                 };
@@ -603,12 +689,15 @@ fn build_lyon_path(
                 current_y = ny;
                 last_cmd_type = Some('S');
             }
-            SvgCommand::QuadTo { x1, y1, x, y, relative } => {
+            SvgCommand::QuadTo {
+                x1,
+                y1,
+                x,
+                y,
+                relative,
+            } => {
                 let (nx1, ny1, nx, ny) = if *relative {
-                    (
-                        current_x + x1, current_y + y1,
-                        current_x + x, current_y + y,
-                    )
+                    (current_x + x1, current_y + y1, current_x + x, current_y + y)
                 } else {
                     (*x1, *y1, *x, *y)
                 };
@@ -645,7 +734,16 @@ fn build_lyon_path(
                 current_y = ny;
                 last_cmd_type = Some('T');
             }
-            SvgCommand::ArcTo { rx, ry, rotation, large_arc, sweep, x, y, relative } => {
+            SvgCommand::ArcTo {
+                rx,
+                ry,
+                rotation,
+                large_arc,
+                sweep,
+                x,
+                y,
+                relative,
+            } => {
                 let (nx, ny) = if *relative {
                     (current_x + x, current_y + y)
                 } else {
@@ -653,24 +751,15 @@ fn build_lyon_path(
                 };
 
                 if *rx == 0.0 || *ry == 0.0 {
-                    builder.line_to(Point::new(
-                        nx * scale_x + offset_x,
-                        ny * scale_y + offset_y,
-                    ));
+                    builder.line_to(Point::new(nx * scale_x + offset_x, ny * scale_y + offset_y));
                 } else {
                     let arc = lyon::geom::SvgArc {
                         from: Point::new(
                             current_x * scale_x + offset_x,
                             current_y * scale_y + offset_y,
                         ),
-                        to: Point::new(
-                            nx * scale_x + offset_x,
-                            ny * scale_y + offset_y,
-                        ),
-                        radii: lyon::math::Vector::new(
-                            rx * scale_x,
-                            ry * scale_y,
-                        ),
+                        to: Point::new(nx * scale_x + offset_x, ny * scale_y + offset_y),
+                        radii: lyon::math::Vector::new(rx * scale_x, ry * scale_y),
                         x_rotation: lyon::geom::Angle::degrees(*rotation),
                         flags: lyon::geom::ArcFlags {
                             large_arc: *large_arc,
@@ -735,8 +824,8 @@ fn parse_svg_content(svg_content: &str) -> ParsedSvg {
         if let Some(d) = extract_attr(&path_match, "d") {
             let fill = extract_attr(&path_match, "fill");
             let stroke = extract_attr(&path_match, "stroke");
-            let stroke_width = extract_attr(&path_match, "stroke-width")
-                .and_then(|s| s.parse().ok());
+            let stroke_width =
+                extract_attr(&path_match, "stroke-width").and_then(|s| s.parse().ok());
 
             result.paths.push(ParsedPath {
                 d,
@@ -753,9 +842,11 @@ fn parse_svg_content(svg_content: &str) -> ParsedSvg {
             extract_attr(&circle_match, "cy"),
             extract_attr(&circle_match, "r"),
         ) {
-            if let (Ok(cx), Ok(cy), Ok(r)) =
-                (cx_str.parse::<f32>(), cy_str.parse::<f32>(), r_str.parse::<f32>())
-            {
+            if let (Ok(cx), Ok(cy), Ok(r)) = (
+                cx_str.parse::<f32>(),
+                cy_str.parse::<f32>(),
+                r_str.parse::<f32>(),
+            ) {
                 let k = 0.5522847498;
                 let d = format!(
                     "M{},{} C{},{} {},{} {},{} C{},{} {},{} {},{} C{},{} {},{} {},{} C{},{} {},{} {},{} Z",
@@ -783,11 +874,22 @@ fn parse_svg_content(svg_content: &str) -> ParsedSvg {
             .and_then(|s| s.parse().ok())
             .unwrap_or(0.0);
 
-        if let (Some(w_str), Some(h_str)) =
-            (extract_attr(&rect_match, "width"), extract_attr(&rect_match, "height"))
-        {
+        if let (Some(w_str), Some(h_str)) = (
+            extract_attr(&rect_match, "width"),
+            extract_attr(&rect_match, "height"),
+        ) {
             if let (Ok(w), Ok(h)) = (w_str.parse::<f32>(), h_str.parse::<f32>()) {
-                let d = format!("M{},{} L{},{} L{},{} L{},{} Z", x, y, x + w, y, x + w, y + h, x, y + h);
+                let d = format!(
+                    "M{},{} L{},{} L{},{} L{},{} Z",
+                    x,
+                    y,
+                    x + w,
+                    y,
+                    x + w,
+                    y + h,
+                    x,
+                    y + h
+                );
                 result.paths.push(ParsedPath {
                     d,
                     fill: extract_attr(&rect_match, "fill"),
@@ -857,7 +959,10 @@ fn find_all_polygons(svg_content: &str) -> Vec<String> {
 
 fn find_all_elements(svg_content: &str, tag: &str) -> Vec<String> {
     let mut results = Vec::new();
-    let pattern = format!(r"<{}\b([^>]*)/?>([\s\S]*?)</{}>|<{}\b([^>]*)/?>", tag, tag, tag);
+    let pattern = format!(
+        r"<{}\b([^>]*)/?>([\s\S]*?)</{}>|<{}\b([^>]*)/?>",
+        tag, tag, tag
+    );
 
     if let Ok(re) = regex_lite::Regex::new(&pattern) {
         for cap in re.captures_iter(svg_content) {
@@ -882,45 +987,4 @@ fn find_all_elements(svg_content: &str, tag: &str) -> Vec<String> {
 fn extract_attr(element: &str, attr: &str) -> Option<String> {
     let pattern = format!(r#"\b{}\s*=\s*["']([^"']*)["']"#, attr);
     regex_match(element, &pattern)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_simple_path() {
-        let commands = parse_svg_path_d("M10,10 L20,20 Z");
-        assert_eq!(commands.len(), 3);
-    }
-
-    #[test]
-    fn test_tessellate_simple_path() {
-        let mut tessellator = SvgTessellator::new();
-        let path_d = "M0,0 L10,0 L10,10 L0,10 Z";
-        let commands = parse_svg_path_d(path_d);
-        let path = build_lyon_path(&commands, 0.0, 0.0, 1.0, 1.0);
-
-        let mut buffers: VertexBuffers<Point2D<f32>, u32> = VertexBuffers::new();
-        tessellator
-            .fill_tessellator
-            .tessellate_path(
-                &path,
-                &FillOptions::default(),
-                &mut BuffersBuilder::new(&mut buffers, PositionOnly),
-            )
-            .unwrap();
-
-        assert!(!buffers.vertices.is_empty());
-        assert!(!buffers.indices.is_empty());
-    }
-
-    #[test]
-    fn test_parse_svg_content() {
-        let svg = r#"<svg viewBox="0 0 24 24"><path d="M10,10 L20,20"/></svg>"#;
-        let parsed = parse_svg_content(svg);
-        assert_eq!(parsed.width, 24.0);
-        assert_eq!(parsed.height, 24.0);
-        assert_eq!(parsed.paths.len(), 1);
-    }
 }

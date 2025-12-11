@@ -105,6 +105,26 @@ export interface FlashContext extends FlashReadContext {
    */
   newFocusHandle(windowId: WindowId): FocusHandle;
 
+  /**
+   * Focus the first focusable descendant of a handle.
+   */
+  focusFirstChild(handle: FocusHandle): void;
+
+  /**
+   * Focus the next focusable sibling of a handle.
+   */
+  focusNextSibling(handle: FocusHandle): void;
+
+  /**
+   * Save the current focused handle for a window (for modal restoration).
+   */
+  saveFocus(windowId: WindowId): void;
+
+  /**
+   * Restore the most recently saved focus for a window.
+   */
+  restoreFocus(windowId: WindowId): void;
+
   // Scroll
 
   /**

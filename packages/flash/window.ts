@@ -52,7 +52,7 @@ import {
 } from "./dispatch.ts";
 import type { KeyEvent } from "@glade/core";
 import { ActionRegistry, Keymap, KeyDispatcher } from "./actions.ts";
-import { coreModsToFlashMods } from "./keyboard.ts";
+import { coreModsToFlashMods, Key } from "./keyboard.ts";
 import { FlashScene } from "./scene.ts";
 import type { Styles, Cursor } from "./styles.ts";
 import { SHADOW_DEFINITIONS, cursorToCursorStyle } from "./styles.ts";
@@ -355,9 +355,8 @@ export class FlashWindow {
    * Set focus to a focus handle.
    */
   setFocus(focusId: FocusId): void {
-    if (!this.focusStack.includes(focusId)) {
-      this.focusStack.push(focusId);
-    }
+    this.focusStack = [focusId];
+    this.getContext().markWindowDirty(this.id);
   }
 
   /**
@@ -367,6 +366,7 @@ export class FlashWindow {
     const index = this.focusStack.indexOf(focusId);
     if (index >= 0) {
       this.focusStack.splice(index, 1);
+      this.getContext().markWindowDirty(this.id);
     }
   }
 
@@ -374,7 +374,17 @@ export class FlashWindow {
    * Check if a focus handle is focused.
    */
   isFocused(focusId: FocusId): boolean {
-    return this.focusStack.includes(focusId);
+    return this.getCurrentFocusId() === focusId;
+  }
+
+  /**
+   * Get the current focused handle ID (top of stack).
+   */
+  private getCurrentFocusId(): FocusId | null {
+    if (this.focusStack.length === 0) {
+      return null;
+    }
+    return this.focusStack[this.focusStack.length - 1]!;
   }
 
   // ============ Key Context & Actions ============
@@ -404,11 +414,23 @@ export class FlashWindow {
    * Get the current key context chain based on focus.
    */
   getKeyContextChain(): string[] {
-    let path = getFocusedPath(this.hitTestTree);
-    if (path.length === 0) {
-      path = hitTest(this.hitTestTree, this.mousePosition);
+    const currentFocusId = this.getCurrentFocusId();
+    if (currentFocusId !== null) {
+      const cached = this.focusContextManager.getContextChain(currentFocusId);
+      if (cached.length > 0) {
+        return cached;
+      }
+
+      const focusPath = getFocusedPath(this.hitTestTree, currentFocusId);
+      if (focusPath.length > 0) {
+        const chain = buildKeyContextChain(focusPath);
+        this.focusContextManager.setContextChain(currentFocusId, chain);
+        return chain;
+      }
     }
-    return buildKeyContextChain(path);
+
+    const fallbackPath = hitTest(this.hitTestTree, this.mousePosition);
+    return buildKeyContextChain(fallbackPath);
   }
 
   // ============ Scroll State Management ============
@@ -609,7 +631,8 @@ export class FlashWindow {
    * Get the next focusable element for Tab navigation.
    */
   getNextFocus(currentFocusId: FocusId | null): FocusId | null {
-    const currentGroup = this.tabStopRegistry.getGroup(currentFocusId ?? (0 as FocusId));
+    const currentGroup =
+      currentFocusId !== null ? this.tabStopRegistry.getGroup(currentFocusId) : null;
     return this.tabStopRegistry.getNextFocus(currentFocusId, currentGroup);
   }
 
@@ -617,7 +640,8 @@ export class FlashWindow {
    * Get the previous focusable element for Shift+Tab navigation.
    */
   getPrevFocus(currentFocusId: FocusId | null): FocusId | null {
-    const currentGroup = this.tabStopRegistry.getGroup(currentFocusId ?? (0 as FocusId));
+    const currentGroup =
+      currentFocusId !== null ? this.tabStopRegistry.getGroup(currentFocusId) : null;
     return this.tabStopRegistry.getPrevFocus(currentFocusId, currentGroup);
   }
 
@@ -794,6 +818,8 @@ export class FlashWindow {
       }
     }
 
+    this.updateFocusContexts();
+
     // Build inspector debug info from hit test tree if inspector is enabled
     if (this.inspector.isEnabled()) {
       this.inspector.warmUpGlyphs(this.textSystem);
@@ -943,6 +969,8 @@ export class FlashWindow {
     this.tooltipManager.clearRegistrations();
     // Clear tab stops from previous frame
     this.tabStopRegistry.clear();
+    // Clear focus contexts from previous frame
+    this.focusContextManager.clear();
     // Clear deferred draw queue from previous frame
     this.deferredDrawQueue = [];
   }
@@ -992,6 +1020,111 @@ export class FlashWindow {
       if (this.renderTarget.setCursor) {
         this.renderTarget.setCursor(newCursor);
       }
+    }
+  }
+
+  private updateFocusContexts(): void {
+    this.focusContextManager.clear();
+    const focusIdsInTree = new Set<FocusId>();
+
+    const traverse = (node: HitTestNode, chain: string[]): void => {
+      const nextChain = node.keyContext ? [...chain, node.keyContext] : chain;
+      if (node.focusHandle) {
+        focusIdsInTree.add(node.focusHandle.id);
+        this.focusContextManager.setContextChain(node.focusHandle.id, nextChain);
+      }
+      for (const child of node.children) {
+        traverse(child, nextChain);
+      }
+    };
+
+    for (const root of this.hitTestTree) {
+      traverse(root, []);
+    }
+
+    const previousLength = this.focusStack.length;
+    this.focusStack = this.focusStack.filter((id) => focusIdsInTree.has(id));
+    if (this.focusStack.length !== previousLength) {
+      this.getContext().markWindowDirty(this.id);
+    }
+  }
+
+  private findFirstFocusable(nodes: HitTestNode[]): FocusId | null {
+    for (const node of nodes) {
+      if (node.focusHandle) {
+        return node.focusHandle.id;
+      }
+      const childFocus = this.findFirstFocusable(node.children);
+      if (childFocus !== null) {
+        return childFocus;
+      }
+    }
+    return null;
+  }
+
+  focusFirstChild(focusId: FocusId): FocusId | null {
+    const path = getFocusedPath(this.hitTestTree, focusId);
+    if (path.length === 0) {
+      return null;
+    }
+    const currentNode = path[path.length - 1]!;
+    const childFocus = this.findFirstFocusable(currentNode.children);
+    if (childFocus !== null) {
+      this.setFocus(childFocus);
+      return childFocus;
+    }
+    return null;
+  }
+
+  focusNextSibling(focusId: FocusId): FocusId | null {
+    const path = getFocusedPath(this.hitTestTree, focusId);
+    if (path.length < 2) {
+      return null;
+    }
+    const currentNode = path[path.length - 1]!;
+    const parentNode = path[path.length - 2]!;
+    const siblingIndex = parentNode.children.indexOf(currentNode);
+    for (let i = siblingIndex + 1; i < parentNode.children.length; i++) {
+      const sibling = parentNode.children[i]!;
+      const focusable = this.findFirstFocusable([sibling]);
+      if (focusable !== null) {
+        this.setFocus(focusable);
+        return focusable;
+      }
+    }
+    return null;
+  }
+
+  saveFocus(): void {
+    this.focusRestoration.saveFocus(this.getCurrentFocusId());
+  }
+
+  restoreFocus(): FocusId | null {
+    const restored = this.focusRestoration.restoreFocus();
+    if (restored !== null) {
+      this.setFocus(restored);
+      return restored;
+    }
+    return null;
+  }
+
+  private focusFromPath(path: HitTestNode[], reason: "mouseDown" | "click"): void {
+    for (let i = path.length - 1; i >= 0; i--) {
+      const node = path[i];
+      if (!node?.focusHandle) {
+        continue;
+      }
+      const handle = node.focusHandle;
+      const tabStop = this.tabStopRegistry.getTabStop(handle.id);
+      if (reason === "mouseDown") {
+        if (tabStop?.config.focusOnPress === true) {
+          this.getContext().focus(handle);
+          return;
+        }
+        continue;
+      }
+      this.getContext().focus(handle);
+      return;
     }
   }
 
@@ -1060,6 +1193,9 @@ export class FlashWindow {
           }
         }
 
+        if (button === 0) {
+          this.focusFromPath(path, "mouseDown");
+        }
         dispatchMouseEvent("mouseDown", event, path, this, this.getContext());
       });
       this.eventCleanups.push(cleanup);
@@ -1113,6 +1249,7 @@ export class FlashWindow {
 
         const event: FlashClickEvent = { x, y, clickCount, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
+        this.focusFromPath(path, "click");
         dispatchClickEvent(event, path, this, this.getContext());
       });
       this.eventCleanups.push(cleanup);
@@ -1149,11 +1286,10 @@ export class FlashWindow {
     // Handle Tab navigation
     if (event.action === 1) {
       // KeyAction.Press
-      const tabKey = event.key === 9; // Tab character
+      const tabKey = event.key === Key.Tab || event.key === 9;
       if (tabKey) {
         const shiftPressed = (event.mods & 0x01) !== 0;
-        const currentFocusId =
-          this.focusStack.length > 0 ? this.focusStack[this.focusStack.length - 1]! : null;
+        const currentFocusId = this.getCurrentFocusId();
         const nextFocusId = shiftPressed
           ? this.getPrevFocus(currentFocusId)
           : this.getNextFocus(currentFocusId);
@@ -1166,14 +1302,14 @@ export class FlashWindow {
       }
     }
 
-    // Get the path from focused element (or use mouse position as fallback)
-    let path = getFocusedPath(this.hitTestTree);
+    const currentFocusId = this.getCurrentFocusId();
+    let path = getFocusedPath(this.hitTestTree, currentFocusId);
     if (path.length === 0) {
       path = hitTest(this.hitTestTree, this.mousePosition);
     }
 
     // Build context chain from the path
-    const contextChain = buildKeyContextChain(path);
+    const contextChain = this.getKeyContextChain();
 
     // Try action dispatch first
     const result = this.keyDispatcher.dispatch(event, contextChain, cx, this);
