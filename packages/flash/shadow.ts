@@ -227,28 +227,25 @@ export class ShadowPipeline {
     private device: GPUDevice,
     format: GPUTextureFormat,
     uniformBindGroupLayout: GPUBindGroupLayout,
-    maxInstances: number = 1000
+    maxInstances: number = 1000,
+    sampleCount: number = 1
   ) {
     this.maxInstances = maxInstances;
     this.instanceData = new Float32Array(maxInstances * FLOATS_PER_INSTANCE);
 
-    // Create instance buffer
     this.instanceBuffer = device.createBuffer({
       size: this.instanceData.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
 
-    // Create shader module
     const shaderModule = device.createShaderModule({
       code: SHADOW_SHADER,
     });
 
-    // Create pipeline layout
     const pipelineLayout = device.createPipelineLayout({
       bindGroupLayouts: [uniformBindGroupLayout],
     });
 
-    // Create render pipeline
     this.pipeline = device.createRenderPipeline({
       layout: pipelineLayout,
       vertex: {
@@ -256,7 +253,6 @@ export class ShadowPipeline {
         entryPoint: "vs_main",
         buffers: [
           {
-            // Instance buffer
             arrayStride: BYTES_PER_INSTANCE,
             stepMode: "instance",
             attributes: [
@@ -286,8 +282,11 @@ export class ShadowPipeline {
       },
       depthStencil: {
         format: "depth24plus",
-        depthWriteEnabled: false, // Shadows are transparent - don't write to depth buffer
+        depthWriteEnabled: false,
         depthCompare: "less",
+      },
+      multisample: {
+        count: sampleCount,
       },
     });
   }

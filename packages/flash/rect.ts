@@ -303,28 +303,25 @@ export class RectPipeline {
     private device: GPUDevice,
     format: GPUTextureFormat,
     uniformBindGroupLayout: GPUBindGroupLayout,
-    maxInstances: number = 10000
+    maxInstances: number = 10000,
+    sampleCount: number = 1
   ) {
     this.maxInstances = maxInstances;
     this.instanceData = new Float32Array(maxInstances * FLOATS_PER_INSTANCE);
 
-    // Create instance buffer
     this.instanceBuffer = device.createBuffer({
       size: this.instanceData.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
 
-    // Create shader module
     const shaderModule = device.createShaderModule({
       code: RECT_SHADER,
     });
 
-    // Create pipeline layout
     const pipelineLayout = device.createPipelineLayout({
       bindGroupLayouts: [uniformBindGroupLayout],
     });
 
-    // Create render pipeline
     this.pipeline = device.createRenderPipeline({
       layout: pipelineLayout,
       vertex: {
@@ -332,7 +329,6 @@ export class RectPipeline {
         entryPoint: "vs_main",
         buffers: [
           {
-            // Instance buffer
             arrayStride: BYTES_PER_INSTANCE,
             stepMode: "instance",
             attributes: [
@@ -365,6 +361,9 @@ export class RectPipeline {
         format: "depth24plus",
         depthWriteEnabled: true,
         depthCompare: "less",
+      },
+      multisample: {
+        count: sampleCount,
       },
     });
   }

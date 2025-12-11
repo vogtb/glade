@@ -25,6 +25,8 @@ export interface RendererConfig {
   maxGlyphs?: number;
   /** Clear color. */
   clearColor?: { r: number; g: number; b: number; a: number };
+  /** MSAA sample count: 1 (off), 4, or 8. Defaults to 1. */
+  msaaSampleCount?: number;
 }
 
 const DEFAULT_CONFIG: Required<RendererConfig> = {
@@ -32,6 +34,7 @@ const DEFAULT_CONFIG: Required<RendererConfig> = {
   maxShadows: 1000,
   maxGlyphs: 50000,
   clearColor: { r: 0, g: 0, b: 0, a: 1 },
+  msaaSampleCount: 1,
 };
 
 /**
@@ -43,11 +46,20 @@ export class FlashRenderer {
   private uniformBindGroup: GPUBindGroup | null = null;
   private uniformBindGroupLayout: GPUBindGroupLayout | null = null;
 
+  // MSAA configuration
+  private sampleCount: number = 1;
+
   // Depth buffer for proper z-ordering of instanced draws
   private depthTexture: GPUTexture | null = null;
   private depthTextureView: GPUTextureView | null = null;
   private depthTextureWidth = 0;
   private depthTextureHeight = 0;
+
+  // MSAA color buffer (only when sampleCount > 1)
+  private msaaColorTexture: GPUTexture | null = null;
+  private msaaColorTextureView: GPUTextureView | null = null;
+  private msaaColorWidth = 0;
+  private msaaColorHeight = 0;
 
   // Pipelines (initialized lazily)
   private rectPipeline: RectPipeline | null = null;
@@ -64,7 +76,22 @@ export class FlashRenderer {
     config: RendererConfig = {}
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.sampleCount = this.normalizeSampleCount(this.config.msaaSampleCount);
     this.initializeUniforms();
+  }
+
+  private normalizeSampleCount(requested: number): number {
+    if (!requested || requested <= 1) return 1;
+    if (requested >= 8) return 8;
+    if (requested >= 4) return 4;
+    return 1;
+  }
+
+  /**
+   * Get the MSAA sample count for pipeline creation.
+   */
+  getSampleCount(): number {
+    return this.sampleCount;
   }
 
   /**
@@ -160,7 +187,7 @@ export class FlashRenderer {
   }
 
   /**
-   * Ensure depth texture exists and matches the required size.
+   * Ensure depth texture exists and matches the required size and sample count.
    */
   private ensureDepthTexture(width: number, height: number): void {
     if (
@@ -171,20 +198,53 @@ export class FlashRenderer {
       return;
     }
 
-    // Destroy old texture if it exists
     if (this.depthTexture) {
       this.depthTexture.destroy();
     }
 
-    // Create new depth texture
     this.depthTexture = this.device.createTexture({
       size: { width, height },
       format: "depth24plus",
+      sampleCount: this.sampleCount,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
     this.depthTextureView = this.depthTexture.createView();
     this.depthTextureWidth = width;
     this.depthTextureHeight = height;
+  }
+
+  /**
+   * Ensure MSAA color texture exists when sampleCount > 1.
+   */
+  private ensureMsaaColorTexture(width: number, height: number): void {
+    if (this.sampleCount === 1) {
+      if (this.msaaColorTexture) {
+        this.msaaColorTexture.destroy();
+        this.msaaColorTexture = null;
+        this.msaaColorTextureView = null;
+        this.msaaColorWidth = 0;
+        this.msaaColorHeight = 0;
+      }
+      return;
+    }
+
+    if (this.msaaColorTexture && this.msaaColorWidth === width && this.msaaColorHeight === height) {
+      return;
+    }
+
+    if (this.msaaColorTexture) {
+      this.msaaColorTexture.destroy();
+    }
+
+    this.msaaColorTexture = this.device.createTexture({
+      size: { width, height },
+      format: this.format,
+      sampleCount: this.sampleCount,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    this.msaaColorTextureView = this.msaaColorTexture.createView();
+    this.msaaColorWidth = width;
+    this.msaaColorHeight = height;
   }
 
   /**
@@ -236,20 +296,31 @@ export class FlashRenderer {
     // The shader will use framebuffer coordinates, and we scale positions by DPR
     this.updateViewport(fbWidth, fbHeight, dpr);
 
-    // Ensure depth buffer exists and is correct size
+    // Ensure depth and MSAA color textures exist
     this.ensureDepthTexture(fbWidth, fbHeight);
+    this.ensureMsaaColorTexture(fbWidth, fbHeight);
 
     const encoder = this.device.createCommandEncoder();
 
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [
-        {
+    const useMSAA = this.sampleCount > 1;
+
+    const colorAttachment: GPURenderPassColorAttachment = useMSAA
+      ? {
+          view: this.msaaColorTextureView!,
+          resolveTarget: textureView,
+          clearValue: this.config.clearColor,
+          loadOp: "clear",
+          storeOp: "discard",
+        }
+      : {
           view: textureView,
           clearValue: this.config.clearColor,
           loadOp: "clear",
           storeOp: "store",
-        },
-      ],
+        };
+
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [colorAttachment],
       depthStencilAttachment: {
         view: this.depthTextureView!,
         depthClearValue: 1.0,
@@ -325,6 +396,8 @@ export class FlashRenderer {
    */
   destroy(): void {
     this.uniformBuffer?.destroy();
+    this.depthTexture?.destroy();
+    this.msaaColorTexture?.destroy();
     this.rectPipeline?.destroy();
     this.shadowPipeline?.destroy();
     this.pathPipeline?.destroy();

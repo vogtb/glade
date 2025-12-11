@@ -735,7 +735,8 @@ export class TextPipeline {
     private device: GPUDevice,
     format: GPUTextureFormat,
     private textSystem: TextSystem,
-    maxInstances: number = 50000
+    maxInstances: number = 50000,
+    private sampleCount: number = 1
   ) {
     this.maxInstances = maxInstances;
     this.instanceData = new Float32Array(maxInstances * FLOATS_PER_GLYPH);
@@ -814,6 +815,9 @@ export class TextPipeline {
         format: "depth24plus",
         depthWriteEnabled: false,
         depthCompare: "always",
+      },
+      multisample: {
+        count: this.sampleCount,
       },
     });
   }

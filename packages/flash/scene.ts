@@ -138,6 +138,8 @@ export interface ImagePrimitive {
 export interface PathVertex {
   x: number;
   y: number;
+  /** Edge distance for antialiasing (0.0 = on edge, 1.0 = interior). Optional, defaults to 1.0 */
+  edgeDist?: number;
 }
 
 /**

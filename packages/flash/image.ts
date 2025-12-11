@@ -421,7 +421,8 @@ export class ImagePipeline {
     private device: GPUDevice,
     format: GPUTextureFormat,
     private imageAtlas: ImageAtlas,
-    maxInstances: number = 10000
+    maxInstances: number = 10000,
+    private sampleCount: number = 1
   ) {
     this.maxInstances = maxInstances;
     this.instanceData = new Float32Array(maxInstances * FLOATS_PER_IMAGE);
@@ -502,6 +503,9 @@ export class ImagePipeline {
         format: "depth24plus",
         depthWriteEnabled: true,
         depthCompare: "less",
+      },
+      multisample: {
+        count: this.sampleCount,
       },
     });
   }

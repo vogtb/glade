@@ -111,7 +111,7 @@ export function parseSvg(svgContent: string): ParsedSvg {
  * Cached tessellated path data for a single SVG path.
  */
 interface CachedPathData {
-  vertices: Array<{ x: number; y: number }>;
+  vertices: Array<{ x: number; y: number; edgeDist: number }>;
   indices: number[];
   bounds: { x: number; y: number; width: number; height: number };
 }
@@ -199,11 +199,17 @@ interface SvgPrepaintState {
 
 /**
  * Convert WASM mesh to cached path data format.
+ * Vertices now include edge distance for antialiasing (3 floats per vertex: x, y, edgeDist).
  */
 function meshToCachedPath(mesh: TessellatedMesh): CachedPathData {
-  const vertices: Array<{ x: number; y: number }> = [];
-  for (let i = 0; i < mesh.vertices.length; i += 2) {
-    vertices.push({ x: mesh.vertices[i]!, y: mesh.vertices[i + 1]! });
+  const vertices: Array<{ x: number; y: number; edgeDist: number }> = [];
+  // Vertex format: [x, y, edgeDist, x, y, edgeDist, ...]
+  for (let i = 0; i < mesh.vertices.length; i += 3) {
+    vertices.push({
+      x: mesh.vertices[i]!,
+      y: mesh.vertices[i + 1]!,
+      edgeDist: mesh.vertices[i + 2]!,
+    });
   }
   return {
     vertices,
@@ -309,6 +315,7 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
       const offsetVertices = cached.vertices.map((v) => ({
         x: v.x + bounds.x,
         y: v.y + bounds.y,
+        edgeDist: v.edgeDist,
       }));
 
       cx.paintCachedPath(

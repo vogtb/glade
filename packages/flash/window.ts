@@ -222,19 +222,26 @@ export class FlashWindow {
     this.layoutEngine.setScaleFactor(1);
     this.renderTarget.configure(device, format);
 
-    // Initialize renderer with pipelines
+    // Initialize renderer with pipelines (4x MSAA for smooth edges)
     this.renderer = new FlashRenderer(device, format, {
       clearColor: { r: 0.08, g: 0.08, b: 0.1, a: 1 },
+      msaaSampleCount: 4,
     });
+    const sampleCount = this.renderer.getSampleCount();
+
     const rectPipeline = new RectPipeline(
       device,
       format,
-      this.renderer.getUniformBindGroupLayout()
+      this.renderer.getUniformBindGroupLayout(),
+      10000,
+      sampleCount
     );
     const shadowPipeline = new ShadowPipeline(
       device,
       format,
-      this.renderer.getUniformBindGroupLayout()
+      this.renderer.getUniformBindGroupLayout(),
+      1000,
+      sampleCount
     );
     this.renderer.setRectPipeline(rectPipeline);
     this.renderer.setShadowPipeline(shadowPipeline);
@@ -242,14 +249,17 @@ export class FlashWindow {
     // Initialize text system
     this.textSystem = new TextSystem(device);
     this.textSystem.setDevicePixelRatio(renderTarget.devicePixelRatio);
-    const textPipeline = new TextPipeline(device, format, this.textSystem);
+    const textPipeline = new TextPipeline(device, format, this.textSystem, 50000, sampleCount);
     this.renderer.setTextPipeline(textPipeline, this.textSystem);
 
     // Initialize path pipeline
     const pathPipeline = new PathPipeline(
       device,
       format,
-      this.renderer.getUniformBindGroupLayout()
+      this.renderer.getUniformBindGroupLayout(),
+      100000,
+      300000,
+      sampleCount
     );
     this.renderer.setPathPipeline(pathPipeline);
 
@@ -257,13 +267,15 @@ export class FlashWindow {
     const underlinePipeline = new UnderlinePipeline(
       device,
       format,
-      this.renderer.getUniformBindGroupLayout()
+      this.renderer.getUniformBindGroupLayout(),
+      10000,
+      sampleCount
     );
     this.renderer.setUnderlinePipeline(underlinePipeline);
 
     // Initialize image atlas and pipeline
     this.imageAtlas = new ImageAtlas(device);
-    const imagePipeline = new ImagePipeline(device, format, this.imageAtlas);
+    const imagePipeline = new ImagePipeline(device, format, this.imageAtlas, 10000, sampleCount);
     this.renderer.setImagePipeline(imagePipeline);
 
     // Initialize key dispatcher
@@ -1376,7 +1388,7 @@ export class FlashWindow {
       },
 
       paintCachedPath: (
-        vertices: Array<{ x: number; y: number }>,
+        vertices: Array<{ x: number; y: number; edgeDist?: number }>,
         indices: number[],
         bounds: Bounds,
         color: Color

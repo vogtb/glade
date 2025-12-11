@@ -240,7 +240,8 @@ export class UnderlinePipeline {
     private device: GPUDevice,
     format: GPUTextureFormat,
     uniformBindGroupLayout: GPUBindGroupLayout,
-    maxInstances: number = 10000
+    maxInstances: number = 10000,
+    sampleCount: number = 1
   ) {
     this.maxInstances = maxInstances;
     this.instanceData = new Float32Array(maxInstances * FLOATS_PER_INSTANCE);
@@ -296,6 +297,9 @@ export class UnderlinePipeline {
         format: "depth24plus",
         depthWriteEnabled: true,
         depthCompare: "less",
+      },
+      multisample: {
+        count: sampleCount,
       },
     });
   }

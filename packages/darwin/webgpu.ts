@@ -833,7 +833,12 @@ export class DawnGPUCommandEncoder {
       ); // view
       colorAttachmentsBuffer.writeUInt32LE(0xffffffff, offset + 16); // depthSlice = WGPU_DEPTH_SLICE_UNDEFINED
       // offset + 20: 4 bytes padding
-      colorAttachmentsBuffer.writeBigUInt64LE(BigInt(0), offset + 24); // resolveTarget = NULL
+      // resolveTarget - needed for MSAA resolve
+      const resolveTarget = attachment.resolveTarget as unknown as DawnGPUTextureView | undefined;
+      colorAttachmentsBuffer.writeBigUInt64LE(
+        resolveTarget ? BigInt(resolveTarget._handle as unknown as number) : BigInt(0),
+        offset + 24
+      ); // resolveTarget
       colorAttachmentsBuffer.writeUInt32LE(
         loadOpMap[attachment.loadOp] ?? WGPULoadOp.Clear,
         offset + 32
@@ -1980,13 +1985,14 @@ export class DawnGPUDevice {
 
     // multisample: WGPUMultisampleState (inline, 24 bytes)
     // { nextInChain: ptr(8), count: u32(4), mask: u32(4), alphaToCoverageEnabled: u32(4), padding(4) }
+    const multisample = descriptor.multisample;
     descBuffer.writeBigUInt64LE(BigInt(0), offset); // multisample.nextInChain
     offset += 8;
-    descBuffer.writeUInt32LE(1, offset); // multisample.count
+    descBuffer.writeUInt32LE(multisample?.count ?? 1, offset); // multisample.count
     offset += 4;
-    descBuffer.writeUInt32LE(0xffffffff, offset); // multisample.mask
+    descBuffer.writeUInt32LE(multisample?.mask ?? 0xffffffff, offset); // multisample.mask
     offset += 4;
-    descBuffer.writeUInt32LE(0, offset); // multisample.alphaToCoverageEnabled
+    descBuffer.writeUInt32LE(multisample?.alphaToCoverageEnabled ? 1 : 0, offset); // multisample.alphaToCoverageEnabled
     offset += 4;
     offset += 4; // padding
 

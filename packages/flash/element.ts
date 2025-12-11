@@ -283,9 +283,10 @@ export interface PaintContext {
 
   /**
    * Paint a cached path (pre-tessellated vertices and indices).
+   * Vertices include optional edgeDist for antialiasing (0.0 = edge, 1.0 = interior).
    */
   paintCachedPath(
-    vertices: Array<{ x: number; y: number }>,
+    vertices: Array<{ x: number; y: number; edgeDist?: number }>,
     indices: number[],
     bounds: Bounds,
     color: Color

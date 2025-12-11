@@ -681,7 +681,10 @@ export function path(): PathBuilder {
 // ============ Path Pipeline ============
 
 /**
- * WGSL shader for path rendering.
+ * WGSL shader for path rendering with antialiasing.
+ *
+ * Uses edge distance interpolation for smooth AA at triangle edges.
+ * Edge distance of 0.0 = on edge (semi-transparent), 1.0 = interior (opaque).
  */
 const PATH_SHADER = /* wgsl */ `
 struct Uniforms {
@@ -697,6 +700,7 @@ struct VertexInput {
   @location(3) clip_params: vec4<f32>,
   @location(4) transform_ab: vec4<f32>,
   @location(5) transform_cd: vec4<f32>,
+  @location(6) edge_dist: f32,
 }
 
 struct VertexOutput {
@@ -705,6 +709,7 @@ struct VertexOutput {
   @location(1) clip_bounds: vec4<f32>,
   @location(2) clip_corner_radius: f32,
   @location(3) has_clip: f32,
+  @location(4) edge_dist: f32,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -750,6 +755,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
   );
   out.clip_corner_radius = in.clip_params.x * uniforms.scale;
   out.has_clip = in.clip_params.y;
+  out.edge_dist = in.edge_dist;
 
   return out;
 }
@@ -782,7 +788,12 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     }
   }
 
-  return in.color;
+  // Antialiasing: smooth the edge based on edge distance and screen-space gradient
+  let edge_width = fwidth(in.edge_dist);
+  let aa_alpha = smoothstep(0.0, edge_width * 1.5, in.edge_dist);
+
+  // Apply AA to the premultiplied color
+  return vec4<f32>(in.color.rgb * aa_alpha, in.color.a * aa_alpha);
 }
 `;
 
@@ -794,8 +805,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
  * - clip_params: 4 floats (corner_radius, has_clip, 0, 0)
  * - transform_ab: 4 floats (a, b, tx, has_transform)
  * - transform_cd: 4 floats (c, d, ty, 0)
+ * - edge_dist: 1 float (0.0 = edge, 1.0 = interior) + 1 padding
  */
-const FLOATS_PER_VERTEX = 22;
+const FLOATS_PER_VERTEX = 24;
 const BYTES_PER_VERTEX = FLOATS_PER_VERTEX * 4;
 
 /**
@@ -815,7 +827,8 @@ export class PathPipeline {
     format: GPUTextureFormat,
     uniformBindGroupLayout: GPUBindGroupLayout,
     maxVertices: number = 100000,
-    maxIndices: number = 300000
+    maxIndices: number = 300000,
+    sampleCount: number = 1
   ) {
     this.maxVertices = maxVertices;
     this.maxIndices = maxIndices;
@@ -856,6 +869,7 @@ export class PathPipeline {
               { shaderLocation: 3, offset: 40, format: "float32x4" }, // clip_params
               { shaderLocation: 4, offset: 56, format: "float32x4" }, // transform_ab
               { shaderLocation: 5, offset: 72, format: "float32x4" }, // transform_cd
+              { shaderLocation: 6, offset: 88, format: "float32" }, // edge_dist
             ],
           },
         ],
@@ -877,6 +891,9 @@ export class PathPipeline {
         format: "depth24plus",
         depthWriteEnabled: true,
         depthCompare: "less",
+      },
+      multisample: {
+        count: sampleCount,
       },
     });
   }
@@ -948,6 +965,10 @@ export class PathPipeline {
         this.vertexData[offset + 19] = transform?.d ?? 1;
         this.vertexData[offset + 20] = transform?.ty ?? 0;
         this.vertexData[offset + 21] = 0;
+
+        // edge_dist (defaults to 1.0 for interior if not specified)
+        this.vertexData[offset + 22] = v.edgeDist ?? 1.0;
+        this.vertexData[offset + 23] = 0; // padding
       }
 
       for (let i = 0; i < numIndices; i++) {

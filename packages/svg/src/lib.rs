@@ -3,7 +3,6 @@
 //! Parses SVG content and tessellates paths into triangle meshes
 //! for GPU rendering in Flash.
 
-use lyon::geom::euclid::default::Point2D;
 use lyon::math::Point;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, FillVertexConstructor,
@@ -12,8 +11,18 @@ use lyon::tessellation::{
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
+/// A vertex with position and edge distance for antialiasing.
+#[derive(Clone, Debug)]
+pub struct TessVertex {
+    pub x: f32,
+    pub y: f32,
+    /// Edge distance: 0.0 = on boundary, 1.0 = interior
+    pub edge_dist: f32,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TessellatedMesh {
+    /// Flat array of vertex data: [x, y, edge_dist, x, y, edge_dist, ...]
     pub vertices: Vec<f32>,
     pub indices: Vec<u32>,
     pub bounds: MeshBounds,
@@ -49,17 +58,40 @@ impl MeshBounds {
     }
 }
 
-struct PositionOnly;
+/// Vertex constructor that extracts position and edge distance for AA.
+/// 
+/// Note: Lyon's fill tessellator doesn't provide per-vertex edge information
+/// that we can use for AA. For proper edge-based AA, we'd need to either:
+/// 1. Use a post-processing pass to compute edge distances per-triangle
+/// 2. Use MSAA at the render target level
+/// 3. Generate an "AA fringe" around the path outline
+///
+/// For now, we set edge_dist = 1.0 for all vertices (fully opaque interior).
+struct VertexWithEdge;
 
-impl FillVertexConstructor<Point2D<f32>> for PositionOnly {
-    fn new_vertex(&mut self, vertex: FillVertex) -> Point2D<f32> {
-        vertex.position()
+impl FillVertexConstructor<TessVertex> for VertexWithEdge {
+    fn new_vertex(&mut self, vertex: FillVertex) -> TessVertex {
+        let pos = vertex.position();
+        TessVertex {
+            x: pos.x,
+            y: pos.y,
+            // All fill vertices are treated as interior (opaque)
+            // AA will be handled via other mechanisms (MSAA or fringe)
+            edge_dist: 1.0,
+        }
     }
 }
 
-impl StrokeVertexConstructor<Point2D<f32>> for PositionOnly {
-    fn new_vertex(&mut self, vertex: StrokeVertex) -> Point2D<f32> {
-        vertex.position()
+impl StrokeVertexConstructor<TessVertex> for VertexWithEdge {
+    fn new_vertex(&mut self, vertex: StrokeVertex) -> TessVertex {
+        let pos = vertex.position();
+        // For strokes, we could use the side (-1 or 1) to identify edges,
+        // but for now keep all opaque
+        TessVertex {
+            x: pos.x,
+            y: pos.y,
+            edge_dist: 1.0,
+        }
     }
 }
 
@@ -122,13 +154,13 @@ impl SvgTessellator {
         let commands = parse_svg_path_d(path_d);
         let path = build_lyon_path(&commands, offset_x, offset_y, scale_x, scale_y);
 
-        let mut buffers: VertexBuffers<Point2D<f32>, u32> = VertexBuffers::new();
+        let mut buffers: VertexBuffers<TessVertex, u32> = VertexBuffers::new();
 
         self.fill_tessellator
             .tessellate_path(
                 &path,
                 &FillOptions::default().with_tolerance(0.1),
-                &mut BuffersBuilder::new(&mut buffers, PositionOnly),
+                &mut BuffersBuilder::new(&mut buffers, VertexWithEdge),
             )
             .map_err(|e| JsValue::from_str(&format!("Tessellation error: {:?}", e)))?;
 
@@ -150,7 +182,7 @@ impl SvgTessellator {
         let commands = parse_svg_path_d(path_d);
         let path = build_lyon_path(&commands, offset_x, offset_y, scale_x, scale_y);
 
-        let mut buffers: VertexBuffers<Point2D<f32>, u32> = VertexBuffers::new();
+        let mut buffers: VertexBuffers<TessVertex, u32> = VertexBuffers::new();
 
         self.stroke_tessellator
             .tessellate_path(
@@ -158,7 +190,7 @@ impl SvgTessellator {
                 &StrokeOptions::default()
                     .with_line_width(stroke_width * scale_x.max(scale_y))
                     .with_tolerance(0.1),
-                &mut BuffersBuilder::new(&mut buffers, PositionOnly),
+                &mut BuffersBuilder::new(&mut buffers, VertexWithEdge),
             )
             .map_err(|e| JsValue::from_str(&format!("Tessellation error: {:?}", e)))?;
 
@@ -188,14 +220,14 @@ impl SvgTessellator {
                 let commands = parse_svg_path_d(&path.d);
                 let lyon_path = build_lyon_path(&commands, 0.0, 0.0, scale_x, scale_y);
 
-                let mut buffers: VertexBuffers<Point2D<f32>, u32> = VertexBuffers::new();
+                let mut buffers: VertexBuffers<TessVertex, u32> = VertexBuffers::new();
 
                 if self
                     .fill_tessellator
                     .tessellate_path(
                         &lyon_path,
                         &FillOptions::default().with_tolerance(0.1),
-                        &mut BuffersBuilder::new(&mut buffers, PositionOnly),
+                        &mut BuffersBuilder::new(&mut buffers, VertexWithEdge),
                     )
                     .is_ok()
                     && !buffers.vertices.is_empty()
@@ -209,7 +241,7 @@ impl SvgTessellator {
                     let commands = parse_svg_path_d(&path.d);
                     let lyon_path = build_lyon_path(&commands, 0.0, 0.0, scale_x, scale_y);
 
-                    let mut buffers: VertexBuffers<Point2D<f32>, u32> = VertexBuffers::new();
+                    let mut buffers: VertexBuffers<TessVertex, u32> = VertexBuffers::new();
 
                     if self
                         .stroke_tessellator
@@ -218,7 +250,7 @@ impl SvgTessellator {
                             &StrokeOptions::default()
                                 .with_line_width(stroke_width * scale_x.max(scale_y))
                                 .with_tolerance(0.1),
-                            &mut BuffersBuilder::new(&mut buffers, PositionOnly),
+                            &mut BuffersBuilder::new(&mut buffers, VertexWithEdge),
                         )
                         .is_ok()
                         && !buffers.vertices.is_empty()
@@ -240,13 +272,15 @@ impl Default for SvgTessellator {
     }
 }
 
-fn build_mesh(buffers: VertexBuffers<Point2D<f32>, u32>) -> TessellatedMesh {
+fn build_mesh(buffers: VertexBuffers<TessVertex, u32>) -> TessellatedMesh {
     let mut bounds = MeshBounds::new();
-    let mut vertices: Vec<f32> = Vec::with_capacity(buffers.vertices.len() * 2);
+    // 3 floats per vertex: x, y, edge_dist
+    let mut vertices: Vec<f32> = Vec::with_capacity(buffers.vertices.len() * 3);
 
     for v in &buffers.vertices {
         vertices.push(v.x);
         vertices.push(v.y);
+        vertices.push(v.edge_dist);
         bounds.expand(v.x, v.y);
     }
 
