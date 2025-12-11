@@ -50,9 +50,7 @@ const jetBrainsMonoSemiBoldBase64 = embedAsBase64(
   "../../assets/JetBrainsMono-SemiBold.ttf"
 ) as unknown as string;
 
-const DEFAULT_EMOJI_FONT_FAMILY = "Noto Color Emoji";
-
-let emojiFontFamily = DEFAULT_EMOJI_FONT_FAMILY;
+const emojiFontFamily = "Noto Color Emoji";
 
 // Embed images as base64 at build time
 const demoPngBase64 = embedAsBase64("../../assets/image.png") as unknown as string;
@@ -2059,35 +2057,8 @@ async function main() {
   window.getKeymap().bind("i", "inspector:toggle");
   console.log("Inspector: Press 'I' to toggle debug mode");
 
-  let emojiFontBytes = base64ToBytes(notoColorEmojiBase64);
-
-  const isDarwin = typeof process !== "undefined" && process.platform === "darwin";
-  const hasBunFile = typeof Bun !== "undefined" && typeof Bun.file === "function";
-
-  if (isDarwin && hasBunFile) {
-    const appleEmojiPath = "/System/Library/Fonts/Apple Color Emoji.ttc";
-    try {
-      const appleFile = Bun.file(appleEmojiPath);
-      const exists = await appleFile.exists();
-      if (exists) {
-        emojiFontBytes = new Uint8Array(await appleFile.arrayBuffer());
-        emojiFontFamily = "Apple Color Emoji";
-        console.log(`Loaded Apple Color Emoji from ${appleEmojiPath}`);
-      } else {
-        console.warn(
-          `Apple Color Emoji not found at ${appleEmojiPath}, using bundled ${DEFAULT_EMOJI_FONT_FAMILY} instead`
-        );
-      }
-    } catch (error) {
-      console.warn(
-        `Failed to load Apple Color Emoji from ${appleEmojiPath}, using bundled ${DEFAULT_EMOJI_FONT_FAMILY}`,
-        error
-      );
-    }
-  }
-
   window.registerFont("Inter", base64ToBytes(interFontBase64));
-  window.registerFont(emojiFontFamily, emojiFontBytes);
+  window.registerFont(emojiFontFamily, base64ToBytes(notoColorEmojiBase64));
   window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoRegularBase64));
   window.registerFont("JetBrains Mono SemiBold", base64ToBytes(jetBrainsMonoSemiBoldBase64));
   console.log(`Loaded fonts: Inter, ${emojiFontFamily}, JetBrains Mono, JetBrains Mono SemiBold`);
