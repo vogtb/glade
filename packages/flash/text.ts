@@ -139,6 +139,8 @@ const DEFAULT_ATLAS_CONFIG: GlyphAtlasConfig = {
   padding: 2,
 };
 
+const FONT_FALLBACK_PRIORITY: readonly string[] = ["Inter", "Noto Color Emoji"];
+
 /**
  * Glyph atlas for caching rasterized glyphs.
  *
@@ -261,12 +263,8 @@ export class GlyphAtlas {
       return null;
     }
 
-    // Try canvas-based rasterization first (browser)
-    if (this.stagingCtx && this.stagingCanvas) {
-      glyphData = this.rasterizeWithCanvas(key.fontSize, fontFamily, glyphChar);
-    }
-    // Fall back to WASM rasterization (native)
-    else if (this.rasterizer && fontId) {
+    // Prefer WASM rasterization for consistent results across platforms
+    if (this.rasterizer && fontId) {
       glyphData = this.rasterizer(
         key.glyphId,
         key.fontSize,
@@ -275,6 +273,10 @@ export class GlyphAtlas {
         glyphChar,
         cosmicFontId
       );
+    }
+    // Fall back to canvas-based rasterization when WASM is unavailable (older browsers)
+    else if (this.stagingCtx && this.stagingCanvas) {
+      glyphData = this.rasterizeWithCanvas(key.fontSize, fontFamily, glyphChar);
     }
 
     if (!glyphData || glyphData.width === 0 || glyphData.height === 0) {
@@ -603,6 +605,33 @@ export class TextSystem {
     return this.fontFamilyToId.get(family);
   }
 
+  private buildFallbackFamilies(primaryFamily: string): string[] {
+    const families: string[] = [];
+    if (primaryFamily) {
+      families.push(primaryFamily);
+    }
+    for (const family of FONT_FALLBACK_PRIORITY) {
+      if (!families.includes(family)) {
+        families.push(family);
+      }
+    }
+    return families;
+  }
+
+  private shapeSingleGlyphForFallback(
+    char: string,
+    fontSize: number,
+    lineHeight: number,
+    family: string
+  ): ShapedGlyph | null {
+    const shaped = this.shaper.shapeLine(char, fontSize, lineHeight, { family });
+    const fallbackGlyph = shaped.glyphs[0];
+    if (!fallbackGlyph) {
+      return null;
+    }
+    return fallbackGlyph;
+  }
+
   /**
    * Shape a single line of text.
    */
@@ -700,6 +729,7 @@ export class TextSystem {
 
     const dpr = this._devicePixelRatio;
     const rasterFontSize = Math.ceil(fontSize * dpr);
+    const fallbackFamilies = this.buildFallbackFamilies(fontFamily);
 
     for (const glyph of shaped.glyphs) {
       const startIndex = byteToUtf16Index.get(glyph.start);
@@ -718,23 +748,53 @@ export class TextSystem {
       const subpixelX = 0;
       const subpixelY = 0;
 
-      const cached = this.atlas.getOrInsert(
-        {
-          fontId: fontId.id,
-          glyphId: glyph.glyphId,
-          fontSize: rasterFontSize,
-          subpixelX,
-          subpixelY,
-        },
-        fontFamily,
-        char,
-        fontId,
-        glyph.cosmicFontId
-      );
+      let cached: CachedGlyph | null = null;
+
+      for (const fallbackFamily of fallbackFamilies) {
+        const fallbackFontId = this.fontFamilyToId.get(fallbackFamily);
+        if (!fallbackFontId) {
+          continue;
+        }
+
+        let targetGlyphId = glyph.glyphId;
+        let targetCosmicFontId = glyph.cosmicFontId;
+
+        if (fallbackFamily !== fontFamily) {
+          const fallbackGlyph = this.shapeSingleGlyphForFallback(
+            char,
+            fontSize,
+            lineHeight,
+            fallbackFamily
+          );
+          if (!fallbackGlyph) {
+            continue;
+          }
+          targetGlyphId = fallbackGlyph.glyphId;
+          targetCosmicFontId = fallbackGlyph.cosmicFontId;
+        }
+
+        cached = this.atlas.getOrInsert(
+          {
+            fontId: fallbackFontId.id,
+            glyphId: targetGlyphId,
+            fontSize: rasterFontSize,
+            subpixelX,
+            subpixelY,
+          },
+          fallbackFamily,
+          char,
+          fallbackFontId,
+          targetCosmicFontId
+        );
+
+        if (cached) {
+          break;
+        }
+      }
 
       if (!cached) {
         console.warn(
-          `Failed to cache glyph: char="${char}" glyphId=${glyph.glyphId} cosmicFontId=${glyph.cosmicFontId} fontSize=${rasterFontSize} fontFamily="${fontFamily}"`
+          `Failed to cache glyph: char="${char}" glyphId=${glyph.glyphId} cosmicFontId=${glyph.cosmicFontId} fontSize=${rasterFontSize} fontFamilies=${fallbackFamilies.join(" -> ")}`
         );
         continue;
       }
