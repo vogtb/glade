@@ -158,8 +158,6 @@ export class GlyphAtlas {
   private currentY = 0;
   private rowHeight = 0;
 
-  private stagingCanvas: OffscreenCanvas | null = null;
-  private stagingCtx: OffscreenCanvasRenderingContext2D | null = null;
   private rasterizer: GlyphRasterizer | null = null;
 
   constructor(
@@ -174,11 +172,6 @@ export class GlyphAtlas {
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
     this.textureView = this.texture.createView();
-
-    if (typeof OffscreenCanvas !== "undefined") {
-      this.stagingCanvas = new OffscreenCanvas(256, 256);
-      this.stagingCtx = this.stagingCanvas.getContext("2d", { willReadFrequently: true });
-    }
   }
 
   /**
@@ -227,7 +220,7 @@ export class GlyphAtlas {
     // For browser-based rasterization (canvas), use character in cache key
     // since we rasterize by character, not glyph ID.
     // For native/WASM rasterization, use glyph ID since that's what gets rasterized.
-    const effectiveKey: GlyphCacheKey = this.stagingCtx ? { ...key, char: glyphChar } : key;
+    const effectiveKey: GlyphCacheKey = key;
 
     const cacheKey = this.makeCacheKey(effectiveKey);
     const cached = this.glyphCache.get(cacheKey);
@@ -263,7 +256,7 @@ export class GlyphAtlas {
       return null;
     }
 
-    // Prefer WASM rasterization for consistent results across platforms
+    // Use WASM rasterization for consistent results across platforms
     if (this.rasterizer && fontId) {
       glyphData = this.rasterizer(
         key.glyphId,
@@ -273,10 +266,6 @@ export class GlyphAtlas {
         glyphChar,
         cosmicFontId
       );
-    }
-    // Fall back to canvas-based rasterization when WASM is unavailable (older browsers)
-    else if (this.stagingCtx && this.stagingCanvas) {
-      glyphData = this.rasterizeWithCanvas(key.fontSize, fontFamily, glyphChar);
     }
 
     if (!glyphData || glyphData.width === 0 || glyphData.height === 0) {
@@ -312,75 +301,6 @@ export class GlyphAtlas {
       glyphData.advance,
       glyphData.isColor
     );
-  }
-
-  /**
-   * Rasterize a glyph using canvas 2D (browser only).
-   */
-  private rasterizeWithCanvas(
-    fontSize: number,
-    fontFamily: string,
-    glyphChar: string
-  ): RasterizedGlyphData | null {
-    if (!this.stagingCtx || !this.stagingCanvas) {
-      return null;
-    }
-
-    const ctx = this.stagingCtx;
-
-    // Ensure canvas is large enough for any glyph at this size
-    const canvasSize = Math.ceil(fontSize * 3);
-    if (this.stagingCanvas.width !== canvasSize || this.stagingCanvas.height !== canvasSize) {
-      this.stagingCanvas.width = canvasSize;
-      this.stagingCanvas.height = canvasSize;
-    }
-
-    // Clear the entire canvas before drawing
-    ctx.clearRect(0, 0, canvasSize, canvasSize);
-
-    ctx.font = `${fontSize}px "${fontFamily}"`;
-    ctx.fillStyle = "white";
-    ctx.textBaseline = "alphabetic";
-
-    const metrics = ctx.measureText(glyphChar);
-    const width = Math.ceil(metrics.width) + 4; // Add extra margin for safety
-    const height = Math.ceil(fontSize * 1.5) + 4;
-
-    const bearingX = 0;
-    const bearingY = Math.ceil(fontSize);
-
-    ctx.fillText(glyphChar, 2, bearingY + 2);
-
-    // Clamp to canvas bounds
-    const readWidth = Math.min(width, canvasSize);
-    const readHeight = Math.min(height, canvasSize);
-    const imageData = ctx.getImageData(0, 0, readWidth, readHeight);
-
-    const pixels = new Uint8Array(width * height * this.bytesPerPixel);
-    // Zero-fill the entire buffer first
-    pixels.fill(0);
-
-    // Copy the rasterized data as RGBA
-    for (let y = 0; y < readHeight; y++) {
-      for (let x = 0; x < readWidth; x++) {
-        const srcIndex = (y * readWidth + x) * 4;
-        const dstIndex = (y * width + x) * this.bytesPerPixel;
-        pixels[dstIndex + 0] = imageData.data[srcIndex + 0]!;
-        pixels[dstIndex + 1] = imageData.data[srcIndex + 1]!;
-        pixels[dstIndex + 2] = imageData.data[srcIndex + 2]!;
-        pixels[dstIndex + 3] = imageData.data[srcIndex + 3]!;
-      }
-    }
-
-    return {
-      width,
-      height,
-      bearingX,
-      bearingY,
-      advance: metrics.width,
-      pixels,
-      isColor: true,
-    };
   }
 
   private uploadAndCache(
