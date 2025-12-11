@@ -201,6 +201,11 @@ export class FlashWindow {
   // Deferred drawing
   private deferredDrawQueue: import("./deferred.ts").DeferredDrawEntry[] = [];
 
+  // FPS tracking
+  private fpsFrameCount = 0;
+  private fpsLastTime = 0;
+  private fpsEnabled = true;
+
   constructor(
     readonly id: WindowId,
     private platform: FlashPlatform,
@@ -266,6 +271,9 @@ export class FlashWindow {
 
     // Initialize inspector
     this.inspector = new Inspector();
+
+    // Initialize FPS tracking time
+    this.fpsLastTime = performance.now();
 
     this.setupEventListeners();
   }
@@ -814,6 +822,47 @@ export class FlashWindow {
   present(): void {
     if (this.didRenderThisFrame) {
       this.renderTarget.present();
+      this.trackFps();
+    }
+  }
+
+  /**
+   * Enable FPS tracking. Logs FPS to console every second.
+   */
+  enableFpsTracking(): void {
+    this.fpsEnabled = true;
+    this.fpsFrameCount = 0;
+    this.fpsLastTime = performance.now();
+  }
+
+  /**
+   * Disable FPS tracking.
+   */
+  disableFpsTracking(): void {
+    this.fpsEnabled = false;
+  }
+
+  /**
+   * Check if FPS tracking is enabled.
+   */
+  isFpsTrackingEnabled(): boolean {
+    return this.fpsEnabled;
+  }
+
+  private trackFps(): void {
+    if (!this.fpsEnabled) {
+      return;
+    }
+
+    this.fpsFrameCount++;
+    const now = performance.now();
+    const elapsed = now - this.fpsLastTime;
+
+    if (elapsed >= 1000) {
+      const fps = (this.fpsFrameCount / elapsed) * 1000;
+      console.log(`FPS: ${fps.toFixed(1)}`);
+      this.fpsFrameCount = 0;
+      this.fpsLastTime = now;
     }
   }
 

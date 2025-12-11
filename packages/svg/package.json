@@ -1,0 +1,17 @@
+{
+  "name": "@glade/svg",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "ts/svg.ts",
+  "types": "ts/svg.ts",
+  "files": [
+    "ts",
+    "pkg"
+  ],
+  "scripts": {
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build": "bun run build:wasm",
+    "typecheck": "bunx tsc --noEmit",
+    "clean": "rm -rf pkg"
+  }
+}

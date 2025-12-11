@@ -1,13 +1,12 @@
 /**
  * SVG rendering for Flash.
  *
- * Provides SVG parsing and rendering via path tessellation.
- * Parses SVG path `d` attributes and converts them to PathBuilder commands.
+ * Uses WASM-based tessellation via Lyon for high-quality path rendering.
+ * Parses SVG content and renders via the PathPipeline with color tinting.
  *
- * For MVP, we focus on path-based rendering:
- * - Parse SVG XML to extract path elements
- * - Parse path `d` attribute commands
- * - Render using existing PathPipeline with color tinting
+ * Features:
+ * - Global mesh caching to avoid re-tessellation
+ * - High-quality tessellation with fine tolerance
  */
 
 import type { Color, Bounds, TransformationMatrix } from "./types.ts";
@@ -19,10 +18,17 @@ import type {
 } from "./element.ts";
 import { FlashElement } from "./element.ts";
 import type { HitTestNode } from "./dispatch.ts";
-import { PathBuilder } from "./path.ts";
+import {
+  tessellateSvg,
+  parseSvg as parseSvgWasm,
+  type TessellatedMesh,
+  type ParsedSvg as WasmParsedSvg,
+} from "@glade/svg";
+
+export type { TessellatedMesh } from "@glade/svg";
 
 /**
- * Parsed SVG path command.
+ * Parsed SVG path command (legacy - kept for backwards compatibility).
  */
 export type SvgPathCommand =
   | { type: "M"; x: number; y: number; relative: boolean }
@@ -56,7 +62,7 @@ export type SvgPathCommand =
   | { type: "Z" };
 
 /**
- * A parsed SVG path element.
+ * A parsed SVG path element (legacy interface for compatibility).
  */
 export interface ParsedSvgPath {
   commands: SvgPathCommand[];
@@ -76,423 +82,29 @@ export interface ParsedSvg {
 }
 
 /**
- * Parse an SVG path `d` attribute string into commands.
- */
-export function parseSvgPathD(d: string): SvgPathCommand[] {
-  const commands: SvgPathCommand[] = [];
-  const tokens = tokenizeSvgPath(d);
-  if (tokens.length === 0) return commands;
-
-  let i = 0;
-  let currentCmd = "M";
-
-  const parseNumber = (): number => {
-    if (i >= tokens.length) return 0;
-    const val = parseFloat(tokens[i]!);
-    if (isNaN(val)) return 0;
-    i++;
-    return val;
-  };
-
-  const parseFlag = (): boolean => {
-    if (i >= tokens.length) return false;
-    const val = tokens[i]!;
-    i++;
-    return val === "1";
-  };
-
-  const isCommand = (token: string): boolean => /^[MmLlHhVvCcSsQqTtAaZz]$/.test(token);
-
-  while (i < tokens.length) {
-    const token = tokens[i]!;
-
-    if (isCommand(token)) {
-      currentCmd = token;
-      i++;
-      if (i >= tokens.length && currentCmd.toUpperCase() !== "Z") {
-        break;
-      }
-    }
-
-    const relative = currentCmd === currentCmd.toLowerCase();
-    const cmd = currentCmd.toUpperCase();
-
-    switch (cmd) {
-      case "M":
-        commands.push({ type: "M", x: parseNumber(), y: parseNumber(), relative });
-        currentCmd = relative ? "l" : "L";
-        break;
-      case "L":
-        commands.push({ type: "L", x: parseNumber(), y: parseNumber(), relative });
-        break;
-      case "H":
-        commands.push({ type: "H", x: parseNumber(), relative });
-        break;
-      case "V":
-        commands.push({ type: "V", y: parseNumber(), relative });
-        break;
-      case "C":
-        commands.push({
-          type: "C",
-          x1: parseNumber(),
-          y1: parseNumber(),
-          x2: parseNumber(),
-          y2: parseNumber(),
-          x: parseNumber(),
-          y: parseNumber(),
-          relative,
-        });
-        break;
-      case "S":
-        commands.push({
-          type: "S",
-          x2: parseNumber(),
-          y2: parseNumber(),
-          x: parseNumber(),
-          y: parseNumber(),
-          relative,
-        });
-        break;
-      case "Q":
-        commands.push({
-          type: "Q",
-          x1: parseNumber(),
-          y1: parseNumber(),
-          x: parseNumber(),
-          y: parseNumber(),
-          relative,
-        });
-        break;
-      case "T":
-        commands.push({ type: "T", x: parseNumber(), y: parseNumber(), relative });
-        break;
-      case "A":
-        commands.push({
-          type: "A",
-          rx: parseNumber(),
-          ry: parseNumber(),
-          rotation: parseNumber(),
-          largeArc: parseFlag(),
-          sweep: parseFlag(),
-          x: parseNumber(),
-          y: parseNumber(),
-          relative,
-        });
-        break;
-      case "Z":
-        commands.push({ type: "Z" });
-        break;
-      default:
-        i++;
-        break;
-    }
-  }
-
-  return commands;
-}
-
-/**
- * Tokenize an SVG path `d` attribute string.
- */
-function tokenizeSvgPath(d: string): string[] {
-  const tokens: string[] = [];
-  const regex = /([MmLlHhVvCcSsQqTtAaZz])|(-?\d*\.?\d+(?:[eE][-+]?\d+)?)/g;
-  let match;
-  while ((match = regex.exec(d)) !== null) {
-    tokens.push(match[0]);
-  }
-  return tokens;
-}
-
-/**
- * Convert SVG path commands to PathBuilder commands.
- * Handles relative coordinates and implicit commands.
- */
-export function svgCommandsToPathBuilder(
-  commands: SvgPathCommand[],
-  pathBuilder: PathBuilder,
-  offsetX = 0,
-  offsetY = 0,
-  scaleX = 1,
-  scaleY = 1
-): void {
-  let currentX = 0;
-  let currentY = 0;
-  let startX = 0;
-  let startY = 0;
-  let lastControlX = 0;
-  let lastControlY = 0;
-  let lastCmd = "";
-
-  for (const cmd of commands) {
-    switch (cmd.type) {
-      case "M": {
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.moveTo(x, y);
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        startX = currentX;
-        startY = currentY;
-        break;
-      }
-      case "L": {
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.lineTo(x, y);
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        break;
-      }
-      case "H": {
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = currentY * scaleY + offsetY;
-        pathBuilder.lineTo(x, y);
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        break;
-      }
-      case "V": {
-        const x = currentX * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.lineTo(x, y);
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        break;
-      }
-      case "C": {
-        const x1 = (cmd.relative ? currentX + cmd.x1 : cmd.x1) * scaleX + offsetX;
-        const y1 = (cmd.relative ? currentY + cmd.y1 : cmd.y1) * scaleY + offsetY;
-        const x2 = (cmd.relative ? currentX + cmd.x2 : cmd.x2) * scaleX + offsetX;
-        const y2 = (cmd.relative ? currentY + cmd.y2 : cmd.y2) * scaleY + offsetY;
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.cubicTo(x1, y1, x2, y2, x, y);
-        lastControlX = cmd.relative ? currentX + cmd.x2 : cmd.x2;
-        lastControlY = cmd.relative ? currentY + cmd.y2 : cmd.y2;
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        break;
-      }
-      case "S": {
-        let cx1: number, cy1: number;
-        if (lastCmd === "C" || lastCmd === "S") {
-          cx1 = 2 * currentX - lastControlX;
-          cy1 = 2 * currentY - lastControlY;
-        } else {
-          cx1 = currentX;
-          cy1 = currentY;
-        }
-        const x2 = (cmd.relative ? currentX + cmd.x2 : cmd.x2) * scaleX + offsetX;
-        const y2 = (cmd.relative ? currentY + cmd.y2 : cmd.y2) * scaleY + offsetY;
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.cubicTo(cx1 * scaleX + offsetX, cy1 * scaleY + offsetY, x2, y2, x, y);
-        lastControlX = cmd.relative ? currentX + cmd.x2 : cmd.x2;
-        lastControlY = cmd.relative ? currentY + cmd.y2 : cmd.y2;
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        break;
-      }
-      case "Q": {
-        const cx = (cmd.relative ? currentX + cmd.x1 : cmd.x1) * scaleX + offsetX;
-        const cy = (cmd.relative ? currentY + cmd.y1 : cmd.y1) * scaleY + offsetY;
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.quadTo(cx, cy, x, y);
-        lastControlX = cmd.relative ? currentX + cmd.x1 : cmd.x1;
-        lastControlY = cmd.relative ? currentY + cmd.y1 : cmd.y1;
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        break;
-      }
-      case "T": {
-        let cx: number, cy: number;
-        if (lastCmd === "Q" || lastCmd === "T") {
-          cx = 2 * currentX - lastControlX;
-          cy = 2 * currentY - lastControlY;
-        } else {
-          cx = currentX;
-          cy = currentY;
-        }
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.quadTo(cx * scaleX + offsetX, cy * scaleY + offsetY, x, y);
-        lastControlX = cx;
-        lastControlY = cy;
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        break;
-      }
-      case "A": {
-        const x = (cmd.relative ? currentX + cmd.x : cmd.x) * scaleX + offsetX;
-        const y = (cmd.relative ? currentY + cmd.y : cmd.y) * scaleY + offsetY;
-        pathBuilder.arcTo(
-          cmd.rx * scaleX,
-          cmd.ry * scaleY,
-          cmd.rotation,
-          cmd.largeArc,
-          cmd.sweep,
-          x,
-          y
-        );
-        currentX = cmd.relative ? currentX + cmd.x : cmd.x;
-        currentY = cmd.relative ? currentY + cmd.y : cmd.y;
-        break;
-      }
-      case "Z":
-        pathBuilder.close();
-        currentX = startX;
-        currentY = startY;
-        break;
-    }
-    lastCmd = cmd.type;
-  }
-}
-
-/**
- * Parse a simple SVG XML string.
- * Extracts viewBox, dimensions, and path elements.
- * This is a minimal parser - not a full XML parser.
+ * Parse a simple SVG XML string using the WASM parser.
+ * Returns data compatible with the legacy ParsedSvg interface.
  */
 export function parseSvg(svgContent: string): ParsedSvg {
-  const result: ParsedSvg = {
-    width: 24,
-    height: 24,
-    viewBox: null,
-    paths: [],
-  };
-
-  const widthMatch = svgContent.match(/\bwidth\s*=\s*["']?(\d+(?:\.\d+)?)/i);
-  if (widthMatch) {
-    result.width = parseFloat(widthMatch[1]!);
-  }
-
-  const heightMatch = svgContent.match(/\bheight\s*=\s*["']?(\d+(?:\.\d+)?)/i);
-  if (heightMatch) {
-    result.height = parseFloat(heightMatch[1]!);
-  }
-
-  const viewBoxMatch = svgContent.match(/\bviewBox\s*=\s*["']([^"']+)["']/i);
-  if (viewBoxMatch) {
-    const parts = viewBoxMatch[1]!
-      .trim()
-      .split(/[\s,]+/)
-      .map(parseFloat);
-    if (parts.length === 4) {
-      result.viewBox = {
-        x: parts[0]!,
-        y: parts[1]!,
-        width: parts[2]!,
-        height: parts[3]!,
-      };
-    }
-  }
-
-  const pathRegex = /<path\b([^>]*)\/?>|<path\b([^>]*)>([^<]*)<\/path>/gi;
-  let pathMatch;
-  while ((pathMatch = pathRegex.exec(svgContent)) !== null) {
-    const attrs = pathMatch[1] || pathMatch[2] || "";
-    const dMatch = attrs.match(/\bd\s*=\s*["']([^"']+)["']/);
-    if (dMatch) {
-      const path: ParsedSvgPath = {
-        commands: parseSvgPathD(dMatch[1]!),
-      };
-
-      const fillMatch = attrs.match(/\bfill\s*=\s*["']([^"']+)["']/);
-      if (fillMatch) {
-        path.fill = fillMatch[1];
-      }
-
-      const strokeMatch = attrs.match(/\bstroke\s*=\s*["']([^"']+)["']/);
-      if (strokeMatch) {
-        path.stroke = strokeMatch[1];
-      }
-
-      const strokeWidthMatch = attrs.match(/\bstroke-width\s*=\s*["']?(\d+(?:\.\d+)?)/);
-      if (strokeWidthMatch) {
-        path.strokeWidth = parseFloat(strokeWidthMatch[1]!);
-      }
-
-      result.paths.push(path);
-    }
-  }
-
-  const circleRegex = /<circle\b([^>]*)\/?>|<circle\b([^>]*)>([^<]*)<\/circle>/gi;
-  let circleMatch;
-  while ((circleMatch = circleRegex.exec(svgContent)) !== null) {
-    const attrs = circleMatch[1] || circleMatch[2] || "";
-    const cxMatch = attrs.match(/\bcx\s*=\s*["']?(\d+(?:\.\d+)?)/);
-    const cyMatch = attrs.match(/\bcy\s*=\s*["']?(\d+(?:\.\d+)?)/);
-    const rMatch = attrs.match(/\br\s*=\s*["']?(\d+(?:\.\d+)?)/);
-    if (cxMatch && cyMatch && rMatch) {
-      const cx = parseFloat(cxMatch[1]!);
-      const cy = parseFloat(cyMatch[1]!);
-      const r = parseFloat(rMatch[1]!);
-      const k = 0.5522847498;
-      const d = `M${cx + r},${cy} C${cx + r},${cy + k * r} ${cx + k * r},${cy + r} ${cx},${cy + r} C${cx - k * r},${cy + r} ${cx - r},${cy + k * r} ${cx - r},${cy} C${cx - r},${cy - k * r} ${cx - k * r},${cy - r} ${cx},${cy - r} C${cx + k * r},${cy - r} ${cx + r},${cy - k * r} ${cx + r},${cy} Z`;
-      const path: ParsedSvgPath = {
-        commands: parseSvgPathD(d),
-      };
-      const fillMatch = attrs.match(/\bfill\s*=\s*["']([^"']+)["']/);
-      if (fillMatch) path.fill = fillMatch[1];
-      result.paths.push(path);
-    }
-  }
-
-  const rectRegex = /<rect\b([^>]*)\/?>|<rect\b([^>]*)>([^<]*)<\/rect>/gi;
-  let rectMatch;
-  while ((rectMatch = rectRegex.exec(svgContent)) !== null) {
-    const attrs = rectMatch[1] || rectMatch[2] || "";
-    const xMatch = attrs.match(/\bx\s*=\s*["']?(\d+(?:\.\d+)?)/);
-    const yMatch = attrs.match(/\by\s*=\s*["']?(\d+(?:\.\d+)?)/);
-    const wMatch = attrs.match(/\bwidth\s*=\s*["']?(\d+(?:\.\d+)?)/);
-    const hMatch = attrs.match(/\bheight\s*=\s*["']?(\d+(?:\.\d+)?)/);
-    if (wMatch && hMatch) {
-      const x = xMatch ? parseFloat(xMatch[1]!) : 0;
-      const y = yMatch ? parseFloat(yMatch[1]!) : 0;
-      const w = parseFloat(wMatch[1]!);
-      const h = parseFloat(hMatch[1]!);
-      const d = `M${x},${y} L${x + w},${y} L${x + w},${y + h} L${x},${y + h} Z`;
-      const path: ParsedSvgPath = {
-        commands: parseSvgPathD(d),
-      };
-      const fillMatch = attrs.match(/\bfill\s*=\s*["']([^"']+)["']/);
-      if (fillMatch) path.fill = fillMatch[1];
-      result.paths.push(path);
-    }
-  }
-
-  const polygonRegex = /<polygon\b([^>]*)\/?>|<polygon\b([^>]*)>([^<]*)<\/polygon>/gi;
-  let polygonMatch;
-  while ((polygonMatch = polygonRegex.exec(svgContent)) !== null) {
-    const attrs = polygonMatch[1] || polygonMatch[2] || "";
-    const pointsMatch = attrs.match(/\bpoints\s*=\s*["']([^"']+)["']/);
-    if (pointsMatch) {
-      const points = pointsMatch[1]!
-        .trim()
-        .split(/[\s,]+/)
-        .map(parseFloat);
-      if (points.length >= 4) {
-        let d = `M${points[0]},${points[1]}`;
-        for (let i = 2; i < points.length; i += 2) {
-          d += ` L${points[i]},${points[i + 1]}`;
+  const wasmParsed: WasmParsedSvg = parseSvgWasm(svgContent);
+  return {
+    width: wasmParsed.width,
+    height: wasmParsed.height,
+    viewBox: wasmParsed.view_box
+      ? {
+          x: wasmParsed.view_box.x,
+          y: wasmParsed.view_box.y,
+          width: wasmParsed.view_box.width,
+          height: wasmParsed.view_box.height,
         }
-        d += " Z";
-        const path: ParsedSvgPath = {
-          commands: parseSvgPathD(d),
-        };
-        const fillMatch = attrs.match(/\bfill\s*=\s*["']([^"']+)["']/);
-        if (fillMatch) path.fill = fillMatch[1];
-        result.paths.push(path);
-      }
-    }
-  }
-
-  if (result.viewBox) {
-    result.width = result.viewBox.width;
-    result.height = result.viewBox.height;
-  }
-
-  return result;
+      : null,
+    paths: wasmParsed.paths.map((p) => ({
+      commands: [],
+      fill: p.fill,
+      stroke: p.stroke,
+      strokeWidth: p.stroke_width,
+    })),
+  };
 }
 
 /**
@@ -502,6 +114,71 @@ interface CachedPathData {
   vertices: Array<{ x: number; y: number }>;
   indices: number[];
   bounds: { x: number; y: number; width: number; height: number };
+}
+
+/**
+ * Global SVG mesh cache.
+ * Keyed by SVG content hash + display size for efficient reuse.
+ */
+class SvgMeshCache {
+  private cache = new Map<string, CachedPathData[]>();
+  private maxEntries = 500;
+  private accessOrder: string[] = [];
+
+  private makeKey(content: string, width: number, height: number): string {
+    return `${this.hashContent(content)}:${width.toFixed(1)}x${height.toFixed(1)}`;
+  }
+
+  private hashContent(content: string): number {
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash + char) | 0;
+    }
+    return hash;
+  }
+
+  get(content: string, width: number, height: number): CachedPathData[] | undefined {
+    const key = this.makeKey(content, width, height);
+    const cached = this.cache.get(key);
+    if (cached) {
+      const idx = this.accessOrder.indexOf(key);
+      if (idx > -1) {
+        this.accessOrder.splice(idx, 1);
+        this.accessOrder.push(key);
+      }
+    }
+    return cached;
+  }
+
+  set(content: string, width: number, height: number, paths: CachedPathData[]): void {
+    const key = this.makeKey(content, width, height);
+
+    if (this.cache.size >= this.maxEntries) {
+      const oldest = this.accessOrder.shift();
+      if (oldest) {
+        this.cache.delete(oldest);
+      }
+    }
+
+    this.cache.set(key, paths);
+    this.accessOrder.push(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+    this.accessOrder = [];
+  }
+}
+
+const globalSvgCache = new SvgMeshCache();
+
+/**
+ * Clear the global SVG mesh cache.
+ * Call this if you need to free memory.
+ */
+export function clearSvgCache(): void {
+  globalSvgCache.clear();
 }
 
 /**
@@ -521,6 +198,26 @@ interface SvgPrepaintState {
 }
 
 /**
+ * Convert WASM mesh to cached path data format.
+ */
+function meshToCachedPath(mesh: TessellatedMesh): CachedPathData {
+  const vertices: Array<{ x: number; y: number }> = [];
+  for (let i = 0; i < mesh.vertices.length; i += 2) {
+    vertices.push({ x: mesh.vertices[i]!, y: mesh.vertices[i + 1]! });
+  }
+  return {
+    vertices,
+    indices: Array.from(mesh.indices),
+    bounds: {
+      x: mesh.bounds.min_x,
+      y: mesh.bounds.min_y,
+      width: mesh.bounds.max_x - mesh.bounds.min_x,
+      height: mesh.bounds.max_y - mesh.bounds.min_y,
+    },
+  };
+}
+
+/**
  * SVG element for rendering SVG content with color tinting.
  *
  * Usage:
@@ -532,11 +229,23 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
   private tintColor: Color = { r: 1, g: 1, b: 1, a: 1 };
   private displayWidth?: number;
   private displayHeight?: number;
-  private parsedSvg: ParsedSvg;
+  private svgContent: string;
+  private cachedNativeSize: { width: number; height: number } | null = null;
 
   constructor(svgContent: string) {
     super();
-    this.parsedSvg = parseSvg(svgContent);
+    this.svgContent = svgContent;
+  }
+
+  private getNativeSize(): { width: number; height: number } {
+    if (!this.cachedNativeSize) {
+      const parsed = parseSvgWasm(this.svgContent);
+      this.cachedNativeSize = {
+        width: parsed.view_box?.width ?? parsed.width,
+        height: parsed.view_box?.height ?? parsed.height,
+      };
+    }
+    return this.cachedNativeSize;
   }
 
   color(c: Color): this {
@@ -565,27 +274,16 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<SvgRequestState> {
-    const nativeWidth = this.parsedSvg.viewBox?.width ?? this.parsedSvg.width;
-    const nativeHeight = this.parsedSvg.viewBox?.height ?? this.parsedSvg.height;
-    const displayWidth = this.displayWidth ?? nativeWidth;
-    const displayHeight = this.displayHeight ?? nativeHeight;
+    const nativeSize = this.getNativeSize();
+    const displayWidth = this.displayWidth ?? nativeSize.width;
+    const displayHeight = this.displayHeight ?? nativeSize.height;
 
-    const scaleX = displayWidth / nativeWidth;
-    const scaleY = displayHeight / nativeHeight;
+    let cachedPaths = globalSvgCache.get(this.svgContent, displayWidth, displayHeight);
 
-    const cachedPaths: CachedPathData[] = [];
-
-    for (const path of this.parsedSvg.paths) {
-      if (path.fill !== "none") {
-        const pathBuilder = new PathBuilder();
-        svgCommandsToPathBuilder(path.commands, pathBuilder, 0, 0, scaleX, scaleY);
-        const tessellated = pathBuilder.tessellate();
-        cachedPaths.push({
-          vertices: tessellated.vertices,
-          indices: tessellated.indices,
-          bounds: tessellated.bounds,
-        });
-      }
+    if (!cachedPaths) {
+      const meshes = tessellateSvg(this.svgContent, displayWidth, displayHeight);
+      cachedPaths = meshes.map(meshToCachedPath);
+      globalSvgCache.set(this.svgContent, displayWidth, displayHeight, cachedPaths);
     }
 
     const layoutId = cx.requestLayout(
@@ -598,7 +296,7 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
 
     return {
       layoutId,
-      requestState: { cachedPaths, nativeWidth, nativeHeight },
+      requestState: { cachedPaths, nativeWidth: nativeSize.width, nativeHeight: nativeSize.height },
     };
   }
 

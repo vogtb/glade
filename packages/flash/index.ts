@@ -331,13 +331,6 @@ export type { Corner, AnchoredPositionMode, AnchoredFitMode, Edges } from "./anc
 export { AnchoredElement, anchored, edges } from "./anchored.ts";
 
 // SVG rendering
-export type { SvgPathCommand, ParsedSvgPath, ParsedSvg } from "./svg.ts";
+export type { SvgPathCommand, ParsedSvgPath, ParsedSvg, TessellatedMesh } from "./svg.ts";
 
-export {
-  SvgElement,
-  svg,
-  parseSvg,
-  parseSvgPathD,
-  svgCommandsToPathBuilder,
-  SvgIcons,
-} from "./svg.ts";
+export { SvgElement, svg, parseSvg, SvgIcons, clearSvgCache } from "./svg.ts";
