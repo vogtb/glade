@@ -40,12 +40,19 @@ import { embedAsBase64 } from "./embed" with { type: "macro" };
 
 // Embed fonts as base64 at build time via Bun macro
 const interFontBase64 = embedAsBase64("../../assets/InterVariable.ttf") as unknown as string;
+const notoColorEmojiBase64 = embedAsBase64(
+  "../../assets/NotoColorEmoji-Regular.ttf"
+) as unknown as string;
 const jetBrainsMonoRegularBase64 = embedAsBase64(
   "../../assets/JetBrainsMono-Regular.ttf"
 ) as unknown as string;
 const jetBrainsMonoSemiBoldBase64 = embedAsBase64(
   "../../assets/JetBrainsMono-SemiBold.ttf"
 ) as unknown as string;
+
+const DEFAULT_EMOJI_FONT_FAMILY = "Noto Color Emoji";
+
+let emojiFontFamily = DEFAULT_EMOJI_FONT_FAMILY;
 
 // Embed images as base64 at build time
 const demoPngBase64 = embedAsBase64("../../assets/image.png") as unknown as string;
@@ -63,6 +70,7 @@ let flowerImageTile: ImageTile | null = null;
  */
 type DemoSection =
   | "inter-text"
+  | "emoji-text"
   | "mono-text"
   | "mono-semibold"
   | "underlined-text"
@@ -88,6 +96,7 @@ interface DemoButton {
 
 const DEMO_BUTTONS: DemoButton[] = [
   { id: "inter-text", label: "Inter Text", color: 0x3b82f6, hoverColor: 0x2563eb },
+  { id: "emoji-text", label: "Emoji Text", color: 0xf472b6, hoverColor: 0xec4899 },
   { id: "mono-text", label: "Monospace Text", color: 0x10b981, hoverColor: 0x059669 },
   { id: "mono-semibold", label: "Mono SemiBold", color: 0xf59e0b, hoverColor: 0xd97706 },
   { id: "underlined-text", label: "Underlined Text", color: 0xef4444, hoverColor: 0xdc2626 },
@@ -469,6 +478,8 @@ class DemoRootView implements FlashView {
     switch (this.selectedDemo) {
       case "inter-text":
         return this.renderInterTextDemo();
+      case "emoji-text":
+        return this.renderEmojiTextDemo();
       case "mono-text":
         return this.renderMonoTextDemo();
       case "mono-semibold":
@@ -549,6 +560,46 @@ class DemoRootView implements FlashView {
           .size(24)
           .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
         text("32px: The quick brown fox").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 })
+      );
+  }
+
+  private renderEmojiTextDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text(emojiFontFamily).font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Color emoji rendering with full glyph coverage")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Faces & Mood: 😀 😁 😂 🤣 🤩 😎 😇 😴")
+          .font(emojiFontFamily)
+          .size(28)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("People & Professions: 👩‍💻 👨‍🚒 🧑🏽‍🚀 🧑‍🍳 🧑‍🔧 🧑🏻‍🏫")
+          .font(emojiFontFamily)
+          .size(28)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Travel & Places: 🏔️ 🏖️ 🌋 🏛️ 🏙️ 🚄 ✈️ 🚀")
+          .font(emojiFontFamily)
+          .size(28)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Activities & Objects: 🎸 🎧 🎮 🛠️ 🧪 🧭 ⚽️ 🏀")
+          .font(emojiFontFamily)
+          .size(28)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Flags & Symbols: 🏳️‍🌈 🏴‍☠️ 🇯🇵 🇺🇳 🇨🇦 ❤️‍🔥 ✨ ✅")
+          .font(emojiFontFamily)
+          .size(28)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Inline text with emoji: Launch 🚀 Celebrate 🎉 Ship it ✅")
+          .font("Inter")
+          .size(18)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
       );
   }
 
@@ -2008,10 +2059,38 @@ async function main() {
   window.getKeymap().bind("i", "inspector:toggle");
   console.log("Inspector: Press 'I' to toggle debug mode");
 
+  let emojiFontBytes = base64ToBytes(notoColorEmojiBase64);
+
+  const isDarwin = typeof process !== "undefined" && process.platform === "darwin";
+  const hasBunFile = typeof Bun !== "undefined" && typeof Bun.file === "function";
+
+  if (isDarwin && hasBunFile) {
+    const appleEmojiPath = "/System/Library/Fonts/Apple Color Emoji.ttc";
+    try {
+      const appleFile = Bun.file(appleEmojiPath);
+      const exists = await appleFile.exists();
+      if (exists) {
+        emojiFontBytes = new Uint8Array(await appleFile.arrayBuffer());
+        emojiFontFamily = "Apple Color Emoji";
+        console.log(`Loaded Apple Color Emoji from ${appleEmojiPath}`);
+      } else {
+        console.warn(
+          `Apple Color Emoji not found at ${appleEmojiPath}, using bundled ${DEFAULT_EMOJI_FONT_FAMILY} instead`
+        );
+      }
+    } catch (error) {
+      console.warn(
+        `Failed to load Apple Color Emoji from ${appleEmojiPath}, using bundled ${DEFAULT_EMOJI_FONT_FAMILY}`,
+        error
+      );
+    }
+  }
+
   window.registerFont("Inter", base64ToBytes(interFontBase64));
+  window.registerFont(emojiFontFamily, emojiFontBytes);
   window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoRegularBase64));
   window.registerFont("JetBrains Mono SemiBold", base64ToBytes(jetBrainsMonoSemiBoldBase64));
-  console.log("Loaded fonts: Inter, JetBrains Mono, JetBrains Mono SemiBold");
+  console.log(`Loaded fonts: Inter, ${emojiFontFamily}, JetBrains Mono, JetBrains Mono SemiBold`);
 
   const pngData = base64ToBytes(demoPngBase64);
   const decodedPng = await platform.decodeImage(pngData);

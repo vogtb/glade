@@ -10,10 +10,16 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 cosmic-text = { version = "0.15", default-features = false, features = ["no_std", "wasm-web"] }
-swash = { version = "0.1", default-features = false, features = ["scale", "render"] }
+swash = { version = "0.1", features = ["scale", "render"] }
 wasm-bindgen = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.6"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = false

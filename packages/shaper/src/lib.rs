@@ -9,6 +9,7 @@ use cosmic_text::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use swash::{
+    scale::image::Content,
     scale::{Render, ScaleContext, Source, StrikeWith},
     zeno::Format,
     FontRef,
@@ -89,6 +90,7 @@ pub struct RasterizedGlyph {
     pub bearing_y: i32,
     pub advance: f32,
     pub pixels: Vec<u8>,
+    pub is_color: bool,
 }
 
 /// Font style input from JavaScript.
@@ -188,6 +190,9 @@ impl TextShaper {
             // This allows rasterization to use the correct font for fallback glyphs
             // fontdb::ID implements Display which outputs the u64 FFI value
             let cosmic_id: u64 = format!("{}", face.id).parse().unwrap_or(0);
+            // Also store a variant with the high 32 bits set, since some platforms
+            // encode the ID that way (e.g., 0x1_0000_0000 | id).
+            let cosmic_id_hi = cosmic_id | (1u64 << 32);
             #[cfg(debug_assertions)]
             web_sys::console::log_1(
                 &format!(
@@ -197,6 +202,8 @@ impl TextShaper {
                 .into(),
             );
             self.cosmic_font_data.insert(cosmic_id, font_data.to_vec());
+            self.cosmic_font_data
+                .insert(cosmic_id_hi, font_data.to_vec());
 
             // Get the English family name (first in the list)
             let family = face
@@ -446,10 +453,22 @@ impl TextShaper {
         let font_data = match self.cosmic_font_data.get(&cosmic_font_id) {
             Some(data) => data.clone(),
             None => {
-                return Err(JsValue::from_str(&format!(
-                    "Font not found for cosmic_font_id: {}",
-                    cosmic_font_id
-                )));
+                // Some platforms encode the font ID with high bits; try the lower 32 bits as a fallback.
+                let masked_id = cosmic_font_id & 0xFFFF_FFFF;
+                match self.cosmic_font_data.get(&masked_id) {
+                    Some(data) => data.clone(),
+                    None => {
+                        // As a last resort, fall back to the first registered font data if present.
+                        if let Some((_k, data)) = self.cosmic_font_data.iter().next() {
+                            data.clone()
+                        } else {
+                            return Err(JsValue::from_str(&format!(
+                                "Font not found for cosmic_font_id: {} (masked: {})",
+                                cosmic_font_id, masked_id
+                            )));
+                        }
+                    }
+                }
             }
         };
 
@@ -478,24 +497,51 @@ impl TextShaper {
             .hint(true)
             .build();
 
-        // Render the glyph
-        let image = Render::new(&[
-            Source::ColorOutline(0),
+        // Render the glyph. Prefer full color output so color emoji stay intact,
+        // but fall back to alpha-only coverage when color data is unavailable.
+        let sources = [
+            Source::ColorBitmap(StrikeWith::LargestSize),
             Source::ColorBitmap(StrikeWith::BestFit),
+            Source::ColorOutline(0),
+            Source::Bitmap(StrikeWith::LargestSize),
+            Source::Bitmap(StrikeWith::BestFit),
             Source::Outline,
-        ])
-        .format(Format::Alpha)
-        .render(&mut scaler, glyph_id as u16);
+        ];
+
+        let image = Render::new(&sources)
+            .render(&mut scaler, glyph_id as u16)
+            .or_else(|| {
+                Render::new(&sources)
+                    .format(Format::Alpha)
+                    .render(&mut scaler, glyph_id as u16)
+            });
 
         match image {
             Some(img) => {
+                let (pixels, is_color) = match img.content {
+                    Content::Mask => (img.data, false),
+                    Content::SubpixelMask => {
+                        // Extract alpha channel from subpixel glyphs
+                        let mut alpha = Vec::with_capacity(
+                            (img.placement.width as usize)
+                                .saturating_mul(img.placement.height as usize),
+                        );
+                        for chunk in img.data.chunks_exact(4) {
+                            alpha.push(chunk[3]);
+                        }
+                        (alpha, false)
+                    }
+                    Content::Color => (img.data, true),
+                };
+
                 let result = RasterizedGlyph {
                     width: img.placement.width,
                     height: img.placement.height,
                     bearing_x: img.placement.left,
                     bearing_y: img.placement.top,
                     advance: 0.0,
-                    pixels: img.data,
+                    pixels,
+                    is_color,
                 };
 
                 serde_wasm_bindgen::to_value(&result)
@@ -510,6 +556,7 @@ impl TextShaper {
                     bearing_y: 0,
                     advance: 0.0,
                     pixels: Vec::new(),
+                    is_color: false,
                 };
 
                 serde_wasm_bindgen::to_value(&result)

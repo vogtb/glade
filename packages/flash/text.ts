@@ -28,6 +28,7 @@ interface RasterizedGlyphData {
   bearingY: number;
   advance: number;
   pixels: Uint8Array;
+  isColor: boolean;
 }
 
 /**
@@ -66,6 +67,7 @@ export interface CachedGlyph {
   bearingX: number;
   bearingY: number;
   advance: number;
+  isColor: boolean;
 }
 
 /**
@@ -117,6 +119,7 @@ export interface GlyphInstance {
   atlasWidth: number;
   atlasHeight: number;
   color: Color;
+  isColor?: boolean;
   clipBounds?: GlyphClipBounds;
   order?: number;
 }
@@ -146,6 +149,7 @@ export class GlyphAtlas {
   private texture: GPUTexture;
   private textureView: GPUTextureView;
   private config: GlyphAtlasConfig;
+  private bytesPerPixel = 4;
 
   private glyphCache: Map<string, CachedGlyph> = new Map();
   private currentX = 0;
@@ -164,7 +168,7 @@ export class GlyphAtlas {
 
     this.texture = device.createTexture({
       size: { width: this.config.width, height: this.config.height },
-      format: "r8unorm",
+      format: "rgba8unorm",
       usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
     this.textureView = this.texture.createView();
@@ -274,6 +278,9 @@ export class GlyphAtlas {
     }
 
     if (!glyphData || glyphData.width === 0 || glyphData.height === 0) {
+      console.warn(
+        `Glyph rasterizer returned no data: char="${glyphChar}" glyphId=${key.glyphId} fontFamily="${fontFamily}" fontSize=${key.fontSize} cosmicFontId=${cosmicFontId ?? -1}`
+      );
       return null;
     }
 
@@ -300,7 +307,8 @@ export class GlyphAtlas {
       glyphData.pixels,
       glyphData.bearingX,
       glyphData.bearingY,
-      glyphData.advance
+      glyphData.advance,
+      glyphData.isColor
     );
   }
 
@@ -346,14 +354,19 @@ export class GlyphAtlas {
     const readHeight = Math.min(height, canvasSize);
     const imageData = ctx.getImageData(0, 0, readWidth, readHeight);
 
-    const pixels = new Uint8Array(width * height);
+    const pixels = new Uint8Array(width * height * this.bytesPerPixel);
     // Zero-fill the entire buffer first
     pixels.fill(0);
 
-    // Copy the rasterized data
+    // Copy the rasterized data as RGBA
     for (let y = 0; y < readHeight; y++) {
       for (let x = 0; x < readWidth; x++) {
-        pixels[y * width + x] = imageData.data[(y * readWidth + x) * 4 + 3]!;
+        const srcIndex = (y * readWidth + x) * 4;
+        const dstIndex = (y * width + x) * this.bytesPerPixel;
+        pixels[dstIndex + 0] = imageData.data[srcIndex + 0]!;
+        pixels[dstIndex + 1] = imageData.data[srcIndex + 1]!;
+        pixels[dstIndex + 2] = imageData.data[srcIndex + 2]!;
+        pixels[dstIndex + 3] = imageData.data[srcIndex + 3]!;
       }
     }
 
@@ -364,6 +377,7 @@ export class GlyphAtlas {
       bearingY,
       advance: metrics.width,
       pixels,
+      isColor: true,
     };
   }
 
@@ -374,12 +388,39 @@ export class GlyphAtlas {
     data: Uint8Array,
     bearingX: number,
     bearingY: number,
-    advance: number
+    advance: number,
+    isColor: boolean
   ): CachedGlyph {
+    const rowStride = width * this.bytesPerPixel;
+    const paddedRowStride = Math.ceil(rowStride / 256) * 256;
+    const paddedData = new Uint8Array(paddedRowStride * height);
+
+    if (isColor) {
+      // Copy row by row to respect padded stride
+      for (let row = 0; row < height; row++) {
+        const srcStart = row * rowStride;
+        const dstStart = row * paddedRowStride;
+        paddedData.set(data.subarray(srcStart, srcStart + rowStride), dstStart);
+      }
+    } else {
+      // Expand alpha mask into RGBA with padding per row
+      for (let row = 0; row < height; row++) {
+        for (let col = 0; col < width; col++) {
+          const srcIndex = row * width + col;
+          const alpha = data[srcIndex] ?? 0;
+          const dstBase = row * paddedRowStride + col * this.bytesPerPixel;
+          paddedData[dstBase + 0] = 255;
+          paddedData[dstBase + 1] = 255;
+          paddedData[dstBase + 2] = 255;
+          paddedData[dstBase + 3] = alpha;
+        }
+      }
+    }
+
     this.device.queue.writeTexture(
       { texture: this.texture, origin: { x: pos.x, y: pos.y } },
-      data,
-      { bytesPerRow: width, rowsPerImage: height },
+      paddedData,
+      { bytesPerRow: paddedRowStride, rowsPerImage: height },
       { width, height }
     );
 
@@ -391,6 +432,7 @@ export class GlyphAtlas {
       bearingX,
       bearingY,
       advance,
+      isColor,
     };
   }
 
@@ -467,16 +509,26 @@ export class TextSystem {
     this.atlas = new GlyphAtlas(device, atlasConfig);
 
     // Set up WASM-based rasterizer for native environments (no OffscreenCanvas)
-    this.atlas.setRasterizer((glyphId, fontSize, _fontFamily, fontId, _glyphChar, cosmicFontId) => {
+    this.atlas.setRasterizer((glyphId, fontSize, _fontFamily, fontId, glyphChar, cosmicFontId) => {
       // Use cosmic font ID if available (handles font fallback correctly)
       // Otherwise fall back to our registered font ID
-      let rasterized;
+      let rasterized: RasterizedGlyphData | null = null;
       if (cosmicFontId !== undefined) {
         rasterized = this.shaper.rasterizeGlyphByCosmicId(cosmicFontId, glyphId, fontSize);
-      } else if (fontId) {
+      }
+      if (!rasterized && fontId) {
         rasterized = this.shaper.rasterizeGlyph(fontId, glyphId, fontSize);
-      } else {
-        return null;
+      }
+      if (!rasterized && fontId) {
+        const fontMeta = this.fonts.get(fontId.id);
+        const family = fontMeta?.family;
+        if (family) {
+          const reshaped = this.shaper.shapeLine(glyphChar, fontSize, fontSize, { family });
+          const fallbackGlyph = reshaped.glyphs[0];
+          if (fallbackGlyph) {
+            rasterized = this.shaper.rasterizeGlyph(fontId, fallbackGlyph.glyphId, fontSize);
+          }
+        }
       }
       if (!rasterized) {
         return null;
@@ -488,6 +540,7 @@ export class TextSystem {
         bearingY: rasterized.bearingY,
         advance: rasterized.advance,
         pixels: rasterized.pixels,
+        isColor: rasterized.isColor ?? false,
       };
     });
   }
@@ -701,6 +754,7 @@ export class TextSystem {
         atlasWidth: cached.width / atlasSize.width,
         atlasHeight: cached.height / atlasSize.height,
         color,
+        isColor: cached.isColor,
       });
     }
 
@@ -738,7 +792,7 @@ struct GlyphInstance {
   @location(0) pos_size: vec4<f32>,       // x, y, width, height
   @location(1) atlas_rect: vec4<f32>,     // atlas_x, atlas_y, atlas_width, atlas_height (normalized 0-1)
   @location(2) color: vec4<f32>,          // rgba (premultiplied)
-  @location(3) params: vec4<f32>,         // z_index, has_clip, 0, 0
+  @location(3) params: vec4<f32>,         // z_index, has_clip, is_color, 0
   @location(4) clip_bounds: vec4<f32>,    // clip_x, clip_y, clip_width, clip_height
 }
 
@@ -749,6 +803,7 @@ struct VertexOutput {
   @location(2) world_pos: vec2<f32>,
   @location(3) @interpolate(flat) has_clip: f32,
   @location(4) @interpolate(flat) clip_bounds: vec4<f32>,
+  @location(5) @interpolate(flat) params: vec4<f32>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -791,6 +846,7 @@ fn vs_main(
   out.world_pos = world_pos;
   out.has_clip = instance.params.y;
   out.clip_bounds = instance.clip_bounds;
+  out.params = instance.params;
 
   return out;
 }
@@ -807,13 +863,24 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     }
   }
 
-  let alpha = textureSample(glyph_texture, glyph_sampler, in.uv).r;
+  let sample = textureSample(glyph_texture, glyph_sampler, in.uv);
+  let is_color = in.params.z > 0.5;
 
+  if is_color {
+    let tint = select(in.color.rgb / max(in.color.a, 0.0001), in.color.rgb, in.color.a < 0.0001);
+    let alpha = sample.a * in.color.a;
+    let tinted_rgb = sample.rgb * tint * alpha;
+    if alpha < 0.01 {
+      discard;
+    }
+    return vec4<f32>(tinted_rgb, alpha);
+  }
+
+  let alpha = sample.a;
   if alpha < 0.01 {
     discard;
   }
-
-  return in.color * alpha;
+  return vec4<f32>(in.color.rgb, in.color.a) * alpha;
 }
 `;
 
@@ -862,7 +929,7 @@ export class TextPipeline {
         {
           binding: 1,
           visibility: GPUShaderStage.FRAGMENT,
-          texture: { sampleType: "float" },
+          texture: { sampleType: "float", viewDimension: "2d", multisampled: false },
         },
         {
           binding: 2,
@@ -880,6 +947,7 @@ export class TextPipeline {
       bindGroupLayouts: [this.bindGroupLayout],
     });
 
+    device.pushErrorScope("validation");
     this.pipeline = device.createRenderPipeline({
       layout: pipelineLayout,
       vertex: {
@@ -920,6 +988,11 @@ export class TextPipeline {
       multisample: {
         count: this.sampleCount,
       },
+    });
+    device.popErrorScope().then((error) => {
+      if (error) {
+        console.error("[TextPipeline] Render pipeline creation failed:", error.message ?? error);
+      }
     });
   }
 
@@ -977,7 +1050,7 @@ export class TextPipeline {
       const hasClip = glyph.clipBounds ? 1 : 0;
       this.instanceData[offset + 12] = glyph.order ?? zIndexStart + i; // z_index from global draw order
       this.instanceData[offset + 13] = hasClip;
-      this.instanceData[offset + 14] = 0;
+      this.instanceData[offset + 14] = glyph.isColor ? 1 : 0;
       this.instanceData[offset + 15] = 0;
 
       // Clip bounds

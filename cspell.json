@@ -30,6 +30,7 @@
     "hoverable",
     "keymap",
     "Hitbox",
-    "Hitboxes"
+    "Hitboxes",
+    "GPUI"
   ]
 }

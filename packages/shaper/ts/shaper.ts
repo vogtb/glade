@@ -126,6 +126,7 @@ export interface RasterizedGlyph {
   bearingY: number;
   advance: number;
   pixels: Uint8Array;
+  isColor: boolean;
 }
 
 /**
@@ -365,6 +366,7 @@ export class TextShaper {
         bearingY: result.bearing_y,
         advance: result.advance,
         pixels: new Uint8Array(result.pixels),
+        isColor: Boolean((result as { is_color?: boolean }).is_color),
       };
     } catch {
       return null;
@@ -393,6 +395,7 @@ export class TextShaper {
         bearing_y: number;
         advance: number;
         pixels: number[];
+        is_color?: boolean;
       };
 
       return {
@@ -402,6 +405,7 @@ export class TextShaper {
         bearingY: result.bearing_y,
         advance: result.advance,
         pixels: new Uint8Array(result.pixels),
+        isColor: Boolean(result.is_color),
       };
     } catch {
       return null;
