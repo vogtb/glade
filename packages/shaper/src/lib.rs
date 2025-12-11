@@ -4,7 +4,7 @@
 //! via wasm-bindgen for use in Flash.
 
 use cosmic_text::{
-    Attrs, Buffer, Family, FontSystem, Metrics, Shaping, ShapeBuffer, Stretch, Style, Weight, Wrap,
+    Attrs, Buffer, Family, FontSystem, Metrics, ShapeBuffer, Shaping, Stretch, Style, Weight, Wrap,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -32,6 +32,8 @@ impl FontId {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ShapedGlyph {
     pub glyph_id: u32,
+    /// The cosmic-text font database ID for this glyph (may differ from requested font due to fallback)
+    pub cosmic_font_id: u64,
     pub x: f32,
     pub y: f32,
     pub x_advance: f32,
@@ -115,6 +117,8 @@ pub struct TextShaper {
     #[allow(dead_code)]
     shape_buffer: ShapeBuffer,
     font_data: HashMap<u32, Vec<u8>>,
+    /// Maps cosmic-text fontdb::ID to font data for rasterization
+    cosmic_font_data: HashMap<u64, Vec<u8>>,
     next_font_id: u32,
     /// Maps our registration name to internal font properties
     font_name_to_info: HashMap<String, FontInfo>,
@@ -133,6 +137,7 @@ impl TextShaper {
             scale_context: ScaleContext::new(),
             shape_buffer: ShapeBuffer::default(),
             font_data: HashMap::new(),
+            cosmic_font_data: HashMap::new(),
             next_font_id: 0,
             font_name_to_info: HashMap::new(),
         }
@@ -169,9 +174,7 @@ impl TextShaper {
 
         self.font_data.insert(id, font_data.to_vec());
 
-        self.font_system
-            .db_mut()
-            .load_font_data(font_data.to_vec());
+        self.font_system.db_mut().load_font_data(font_data.to_vec());
 
         // Find the newly added font(s) and extract their properties
         let db = self.font_system.db();
@@ -180,6 +183,20 @@ impl TextShaper {
         if faces.len() > count_before {
             // Get the last added face
             let face = &faces[faces.len() - 1];
+
+            // Store font data keyed by cosmic-text's internal font ID
+            // This allows rasterization to use the correct font for fallback glyphs
+            // fontdb::ID implements Display which outputs the u64 FFI value
+            let cosmic_id: u64 = format!("{}", face.id).parse().unwrap_or(0);
+            #[cfg(debug_assertions)]
+            web_sys::console::log_1(
+                &format!(
+                    "[Shaper] Registered font '{}' with cosmic_id={}",
+                    name, cosmic_id
+                )
+                .into(),
+            );
+            self.cosmic_font_data.insert(cosmic_id, font_data.to_vec());
 
             // Get the English family name (first in the list)
             let family = face
@@ -190,13 +207,8 @@ impl TextShaper {
 
             let weight = face.weight.0;
 
-            self.font_name_to_info.insert(
-                name.to_string(),
-                FontInfo {
-                    family,
-                    weight,
-                },
-            );
+            self.font_name_to_info
+                .insert(name.to_string(), FontInfo { family, weight });
         }
 
         Ok(FontId(id))
@@ -250,6 +262,7 @@ impl TextShaper {
             for glyph in run.glyphs.iter() {
                 glyphs.push(ShapedGlyph {
                     glyph_id: glyph.glyph_id as u32,
+                    cosmic_font_id: format!("{}", glyph.font_id).parse().unwrap_or(0),
                     x: glyph.x,
                     y: glyph.y,
                     x_advance: glyph.w,
@@ -311,6 +324,7 @@ impl TextShaper {
             for glyph in run.glyphs.iter() {
                 line_glyphs.push(ShapedGlyph {
                     glyph_id: glyph.glyph_id as u32,
+                    cosmic_font_id: format!("{}", glyph.font_id).parse().unwrap_or(0),
                     x: glyph.x,
                     y: glyph.y,
                     x_advance: glyph.w,
@@ -408,14 +422,46 @@ impl TextShaper {
         glyph_id: u32,
         font_size: f32,
     ) -> Result<JsValue, JsValue> {
-        // Get the font data for this font ID
+        // Get the font data for this font ID (clone to avoid borrow issues)
         let font_data = match self.font_data.get(&font_id) {
-            Some(data) => data,
+            Some(data) => data.clone(),
             None => {
                 return Err(JsValue::from_str("Font not found"));
             }
         };
 
+        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size)
+    }
+
+    /// Rasterize a glyph using cosmic-text's internal font ID.
+    /// This is used when shaping falls back to a different font than requested.
+    #[wasm_bindgen]
+    pub fn rasterize_glyph_by_cosmic_id(
+        &mut self,
+        cosmic_font_id: u64,
+        glyph_id: u32,
+        font_size: f32,
+    ) -> Result<JsValue, JsValue> {
+        // Get the font data for this cosmic font ID
+        let font_data = match self.cosmic_font_data.get(&cosmic_font_id) {
+            Some(data) => data.clone(),
+            None => {
+                return Err(JsValue::from_str(&format!(
+                    "Font not found for cosmic_font_id: {}",
+                    cosmic_font_id
+                )));
+            }
+        };
+
+        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size)
+    }
+
+    fn rasterize_glyph_with_data(
+        &mut self,
+        font_data: &[u8],
+        glyph_id: u32,
+        font_size: f32,
+    ) -> Result<JsValue, JsValue> {
         // Create a swash FontRef from the font data
         let font = match FontRef::from_index(font_data, 0) {
             Some(f) => f,

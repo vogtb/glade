@@ -35,6 +35,7 @@ import { DEFAULT_TOOLTIP_CONFIG, TooltipConfigBuilder } from "./tooltip.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
+import type { TabStopConfig } from "./tab_stop.ts";
 
 /**
  * State passed from requestLayout to prepaint for FlashDiv.
@@ -80,6 +81,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private isDropTarget = false;
   private tooltipBuilderFn: TooltipBuilder | null = null;
   private tooltipConfigValue: TooltipConfig = DEFAULT_TOOLTIP_CONFIG;
+  private tabStopConfigValue: TabStopConfig | null = null;
 
   // ============ Layout Styles (Tailwind-like API) ============
 
@@ -716,6 +718,38 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  /**
+   * Mark this element as focusable with tab navigation.
+   */
+  tabStop(config?: TabStopConfig): this {
+    this.tabStopConfigValue = config ?? {};
+    return this;
+  }
+
+  /**
+   * Set explicit tab order index.
+   */
+  tabIndex(index: number): this {
+    this.tabStopConfigValue = { ...this.tabStopConfigValue, index };
+    return this;
+  }
+
+  /**
+   * Assign to a focus group (tab navigates within group first).
+   */
+  focusGroup(group: string): this {
+    this.tabStopConfigValue = { ...this.tabStopConfigValue, group };
+    return this;
+  }
+
+  /**
+   * Focus on mouse down instead of click.
+   */
+  focusOnPress(): this {
+    this.tabStopConfigValue = { ...this.tabStopConfigValue, focusOnPress: true };
+    return this;
+  }
+
   // ============ Scroll ============
 
   trackScroll(handle: ScrollHandle): this {
@@ -836,6 +870,11 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     // Register with group if this element is in a group
     if (this.groupNameValue) {
       cx.addGroupHitbox(this.groupNameValue, hitbox.id);
+    }
+
+    // Register tab stop if this element is focusable
+    if (this.tabStopConfigValue && this.focusHandleRef) {
+      cx.registerTabStop?.(this.focusHandleRef.id, bounds, this.tabStopConfigValue);
     }
 
     // Get our original layout bounds and compute the delta from the passed bounds.

@@ -210,6 +210,15 @@ export interface PrepaintContext {
    * Get the window size for overflow calculations (e.g., anchored elements).
    */
   getWindowSize?(): { width: number; height: number };
+
+  /**
+   * Register a tab stop for keyboard navigation.
+   */
+  registerTabStop?(
+    focusId: import("./types.ts").FocusId,
+    bounds: Bounds,
+    config: import("./tab_stop.ts").TabStopConfig
+  ): void;
 }
 
 /**

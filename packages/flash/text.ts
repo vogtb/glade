@@ -38,7 +38,8 @@ type GlyphRasterizer = (
   fontSize: number,
   fontFamily: string,
   fontId: FontId | undefined,
-  glyphChar: string
+  glyphChar: string,
+  cosmicFontId: number | undefined
 ) => RasterizedGlyphData | null;
 
 /**
@@ -50,6 +51,8 @@ export interface GlyphCacheKey {
   fontSize: number;
   subpixelX: number;
   subpixelY: number;
+  /** Character string for browser-based rasterization cache key disambiguation */
+  char?: string;
 }
 
 /**
@@ -196,8 +199,12 @@ export class GlyphAtlas {
 
   /**
    * Create a cache key string from glyph parameters.
+   * Includes character when present (browser rasterization) for correct caching.
    */
   private makeCacheKey(key: GlyphCacheKey): string {
+    if (key.char !== undefined) {
+      return `${key.fontId}:${key.char}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}`;
+    }
     return `${key.fontId}:${key.glyphId}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}`;
   }
 
@@ -208,15 +215,21 @@ export class GlyphAtlas {
     key: GlyphCacheKey,
     fontFamily: string,
     glyphChar: string,
-    fontId?: FontId
+    fontId?: FontId,
+    cosmicFontId?: number
   ): CachedGlyph | null {
-    const cacheKey = this.makeCacheKey(key);
+    // For browser-based rasterization (canvas), use character in cache key
+    // since we rasterize by character, not glyph ID.
+    // For native/WASM rasterization, use glyph ID since that's what gets rasterized.
+    const effectiveKey: GlyphCacheKey = this.stagingCtx ? { ...key, char: glyphChar } : key;
+
+    const cacheKey = this.makeCacheKey(effectiveKey);
     const cached = this.glyphCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const glyph = this.rasterizeGlyph(key, fontFamily, glyphChar, fontId);
+    const glyph = this.rasterizeGlyph(key, fontFamily, glyphChar, fontId, cosmicFontId);
     if (glyph) {
       this.glyphCache.set(cacheKey, glyph);
     }
@@ -230,9 +243,19 @@ export class GlyphAtlas {
     key: GlyphCacheKey,
     fontFamily: string,
     glyphChar: string,
-    fontId?: FontId
+    fontId?: FontId,
+    cosmicFontId?: number
   ): CachedGlyph | null {
     let glyphData: RasterizedGlyphData | null = null;
+
+    // Enforce minimum font size for rasterization
+    const minFontSize = 4;
+    if (key.fontSize < minFontSize) {
+      console.debug(
+        `Glyph font size ${key.fontSize}px is below minimum ${minFontSize}px, skipping: char="${glyphChar}"`
+      );
+      return null;
+    }
 
     // Try canvas-based rasterization first (browser)
     if (this.stagingCtx && this.stagingCanvas) {
@@ -240,10 +263,25 @@ export class GlyphAtlas {
     }
     // Fall back to WASM rasterization (native)
     else if (this.rasterizer && fontId) {
-      glyphData = this.rasterizer(key.glyphId, key.fontSize, fontFamily, fontId, glyphChar);
+      glyphData = this.rasterizer(
+        key.glyphId,
+        key.fontSize,
+        fontFamily,
+        fontId,
+        glyphChar,
+        cosmicFontId
+      );
     }
 
     if (!glyphData || glyphData.width === 0 || glyphData.height === 0) {
+      return null;
+    }
+
+    // Ensure glyph data is not too large
+    if (glyphData.width > this.config.width || glyphData.height > this.config.height) {
+      console.warn(
+        `Glyph too large for atlas: ${glyphData.width}x${glyphData.height}, atlas size: ${this.config.width}x${this.config.height}`
+      );
       return null;
     }
 
@@ -280,12 +318,14 @@ export class GlyphAtlas {
 
     const ctx = this.stagingCtx;
 
-    const canvasSize = Math.ceil(fontSize * 2);
+    // Ensure canvas is large enough for any glyph at this size
+    const canvasSize = Math.ceil(fontSize * 3);
     if (this.stagingCanvas.width !== canvasSize || this.stagingCanvas.height !== canvasSize) {
       this.stagingCanvas.width = canvasSize;
       this.stagingCanvas.height = canvasSize;
     }
 
+    // Clear the entire canvas before drawing
     ctx.clearRect(0, 0, canvasSize, canvasSize);
 
     ctx.font = `${fontSize}px "${fontFamily}"`;
@@ -293,19 +333,28 @@ export class GlyphAtlas {
     ctx.textBaseline = "alphabetic";
 
     const metrics = ctx.measureText(glyphChar);
-    const width = Math.ceil(metrics.width) + 2;
-    const height = Math.ceil(fontSize * 1.5);
+    const width = Math.ceil(metrics.width) + 4; // Add extra margin for safety
+    const height = Math.ceil(fontSize * 1.5) + 4;
 
     const bearingX = 0;
     const bearingY = Math.ceil(fontSize);
 
-    ctx.fillText(glyphChar, 1, bearingY);
+    ctx.fillText(glyphChar, 2, bearingY + 2);
 
-    const imageData = ctx.getImageData(0, 0, width, height);
+    // Clamp to canvas bounds
+    const readWidth = Math.min(width, canvasSize);
+    const readHeight = Math.min(height, canvasSize);
+    const imageData = ctx.getImageData(0, 0, readWidth, readHeight);
 
     const pixels = new Uint8Array(width * height);
-    for (let i = 0; i < width * height; i++) {
-      pixels[i] = imageData.data[i * 4 + 3]!;
+    // Zero-fill the entire buffer first
+    pixels.fill(0);
+
+    // Copy the rasterized data
+    for (let y = 0; y < readHeight; y++) {
+      for (let x = 0; x < readWidth; x++) {
+        pixels[y * width + x] = imageData.data[(y * readWidth + x) * 4 + 3]!;
+      }
     }
 
     return {
@@ -390,6 +439,19 @@ export class GlyphAtlas {
   }
 }
 
+function utf8Length(codePoint: number): number {
+  if (codePoint <= 0x7f) {
+    return 1;
+  }
+  if (codePoint <= 0x7ff) {
+    return 2;
+  }
+  if (codePoint <= 0xffff) {
+    return 3;
+  }
+  return 4;
+}
+
 /**
  * Text system managing fonts, shaping, and glyph caching.
  */
@@ -405,11 +467,17 @@ export class TextSystem {
     this.atlas = new GlyphAtlas(device, atlasConfig);
 
     // Set up WASM-based rasterizer for native environments (no OffscreenCanvas)
-    this.atlas.setRasterizer((glyphId, fontSize, _fontFamily, fontId, _glyphChar) => {
-      if (!fontId) {
+    this.atlas.setRasterizer((glyphId, fontSize, _fontFamily, fontId, _glyphChar, cosmicFontId) => {
+      // Use cosmic font ID if available (handles font fallback correctly)
+      // Otherwise fall back to our registered font ID
+      let rasterized;
+      if (cosmicFontId !== undefined) {
+        rasterized = this.shaper.rasterizeGlyphByCosmicId(cosmicFontId, glyphId, fontSize);
+      } else if (fontId) {
+        rasterized = this.shaper.rasterizeGlyph(fontId, glyphId, fontSize);
+      } else {
         return null;
       }
-      const rasterized = this.shaper.rasterizeGlyph(fontId, glyphId, fontSize);
       if (!rasterized) {
         return null;
       }
@@ -549,11 +617,31 @@ export class TextSystem {
     fontFamily: string,
     style?: FontStyle
   ): GlyphInstance[] {
-    const shaped = this.shapeLine(text, fontSize, lineHeight, style);
+    // Merge fontFamily into style to ensure shaper uses the correct font
+    const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+    const shaped = this.shapeLine(text, fontSize, lineHeight, effectiveStyle);
     const instances: GlyphInstance[] = [];
+    // cosmic-text reports glyph cluster bounds in UTF-8 byte offsets; map them to UTF-16 indices.
+    const byteToUtf16Index = new Map<number, number>();
+
+    let byteOffset = 0;
+    for (let i = 0; i < text.length; ) {
+      const codePoint = text.codePointAt(i);
+      if (codePoint === undefined) {
+        break;
+      }
+      const byteLength = utf8Length(codePoint);
+      for (let b = 0; b < byteLength; b++) {
+        byteToUtf16Index.set(byteOffset + b, i);
+      }
+      byteOffset += byteLength;
+      i += codePoint > 0xffff ? 2 : 1;
+    }
+    byteToUtf16Index.set(byteOffset, text.length);
 
     const fontId = this.fontFamilyToId.get(fontFamily);
     if (!fontId) {
+      console.warn(`[TextSystem] Font not found: "${fontFamily}"`);
       return instances;
     }
 
@@ -561,7 +649,13 @@ export class TextSystem {
     const rasterFontSize = Math.ceil(fontSize * dpr);
 
     for (const glyph of shaped.glyphs) {
-      const char = text.substring(glyph.start, glyph.end);
+      const startIndex = byteToUtf16Index.get(glyph.start);
+      const endIndex = byteToUtf16Index.get(glyph.end);
+      if (startIndex === undefined || endIndex === undefined || endIndex <= startIndex) {
+        continue;
+      }
+
+      const char = text.substring(startIndex, endIndex);
       if (!char || char === " ") {
         continue;
       }
@@ -581,18 +675,25 @@ export class TextSystem {
         },
         fontFamily,
         char,
-        fontId
+        fontId,
+        glyph.cosmicFontId
       );
 
       if (!cached) {
+        console.warn(
+          `Failed to cache glyph: char="${char}" glyphId=${glyph.glyphId} cosmicFontId=${glyph.cosmicFontId} fontSize=${rasterFontSize} fontFamily="${fontFamily}"`
+        );
         continue;
       }
 
       const atlasSize = this.atlas.getSize();
 
+      // Y positioning: baseline is at y + fontSize
+      // bearingY is the distance from baseline to top of glyph
+      // So we need: baseline - bearingY = y + fontSize - bearingY/dpr
       instances.push({
         x: x + glyph.x + cached.bearingX / dpr,
-        y: y + (fontSize - cached.bearingY / dpr),
+        y: y + fontSize - cached.bearingY / dpr,
         width: cached.width / dpr,
         height: cached.height / dpr,
         atlasX: cached.atlasX / atlasSize.width,

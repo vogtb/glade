@@ -23,7 +23,8 @@ import type {
 } from "./types.ts";
 import { createScrollState, clampScrollOffset } from "./types.ts";
 import { CursorStyle } from "@glade/core/events.ts";
-import type { FlashViewHandle, FocusHandle, ScrollHandle } from "./entity.ts";
+import type { FlashViewHandle, ScrollHandle } from "./entity.ts";
+import { FocusHandle } from "./entity.ts";
 import type {
   FlashView,
   RequestLayoutContext,
@@ -67,6 +68,12 @@ import {
 } from "./hitbox.ts";
 import { DragTracker, type ActiveDrag, type DragPayload } from "./drag.ts";
 import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./tooltip.ts";
+import {
+  TabStopRegistry,
+  FocusContextManager,
+  FocusRestoration,
+  type TabStopConfig,
+} from "./tab_stop.ts";
 import { FlashRenderer } from "./renderer.ts";
 import { RectPipeline } from "./rect.ts";
 import { ShadowPipeline } from "./shadow.ts";
@@ -183,6 +190,11 @@ export class FlashWindow {
 
   // Tooltips
   private tooltipManager = new TooltipManager();
+
+  // Tab stops and focus
+  private tabStopRegistry = new TabStopRegistry();
+  private focusContextManager = new FocusContextManager();
+  private focusRestoration = new FocusRestoration();
 
   // Key dispatch
   private actionRegistry = new ActionRegistry();
@@ -587,6 +599,29 @@ export class FlashWindow {
   }
 
   /**
+   * Register a tab stop for keyboard navigation.
+   */
+  registerTabStop(focusId: FocusId, bounds: Bounds, config: TabStopConfig): void {
+    this.tabStopRegistry.register(focusId, bounds, config);
+  }
+
+  /**
+   * Get the next focusable element for Tab navigation.
+   */
+  getNextFocus(currentFocusId: FocusId | null): FocusId | null {
+    const currentGroup = this.tabStopRegistry.getGroup(currentFocusId ?? (0 as FocusId));
+    return this.tabStopRegistry.getNextFocus(currentFocusId, currentGroup);
+  }
+
+  /**
+   * Get the previous focusable element for Shift+Tab navigation.
+   */
+  getPrevFocus(currentFocusId: FocusId | null): FocusId | null {
+    const currentGroup = this.tabStopRegistry.getGroup(currentFocusId ?? (0 as FocusId));
+    return this.tabStopRegistry.getPrevFocus(currentFocusId, currentGroup);
+  }
+
+  /**
    * Check if a hitbox is a valid drop target for the current drag.
    */
   canDropOnHitbox(hitboxId: HitboxId): boolean {
@@ -906,6 +941,8 @@ export class FlashWindow {
     this.dropTargetHitboxes.clear();
     // Clear tooltip registrations from previous frame
     this.tooltipManager.clearRegistrations();
+    // Clear tab stops from previous frame
+    this.tabStopRegistry.clear();
     // Clear deferred draw queue from previous frame
     this.deferredDrawQueue = [];
   }
@@ -1109,6 +1146,26 @@ export class FlashWindow {
   private handleKeyEvent(event: KeyEvent): void {
     const cx = this.getContext();
 
+    // Handle Tab navigation
+    if (event.action === 1) {
+      // KeyAction.Press
+      const tabKey = event.key === 9; // Tab character
+      if (tabKey) {
+        const shiftPressed = (event.mods & 0x01) !== 0;
+        const currentFocusId =
+          this.focusStack.length > 0 ? this.focusStack[this.focusStack.length - 1]! : null;
+        const nextFocusId = shiftPressed
+          ? this.getPrevFocus(currentFocusId)
+          : this.getNextFocus(currentFocusId);
+
+        if (nextFocusId !== null && nextFocusId !== undefined) {
+          // Queue focus change via context
+          cx.focus(new FocusHandle(nextFocusId, this.id));
+          return;
+        }
+      }
+    }
+
     // Get the path from focused element (or use mouse position as fallback)
     let path = getFocusedPath(this.hitTestTree);
     if (path.length === 0) {
@@ -1186,6 +1243,7 @@ export class FlashWindow {
     const addGroupHitboxFn = this.addGroupHitbox.bind(this);
     const registerDropTargetFn = this.registerDropTarget.bind(this);
     const registerTooltipFn = this.registerTooltip.bind(this);
+    const registerTabStopFn = this.registerTabStop.bind(this);
 
     return {
       elementId,
@@ -1249,6 +1307,10 @@ export class FlashWindow {
 
       getWindowSize: (): { width: number; height: number } => {
         return { width: this.width, height: this.height };
+      },
+
+      registerTabStop: (focusId: FocusId, bounds: Bounds, config: TabStopConfig): void => {
+        registerTabStopFn(focusId, bounds, config);
       },
     };
   }

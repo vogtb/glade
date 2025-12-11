@@ -66,6 +66,8 @@ export type { FontId, InitOutput };
  */
 export interface ShapedGlyph {
   glyphId: number;
+  /** cosmic-text's internal font ID - may differ from requested font due to fallback */
+  cosmicFontId: number;
   x: number;
   y: number;
   xAdvance: number;
@@ -162,6 +164,7 @@ function styleToWasm(style: FontStyle): Record<string, unknown> {
  */
 function convertShapedGlyph(glyph: {
   glyph_id: number;
+  cosmic_font_id: number;
   x: number;
   y: number;
   x_advance: number;
@@ -173,6 +176,7 @@ function convertShapedGlyph(glyph: {
 }): ShapedGlyph {
   return {
     glyphId: glyph.glyph_id,
+    cosmicFontId: glyph.cosmic_font_id,
     x: glyph.x,
     y: glyph.y,
     xAdvance: glyph.x_advance,
@@ -240,6 +244,7 @@ export class TextShaper {
     const result = this.inner.shape_line(text, fontSize, lineHeight, styleToWasm(style)) as {
       glyphs: Array<{
         glyph_id: number;
+        cosmic_font_id: number;
         x: number;
         y: number;
         x_advance: number;
@@ -284,6 +289,7 @@ export class TextShaper {
       lines: Array<{
         glyphs: Array<{
           glyph_id: number;
+          cosmic_font_id: number;
           x: number;
           y: number;
           x_advance: number;
@@ -344,6 +350,43 @@ export class TextShaper {
   rasterizeGlyph(fontId: FontId, glyphId: number, fontSize: number): RasterizedGlyph | null {
     try {
       const result = this.inner.rasterize_glyph(fontId.id, glyphId, fontSize) as {
+        width: number;
+        height: number;
+        bearing_x: number;
+        bearing_y: number;
+        advance: number;
+        pixels: number[];
+      };
+
+      return {
+        width: result.width,
+        height: result.height,
+        bearingX: result.bearing_x,
+        bearingY: result.bearing_y,
+        advance: result.advance,
+        pixels: new Uint8Array(result.pixels),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Rasterize a glyph using cosmic-text's internal font ID.
+   * This is used when shaping falls back to a different font than requested.
+   */
+  rasterizeGlyphByCosmicId(
+    cosmicFontId: number,
+    glyphId: number,
+    fontSize: number
+  ): RasterizedGlyph | null {
+    try {
+      // WASM expects BigInt for u64 parameters
+      const result = this.inner.rasterize_glyph_by_cosmic_id(
+        BigInt(cosmicFontId),
+        glyphId,
+        fontSize
+      ) as {
         width: number;
         height: number;
         bearing_x: number;

@@ -252,6 +252,11 @@ export { Key, parseKeystroke, matchesKeystroke, formatKeystroke } from "./keyboa
 // Focus management
 export { FocusStack, FocusNavigator, FocusContextStack } from "./focus.ts";
 
+// Tab stops and navigation
+export type { TabStopConfig, TabStop } from "./tab_stop.ts";
+
+export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab_stop.ts";
+
 // Action system
 export type { Action, KeyBinding } from "./actions.ts";
 

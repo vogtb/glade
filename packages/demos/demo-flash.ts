@@ -72,7 +72,8 @@ type DemoSection =
   | "jpg-images"
   | "virtual-scrolling"
   | "deferred-anchored"
-  | "svg-icons";
+  | "svg-icons"
+  | "focus-navigation";
 
 /**
  * Demo button configuration.
@@ -97,6 +98,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "virtual-scrolling", label: "Virtual Scrolling", color: 0x6366f1, hoverColor: 0x4f46e5 },
   { id: "deferred-anchored", label: "Deferred/Anchored", color: 0xa855f7, hoverColor: 0x9333ea },
   { id: "svg-icons", label: "SVG Icons", color: 0x14b8a6, hoverColor: 0x0d9488 },
+  { id: "focus-navigation", label: "Focus Nav", color: 0xec7063, hoverColor: 0xc0392b },
 ];
 
 /**
@@ -477,6 +479,8 @@ class DemoRootView implements FlashView {
         return this.renderDeferredAnchoredDemo(cx);
       case "svg-icons":
         return this.renderSvgIconsDemo();
+      case "focus-navigation":
+        return this.renderFocusNavigationDemo(cx);
       default:
         return div();
     }
@@ -1539,6 +1543,150 @@ class DemoRootView implements FlashView {
               .size(12)
               .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
             text("• Color tinting and arbitrary sizing")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+          )
+      );
+  }
+
+  private renderFocusNavigationDemo(_cx: FlashViewContext<this>): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Enhanced Focus & Tab Navigation")
+          .font("Inter")
+          .size(32)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Keyboard navigation with focus management")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Instructions").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .children_(
+            text("• Press Tab to navigate forward between buttons")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("• Press Shift+Tab to navigate backward")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("• Focused buttons show a brighter border")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("• Click any button to set focus manually")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Focusable Elements").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .flexWrap()
+          .children_(
+            div()
+              .h(44)
+              .px(16)
+              .bg({ r: 0.2, g: 0.5, b: 0.8, a: 1 })
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 0.5, g: 0.7, b: 1, a: 1 })
+              .cursorPointer()
+              .hover((s) => s.bg({ r: 0.3, g: 0.6, b: 0.9, a: 1 }).shadow("md"))
+              .active((s) => s.bg({ r: 0.1, g: 0.4, b: 0.7, a: 1 }))
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Button 1").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(44)
+              .px(16)
+              .bg({ r: 0.2, g: 0.5, b: 0.8, a: 1 })
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 0.5, g: 0.7, b: 1, a: 1 })
+              .cursorPointer()
+              .hover((s) => s.bg({ r: 0.3, g: 0.6, b: 0.9, a: 1 }).shadow("md"))
+              .active((s) => s.bg({ r: 0.1, g: 0.4, b: 0.7, a: 1 }))
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Button 2").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(44)
+              .px(16)
+              .bg({ r: 0.2, g: 0.5, b: 0.8, a: 1 })
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 0.5, g: 0.7, b: 1, a: 1 })
+              .cursorPointer()
+              .hover((s) => s.bg({ r: 0.3, g: 0.6, b: 0.9, a: 1 }).shadow("md"))
+              .active((s) => s.bg({ r: 0.1, g: 0.4, b: 0.7, a: 1 }))
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Button 3").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(44)
+              .px(16)
+              .bg({ r: 0.8, g: 0.3, b: 0.2, a: 1 })
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 1, g: 0.5, b: 0.3, a: 1 })
+              .cursorPointer()
+              .hover((s) => s.bg({ r: 0.9, g: 0.4, b: 0.3, a: 1 }).shadow("md"))
+              .active((s) => s.bg({ r: 0.7, g: 0.2, b: 0.1, a: 1 }))
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Button 4").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(44)
+              .px(16)
+              .bg({ r: 0.2, g: 0.7, b: 0.4, a: 1 })
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 0.4, g: 1, b: 0.6, a: 1 })
+              .cursorPointer()
+              .hover((s) => s.bg({ r: 0.3, g: 0.8, b: 0.5, a: 1 }).shadow("md"))
+              .active((s) => s.bg({ r: 0.1, g: 0.6, b: 0.3, a: 1 }))
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Button 5").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 }))
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Phase 6 Features").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .children_(
+            text("✓ Tab/Shift+Tab Navigation - Navigate through focusable elements")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("✓ Focus Groups - Elements can be grouped for collective focus behavior")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("✓ Tab Index - Set explicit tab order with .tabIndex()")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("✓ Focus Contexts - Keyboard contexts for nested scopes (Editor > TextInput)")
               .font("Inter")
               .size(12)
               .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
