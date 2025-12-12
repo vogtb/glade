@@ -68,6 +68,7 @@ let flowerImageTile: ImageTile | null = null;
  */
 type DemoSection =
   | "inter-text"
+  | "wrapped-text"
   | "emoji-text"
   | "mono-text"
   | "mono-semibold"
@@ -95,6 +96,7 @@ interface DemoButton {
 
 const DEMO_BUTTONS: DemoButton[] = [
   { id: "inter-text", label: "Inter Text", color: 0x3b82f6, hoverColor: 0x2563eb },
+  { id: "wrapped-text", label: "Wrapped Text", color: 0x7c7cff, hoverColor: 0x6b6bf5 },
   { id: "emoji-text", label: "Emoji Text", color: 0xf472b6, hoverColor: 0xec4899 },
   { id: "mono-text", label: "Monospace Text", color: 0x10b981, hoverColor: 0x059669 },
   { id: "mono-semibold", label: "Mono SemiBold", color: 0xf59e0b, hoverColor: 0xd97706 },
@@ -481,6 +483,8 @@ class DemoRootView implements FlashView {
     switch (this.selectedDemo) {
       case "inter-text":
         return this.renderInterTextDemo();
+      case "wrapped-text":
+        return this.renderWrappedTextDemo();
       case "emoji-text":
         return this.renderEmojiTextDemo();
       case "mono-text":
@@ -525,6 +529,13 @@ class DemoRootView implements FlashView {
           .font("Inter")
           .size(16)
           .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text(
+          "Wrapped text automatically breaks across lines to fit the available width without clipping or overflow."
+        )
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.8, g: 0.8, b: 0.95, a: 1 })
+          .maxWidth(520),
         div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
         text("The quick brown fox jumps over the lazy dog.")
           .font("Inter")
@@ -565,6 +576,86 @@ class DemoRootView implements FlashView {
           .size(24)
           .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
         text("32px: The quick brown fox").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 })
+      );
+  }
+
+  private renderWrappedTextDemo(): FlashDiv {
+    const sample =
+      "Wrapped text will break across lines when a maxWidth is provided. Without it, the text stays on one line if there is space.";
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Text Wrapping").font("Inter").size(28).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Side-by-side comparison of wrapped vs. unwrapped text.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.75, g: 0.8, b: 0.9, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .children_(
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .w(320)
+              .p(12)
+              .rounded(12)
+              .bg({ r: 0.16, g: 0.18, b: 0.22, a: 1 })
+              .children_(
+                text("Wrapped (maxWidth 300)")
+                  .font("Inter")
+                  .size(16)
+                  .color({ r: 1, g: 1, b: 1, a: 1 }),
+                text(sample)
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.85, g: 0.88, b: 0.95, a: 1 })
+                  .maxWidth(300)
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .w(320)
+              .p(12)
+              .rounded(12)
+              .bg({ r: 0.14, g: 0.16, b: 0.2, a: 1 })
+              .children_(
+                text("Unwrapped (no maxWidth)")
+                  .font("Inter")
+                  .size(16)
+                  .color({ r: 1, g: 1, b: 1, a: 1 }),
+                text(sample).font("Inter").size(14).color({ r: 0.85, g: 0.88, b: 0.95, a: 1 })
+              )
+          ),
+        div().h(1).bg({ r: 0.35, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Single column wrap demo").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .w(520)
+          .children_(
+            text(
+              "This paragraph uses maxWidth to demonstrate natural wrapping in a single column layout."
+            )
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+              .maxWidth(520),
+            text(
+              "Adjusting the container width should reflow the lines consistently with cosmic-text wrapping."
+            )
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.8, g: 0.85, b: 0.95, a: 1 })
+              .maxWidth(520)
+          )
       );
   }
 

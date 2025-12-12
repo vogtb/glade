@@ -1353,13 +1353,25 @@ export class FlashWindow {
 
       measureText: (
         text: string,
-        options: { fontSize: number; fontFamily: string; fontWeight: number }
+        options: {
+          fontSize: number;
+          fontFamily: string;
+          fontWeight: number;
+          lineHeight?: number;
+          maxWidth?: number;
+        }
       ): { width: number; height: number } => {
-        const lineHeight = options.fontSize * 1.2;
-        return this.textSystem.measureText(text, options.fontSize, lineHeight, undefined, {
-          family: options.fontFamily,
-          weight: options.fontWeight,
-        });
+        const lineHeight = options.lineHeight ?? options.fontSize * 1.2;
+        return this.textSystem.measureText(
+          text,
+          options.fontSize,
+          lineHeight,
+          options.maxWidth ?? undefined,
+          {
+            family: options.fontFamily,
+            weight: options.fontWeight,
+          }
+        );
       },
 
       getPersistentState: <T = unknown>(): T | undefined => {
@@ -1571,9 +1583,16 @@ export class FlashWindow {
         text: string,
         bounds: Bounds,
         color: Color,
-        options: { fontSize: number; fontFamily: string; fontWeight: number }
+        options: {
+          fontSize: number;
+          fontFamily: string;
+          fontWeight: number;
+          lineHeight?: number;
+          maxWidth?: number;
+        }
       ): void => {
-        const lineHeight = options.fontSize * 1.2;
+        const lineHeight = options.lineHeight ?? options.fontSize * 1.2;
+        const maxWidth = options.maxWidth ?? undefined;
         const glyphs = this.textSystem.prepareGlyphInstances(
           text,
           bounds.x,
@@ -1582,7 +1601,8 @@ export class FlashWindow {
           lineHeight,
           color,
           options.fontFamily,
-          { family: options.fontFamily, weight: options.fontWeight }
+          { family: options.fontFamily, weight: options.fontWeight },
+          maxWidth
         );
         for (const glyph of glyphs) {
           scene.addGlyph(glyph);

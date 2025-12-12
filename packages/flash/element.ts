@@ -97,7 +97,13 @@ export interface RequestLayoutContext {
    */
   measureText(
     text: string,
-    options: { fontSize: number; fontFamily: string; fontWeight: number }
+    options: {
+      fontSize: number;
+      fontFamily: string;
+      fontWeight: number;
+      lineHeight?: number;
+      maxWidth?: number;
+    }
   ): { width: number; height: number };
 
   /**
@@ -282,7 +288,13 @@ export interface PaintContext {
     text: string,
     bounds: Bounds,
     color: Color,
-    options: { fontSize: number; fontFamily: string; fontWeight: number }
+    options: {
+      fontSize: number;
+      fontFamily: string;
+      fontWeight: number;
+      lineHeight?: number;
+      maxWidth?: number;
+    }
   ): void;
 
   /**
@@ -539,6 +551,8 @@ export class FlashTextElement extends FlashElement<NoState, NoState> {
   private fontSize = 14;
   private fontFamily = "system-ui";
   private fontWeight = 400;
+  private lineHeightValue: number | null = null;
+  private maxWidthValue: number | null = null;
 
   constructor(private text: string) {
     super();
@@ -564,16 +578,32 @@ export class FlashTextElement extends FlashElement<NoState, NoState> {
     return this;
   }
 
+  lineHeight(v: number): this {
+    this.lineHeightValue = v;
+    return this;
+  }
+
+  maxWidth(width: number): this {
+    this.maxWidthValue = width;
+    return this;
+  }
+
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
+    const lineHeight = this.lineHeightValue ?? this.fontSize * 1.2;
+    const wrapWidth = this.maxWidthValue ?? undefined;
     const metrics = cx.measureText(this.text, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: this.fontWeight,
+      lineHeight,
+      maxWidth: wrapWidth,
     });
+
+    const layoutWidth = wrapWidth !== undefined ? Math.max(wrapWidth, 0) : metrics.width;
 
     const layoutId = cx.requestLayout(
       {
-        width: metrics.width,
+        width: layoutWidth,
         height: metrics.height,
       },
       []
@@ -587,10 +617,14 @@ export class FlashTextElement extends FlashElement<NoState, NoState> {
   }
 
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: NoState): void {
+    const lineHeight = this.lineHeightValue ?? this.fontSize * 1.2;
+    const wrapWidth = this.maxWidthValue ?? undefined;
     cx.paintGlyphs(this.text, bounds, this.textColor, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: this.fontWeight,
+      lineHeight,
+      maxWidth: wrapWidth,
     });
   }
 

@@ -617,12 +617,30 @@ export class TextSystem {
     lineHeight: number,
     color: Color,
     fontFamily: string,
-    style?: FontStyle
+    style?: FontStyle,
+    maxWidth?: number
   ): GlyphInstance[] {
     // Merge fontFamily into style to ensure shaper uses the correct font
     const effectiveStyle: FontStyle = { ...style, family: fontFamily };
-    const shaped = this.shapeLine(text, fontSize, lineHeight, effectiveStyle);
     const instances: GlyphInstance[] = [];
+    type GlyphLine = { glyphs: ShapedGlyph[]; y: number; lineHeight: number };
+    const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
+    const glyphLines: GlyphLine[] =
+      effectiveMaxWidth !== undefined
+        ? this.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines.map(
+            (line) => ({
+              glyphs: line.glyphs,
+              y: line.y,
+              lineHeight: line.lineHeight,
+            })
+          )
+        : [
+            {
+              glyphs: this.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
+              y: 0,
+              lineHeight,
+            },
+          ];
     // cosmic-text reports glyph cluster bounds in UTF-8 byte offsets; map them to UTF-16 indices.
     const byteToUtf16Index = new Map<number, number>();
 
@@ -651,91 +669,94 @@ export class TextSystem {
     const rasterFontSize = Math.ceil(fontSize * dpr);
     const fallbackFamilies = this.buildFallbackFamilies(fontFamily);
 
-    for (const glyph of shaped.glyphs) {
-      const startIndex = byteToUtf16Index.get(glyph.start);
-      const endIndex = byteToUtf16Index.get(glyph.end);
-      if (startIndex === undefined || endIndex === undefined || endIndex <= startIndex) {
-        continue;
-      }
+    for (const line of glyphLines) {
+      const baselineY = y + line.y + line.lineHeight;
 
-      const char = text.substring(startIndex, endIndex);
-      if (!char || char === " ") {
-        continue;
-      }
-
-      // Disable subpixel caching to reduce atlas pressure
-      // Original: subpixelX = Math.round((glyph.x % 1) * 6), subpixelY = Math.round((glyph.y % 1) * 3)
-      const subpixelX = 0;
-      const subpixelY = 0;
-
-      let cached: CachedGlyph | null = null;
-
-      for (const fallbackFamily of fallbackFamilies) {
-        const fallbackFontId = this.fontFamilyToId.get(fallbackFamily);
-        if (!fallbackFontId) {
+      for (const glyph of line.glyphs) {
+        const startIndex = byteToUtf16Index.get(glyph.start);
+        const endIndex = byteToUtf16Index.get(glyph.end);
+        if (startIndex === undefined || endIndex === undefined || endIndex <= startIndex) {
           continue;
         }
 
-        let targetGlyphId = glyph.glyphId;
-        let targetCosmicFontId = glyph.cosmicFontId;
+        const char = text.substring(startIndex, endIndex);
+        if (!char || char === " ") {
+          continue;
+        }
 
-        if (fallbackFamily !== fontFamily) {
-          const fallbackGlyph = this.shapeSingleGlyphForFallback(
-            char,
-            fontSize,
-            lineHeight,
-            fallbackFamily
-          );
-          if (!fallbackGlyph) {
+        // Disable subpixel caching to reduce atlas pressure
+        // Original: subpixelX = Math.round((glyph.x % 1) * 6), subpixelY = Math.round((glyph.y % 1) * 3)
+        const subpixelX = 0;
+        const subpixelY = 0;
+
+        let cached: CachedGlyph | null = null;
+
+        for (const fallbackFamily of fallbackFamilies) {
+          const fallbackFontId = this.fontFamilyToId.get(fallbackFamily);
+          if (!fallbackFontId) {
             continue;
           }
-          targetGlyphId = fallbackGlyph.glyphId;
-          targetCosmicFontId = fallbackGlyph.cosmicFontId;
+
+          let targetGlyphId = glyph.glyphId;
+          let targetCosmicFontId = glyph.cosmicFontId;
+
+          if (fallbackFamily !== fontFamily) {
+            const fallbackGlyph = this.shapeSingleGlyphForFallback(
+              char,
+              fontSize,
+              lineHeight,
+              fallbackFamily
+            );
+            if (!fallbackGlyph) {
+              continue;
+            }
+            targetGlyphId = fallbackGlyph.glyphId;
+            targetCosmicFontId = fallbackGlyph.cosmicFontId;
+          }
+
+          cached = this.atlas.getOrInsert(
+            {
+              fontId: fallbackFontId.id,
+              glyphId: targetGlyphId,
+              fontSize: rasterFontSize,
+              subpixelX,
+              subpixelY,
+            },
+            fallbackFamily,
+            char,
+            fallbackFontId,
+            targetCosmicFontId
+          );
+
+          if (cached) {
+            break;
+          }
         }
 
-        cached = this.atlas.getOrInsert(
-          {
-            fontId: fallbackFontId.id,
-            glyphId: targetGlyphId,
-            fontSize: rasterFontSize,
-            subpixelX,
-            subpixelY,
-          },
-          fallbackFamily,
-          char,
-          fallbackFontId,
-          targetCosmicFontId
-        );
-
-        if (cached) {
-          break;
+        if (!cached) {
+          console.warn(
+            `Failed to cache glyph: char="${char}" glyphId=${glyph.glyphId} cosmicFontId=${glyph.cosmicFontId} fontSize=${rasterFontSize} fontFamilies=${fallbackFamilies.join(" -> ")}`
+          );
+          continue;
         }
+
+        const atlasSize = this.atlas.getSize();
+
+        // Y positioning: baseline is at line offset + lineHeight
+        // bearingY is the distance from baseline to top of glyph
+        instances.push({
+          x: x + glyph.x + cached.bearingX / dpr,
+          y: baselineY - cached.bearingY / dpr,
+          width: cached.width / dpr,
+          height: cached.height / dpr,
+          atlasX: cached.atlasX / atlasSize.width,
+          atlasY: cached.atlasY / atlasSize.height,
+          atlasWidth: cached.width / atlasSize.width,
+          atlasHeight: cached.height / atlasSize.height,
+          color,
+          isColor: cached.isColor,
+        });
       }
-
-      if (!cached) {
-        console.warn(
-          `Failed to cache glyph: char="${char}" glyphId=${glyph.glyphId} cosmicFontId=${glyph.cosmicFontId} fontSize=${rasterFontSize} fontFamilies=${fallbackFamilies.join(" -> ")}`
-        );
-        continue;
-      }
-
-      const atlasSize = this.atlas.getSize();
-
-      // Y positioning: baseline is at y + fontSize
-      // bearingY is the distance from baseline to top of glyph
-      // So we need: baseline - bearingY = y + fontSize - bearingY/dpr
-      instances.push({
-        x: x + glyph.x + cached.bearingX / dpr,
-        y: y + fontSize - cached.bearingY / dpr,
-        width: cached.width / dpr,
-        height: cached.height / dpr,
-        atlasX: cached.atlasX / atlasSize.width,
-        atlasY: cached.atlasY / atlasSize.height,
-        atlasWidth: cached.width / atlasSize.width,
-        atlasHeight: cached.height / atlasSize.height,
-        color,
-        isColor: cached.isColor,
-      });
     }
 
     return instances;
