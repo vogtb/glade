@@ -372,6 +372,7 @@ function groupButton(
  */
 class DemoRootView implements FlashView {
   private rightScrollHandle: ScrollHandle | null = null;
+  private leftNavScrollHandle: ScrollHandle | null = null;
   private uniformListScrollHandle: ScrollHandle | null = null;
   private variableListScrollHandle: ScrollHandle | null = null;
   private variableListState: ListState | null = null;
@@ -397,6 +398,9 @@ class DemoRootView implements FlashView {
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.leftNavScrollHandle) {
+      this.leftNavScrollHandle = cx.newScrollHandle(cx.windowId);
     }
     if (!this.uniformListScrollHandle) {
       this.uniformListScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -430,12 +434,27 @@ class DemoRootView implements FlashView {
       .w(220)
       .bg(rgb(0x1f1f28))
       .rounded(12)
-      .p(16)
-      .gap(8)
+      .overflowHidden()
       .children_(
-        text("Flash Demos").font("Inter").size(18).color({ r: 1, g: 1, b: 1, a: 1 }),
-        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-        ...DEMO_BUTTONS.map((btn) => this.renderNavButton(cx, btn))
+        div()
+          .px(16)
+          .pt(16)
+          .pb(8)
+          .flexShrink0()
+          .children_(
+            text("Flash Demos").font("Inter").size(18).color({ r: 1, g: 1, b: 1, a: 1 }),
+            div().h(1).mt(8).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 })
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .px(16)
+          .pb(16)
+          .flexGrow()
+          .overflowAuto()
+          .trackScroll(this.leftNavScrollHandle!)
+          .children_(...DEMO_BUTTONS.map((btn) => this.renderNavButton(cx, btn)))
       );
   }
 
@@ -2301,7 +2320,7 @@ async function main() {
 
   const ctx = await createWebGPUContext({
     width: 1200,
-    height: 800,
+    height: 900,
     title: "Flash App Demo",
   });
 
@@ -2310,7 +2329,7 @@ async function main() {
   const app = new FlashApp({ platform });
   await app.initialize();
 
-  const window = await app.openWindow({ width: 1200, height: 800, title: "Flash App Demo" }, (cx) =>
+  const window = await app.openWindow({ width: 1200, height: 900, title: "Flash App Demo" }, (cx) =>
     cx.newView<DemoRootView>(() => new DemoRootView())
   );
 
