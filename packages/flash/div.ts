@@ -26,6 +26,7 @@ import type {
   MouseHandler,
   ClickHandler,
   KeyHandler,
+  TextInputHandler,
   ScrollHandler,
   DragStartHandler,
 } from "./dispatch.ts";
@@ -643,6 +644,11 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
   onKeyUp(handler: KeyHandler): this {
     this.handlers.keyUp = handler;
+    return this;
+  }
+
+  onTextInput(handler: TextInputHandler): this {
+    this.handlers.textInput = handler;
     return this;
   }
 

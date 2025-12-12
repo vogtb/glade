@@ -4,7 +4,7 @@
  * Bridges a WebGPUContext to Flash's FlashPlatform interface.
  */
 
-import type { WebGPUContext, CursorStyle, Clipboard } from "@glade/core";
+import type { WebGPUContext, CursorStyle, Clipboard, CharEvent } from "@glade/core";
 import type { FlashPlatform, FlashRenderTarget, Modifiers, DecodedImageData } from "@glade/flash";
 import { coreModsToFlashMods } from "@glade/flash";
 
@@ -256,6 +256,36 @@ class BrowserRenderTarget implements FlashRenderTarget {
   onKey(callback: (event: import("@glade/core").KeyEvent) => void): () => void {
     return this.ctx.onKey((event) => {
       callback(event);
+    });
+  }
+
+  onChar(callback: (event: CharEvent) => void): () => void {
+    return this.ctx.onChar((event) => {
+      callback(event);
+    });
+  }
+
+  onClose(callback: () => void): () => void {
+    return this.ctx.onClose(() => {
+      callback();
+    });
+  }
+
+  onFocus(callback: (focused: boolean) => void): () => void {
+    return this.ctx.onFocus((event) => {
+      callback(event.focused);
+    });
+  }
+
+  onCursorEnter(callback: (entered: boolean) => void): () => void {
+    return this.ctx.onCursorEnter((event) => {
+      callback(event.entered);
+    });
+  }
+
+  onRefresh(callback: () => void): () => void {
+    return this.ctx.onRefresh(() => {
+      callback();
     });
   }
 }

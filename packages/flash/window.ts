@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 import { createScrollState, clampScrollOffset } from "./types.ts";
 import { CursorStyle } from "@glade/core/events.ts";
-import type { Clipboard } from "@glade/core";
+import type { Clipboard, CharEvent } from "@glade/core";
 import type { FlashViewHandle, ScrollHandle } from "./entity.ts";
 import { FocusHandle } from "./entity.ts";
 import type {
@@ -39,6 +39,7 @@ import type {
   FlashMouseEvent,
   FlashClickEvent,
   FlashScrollEvent,
+  FlashTextInputEvent,
   Modifiers,
 } from "./dispatch.ts";
 import {
@@ -47,6 +48,7 @@ import {
   dispatchClickEvent,
   dispatchScrollEvent,
   dispatchKeyEvent,
+  dispatchTextInputEvent,
   buildKeyContextChain,
   getFocusedPath,
   type FlashKeyEvent,
@@ -66,6 +68,7 @@ import {
   performHitTest,
   isHitboxHovered,
   GroupHitboxes,
+  createHitTest,
 } from "./hitbox.ts";
 import { DragTracker, type ActiveDrag, type DragPayload } from "./drag.ts";
 import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./tooltip.ts";
@@ -151,8 +154,14 @@ export interface FlashRenderTarget {
   ): () => void;
   onResize?(callback: (width: number, height: number) => void): () => void;
   onKey?(callback: (event: import("@glade/core").KeyEvent) => void): () => void;
+  onChar?(callback: (event: import("@glade/core").CharEvent) => void): () => void;
 
   setCursor?(style: CursorStyle): void;
+
+  onClose?(callback: () => void): () => void;
+  onFocus?(callback: (focused: boolean) => void): () => void;
+  onCursorEnter?(callback: (entered: boolean) => void): () => void;
+  onRefresh?(callback: () => void): () => void;
 }
 
 /**
@@ -165,6 +174,9 @@ export class FlashWindow {
   private focusStack: FocusId[] = [];
   private mousePosition: Point = { x: 0, y: 0 };
   private mouseDown = false;
+  private windowFocused = true;
+  private cursorInside = true;
+  private closed = false;
   private eventCleanups: Array<() => void> = [];
 
   private elementState = new Map<GlobalElementId, unknown>();
@@ -232,7 +244,7 @@ export class FlashWindow {
   ) {
     this.scene = new FlashScene();
     this.layoutEngine = new FlashLayoutEngine();
-    // Layout engine works in logical coordinates, no scaling needed
+    // Layout engine operates in logical coordinates; rendering stage handles device pixel scaling
     this.layoutEngine.setScaleFactor(1);
     this.renderTarget.configure(device, format);
 
@@ -316,6 +328,13 @@ export class FlashWindow {
    */
   get height(): number {
     return this.renderTarget.height;
+  }
+
+  /**
+   * Check if window has been closed by the platform.
+   */
+  isClosed(): boolean {
+    return this.closed;
   }
 
   /**
@@ -952,6 +971,7 @@ export class FlashWindow {
    * Destroy the window and release resources.
    */
   destroy(): void {
+    this.closed = true;
     for (const cleanup of this.eventCleanups) {
       cleanup();
     }
@@ -1287,6 +1307,52 @@ export class FlashWindow {
       });
       this.eventCleanups.push(cleanup);
     }
+
+    if (target.onChar) {
+      const cleanup = target.onChar((event: CharEvent) => {
+        this.handleCharEvent(event);
+      });
+      this.eventCleanups.push(cleanup);
+    }
+
+    if (target.onFocus) {
+      const cleanup = target.onFocus((focused) => {
+        this.windowFocused = focused;
+        if (!focused) {
+          this.focusStack = [];
+        }
+        this.getContext().markWindowDirty(this.id);
+      });
+      this.eventCleanups.push(cleanup);
+    }
+
+    if (target.onCursorEnter) {
+      const cleanup = target.onCursorEnter((entered) => {
+        this.cursorInside = entered;
+        if (!entered) {
+          this.mouseHitTest = createHitTest();
+          this.updateCursor();
+        }
+        this.getContext().markWindowDirty(this.id);
+      });
+      this.eventCleanups.push(cleanup);
+    }
+
+    if (target.onRefresh) {
+      const cleanup = target.onRefresh(() => {
+        this.getContext().markWindowDirty(this.id);
+      });
+      this.eventCleanups.push(cleanup);
+    }
+
+    if (target.onClose) {
+      const cleanup = target.onClose(() => {
+        this.closed = true;
+        this.destroy();
+        this.getContext().markWindowDirty(this.id);
+      });
+      this.eventCleanups.push(cleanup);
+    }
   }
 
   private handleKeyEvent(event: KeyEvent): void {
@@ -1337,6 +1403,22 @@ export class FlashWindow {
 
     const type = event.action === 0 ? "keyUp" : "keyDown";
     dispatchKeyEvent(type, flashEvent, path, this, cx);
+  }
+
+  private handleCharEvent(event: CharEvent): void {
+    const cx = this.getContext();
+    const currentFocusId = this.getCurrentFocusId();
+    let path = getFocusedPath(this.hitTestTree, currentFocusId);
+    if (path.length === 0) {
+      path = hitTest(this.hitTestTree, this.mousePosition);
+    }
+
+    const textEvent: FlashTextInputEvent = {
+      codepoint: event.codepoint,
+      text: event.char,
+    };
+
+    dispatchTextInputEvent(textEvent, path, this, cx);
   }
 
   private createRequestLayoutContext(elementId: GlobalElementId): RequestLayoutContext {

@@ -426,10 +426,15 @@ export class FlashApp {
     // Render and present dirty windows
     for (const windowId of this.dirtyWindows) {
       const window = this.windows.get(windowId);
-      if (window) {
-        window.render((entityId, windowId, win) => this.createViewContext(entityId, windowId, win));
-        window.present();
+      if (!window) {
+        continue;
       }
+      if (window.isClosed()) {
+        this.windows.delete(windowId);
+        continue;
+      }
+      window.render((entityId, windowId, win) => this.createViewContext(entityId, windowId, win));
+      window.present();
     }
     this.dirtyWindows.clear();
   }

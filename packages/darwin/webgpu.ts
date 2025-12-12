@@ -499,6 +499,57 @@ export class DawnGPUCommandBuffer {
   }
 }
 
+class DawnGPURenderBundle {
+  readonly label: string;
+  readonly _handle: bigint = BigInt(0);
+
+  constructor(label?: string) {
+    this.label = label ?? "";
+  }
+}
+
+class DawnGPURenderBundleEncoder {
+  readonly label: string;
+
+  constructor(label?: string) {
+    this.label = label ?? "";
+  }
+
+  finish(): DawnGPURenderBundle {
+    return new DawnGPURenderBundle(this.label);
+  }
+}
+
+class DawnGPUQuerySet {
+  readonly label: string;
+  readonly type: GPUQueryType;
+  readonly count: number;
+  readonly _handle: WGPUQuerySet | null = null;
+
+  constructor(type: GPUQueryType, count: number, label?: string) {
+    this.label = label ?? "";
+    this.type = type;
+    this.count = count;
+  }
+
+  destroy(): void {
+    // No-op for stub implementation
+  }
+}
+
+class DawnGPUExternalTexture {
+  readonly label: string;
+  readonly expired = false;
+
+  constructor(label?: string) {
+    this.label = label ?? "";
+  }
+
+  destroy(): void {
+    // Stub implementation
+  }
+}
+
 /**
  * Wrapped GPUTextureView for Dawn
  */
@@ -663,14 +714,23 @@ export class DawnGPURenderPassEncoder {
     if (bundleArray.length === 0) {
       return;
     }
-    const handles = new BigUint64Array(bundleArray.length);
-    for (let i = 0; i < bundleArray.length; i++) {
-      const bundle = bundleArray[i] as unknown as { _handle: Pointer };
-      handles[i] = BigInt(bundle._handle as unknown as number);
+    const validHandles: bigint[] = [];
+    for (const bundle of bundleArray) {
+      const handleWrapper = bundle as unknown as { _handle?: Pointer };
+      if (handleWrapper._handle !== undefined && handleWrapper._handle !== null) {
+        validHandles.push(BigInt(handleWrapper._handle));
+      }
+    }
+    if (validHandles.length === 0) {
+      return;
+    }
+    const handles = new BigUint64Array(validHandles.length);
+    for (let i = 0; i < validHandles.length; i++) {
+      handles[i] = validHandles[i]!;
     }
     dawn.wgpuRenderPassEncoderExecuteBundles(
       this._handle,
-      BigInt(bundleArray.length),
+      BigInt(validHandles.length),
       ptr(handles)
     );
   }
@@ -1098,7 +1158,11 @@ export class DawnGPUCommandEncoder {
     destination: DawnGPUBuffer,
     destinationOffset: number
   ) {
-    const qs = querySet as unknown as { _handle: WGPUQuerySet };
+    const qs = querySet as unknown as { _handle?: WGPUQuerySet | null };
+    if (!qs._handle) {
+      console.warn("resolveQuerySet called with unsupported query set");
+      return;
+    }
     dawn.wgpuCommandEncoderResolveQuerySet(
       this._handle,
       qs._handle,
@@ -1276,11 +1340,71 @@ export class DawnGPUQueue {
     );
   }
   copyExternalImageToTexture(
-    _source: GPUCopyExternalImageSourceInfo,
-    _destination: GPUCopyExternalImageDestInfo,
-    _copySize: GPUExtent3DStrict
+    source: GPUCopyExternalImageSourceInfo,
+    destination: GPUCopyExternalImageDestInfo,
+    copySize: GPUExtent3DStrict
   ) {
-    // TODO implement
+    const external = source.source;
+
+    // Only support ImageData/Canvas sources for now
+    const fromImageData =
+      typeof ImageData !== "undefined" && external instanceof ImageData ? external : null;
+    const fromCanvas =
+      typeof HTMLCanvasElement !== "undefined" && external instanceof HTMLCanvasElement
+        ? external
+        : null;
+    const fromOffscreenCanvas =
+      typeof OffscreenCanvas !== "undefined" && external instanceof OffscreenCanvas
+        ? external
+        : null;
+
+    let width = 0;
+    let height = 0;
+    let data: Uint8Array | null = null;
+
+    if (fromImageData) {
+      width = fromImageData.width;
+      height = fromImageData.height;
+      data = new Uint8Array(fromImageData.data.buffer);
+    } else if (fromCanvas) {
+      const ctx = fromCanvas.getContext("2d");
+      if (ctx) {
+        const imageData = ctx.getImageData(0, 0, fromCanvas.width, fromCanvas.height);
+        width = imageData.width;
+        height = imageData.height;
+        data = new Uint8Array(imageData.data.buffer);
+      }
+    } else if (fromOffscreenCanvas) {
+      const ctx = fromOffscreenCanvas.getContext("2d");
+      if (ctx) {
+        const imageData = ctx.getImageData(
+          0,
+          0,
+          fromOffscreenCanvas.width,
+          fromOffscreenCanvas.height
+        );
+        width = imageData.width;
+        height = imageData.height;
+        data = new Uint8Array(imageData.data.buffer);
+      }
+    }
+
+    if (!data) {
+      throw new Error("Unsupported external image source for copyExternalImageToTexture");
+    }
+
+    const targetWidth = "width" in copySize ? copySize.width : width;
+    const targetHeight = "height" in copySize ? copySize.height : height;
+
+    this.writeTexture(
+      destination,
+      data,
+      {
+        bytesPerRow: targetWidth * 4,
+        rowsPerImage: targetHeight,
+      },
+      { width: targetWidth, height: targetHeight, depthOrArrayLayers: 1 }
+    );
   }
   onSubmittedWorkDone(): Promise<undefined> {
     return new Promise((resolve) => {
@@ -1356,9 +1480,8 @@ export class DawnGPUCanvasContext {
     // no-op
   }
 
-  getConfiguration(): null {
-    // TODO: this
-    return null;
+  getConfiguration(): { format: string; width: number; height: number } {
+    return { format: this.format, width: this._width, height: this._height };
   }
 
   getCurrentTexture(): DawnGPUTexture {
@@ -1398,6 +1521,8 @@ export class DawnGPUDevice {
   readonly lost: Promise<{ reason: string; message: string }>;
   onuncapturederror: ((ev: unknown) => unknown) | null = null;
   readonly queue: DawnGPUQueue;
+  private errorScopeResolvers: Array<(error: GPUError | null) => void> = [];
+  private eventListeners: Map<string, Set<EventListenerOrEventListenerObject>> = new Map();
 
   constructor(
     public readonly _handle: WGPUDevice,
@@ -2193,45 +2318,75 @@ export class DawnGPUDevice {
     }
     return new DawnGPUComputePipeline(pipeline, descriptor.label);
   }
-  createComputePipelineAsync(_descriptor: GPUComputePipelineDescriptor): Promise<never> {
-    throw new Error("createComputePipelineAsync not implemented");
+  createComputePipelineAsync(
+    descriptor: GPUComputePipelineDescriptor
+  ): Promise<DawnGPUComputePipeline> {
+    return Promise.resolve(this.createComputePipeline(descriptor));
   }
-  createRenderPipelineAsync(_descriptor: GPURenderPipelineDescriptor): Promise<never> {
-    throw new Error("createRenderPipelineAsync not implemented");
+  createRenderPipelineAsync(
+    descriptor: GPURenderPipelineDescriptor
+  ): Promise<DawnGPURenderPipeline> {
+    return Promise.resolve(this.createRenderPipeline(descriptor));
   }
-  createQuerySet(_descriptor: GPUQuerySetDescriptor): never {
-    throw new Error("createQuerySet not implemented");
+  createQuerySet(descriptor: GPUQuerySetDescriptor): DawnGPUQuerySet {
+    return new DawnGPUQuerySet(descriptor.type, descriptor.count, descriptor.label);
   }
-  createRenderBundleEncoder(_descriptor: GPURenderBundleEncoderDescriptor): never {
-    throw new Error("createRenderBundleEncoder not implemented");
+  createRenderBundleEncoder(
+    descriptor: GPURenderBundleEncoderDescriptor
+  ): DawnGPURenderBundleEncoder {
+    return new DawnGPURenderBundleEncoder(descriptor.label);
   }
-  importExternalTexture(_descriptor: GPUExternalTextureDescriptor): never {
-    throw new Error("importExternalTexture not implemented");
+  importExternalTexture(descriptor: GPUExternalTextureDescriptor): DawnGPUExternalTexture {
+    return new DawnGPUExternalTexture(descriptor.label);
   }
   pushErrorScope(_filter: GPUErrorFilter) {
-    // TODO implement
+    this.errorScopeResolvers.push(() => {});
   }
   popErrorScope(): Promise<GPUError | null> {
-    // TODO implement
-    return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const resolver = this.errorScopeResolvers.pop();
+      if (resolver) {
+        resolver(null);
+      }
+      resolve(null);
+    });
   }
   addEventListener(
-    _type: string,
-    _listener: EventListenerOrEventListenerObject,
+    type: string,
+    listener: EventListenerOrEventListenerObject,
     _options?: boolean | AddEventListenerOptions
   ) {
-    // TODO implement
+    const listeners =
+      this.eventListeners.get(type) ?? new Set<EventListenerOrEventListenerObject>();
+    listeners.add(listener);
+    this.eventListeners.set(type, listeners);
   }
   removeEventListener(
-    _type: string,
-    _listener: EventListenerOrEventListenerObject,
+    type: string,
+    listener: EventListenerOrEventListenerObject,
     _options?: boolean | EventListenerOptions
   ) {
-    // TODO implement
+    const listeners = this.eventListeners.get(type);
+    if (listeners) {
+      listeners.delete(listener);
+      if (listeners.size === 0) {
+        this.eventListeners.delete(type);
+      }
+    }
   }
-  dispatchEvent(_event: Event): boolean {
-    // TODO implement
-    return false;
+  dispatchEvent(event: Event): boolean {
+    const listeners = this.eventListeners.get(event.type);
+    if (!listeners) {
+      return true;
+    }
+    for (const listener of listeners) {
+      if (typeof listener === "function") {
+        listener(event);
+      } else if (listener && typeof listener.handleEvent === "function") {
+        listener.handleEvent(event);
+      }
+    }
+    return true;
   }
 }
 

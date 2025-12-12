@@ -63,6 +63,16 @@ export interface FlashScrollEvent {
 }
 
 /**
+ * Text input event data (character input).
+ */
+export interface FlashTextInputEvent {
+  /** Unicode code point. */
+  codepoint: number;
+  /** Text representation for the code point. */
+  text: string;
+}
+
+/**
  * Modifier key state.
  */
 export interface Modifiers {
@@ -110,6 +120,15 @@ export type KeyHandler = (
 ) => EventResult | void;
 
 /**
+ * Text input handler type.
+ */
+export type TextInputHandler = (
+  event: FlashTextInputEvent,
+  window: FlashWindow,
+  cx: FlashContext
+) => EventResult | void;
+
+/**
  * Scroll event handler type.
  */
 export type ScrollHandler = (
@@ -141,6 +160,7 @@ export interface EventHandlers {
   scroll?: ScrollHandler;
   keyDown?: KeyHandler;
   keyUp?: KeyHandler;
+  textInput?: TextInputHandler;
   dragStart?: DragStartHandler;
   drop?: DropHandler;
   canDrop?: CanDropPredicate;
@@ -255,6 +275,27 @@ export function dispatchKeyEvent(
   for (let i = path.length - 1; i >= 0; i--) {
     const node = path[i]!;
     const handler = node.handlers[type];
+    if (handler) {
+      const result = handler(event, window, cx);
+      if (result?.stopPropagation) {
+        return;
+      }
+    }
+  }
+}
+
+/**
+ * Dispatch a text input event through the focus chain.
+ */
+export function dispatchTextInputEvent(
+  event: FlashTextInputEvent,
+  path: HitTestNode[],
+  window: FlashWindow,
+  cx: FlashContext
+): void {
+  for (let i = path.length - 1; i >= 0; i--) {
+    const node = path[i]!;
+    const handler = node.handlers.textInput;
     if (handler) {
       const result = handler(event, window, cx);
       if (result?.stopPropagation) {

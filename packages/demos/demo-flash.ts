@@ -35,6 +35,7 @@ import {
   deferred,
   anchored,
   type Point,
+  Key,
 } from "@glade/flash";
 import { embedAsBase64 } from "./embed" with { type: "macro" };
 
@@ -69,6 +70,7 @@ let flowerImageTile: ImageTile | null = null;
 type DemoSection =
   | "inter-text"
   | "wrapped-text"
+  | "text-input"
   | "emoji-text"
   | "mono-text"
   | "mono-semibold"
@@ -97,6 +99,7 @@ interface DemoButton {
 const DEMO_BUTTONS: DemoButton[] = [
   { id: "inter-text", label: "Inter Text", color: 0x3b82f6, hoverColor: 0x2563eb },
   { id: "wrapped-text", label: "Wrapped Text", color: 0x7c7cff, hoverColor: 0x6b6bf5 },
+  { id: "text-input", label: "Text Input", color: 0x9f7aea, hoverColor: 0x7c3aed },
   { id: "emoji-text", label: "Emoji Text", color: 0xf472b6, hoverColor: 0xec4899 },
   { id: "mono-text", label: "Monospace Text", color: 0x10b981, hoverColor: 0x059669 },
   { id: "mono-semibold", label: "Mono SemiBold", color: 0xf59e0b, hoverColor: 0xd97706 },
@@ -394,6 +397,9 @@ class DemoRootView implements FlashView {
   private clipboardSample = "Flash clipboard sample text";
   private clipboardStatus = "Clipboard ready.";
   private clipboardLastText: string | null = null;
+  private textInputHandle: FocusHandle | null = null;
+  private textInputValue = "";
+  private textInputStatus = "Click the field to focus, then type to insert characters.";
 
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
@@ -432,6 +438,8 @@ class DemoRootView implements FlashView {
       .flex()
       .flexCol()
       .w(220)
+      .h(Math.max(200, cx.window.height - 40))
+      .flexShrink0()
       .bg(rgb(0x1f1f28))
       .rounded(12)
       .overflowHidden()
@@ -452,6 +460,7 @@ class DemoRootView implements FlashView {
           .px(16)
           .pb(16)
           .flexGrow()
+          .hMax(cx.window.height - 120)
           .overflowAuto()
           .trackScroll(this.leftNavScrollHandle!)
           .children_(...DEMO_BUTTONS.map((btn) => this.renderNavButton(cx, btn)))
@@ -504,6 +513,8 @@ class DemoRootView implements FlashView {
         return this.renderInterTextDemo();
       case "wrapped-text":
         return this.renderWrappedTextDemo();
+      case "text-input":
+        return this.renderTextInputDemo(cx);
       case "emoji-text":
         return this.renderEmojiTextDemo();
       case "mono-text":
@@ -674,6 +685,106 @@ class DemoRootView implements FlashView {
               .size(14)
               .color({ r: 0.8, g: 0.85, b: 0.95, a: 1 })
               .maxWidth(520)
+          )
+      );
+  }
+
+  private renderTextInputDemo(cx: FlashViewContext<this>): FlashDiv {
+    const inputHandle = this.ensureTextInputHandle(cx);
+    const focused = cx.isFocused(inputHandle);
+    const lines =
+      this.textInputValue.length > 0 ? this.textInputValue.split("\n") : ["Start typing..."];
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Text Input").font("Inter").size(28).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Demonstrates text input events, focus handling, and simple editing.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.75, g: 0.8, b: 0.9, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .children_(
+            text("Click the field and type. Backspace deletes, Enter inserts a new line.")
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            div()
+              .bg({ r: 0.12, g: 0.13, b: 0.17, a: 1 })
+              .border(2)
+              .borderColor(focused ? rgb(0x6366f1) : { r: 0.25, g: 0.28, b: 0.35, a: 1 })
+              .rounded(12)
+              .p(12)
+              .trackFocus(inputHandle)
+              .tabStop({ index: 1 })
+              .onTextInput(
+                cx.listener((view, event, _window, ecx) => {
+                  view.textInputValue = `${view.textInputValue}${event.text}`;
+                  view.textInputStatus = `Inserted "${event.text}"`;
+                  ecx.notify();
+                })
+              )
+              .onKeyDown(
+                cx.listener((view, event, _window, ecx) => {
+                  const scancode = Number(event.code);
+                  if (scancode === Key.Backspace) {
+                    if (view.textInputValue.length > 0) {
+                      view.textInputValue = view.textInputValue.slice(0, -1);
+                      view.textInputStatus = "Backspace";
+                      ecx.notify();
+                    }
+                    return { stopPropagation: true };
+                  }
+                  if (scancode === Key.Enter) {
+                    view.textInputValue = `${view.textInputValue}\n`;
+                    view.textInputStatus = "Inserted newline";
+                    ecx.notify();
+                    return { stopPropagation: true };
+                  }
+                  return undefined;
+                })
+              )
+              .children_(
+                div()
+                  .flex()
+                  .flexCol()
+                  .gap(6)
+                  .children_(
+                    ...lines.map((line) =>
+                      text(line)
+                        .font("Inter")
+                        .size(16)
+                        .color(
+                          this.textInputValue.length === 0
+                            ? { r: 0.6, g: 0.65, b: 0.75, a: 1 }
+                            : { r: 0.92, g: 0.94, b: 0.98, a: 1 }
+                        )
+                    )
+                  )
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .children_(
+                text(`Focused: ${focused ? "yes" : "no"}`)
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.85, b: 0.9, a: 1 }),
+                text(`Length: ${this.textInputValue.length}`)
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.85, b: 0.9, a: 1 })
+              ),
+            text(`Status: ${this.textInputStatus}`)
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.7, g: 0.78, b: 0.9, a: 1 })
           )
       );
   }
@@ -2180,6 +2291,13 @@ class DemoRootView implements FlashView {
     if (!this.modalCloseHandle) {
       this.modalCloseHandle = cx.newFocusHandle(cx.windowId);
     }
+  }
+
+  private ensureTextInputHandle(cx: FlashViewContext<this>): FocusHandle {
+    if (!this.textInputHandle) {
+      this.textInputHandle = cx.focusHandle();
+    }
+    return this.textInputHandle;
   }
 
   private registerFocusDemoActions(cx: FlashViewContext<this>): void {
