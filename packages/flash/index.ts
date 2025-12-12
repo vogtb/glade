@@ -121,6 +121,14 @@ export {
   text,
   img,
 } from "./element.ts";
+export {
+  canvas,
+  CanvasElement,
+  type CanvasPrepaint,
+  type CanvasPaint,
+  type CanvasOptionsWithPrepaint,
+  type CanvasOptionsWithoutPrepaint,
+} from "./canvas.ts";
 
 // Div element
 export { FlashDiv, div } from "./div.ts";

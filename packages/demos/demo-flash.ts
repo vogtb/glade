@@ -28,6 +28,8 @@ import {
   type PaintContext,
   type RequestLayoutResult,
   type Bounds,
+  canvas,
+  type TessellatedPath,
   uniformList,
   list,
   createListState,
@@ -76,6 +78,7 @@ type DemoSection =
   | "mono-semibold"
   | "underlined-text"
   | "group-styles"
+  | "canvas"
   | "vector-paths"
   | "border-styles"
   | "png-images"
@@ -105,6 +108,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "mono-semibold", label: "Mono SemiBold", color: 0xf59e0b, hoverColor: 0xd97706 },
   { id: "underlined-text", label: "Underlined Text", color: 0xef4444, hoverColor: 0xdc2626 },
   { id: "group-styles", label: "Group Styles", color: 0x8b5cf6, hoverColor: 0x7c3aed },
+  { id: "canvas", label: "Canvas", color: 0x22c55e, hoverColor: 0x16a34a },
   { id: "vector-paths", label: "Vector Paths", color: 0xec4899, hoverColor: 0xdb2777 },
   { id: "border-styles", label: "Border Styles", color: 0x06b6d4, hoverColor: 0x0891b2 },
   { id: "png-images", label: "PNG Images", color: 0x84cc16, hoverColor: 0x65a30d },
@@ -341,6 +345,16 @@ function underlinedText(
   return new UnderlinedTextElement(textContent, options);
 }
 
+type CanvasWaveState = {
+  values: number[];
+  padding: number;
+  startX: number;
+  endX: number;
+  baseY: number;
+  amplitude: number;
+  wave: TessellatedPath;
+};
+
 /**
  * Helper to create a button that participates in a group hover/active.
  */
@@ -525,6 +539,8 @@ class DemoRootView implements FlashView {
         return this.renderUnderlinedTextDemo();
       case "group-styles":
         return this.renderGroupStylesDemo();
+      case "canvas":
+        return this.renderCanvasDemo();
       case "vector-paths":
         return this.renderVectorPathsDemo();
       case "border-styles":
@@ -1041,6 +1057,121 @@ class DemoRootView implements FlashView {
             groupButton("Green", "group-c", 0x166534, 0x15803d, 0x22c55e),
             groupButton("Blue", "group-c", 0x1e40af, 0x1d4ed8, 0x3b82f6)
           )
+      );
+  }
+
+  private renderCanvasDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Canvas Element").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Direct access to low-level paint APIs without defining a custom element.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Waveform + Bars via canvas()")
+          .font("Inter")
+          .size(18)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        canvas<CanvasWaveState>({
+          styles: { width: "100%", height: 260, borderRadius: 12 },
+          prepaint: (bounds: Bounds, _cx: PrepaintContext): CanvasWaveState => {
+            const padding = 16;
+            const barCount = 28;
+            const startX = bounds.x + padding;
+            const endX = bounds.x + bounds.width - padding;
+            const baseY = bounds.y + bounds.height - padding;
+            const amplitude = bounds.height * 0.55;
+
+            const values = Array.from({ length: barCount }, (_v, i) => {
+              const t = i / Math.max(1, barCount - 1);
+              const sin1 = Math.sin(t * Math.PI * 2);
+              const sin2 = Math.sin(t * Math.PI * 4 + 0.6);
+              const envelope = Math.sin(t * Math.PI);
+              const v = 0.55 + 0.35 * sin1 * envelope + 0.2 * sin2 * envelope;
+              return Math.max(0.05, Math.min(1, v));
+            });
+
+            const wavePath = path();
+            wavePath.moveTo(startX, baseY);
+            values.forEach((value, idx) => {
+              const x = startX + ((endX - startX) / Math.max(1, barCount - 1)) * idx;
+              const y = baseY - value * amplitude;
+              wavePath.lineTo(x, y);
+            });
+            wavePath.lineTo(endX, baseY);
+            wavePath.close();
+
+            const wave = wavePath.tessellate();
+            return { values, padding, startX, endX, baseY, amplitude, wave };
+          },
+          paint: (cx, bounds, state: CanvasWaveState) => {
+            const scene = cx.scene;
+            const { values, padding, startX, endX, baseY, amplitude, wave } = state;
+
+            scene.addRect({
+              x: bounds.x,
+              y: bounds.y,
+              width: bounds.width,
+              height: bounds.height,
+              color: { r: 0.14, g: 0.14, b: 0.18, a: 1 },
+              cornerRadius: 12,
+              borderWidth: 1,
+              borderColor: { r: 0.22, g: 0.22, b: 0.28, a: 1 },
+            });
+
+            const gridCount = 4;
+            for (let i = 1; i <= gridCount; i++) {
+              const y = bounds.y + (bounds.height / (gridCount + 1)) * i;
+              scene.addRect({
+                x: bounds.x + padding / 2,
+                y,
+                width: bounds.width - padding,
+                height: 1,
+                color: { r: 0.2, g: 0.25, b: 0.35, a: 0.4 },
+                cornerRadius: 0,
+                borderWidth: 0,
+                borderColor: { r: 0, g: 0, b: 0, a: 0 },
+              });
+            }
+
+            const barGap = 6;
+            const barCount = values.length;
+            const usableWidth = Math.max(0, endX - startX - barGap * (barCount - 1));
+            const barWidth = Math.max(3, usableWidth / Math.max(1, barCount));
+
+            values.forEach((value: number, idx: number) => {
+              const x = startX + idx * (barWidth + barGap);
+              const height = Math.max(6, amplitude * value);
+              scene.addRect({
+                x,
+                y: baseY - height,
+                width: barWidth,
+                height,
+                color: { r: 0.3, g: 0.78, b: 0.55, a: 0.9 },
+                cornerRadius: Math.min(6, barWidth / 2),
+                borderWidth: 0,
+                borderColor: { r: 0, g: 0, b: 0, a: 0 },
+              });
+            });
+
+            scene.addPath({
+              vertices: wave.vertices,
+              indices: wave.indices,
+              bounds: wave.bounds,
+              color: { r: 0.25, g: 0.68, b: 1, a: 0.8 },
+            });
+          },
+        }),
+        text(
+          "canvas() feeds prepaint → paint so you can push custom primitives directly into the scene."
+        )
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.65, g: 0.75, b: 0.9, a: 1 })
       );
   }
 
