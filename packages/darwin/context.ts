@@ -468,11 +468,16 @@ export async function createWebGPUContext(
 /**
  * Native render loop for macOS WebGPU context.
  * Time values are in seconds.
+ * Uses a timed loop to yield to the host event loop between frames.
  */
 export function runWebGPURenderLoop(ctx: DarwinWebGPUContext, callback: RenderCallback): void {
   let lastTime = glfw.getTime();
 
-  while (!glfw.windowShouldClose(ctx.window)) {
+  function frame(): void {
+    if (glfw.windowShouldClose(ctx.window)) {
+      return;
+    }
+
     const time = glfw.getTime();
     const deltaTime = time - lastTime;
     lastTime = time;
@@ -486,9 +491,14 @@ export function runWebGPURenderLoop(ctx: DarwinWebGPUContext, callback: RenderCa
 
     const shouldContinue = callback(time, deltaTime);
     if (shouldContinue === false) {
-      break;
+      return;
     }
 
     glfw.pollEvents();
+
+    // Yield to the host event loop between frames so async tasks (e.g., clipboard reads) can run.
+    setTimeout(frame, 0);
   }
+
+  setTimeout(frame, 0);
 }
