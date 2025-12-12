@@ -14,5 +14,8 @@ export {
   type BrowserWebGPUContextOptions,
 } from "./context.ts";
 
+// Clipboard
+export { createClipboard } from "./clipboard.ts";
+
 // Flash platform
 export { createFlashPlatform } from "./flash";

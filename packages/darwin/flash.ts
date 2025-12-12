@@ -4,7 +4,7 @@
  * Bridges a WebGPUContext to Flash's FlashPlatform interface.
  */
 
-import type { WebGPUContext, CursorStyle } from "@glade/core";
+import type { WebGPUContext, CursorStyle, Clipboard } from "@glade/core";
 import type { FlashPlatform, FlashRenderTarget, Modifiers, DecodedImageData } from "@glade/flash";
 import { coreModsToFlashMods } from "@glade/flash";
 import { decodePNG, decodeJPEG } from "./image";
@@ -14,6 +14,7 @@ import { decodePNG, decodeJPEG } from "./image";
  */
 class DarwinFlashPlatform implements FlashPlatform {
   readonly runtime = "darwin" as const;
+  readonly clipboard: Clipboard;
 
   private ctx: WebGPUContext;
   private animationFrameId = 0;
@@ -21,6 +22,7 @@ class DarwinFlashPlatform implements FlashPlatform {
 
   constructor(ctx: WebGPUContext) {
     this.ctx = ctx;
+    this.clipboard = ctx.clipboard;
   }
 
   async requestAdapter(): Promise<GPUAdapter | null> {

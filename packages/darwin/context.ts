@@ -27,6 +27,7 @@ import {
   GLFW_RESIZE_ALL_CURSOR,
   GLFW_NOT_ALLOWED_CURSOR,
 } from "@glade/glfw";
+import { createClipboard } from "./clipboard.ts";
 import {
   createInstance,
   requestAdapter,
@@ -163,6 +164,8 @@ export async function createWebGPUContext(
     throw new Error("Failed to get Cocoa view from GLFW window");
   }
 
+  const clipboard = createClipboard(window);
+
   const metalLayer = createMetalLayerForView(nsView);
 
   // Create WebGPU instance
@@ -243,6 +246,7 @@ export async function createWebGPUContext(
     queue: wrappedDevice.queue as unknown as GPUQueue,
     context: wrappedContext as unknown as GPUCanvasContext,
     format: formatString,
+    clipboard,
     window,
     // width/height are framebuffer size (physical pixels) for GPU operations
     get width() {

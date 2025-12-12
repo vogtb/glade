@@ -23,6 +23,7 @@ import type {
 } from "./types.ts";
 import { createScrollState, clampScrollOffset } from "./types.ts";
 import { CursorStyle } from "@glade/core/events.ts";
+import type { Clipboard } from "@glade/core";
 import type { FlashViewHandle, ScrollHandle } from "./entity.ts";
 import { FocusHandle } from "./entity.ts";
 import type {
@@ -107,6 +108,7 @@ export interface DecodedImageData {
  */
 export interface FlashPlatform {
   readonly runtime: "browser" | "darwin";
+  readonly clipboard: Clipboard;
 
   requestAdapter(): Promise<GPUAdapter | null>;
   requestDevice(): Promise<GPUDevice>;
@@ -314,6 +316,13 @@ export class FlashWindow {
    */
   get height(): number {
     return this.renderTarget.height;
+  }
+
+  /**
+   * Access the platform clipboard.
+   */
+  getClipboard(): Clipboard {
+    return this.platform.clipboard;
   }
 
   /**

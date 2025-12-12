@@ -15,6 +15,7 @@ import {
   type CursorEnterCallback,
   type RefreshCallback,
 } from "@glade/core/events";
+import { createClipboard } from "./clipboard.ts";
 
 export interface BrowserContextOptions extends ContextOptions {
   canvas?: HTMLCanvasElement;
@@ -94,6 +95,8 @@ export async function createWebGPUContext(
   if (!navigator.gpu) {
     throw new Error("WebGPU is not supported in this browser");
   }
+
+  const clipboard = createClipboard();
 
   const gpu = navigator.gpu;
 
@@ -246,6 +249,7 @@ export async function createWebGPUContext(
     queue,
     context,
     format,
+    clipboard,
     canvas,
     // width/height are framebuffer size (physical pixels) for GPU operations
     get width() {

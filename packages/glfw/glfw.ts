@@ -25,6 +25,8 @@ const lib = dlopen(GLFW_PATH, {
   glfwGetWindowSize: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
   glfwGetFramebufferSize: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
   glfwSwapInterval: { args: [FFIType.i32], returns: FFIType.void },
+  glfwSetClipboardString: { args: [FFIType.ptr, FFIType.cstring], returns: FFIType.void },
+  glfwGetClipboardString: { args: [FFIType.ptr], returns: FFIType.cstring },
   // Native window access (macOS)
   glfwGetCocoaWindow: { args: [FFIType.ptr], returns: FFIType.ptr },
   glfwGetCocoaView: { args: [FFIType.ptr], returns: FFIType.ptr },
@@ -311,5 +313,18 @@ export const glfw = {
 
   setCursor(window: GLFWwindow, cursor: GLFWcursor | null): void {
     lib.symbols.glfwSetCursor(window, cursor);
+  },
+
+  setClipboardString(window: GLFWwindow, text: string): void {
+    const textBuffer = Buffer.from(text + "\0");
+    lib.symbols.glfwSetClipboardString(window, ptr(textBuffer));
+  },
+
+  getClipboardString(window: GLFWwindow): string | null {
+    const value = lib.symbols.glfwGetClipboardString(window);
+    if (!value) {
+      return null;
+    }
+    return value.toString();
   },
 };

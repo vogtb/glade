@@ -2,6 +2,8 @@ export {
   // WebGPU
   createWebGPUContext,
   runWebGPURenderLoop,
+  // Clipboard
+  createClipboard,
   // Flash
   createFlashPlatform,
   // Types

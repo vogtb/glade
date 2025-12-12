@@ -80,7 +80,8 @@ type DemoSection =
   | "virtual-scrolling"
   | "deferred-anchored"
   | "svg-icons"
-  | "focus-navigation";
+  | "focus-navigation"
+  | "clipboard";
 
 /**
  * Demo button configuration.
@@ -107,6 +108,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "deferred-anchored", label: "Deferred/Anchored", color: 0xa855f7, hoverColor: 0x9333ea },
   { id: "svg-icons", label: "SVG Icons", color: 0x14b8a6, hoverColor: 0x0d9488 },
   { id: "focus-navigation", label: "Focus Nav", color: 0xec7063, hoverColor: 0xc0392b },
+  { id: "clipboard", label: "Clipboard", color: 0x22c55e, hoverColor: 0x16a34a },
 ];
 
 /**
@@ -386,6 +388,9 @@ class DemoRootView implements FlashView {
   private focusLog = "Click or Tab through the controls.";
   private focusActionsRegistered = false;
   private focusModalOpen = false;
+  private clipboardSample = "Flash clipboard sample text";
+  private clipboardStatus = "Clipboard ready.";
+  private clipboardLastText: string | null = null;
 
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
@@ -502,6 +507,8 @@ class DemoRootView implements FlashView {
         return this.renderSvgIconsDemo();
       case "focus-navigation":
         return this.renderFocusNavigationDemo(cx);
+      case "clipboard":
+        return this.renderClipboardDemo(cx);
       default:
         return div();
     }
@@ -1608,6 +1615,183 @@ class DemoRootView implements FlashView {
               .size(12)
               .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
           )
+      );
+  }
+
+  private renderClipboardDemo(cx: FlashViewContext<this>): FlashDiv {
+    const clipboard = cx.window.getClipboard();
+    const capabilityText = clipboard.isSupported
+      ? `Read ${clipboard.supportsReadText ? "enabled" : "blocked"} • Write ${clipboard.supportsWriteText ? "enabled" : "blocked"}`
+      : "Clipboard unavailable in this runtime.";
+    const lastText =
+      this.clipboardLastText === null
+        ? "No clipboard text captured yet."
+        : this.clipboardLastText.length > 0
+          ? this.clipboardLastText
+          : "(empty clipboard)";
+
+    const copyHandler = cx.listener((_view, _event, _window, ecx) => {
+      if (!clipboard.supportsWriteText) {
+        this.clipboardStatus = "Clipboard write is not available.";
+        ecx.notify();
+        return;
+      }
+
+      const sample = `${this.clipboardSample} (${new Date().toLocaleTimeString()})`;
+      clipboard
+        .writeText(sample)
+        .then(() => {
+          this.clipboardStatus = `Copied sample (${sample.length} chars) to the system clipboard.`;
+          this.clipboardLastText = sample;
+          ecx.notify();
+        })
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : "Clipboard write failed.";
+          this.clipboardStatus = message;
+          ecx.notify();
+        });
+    });
+
+    const pasteHandler = cx.listener((_view, _event, _window, ecx) => {
+      this.clipboardStatus = "Attempting to paste from system clipboard...";
+      ecx.notify();
+
+      let completed = false;
+      const timeoutId = setTimeout(() => {
+        if (completed) {
+          return;
+        }
+        completed = true;
+        this.clipboardStatus = "Paste timed out; no data received.";
+        this.clipboardLastText = "";
+        ecx.notify();
+      }, 500);
+
+      if (!clipboard.supportsReadText) {
+        clearTimeout(timeoutId);
+        this.clipboardStatus = "Clipboard read is not available.";
+        ecx.notify();
+        return;
+      }
+
+      clipboard
+        .readText()
+        .then((value) => {
+          if (completed) {
+            return;
+          }
+          completed = true;
+          clearTimeout(timeoutId);
+          this.clipboardStatus = `Read ${value.length} chars from the system clipboard.`;
+          this.clipboardLastText = value;
+          ecx.notify();
+        })
+        .catch((error) => {
+          if (completed) {
+            return;
+          }
+          completed = true;
+          clearTimeout(timeoutId);
+          const message = error instanceof Error ? error.message : "Clipboard read failed.";
+          this.clipboardStatus = message;
+          ecx.notify();
+        });
+    });
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .keyContext("clipboard-demo")
+      .children_(
+        text("Clipboard").font("Inter").size(26).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Cross-platform copy/paste powered by platform clipboards.")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.78, g: 0.82, b: 0.94, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(6)
+          .bg(rgb(0x1f2937))
+          .rounded(10)
+          .border(1)
+          .borderColor({ r: 0.25, g: 0.28, b: 0.38, a: 1 })
+          .p(12)
+          .children_(
+            text("Capabilities").font("Inter").size(13).color({ r: 0.82, g: 0.86, b: 0.96, a: 1 }),
+            text(capabilityText).font("Inter").size(12).color({ r: 0.7, g: 0.74, b: 0.82, a: 1 })
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(6)
+          .bg(rgb(0x111827))
+          .rounded(12)
+          .p(14)
+          .border(1)
+          .borderColor({ r: 0.23, g: 0.25, b: 0.34, a: 1 })
+          .children_(
+            text("Sample to copy")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.86, g: 0.88, b: 0.96, a: 1 }),
+            text(this.clipboardSample)
+              .font("Inter")
+              .size(16)
+              .color({ r: 0.95, g: 0.96, b: 1, a: 1 })
+          ),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .children_(
+            div()
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .bg(rgb(0x2563eb))
+              .rounded(10)
+              .h(44)
+              .px(16)
+              .cursorPointer()
+              .hover((s) => s.bg(rgb(0x1d4ed8)))
+              .active((s) => s.bg(rgb(0x1e40af)))
+              .onClick(copyHandler)
+              .child(text("Copy sample").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .bg(rgb(0x22c55e))
+              .rounded(10)
+              .h(44)
+              .px(16)
+              .cursorPointer()
+              .hover((s) => s.bg(rgb(0x16a34a)))
+              .active((s) => s.bg(rgb(0x15803d)))
+              .onClick(pasteHandler)
+              .child(
+                text("Paste from system").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })
+              )
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(6)
+          .bg(rgb(0x0b1220))
+          .rounded(12)
+          .p(14)
+          .border(1)
+          .borderColor({ r: 0.2, g: 0.22, b: 0.32, a: 1 })
+          .children_(
+            text("Last clipboard text")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.82, g: 0.86, b: 0.96, a: 1 }),
+            text(lastText).font("Inter").size(15).color({ r: 0.92, g: 0.94, b: 1, a: 1 })
+          ),
+        text(this.clipboardStatus).font("Inter").size(13).color({ r: 0.72, g: 0.76, b: 0.86, a: 1 })
       );
   }
 

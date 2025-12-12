@@ -6,6 +6,7 @@ export {
   type DarwinWebGPUContext,
   type DarwinContextOptions,
 } from "./context";
+export { createClipboard } from "./clipboard.ts";
 export { glfw } from "@glade/glfw";
 export * from "./webgpu";
 
