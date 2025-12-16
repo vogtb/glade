@@ -13,6 +13,8 @@ import {
   type FocusCallback,
   type CursorEnterCallback,
   type RefreshCallback,
+  type CompositionCallback,
+  type TextInputCallback,
 } from "@glade/core/events";
 import {
   glfw,
@@ -348,6 +350,39 @@ export async function createWebGPUContext(
         cleanup();
         const idx = cleanups.indexOf(cleanup);
         if (idx >= 0) cleanups.splice(idx, 1);
+      };
+    },
+
+    onCompositionStart(_callback: CompositionCallback): () => void {
+      // TODO: hook into NSTextInputClient via objc bridge to surface real composition data.
+      return () => {};
+    },
+
+    onCompositionUpdate(_callback: CompositionCallback): () => void {
+      // TODO: hook into NSTextInputClient via objc bridge to surface real composition data.
+      return () => {};
+    },
+
+    onCompositionEnd(_callback: CompositionCallback): () => void {
+      // TODO: hook into NSTextInputClient via objc bridge to surface real composition data.
+      return () => {};
+    },
+
+    onTextInput(callback: TextInputCallback): () => void {
+      const cleanup = glfw.setCharCallback(window, (_win, codepoint) => {
+        const text = String.fromCodePoint(codepoint);
+        callback({
+          text,
+          isComposing: false,
+        });
+      });
+      cleanups.push(cleanup);
+      return () => {
+        cleanup();
+        const idx = cleanups.indexOf(cleanup);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 

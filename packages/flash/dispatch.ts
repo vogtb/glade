@@ -66,10 +66,22 @@ export interface FlashScrollEvent {
  * Text input event data (character input).
  */
 export interface FlashTextInputEvent {
-  /** Unicode code point. */
-  codepoint: number;
-  /** Text representation for the code point. */
+  /** Text to insert (may be multiple code points). */
   text: string;
+  /** Whether the text originated from an active composition. */
+  isComposing: boolean;
+}
+
+/**
+ * Composition (IME) event data.
+ */
+export interface FlashCompositionEvent {
+  /** Current composition text (empty on start). */
+  text: string;
+  /** Selection start within the composition text. */
+  selectionStart: number;
+  /** Selection end within the composition text. */
+  selectionEnd: number;
 }
 
 /**
@@ -129,6 +141,15 @@ export type TextInputHandler = (
 ) => EventResult | void;
 
 /**
+ * Composition event handler type.
+ */
+export type CompositionHandler = (
+  event: FlashCompositionEvent,
+  window: FlashWindow,
+  cx: FlashContext
+) => EventResult | void;
+
+/**
  * Scroll event handler type.
  */
 export type ScrollHandler = (
@@ -161,6 +182,9 @@ export interface EventHandlers {
   keyDown?: KeyHandler;
   keyUp?: KeyHandler;
   textInput?: TextInputHandler;
+  compositionStart?: CompositionHandler;
+  compositionUpdate?: CompositionHandler;
+  compositionEnd?: CompositionHandler;
   dragStart?: DragStartHandler;
   drop?: DropHandler;
   canDrop?: CanDropPredicate;
@@ -296,6 +320,28 @@ export function dispatchTextInputEvent(
   for (let i = path.length - 1; i >= 0; i--) {
     const node = path[i]!;
     const handler = node.handlers.textInput;
+    if (handler) {
+      const result = handler(event, window, cx);
+      if (result?.stopPropagation) {
+        return;
+      }
+    }
+  }
+}
+
+/**
+ * Dispatch a composition event through the focus chain.
+ */
+export function dispatchCompositionEvent(
+  type: "compositionStart" | "compositionUpdate" | "compositionEnd",
+  event: FlashCompositionEvent,
+  path: HitTestNode[],
+  window: FlashWindow,
+  cx: FlashContext
+): void {
+  for (let i = path.length - 1; i >= 0; i--) {
+    const node = path[i]!;
+    const handler = node.handlers[type];
     if (handler) {
       const result = handler(event, window, cx);
       if (result?.stopPropagation) {

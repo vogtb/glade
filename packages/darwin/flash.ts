@@ -4,7 +4,7 @@
  * Bridges a WebGPUContext to Flash's FlashPlatform interface.
  */
 
-import type { WebGPUContext, CursorStyle, Clipboard, CharEvent } from "@glade/core";
+import type { WebGPUContext, CursorStyle, Clipboard, CharEvent, TextInputEvent } from "@glade/core";
 import type { FlashPlatform, FlashRenderTarget, Modifiers, DecodedImageData } from "@glade/flash";
 import { coreModsToFlashMods } from "@glade/flash";
 import { decodePNG, decodeJPEG } from "./image";
@@ -283,6 +283,34 @@ class DarwinRenderTarget implements FlashRenderTarget {
 
   onChar(callback: (event: CharEvent) => void): () => void {
     return this.ctx.onChar((event) => {
+      callback(event);
+    });
+  }
+
+  onTextInput(callback: (event: TextInputEvent) => void): () => void {
+    return this.ctx.onTextInput((event) => {
+      callback(event);
+    });
+  }
+
+  onCompositionStart(
+    callback: (event: import("@glade/core").CompositionEvent) => void
+  ): () => void {
+    return this.ctx.onCompositionStart((event) => {
+      callback(event);
+    });
+  }
+
+  onCompositionUpdate(
+    callback: (event: import("@glade/core").CompositionEvent) => void
+  ): () => void {
+    return this.ctx.onCompositionUpdate((event) => {
+      callback(event);
+    });
+  }
+
+  onCompositionEnd(callback: (event: import("@glade/core").CompositionEvent) => void): () => void {
+    return this.ctx.onCompositionEnd((event) => {
       callback(event);
     });
   }

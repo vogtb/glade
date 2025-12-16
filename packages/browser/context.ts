@@ -14,6 +14,8 @@ import {
   type FocusCallback,
   type CursorEnterCallback,
   type RefreshCallback,
+  type CompositionCallback,
+  type TextInputCallback,
 } from "@glade/core/events";
 import { createClipboard } from "./clipboard.ts";
 
@@ -429,6 +431,62 @@ export async function createWebGPUContext(
     onRefresh(_callback: RefreshCallback): () => void {
       // Browser handles refresh automatically, no-op
       return () => {};
+    },
+
+    onCompositionStart(callback: CompositionCallback): () => void {
+      const handle = (event: globalThis.CompositionEvent) => {
+        const text = event.data ?? "";
+        const selection = text.length;
+        callback({ text, selectionStart: selection, selectionEnd: selection });
+      };
+      canvas.addEventListener("compositionstart", handle);
+      return () => {
+        canvas.removeEventListener("compositionstart", handle);
+      };
+    },
+
+    onCompositionUpdate(callback: CompositionCallback): () => void {
+      const handle = (event: globalThis.CompositionEvent) => {
+        const text = event.data ?? "";
+        const selection = text.length;
+        callback({ text, selectionStart: selection, selectionEnd: selection });
+      };
+      canvas.addEventListener("compositionupdate", handle);
+      return () => {
+        canvas.removeEventListener("compositionupdate", handle);
+      };
+    },
+
+    onCompositionEnd(callback: CompositionCallback): () => void {
+      const handle = (event: globalThis.CompositionEvent) => {
+        const text = event.data ?? "";
+        const selection = text.length;
+        callback({ text, selectionStart: selection, selectionEnd: selection });
+      };
+      canvas.addEventListener("compositionend", handle);
+      return () => {
+        canvas.removeEventListener("compositionend", handle);
+      };
+    },
+
+    onTextInput(callback: TextInputCallback): () => void {
+      const handle = (event: InputEvent) => {
+        const isInsertText =
+          event.inputType === "insertText" || event.inputType === "insertCompositionText";
+        if (!isInsertText) {
+          return;
+        }
+        const text = event.data ?? "";
+        if (text.length === 0) {
+          return;
+        }
+        callback({ text, isComposing: event.isComposing });
+        event.preventDefault();
+      };
+      canvas.addEventListener("beforeinput", handle);
+      return () => {
+        canvas.removeEventListener("beforeinput", handle);
+      };
     },
 
     setCursor(style: CursorStyle): void {

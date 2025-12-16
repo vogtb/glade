@@ -23,7 +23,7 @@ import type {
 } from "./types.ts";
 import { createScrollState, clampScrollOffset } from "./types.ts";
 import { CursorStyle } from "@glade/core/events.ts";
-import type { Clipboard, CharEvent } from "@glade/core";
+import type { Clipboard, CharEvent, CompositionEvent, TextInputEvent } from "@glade/core";
 import type { FlashViewHandle, ScrollHandle } from "./entity.ts";
 import { FocusHandle } from "./entity.ts";
 import type {
@@ -49,6 +49,7 @@ import {
   dispatchScrollEvent,
   dispatchKeyEvent,
   dispatchTextInputEvent,
+  dispatchCompositionEvent,
   buildKeyContextChain,
   getFocusedPath,
   type FlashKeyEvent,
@@ -155,6 +156,14 @@ export interface FlashRenderTarget {
   onResize?(callback: (width: number, height: number) => void): () => void;
   onKey?(callback: (event: import("@glade/core").KeyEvent) => void): () => void;
   onChar?(callback: (event: import("@glade/core").CharEvent) => void): () => void;
+  onCompositionStart?(
+    callback: (event: import("@glade/core").CompositionEvent) => void
+  ): () => void;
+  onCompositionUpdate?(
+    callback: (event: import("@glade/core").CompositionEvent) => void
+  ): () => void;
+  onCompositionEnd?(callback: (event: import("@glade/core").CompositionEvent) => void): () => void;
+  onTextInput?(callback: (event: import("@glade/core").TextInputEvent) => void): () => void;
 
   setCursor?(style: CursorStyle): void;
 
@@ -1308,9 +1317,37 @@ export class FlashWindow {
       this.eventCleanups.push(cleanup);
     }
 
-    if (target.onChar) {
-      const cleanup = target.onChar((event: CharEvent) => {
-        this.handleCharEvent(event);
+    if (target.onTextInput) {
+      const cleanup = target.onTextInput((event: TextInputEvent) => {
+        this.handleTextInputEvent(event);
+      });
+      this.eventCleanups.push(cleanup);
+    } else {
+      if (target.onChar) {
+        const cleanup = target.onChar((event: CharEvent) => {
+          this.handleCharEvent(event);
+        });
+        this.eventCleanups.push(cleanup);
+      }
+    }
+
+    if (target.onCompositionStart) {
+      const cleanup = target.onCompositionStart((event: CompositionEvent) => {
+        this.handleCompositionEvent("compositionStart", event);
+      });
+      this.eventCleanups.push(cleanup);
+    }
+
+    if (target.onCompositionUpdate) {
+      const cleanup = target.onCompositionUpdate((event: CompositionEvent) => {
+        this.handleCompositionEvent("compositionUpdate", event);
+      });
+      this.eventCleanups.push(cleanup);
+    }
+
+    if (target.onCompositionEnd) {
+      const cleanup = target.onCompositionEnd((event: CompositionEvent) => {
+        this.handleCompositionEvent("compositionEnd", event);
       });
       this.eventCleanups.push(cleanup);
     }
@@ -1406,6 +1443,13 @@ export class FlashWindow {
   }
 
   private handleCharEvent(event: CharEvent): void {
+    this.handleTextInputEvent({
+      text: event.char,
+      isComposing: false,
+    });
+  }
+
+  private handleTextInputEvent(event: TextInputEvent): void {
     const cx = this.getContext();
     const currentFocusId = this.getCurrentFocusId();
     let path = getFocusedPath(this.hitTestTree, currentFocusId);
@@ -1414,11 +1458,31 @@ export class FlashWindow {
     }
 
     const textEvent: FlashTextInputEvent = {
-      codepoint: event.codepoint,
-      text: event.char,
+      text: event.text,
+      isComposing: event.isComposing,
     };
 
     dispatchTextInputEvent(textEvent, path, this, cx);
+  }
+
+  private handleCompositionEvent(
+    type: "compositionStart" | "compositionUpdate" | "compositionEnd",
+    event: CompositionEvent
+  ): void {
+    const cx = this.getContext();
+    const currentFocusId = this.getCurrentFocusId();
+    let path = getFocusedPath(this.hitTestTree, currentFocusId);
+    if (path.length === 0) {
+      path = hitTest(this.hitTestTree, this.mousePosition);
+    }
+
+    const flashEvent = {
+      text: event.text,
+      selectionStart: event.selectionStart,
+      selectionEnd: event.selectionEnd,
+    };
+
+    dispatchCompositionEvent(type, flashEvent, path, this, cx);
   }
 
   private createRequestLayoutContext(elementId: GlobalElementId): RequestLayoutContext {

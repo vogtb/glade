@@ -90,6 +90,28 @@ export interface CursorEnterEvent {
   entered: boolean;
 }
 
+/**
+ * Composition (IME) event payload.
+ */
+export interface CompositionEvent {
+  /** Current composition text (empty for start) */
+  text: string;
+  /** Selection start within the composition string */
+  selectionStart: number;
+  /** Selection end within the composition string */
+  selectionEnd: number;
+}
+
+/**
+ * Committed text input payload (post-composition).
+ */
+export interface TextInputEvent {
+  /** Text to insert */
+  text: string;
+  /** Whether the text is being inserted as part of an active composition */
+  isComposing: boolean;
+}
+
 // Callback type definitions
 export type KeyCallback = (event: KeyEvent) => void;
 export type CharCallback = (event: CharEvent) => void;
@@ -101,6 +123,8 @@ export type CloseCallback = () => void;
 export type FocusCallback = (event: FocusEvent) => void;
 export type CursorEnterCallback = (event: CursorEnterEvent) => void;
 export type RefreshCallback = () => void;
+export type CompositionCallback = (event: CompositionEvent) => void;
+export type TextInputCallback = (event: TextInputEvent) => void;
 
 /**
  * Cursor style constants matching CSS cursor values.
@@ -137,5 +161,9 @@ export interface EventTarget {
   onFocus(callback: FocusCallback): () => void;
   onCursorEnter(callback: CursorEnterCallback): () => void;
   onRefresh(callback: RefreshCallback): () => void;
+  onCompositionStart(callback: CompositionCallback): () => void;
+  onCompositionUpdate(callback: CompositionCallback): () => void;
+  onCompositionEnd(callback: CompositionCallback): () => void;
+  onTextInput(callback: TextInputCallback): () => void;
   setCursor(style: CursorStyle): void;
 }
