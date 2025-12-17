@@ -8,17 +8,6 @@
     ".": {
       "types": "./ts/shaper.ts",
       "default": "./ts/shaper.ts"
-    },
-    "./embed": {
-      "types": "./ts/embed.ts",
-      "default": "./ts/embed.ts"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "embed": [
-        "./ts/embed.ts"
-      ]
     }
   },
   "files": [
@@ -30,5 +19,8 @@
     "build": "bun run build:wasm",
     "typecheck": "bunx tsc --noEmit",
     "clean": "rm -rf pkg"
+  },
+  "dependencies": {
+    "@glade/comptime": "workspace:*"
   }
 }

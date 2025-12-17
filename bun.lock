@@ -5,14 +5,14 @@
     "": {
       "name": "glade",
       "devDependencies": {
-        "@eslint/js": "^9.39.1",
+        "@eslint/js": "9.39.1",
         "@types/bun": "latest",
-        "@webgpu/types": "^0.1.67",
-        "eslint": "^9.39.1",
-        "globals": "^16.5.0",
-        "prettier": "^3.7.4",
+        "@webgpu/types": "0.1.67",
+        "eslint": "9.39.1",
+        "globals": "16.5.0",
+        "prettier": "3.7.4",
         "typescript": "5.7.2",
-        "typescript-eslint": "^8.48.1",
+        "typescript-eslint": "8.48.1",
       },
     },
     "packages/browser": {
@@ -22,6 +22,10 @@
         "@glade/core": "workspace:*",
         "@glade/flash": "workspace:*",
       },
+    },
+    "packages/comptime": {
+      "name": "@glade/comptime",
+      "version": "0.0.1",
     },
     "packages/core": {
       "name": "@glade/core",
@@ -51,6 +55,7 @@
       "name": "@glade/demos",
       "version": "0.0.1",
       "dependencies": {
+        "@glade/comptime": "workspace:*",
         "@glade/core": "workspace:*",
         "@glade/flash": "workspace:*",
         "@glade/platform": "workspace:*",
@@ -76,6 +81,9 @@
     "packages/layout": {
       "name": "@glade/layout",
       "version": "0.0.1",
+      "dependencies": {
+        "@glade/comptime": "workspace:*",
+      },
     },
     "packages/platform": {
       "name": "@glade/platform",
@@ -89,10 +97,16 @@
     "packages/shaper": {
       "name": "@glade/shaper",
       "version": "0.0.1",
+      "dependencies": {
+        "@glade/comptime": "workspace:*",
+      },
     },
     "packages/svg": {
       "name": "@glade/svg",
       "version": "0.0.1",
+      "dependencies": {
+        "@glade/comptime": "workspace:*",
+      },
     },
   },
   "packages": {
@@ -115,6 +129,8 @@
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
 
     "@glade/browser": ["@glade/browser@workspace:packages/browser"],
+
+    "@glade/comptime": ["@glade/comptime@workspace:packages/comptime"],
 
     "@glade/core": ["@glade/core@workspace:packages/core"],
 

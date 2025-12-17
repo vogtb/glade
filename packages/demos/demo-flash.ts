@@ -39,28 +39,30 @@ import {
   type Point,
   Key,
 } from "@glade/flash";
-import { embedAsBase64 } from "./embed" with { type: "macro" };
+import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed fonts as base64 at build time via Bun macro
-const interFontBase64 = embedAsBase64("../../assets/InterVariable.ttf") as unknown as string;
-const notoColorEmojiBase64 = embedAsBase64(
+const interFontBase64 = COMPTIME_embedAsBase64(
+  "../../assets/InterVariable.ttf"
+) as unknown as string;
+const notoColorEmojiBase64 = COMPTIME_embedAsBase64(
   "../../assets/NotoColorEmoji-Regular.ttf"
 ) as unknown as string;
-const jetBrainsMonoRegularBase64 = embedAsBase64(
+const jetBrainsMonoRegularBase64 = COMPTIME_embedAsBase64(
   "../../assets/JetBrainsMono-Regular.ttf"
 ) as unknown as string;
-const jetBrainsMonoSemiBoldBase64 = embedAsBase64(
+const jetBrainsMonoSemiBoldBase64 = COMPTIME_embedAsBase64(
   "../../assets/JetBrainsMono-SemiBold.ttf"
 ) as unknown as string;
 
 const emojiFontFamily = "Noto Color Emoji";
 
 // Embed images as base64 at build time
-const demoPngBase64 = embedAsBase64("../../assets/image.png") as unknown as string;
-const flowerJpgBase64 = embedAsBase64("../../assets/flower.jpg") as unknown as string;
+const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png") as unknown as string;
+const flowerJpgBase64 = COMPTIME_embedAsBase64("../../assets/flower.jpg") as unknown as string;
 
 // Embed SVG as base64 at build time
-const gearSvgBase64 = embedAsBase64("../../assets/gear.svg") as unknown as string;
+const gearSvgBase64 = COMPTIME_embedAsBase64("../../assets/gear.svg") as unknown as string;
 
 // Global image tiles - set after window is created
 let demoImageTile: ImageTile | null = null;

@@ -173,6 +173,11 @@ export type {
   TextInputHistory,
   TextInputState,
   TextInputStateInit,
+  TextHitTestResult,
+  SelectionBehavior,
+  SelectionAnchor,
+  PointerSelectionSession,
+  TextSelectionRect,
 } from "./text.ts";
 export {
   createTextInputState,
@@ -186,6 +191,16 @@ export {
   setFocused,
   setPreferredCaretX,
   normalizeSelection,
+  applyHitTestSelection,
+  selectWordAtHit,
+  selectLineAtHit,
+  beginSelection,
+  updateSelectionWithAnchor,
+  startPointerSelection,
+  updatePointerSelection,
+  computeRangeRects,
+  computeSelectionRects,
+  computeCompositionRects,
 } from "./text.ts";
 
 // Event dispatch

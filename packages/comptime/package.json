@@ -1,0 +1,10 @@
+{
+  "name": "@glade/comptime",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "comptime.ts",
+  "types": "comptime.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

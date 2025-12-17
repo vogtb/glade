@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@glade/comptime": "workspace:*",
     "@glade/core": "workspace:*",
     "@glade/flash": "workspace:*",
     "@glade/platform": "workspace:*"

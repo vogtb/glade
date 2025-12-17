@@ -28,10 +28,12 @@ import {
   multiplyTransform,
   type TransformationMatrix,
 } from "@glade/flash";
-import { embedAsBase64 } from "./embed" with { type: "macro" };
+import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed font as base64 at build time via Bun macro
-const interFontBase64 = embedAsBase64("../../assets/InterVariable.ttf") as unknown as string;
+const interFontBase64 = COMPTIME_embedAsBase64(
+  "../../assets/InterVariable.ttf"
+) as unknown as string;
 
 /**
  * Decode base64 to Uint8Array (works in both browser and Node/Bun)

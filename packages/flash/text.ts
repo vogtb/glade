@@ -591,6 +591,114 @@ export class TextSystem {
   }
 
   /**
+   * Hit-test a point against laid-out text and return the nearest caret index.
+   * Coordinates are relative to the text origin (same origin passed to rendering).
+   */
+  hitTestTextPosition(
+    text: string,
+    point: { x: number; y: number },
+    fontSize: number,
+    lineHeight: number,
+    fontFamily: string,
+    maxWidth?: number,
+    style?: FontStyle
+  ): TextHitTestResult {
+    const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+    const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
+    const lines =
+      effectiveMaxWidth !== undefined
+        ? this.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines
+        : [
+            {
+              glyphs: this.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
+              width: this.measureText(text, fontSize, lineHeight, undefined, effectiveStyle).width,
+              y: 0,
+              lineHeight,
+            },
+          ];
+
+    if (lines.length === 0) {
+      return {
+        index: 0,
+        lineIndex: 0,
+        lineStartIndex: 0,
+        lineEndIndex: 0,
+        caretX: 0,
+        caretY: 0,
+        lineTop: 0,
+        lineHeight,
+      };
+    }
+
+    const byteToUtf16Index = buildByteToUtf16Index(text);
+
+    const lastLine = lines[lines.length - 1]!;
+    const clampedY = clamp(point.y, 0, lastLine.y + lastLine.lineHeight);
+    let lineIndex = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const top = lines[i]!.y;
+      const bottom = top + lines[i]!.lineHeight;
+      if (clampedY >= top && clampedY <= bottom) {
+        lineIndex = i;
+        break;
+      }
+      if (clampedY > bottom) {
+        lineIndex = i;
+      }
+    }
+
+    const line = lines[lineIndex]!;
+    const localX = point.x;
+    let caretIndex = 0;
+    let caretX = 0;
+    let lineStartIndex = 0;
+    let lineEndIndex = text.length;
+
+    if (line.glyphs.length === 0) {
+      caretIndex = lineIndex === lines.length - 1 ? text.length : 0;
+      caretX = 0;
+      lineStartIndex = caretIndex;
+      lineEndIndex = caretIndex;
+    } else {
+      lineStartIndex = findLineStartIndex(line.glyphs, byteToUtf16Index);
+      lineEndIndex = findLineEndIndex(line.glyphs, byteToUtf16Index, text.length);
+      const firstStart = byteToUtf16Index.get(line.glyphs[0]!.start);
+      caretIndex = firstStart ?? 0;
+      caretX = localX <= 0 ? 0 : line.width;
+
+      for (let i = 0; i < line.glyphs.length; i++) {
+        const glyph = line.glyphs[i]!;
+        const startIndex = byteToUtf16Index.get(glyph.start);
+        const endIndex = byteToUtf16Index.get(glyph.end);
+        if (startIndex === undefined || endIndex === undefined) {
+          continue;
+        }
+        const glyphStartX = glyph.x;
+        const glyphEndX = glyph.x + glyph.xAdvance;
+        const mid = glyphStartX + (glyphEndX - glyphStartX) * 0.5;
+        if (localX < mid) {
+          caretIndex = startIndex;
+          caretX = glyphStartX;
+          break;
+        }
+        caretIndex = endIndex;
+        caretX = glyphEndX;
+      }
+    }
+
+    return {
+      index: caretIndex,
+      lineIndex,
+      lineStartIndex,
+      lineEndIndex,
+      caretX,
+      caretY: line.y,
+      lineTop: line.y,
+      lineHeight: line.lineHeight,
+    };
+  }
+
+  /**
    * Get the glyph atlas.
    */
   getAtlas(): GlyphAtlas {
@@ -1142,6 +1250,17 @@ export type TextInputStateInit = {
   historyLimit?: number;
 };
 
+export type TextHitTestResult = {
+  index: number;
+  lineIndex: number;
+  lineStartIndex: number;
+  lineEndIndex: number;
+  caretX: number;
+  caretY: number;
+  lineTop: number;
+  lineHeight: number;
+};
+
 export function createTextInputState(init: TextInputStateInit = {}): TextInputState {
   const value = init.value ?? "";
   const selection = normalizeSelection(
@@ -1262,6 +1381,88 @@ export function clamp(value: number, min: number, max: number): number {
     return max;
   }
   return value;
+}
+
+function buildByteToUtf16Index(text: string): Map<number, number> {
+  const map = new Map<number, number>();
+  let byteOffset = 0;
+  for (let i = 0; i < text.length; ) {
+    const codePoint = text.codePointAt(i);
+    if (codePoint === undefined) {
+      break;
+    }
+    const byteLength = utf8Length(codePoint);
+    for (let b = 0; b < byteLength; b++) {
+      map.set(byteOffset + b, i);
+    }
+    byteOffset += byteLength;
+    i += codePoint > 0xffff ? 2 : 1;
+  }
+  map.set(byteOffset, text.length);
+  return map;
+}
+
+function findLineStartIndex(glyphs: ShapedGlyph[], map: Map<number, number>): number {
+  if (glyphs.length === 0) {
+    return 0;
+  }
+  let min = Number.POSITIVE_INFINITY;
+  for (const glyph of glyphs) {
+    const start = map.get(glyph.start);
+    if (start !== undefined && start < min) {
+      min = start;
+    }
+  }
+  return Number.isFinite(min) ? min : 0;
+}
+
+function findLineEndIndex(
+  glyphs: ShapedGlyph[],
+  map: Map<number, number>,
+  fallback: number
+): number {
+  if (glyphs.length === 0) {
+    return fallback;
+  }
+  let max = -1;
+  for (const glyph of glyphs) {
+    const end = map.get(glyph.end);
+    if (end !== undefined && end > max) {
+      max = end;
+    }
+  }
+  return max >= 0 ? max : fallback;
+}
+
+function caretXAtIndex(
+  line: { glyphs: ShapedGlyph[]; width: number },
+  map: Map<number, number>,
+  index: number,
+  _textLength: number
+): number {
+  let lastX = 0;
+  for (const glyph of line.glyphs) {
+    const startIndex = map.get(glyph.start);
+    const endIndex = map.get(glyph.end);
+    if (startIndex === undefined || endIndex === undefined) {
+      continue;
+    }
+    const startX = glyph.x;
+    const endX = glyph.x + glyph.xAdvance;
+    if (index <= startIndex) {
+      return startX;
+    }
+    if (index <= endIndex) {
+      const span = endIndex - startIndex;
+      if (span <= 0) {
+        return startX;
+      }
+      const t = (index - startIndex) / span;
+      return startX + (endX - startX) * t;
+    }
+    lastX = endX;
+  }
+  return Number.isFinite(line.width) ? line.width : lastX;
 }
 
 function graphemeBreaks(text: string): number[] {
@@ -1571,4 +1772,235 @@ export function cutSelectedText(state: TextInputState): string {
   }
   applyValueChange(state, state.selection.start, state.selection.end, "");
   return text;
+}
+
+export function applyHitTestSelection(
+  state: TextInputState,
+  hit: TextHitTestResult,
+  extendSelection: boolean
+): void {
+  if (extendSelection) {
+    state.selection = { start: state.selection.start, end: hit.index };
+  } else {
+    state.selection = { start: hit.index, end: hit.index };
+  }
+  state.composition = null;
+  state.preferredCaretX = hit.caretX;
+}
+
+export function selectWordAtHit(state: TextInputState, text: string, hit: TextHitTestResult): void {
+  const start = findWordBoundaryLeft(text, hit.index);
+  const end = findWordBoundaryRight(text, hit.index);
+  state.selection = { start, end };
+  state.composition = null;
+  state.preferredCaretX = hit.caretX;
+}
+
+export function selectLineAtHit(state: TextInputState, hit: TextHitTestResult): void {
+  const start = hit.lineStartIndex;
+  const end = hit.lineEndIndex;
+  state.selection = { start, end };
+  state.composition = null;
+  state.preferredCaretX = hit.caretX;
+}
+
+export type SelectionBehavior = "caret" | "word" | "line";
+
+export type SelectionAnchor = {
+  start: number;
+  end: number;
+  behavior: SelectionBehavior;
+};
+
+export type PointerSelectionSession = {
+  anchor: SelectionAnchor;
+};
+
+export type TextSelectionRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+function rangeForBehavior(
+  text: string,
+  hit: TextHitTestResult,
+  behavior: SelectionBehavior
+): SelectionRange {
+  if (behavior === "word") {
+    return {
+      start: findWordBoundaryLeft(text, hit.index),
+      end: findWordBoundaryRight(text, hit.index),
+    };
+  }
+  if (behavior === "line") {
+    return { start: hit.lineStartIndex, end: hit.lineEndIndex };
+  }
+  return { start: hit.index, end: hit.index };
+}
+
+export function beginSelection(
+  state: TextInputState,
+  text: string,
+  hit: TextHitTestResult,
+  behavior: SelectionBehavior
+): SelectionAnchor {
+  const range = rangeForBehavior(text, hit, behavior);
+  state.selection = range;
+  state.composition = null;
+  state.preferredCaretX = hit.caretX;
+  return { start: range.start, end: range.end, behavior };
+}
+
+export function updateSelectionWithAnchor(
+  state: TextInputState,
+  text: string,
+  hit: TextHitTestResult,
+  anchor: SelectionAnchor
+): void {
+  const range = rangeForBehavior(text, hit, anchor.behavior);
+  const start = Math.min(anchor.start, range.start);
+  const end = Math.max(anchor.end, range.end);
+  state.selection = { start, end };
+  state.composition = null;
+  state.preferredCaretX = hit.caretX;
+}
+
+export function startPointerSelection(
+  state: TextInputState,
+  text: string,
+  hit: TextHitTestResult,
+  opts: { shiftExtend: boolean; clickCount: number }
+): PointerSelectionSession {
+  const behavior: SelectionBehavior =
+    opts.clickCount >= 3 ? "line" : opts.clickCount === 2 ? "word" : "caret";
+  if (opts.shiftExtend) {
+    const anchor: SelectionAnchor = {
+      start: state.selection.start,
+      end: state.selection.end,
+      behavior,
+    };
+    updateSelectionWithAnchor(state, text, hit, anchor);
+    return { anchor };
+  }
+  const anchor = beginSelection(state, text, hit, behavior);
+  return { anchor };
+}
+
+export function updatePointerSelection(
+  state: TextInputState,
+  text: string,
+  hit: TextHitTestResult,
+  session: PointerSelectionSession
+): void {
+  updateSelectionWithAnchor(state, text, hit, session.anchor);
+}
+
+/**
+ * Compute selection rectangles for a given range.
+ */
+export function computeRangeRects(
+  text: string,
+  range: SelectionRange,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  maxWidth?: number,
+  style?: FontStyle
+): TextSelectionRect[] {
+  const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+  const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
+  const shaper = createTextShaper();
+  const lines =
+    effectiveMaxWidth !== undefined
+      ? shaper.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines
+      : [
+          {
+            glyphs: shaper.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
+            width: shaper.measureText(text, fontSize, lineHeight, undefined, effectiveStyle).width,
+            y: 0,
+            lineHeight,
+          },
+        ];
+
+  if (lines.length === 0) {
+    return [];
+  }
+
+  const byteToUtf16Index = buildByteToUtf16Index(text);
+  const rects: TextSelectionRect[] = [];
+  const startIndex = Math.min(range.start, range.end);
+  const endIndex = Math.max(range.start, range.end);
+
+  for (const line of lines) {
+    const lineStart = findLineStartIndex(line.glyphs, byteToUtf16Index);
+    const lineEnd = findLineEndIndex(line.glyphs, byteToUtf16Index, text.length);
+
+    const overlapStart = Math.max(startIndex, lineStart);
+    const overlapEnd = Math.min(endIndex, lineEnd);
+    if (overlapStart >= overlapEnd) {
+      continue;
+    }
+
+    const xStart = caretXAtIndex(line, byteToUtf16Index, overlapStart, text.length);
+    const xEnd = caretXAtIndex(line, byteToUtf16Index, overlapEnd, text.length);
+
+    rects.push({
+      x: Math.min(xStart, xEnd),
+      y: line.y,
+      width: Math.abs(xEnd - xStart),
+      height: line.lineHeight,
+    });
+  }
+
+  return rects;
+}
+
+export function computeSelectionRects(
+  state: TextInputState,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  maxWidth?: number,
+  style?: FontStyle
+): TextSelectionRect[] {
+  if (state.selection.start === state.selection.end) {
+    return [];
+  }
+  return computeRangeRects(
+    state.value,
+    state.selection,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style
+  );
+}
+
+export function computeCompositionRects(
+  state: TextInputState,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  maxWidth?: number,
+  style?: FontStyle
+): TextSelectionRect[] {
+  if (!state.composition || state.composition.text.length === 0) {
+    return [];
+  }
+  const compositionRange: SelectionRange = {
+    start: state.composition.start,
+    end: state.composition.start + state.composition.text.length,
+  };
+  return computeRangeRects(
+    state.value,
+    compositionRange,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style
+  );
 }
