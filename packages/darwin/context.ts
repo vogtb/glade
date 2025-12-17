@@ -535,6 +535,10 @@ export async function createWebGPUContext(
       const cleanup = glfw.setWindowFocusCallback(window, (_win, focused) => {
         if (focused !== 0 && imeHandle) {
           imeHandle.makeFirstResponder();
+        } else if (focused === 0 && compositionActive) {
+          // Ensure we end any in-flight composition when focus leaves the window
+          emitComposition("end", "", 0, 0);
+          compositionActive = false;
         }
         callback({ focused: focused !== 0 });
       });

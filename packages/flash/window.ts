@@ -1220,6 +1220,21 @@ export class FlashWindow {
             this.pendingDragStart = null;
           }
         }
+
+        const event: FlashMouseEvent = {
+          x,
+          y,
+          button: 0,
+          modifiers: { shift: false, ctrl: false, alt: false, meta: false },
+        };
+        let path = hitTest(this.hitTestTree, { x, y });
+        if (this.mouseDown && path.length === 0) {
+          const focusedPath = getFocusedPath(this.hitTestTree, this.getCurrentFocusId());
+          if (focusedPath.length > 0) {
+            path = focusedPath;
+          }
+        }
+        dispatchMouseEvent("mouseMove", event, path, this, this.getContext());
       });
       this.eventCleanups.push(cleanup);
     }

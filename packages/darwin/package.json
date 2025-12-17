@@ -5,7 +5,8 @@
   "main": "darwin.ts",
   "types": "darwin.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:ime": "clang -ObjC -fobjc-arc -framework Cocoa -shared ime_handler.m -o ../../vendor/ime_handler.dylib"
   },
   "dependencies": {
     "@glade/core": "workspace:*",

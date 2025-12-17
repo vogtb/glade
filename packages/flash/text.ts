@@ -19,6 +19,15 @@ import type { Color } from "./types.ts";
 import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 
+let sharedTextShaper: TextShaper | null = null;
+
+function getSharedTextShaper(): TextShaper {
+  if (!sharedTextShaper) {
+    sharedTextShaper = createTextShaper();
+  }
+  return sharedTextShaper;
+}
+
 /**
  * Rasterized glyph data for atlas upload.
  */
@@ -588,7 +597,23 @@ export class TextSystem {
     maxWidth?: number,
     style?: FontStyle
   ): { width: number; height: number } {
-    return this.shaper.measureText(text, fontSize, lineHeight, maxWidth, style ?? {});
+    const safeFontSize = fontSize > 0 ? fontSize : 1;
+    const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
+    const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
+    const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
+    try {
+      return this.shaper.measureText(
+        text,
+        safeFontSize,
+        safeLineHeight,
+        effectiveMaxWidth,
+        style ?? {}
+      );
+    } catch {
+      // Fallback to simple estimate to avoid crashing the app.
+      const width = Math.max(text.length * safeFontSize * 0.6, 1);
+      return { width, height: safeLineHeight };
+    }
   }
 
   /**
@@ -604,22 +629,45 @@ export class TextSystem {
     maxWidth?: number,
     style?: FontStyle
   ): TextHitTestResult {
+    const safeFontSize = fontSize > 0 ? fontSize : 1;
+    const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
     const effectiveStyle: FontStyle = { ...style, family: fontFamily };
-    const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
-    const lines =
-      effectiveMaxWidth !== undefined
-        ? this.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines
-        : [
-            {
-              glyphs: this.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
-              width: this.measureText(text, fontSize, lineHeight, undefined, effectiveStyle).width,
-              y: 0,
-              lineHeight,
-            },
-          ];
+    const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
+    const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
+    let lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
+
+    try {
+      lines =
+        effectiveMaxWidth !== undefined
+          ? this.layoutText(text, safeFontSize, safeLineHeight, effectiveMaxWidth, effectiveStyle)
+              .lines
+          : [
+              {
+                glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
+                width: this.measureText(
+                  text,
+                  safeFontSize,
+                  safeLineHeight,
+                  undefined,
+                  effectiveStyle
+                ).width,
+                y: 0,
+                lineHeight: safeLineHeight,
+              },
+            ];
+    } catch {
+      lines = [
+        {
+          glyphs: [],
+          width: effectiveMaxWidth ?? Math.max(text.length * safeFontSize * 0.6, 1),
+          y: 0,
+          lineHeight: safeLineHeight,
+        },
+      ];
+    }
 
     const byteToUtf16Index = buildByteToUtf16Index(text);
-    return hitTestLines(text, point, lines, byteToUtf16Index, lineHeight);
+    return hitTestLines(text, point, lines, byteToUtf16Index, safeLineHeight);
   }
 
   /**
@@ -653,26 +701,44 @@ export class TextSystem {
     maxWidth?: number
   ): GlyphInstance[] {
     // Merge fontFamily into style to ensure shaper uses the correct font
+    const safeFontSize = fontSize > 0 ? fontSize : 1;
+    const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
     const effectiveStyle: FontStyle = { ...style, family: fontFamily };
     const instances: GlyphInstance[] = [];
     type GlyphLine = { glyphs: ShapedGlyph[]; y: number; lineHeight: number };
-    const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
-    const glyphLines: GlyphLine[] =
-      effectiveMaxWidth !== undefined
-        ? this.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines.map(
-            (line) => ({
+    const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
+    const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
+    let glyphLines: GlyphLine[];
+    try {
+      glyphLines =
+        effectiveMaxWidth !== undefined
+          ? this.layoutText(
+              text,
+              safeFontSize,
+              safeLineHeight,
+              effectiveMaxWidth,
+              effectiveStyle
+            ).lines.map((line) => ({
               glyphs: line.glyphs,
               y: line.y,
               lineHeight: line.lineHeight,
-            })
-          )
-        : [
-            {
-              glyphs: this.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
-              y: 0,
-              lineHeight,
-            },
-          ];
+            }))
+          : [
+              {
+                glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
+                y: 0,
+                lineHeight: safeLineHeight,
+              },
+            ];
+    } catch {
+      glyphLines = [
+        {
+          glyphs: [],
+          y: 0,
+          lineHeight: safeLineHeight,
+        },
+      ];
+    }
     // cosmic-text reports glyph cluster bounds in UTF-8 byte offsets; map them to UTF-16 indices.
     const byteToUtf16Index = new Map<number, number>();
 
@@ -1378,20 +1444,52 @@ function layoutDecoratedLines(
   lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
   byteToUtf16Index: Map<number, number>;
 } {
+  const safeFontSize = fontSize > 0 ? fontSize : 1;
   const effectiveStyle: FontStyle = { ...style, family: fontFamily };
-  const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
-  const shaper = createTextShaper();
-  const lines =
-    effectiveMaxWidth !== undefined
-      ? shaper.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines
-      : [
-          {
-            glyphs: shaper.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
-            width: shaper.measureText(text, fontSize, lineHeight, undefined, effectiveStyle).width,
-            y: 0,
-            lineHeight,
-          },
-        ];
+  const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
+  // The underlying shaper panics on non-positive or non-finite widths; clamp to at least 1px when provided.
+  const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
+  const effectiveLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
+  const shaper = getSharedTextShaper();
+  const fallbackWidth = Math.max(text.length * safeFontSize * 0.6, 1);
+  let lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
+
+  try {
+    lines =
+      effectiveMaxWidth !== undefined
+        ? shaper.layoutText(
+            text,
+            safeFontSize,
+            effectiveLineHeight,
+            effectiveMaxWidth,
+            effectiveStyle
+          ).lines
+        : [
+            {
+              glyphs: shaper.shapeLine(text, safeFontSize, effectiveLineHeight, effectiveStyle)
+                .glyphs,
+              width: shaper.measureText(
+                text,
+                safeFontSize,
+                effectiveLineHeight,
+                undefined,
+                effectiveStyle
+              ).width,
+              y: 0,
+              lineHeight: effectiveLineHeight,
+            },
+          ];
+  } catch {
+    const safeWidth = Math.max(1, fallbackWidth);
+    lines = [
+      {
+        glyphs: [],
+        width: safeWidth,
+        y: 0,
+        lineHeight: effectiveLineHeight,
+      },
+    ];
+  }
 
   return {
     lines,
@@ -2161,9 +2259,11 @@ export function caretPrimitive(
     }
   }
   const thickness = Math.max(1, opts?.thickness ?? 1);
+  // Align caret to the text baseline by offsetting its top to the line's y position.
+  const caretY = caretRect.y;
   return {
     x: caretRect.x,
-    y: caretRect.y,
+    y: caretY,
     width: thickness,
     height: caretRect.height,
     color,

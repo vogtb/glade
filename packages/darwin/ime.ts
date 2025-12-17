@@ -1,6 +1,7 @@
 import { dlopen, FFIType, JSCallback, type Pointer } from "bun:ffi";
-import { fileURLToPath } from "url";
-import path from "path";
+import fs from "fs";
+// @ts-expect-error - Bun-specific import attribute for embedded dylib
+import IME_HANDLER_PATH from "../../vendor/ime_handler.dylib" with { type: "file" };
 
 export interface ImeHandle {
   detach(): void;
@@ -35,7 +36,13 @@ type ImeLib = {
  * Attempts to load the IME bridge dylib and attach to the given NSWindow.
  */
 export function attachIme(nsWindow: Pointer, callbacks: ImeCallbacks): ImeHandle | null {
-  const libPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "ime_handler.dylib");
+  const libPath = IME_HANDLER_PATH;
+
+  // If the IME bridge isn't present, fail silently.
+  if (!fs.existsSync(libPath)) {
+    console.warn(`IME handler dylib not found at ${libPath}, IME disabled`);
+    return null;
+  }
 
   let lib: ImeLib;
   try {
@@ -48,7 +55,7 @@ export function attachIme(nsWindow: Pointer, callbacks: ImeCallbacks): ImeHandle
       ime_make_first_responder: { args: [FFIType.ptr], returns: FFIType.void },
     }) as unknown as ImeLib;
   } catch (err) {
-    console.error("Failed to load IME handler dylib", err);
+    console.warn("Failed to load IME handler dylib; IME disabled", err);
     return null;
   }
 

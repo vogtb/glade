@@ -125,6 +125,7 @@ const DEMO_BUTTONS: DemoButton[] = [
 
 /**
  * Decode base64 to Uint8Array (works in both browser and Node/Bun)
+ * TODO: put in utils
  */
 function base64ToBytes(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -137,6 +138,7 @@ function base64ToBytes(base64: string): Uint8Array {
 
 /**
  * Decode base64 to string (for SVG files)
+ * TODO: put in utils
  */
 function base64ToString(base64: string): string {
   const bytes = base64ToBytes(base64);
@@ -2613,6 +2615,7 @@ async function main() {
 
   app.run();
 
+  // TODO: We should not need to do this. fix.
   const platformAny = platform as { tick?: (time: number) => void };
   runWebGPURenderLoop(ctx, (time, _deltaTime) => {
     if (platformAny.tick) {

@@ -1,4 +1,4 @@
-import type { Color, Bounds } from "./types.ts";
+import type { Color, Bounds, Point } from "./types.ts";
 import { rgb } from "./types.ts";
 import {
   FlashElement,
@@ -18,9 +18,11 @@ import type {
   TextInputHandler,
   CompositionHandler,
   ClickHandler,
+  DragStartHandler,
 } from "./dispatch.ts";
 import { Key } from "./keyboard.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
+import type { DragPayload, DropHandler, CanDropPredicate } from "./drag.ts";
 import {
   computeCaretRect,
   cutSelectedText,
@@ -65,6 +67,10 @@ import { FlashScene } from "./scene.ts";
 
 export const TEXT_INPUT_CONTEXT = "flash:text-input";
 
+type TextDragPayload = {
+  text: string;
+};
+
 export interface TextInputOptions {
   value?: string;
   placeholder?: string;
@@ -101,6 +107,7 @@ interface TextInputPrepaintState {
   placeholderLayoutId: LayoutId | null;
   bounds: Bounds;
   hitbox: Hitbox | null;
+  hitTestNode: HitTestNode;
 }
 
 interface TextInputPersistentState {
@@ -440,7 +447,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     if (!this.contentBounds || !this.getState().multiline) {
       return undefined;
     }
-    return Math.max(this.contentBounds.width, 0);
+    return Math.max(this.contentBounds.width, 1);
   }
 
   private hitTestPoint(point: { x: number; y: number }): TextHitTestResult | null {
@@ -449,10 +456,16 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     }
     const state = this.getState();
     const text = valueWithComposition(state);
-    const local = {
-      x: point.x - this.contentBounds.x,
-      y: point.y - this.contentBounds.y,
-    };
+    // Clamp to the content bounds so drags just outside still hit-test to edges.
+    const localX = Math.max(
+      0,
+      Math.min(point.x - this.contentBounds.x, Math.max(this.contentBounds.width, 0))
+    );
+    const localY = Math.max(
+      0,
+      Math.min(point.y - this.contentBounds.y, Math.max(this.contentBounds.height, 0))
+    );
+    const local = { x: localX, y: localY };
     const maxWidth = this.contentMaxWidth();
     return hitTestText(text, local, this.fontSize, this.getLineHeight(), this.fontFamily, maxWidth);
   }
@@ -593,6 +606,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     bounds: Bounds,
     requestState: TextInputRequestState
   ): TextInputPrepaintState {
+    const handlers = this.buildHandlers();
     this.contentBounds = {
       x: bounds.x + this.padding.x,
       y: bounds.y + this.padding.y,
@@ -610,6 +624,14 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       placeholderLayoutId: requestState.placeholderLayoutId,
       bounds,
       hitbox,
+      hitTestNode: {
+        bounds,
+        handlers,
+        focusHandle: this.controller.focusHandle ?? null,
+        scrollHandle: null,
+        keyContext: TEXT_INPUT_CONTEXT,
+        children: [],
+      },
     };
   }
 
@@ -770,6 +792,57 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         console.warn("Clipboard read failed:", err);
       });
     return true;
+  }
+
+  private buildDragPayload(): DragPayload<TextDragPayload> | null {
+    if (this.options.readonly) {
+      return null;
+    }
+    const text = getSelectedText(this.getState());
+    if (!text) {
+      return null;
+    }
+    return { data: { text } };
+  }
+
+  private isTextDragPayload(payload: unknown): payload is TextDragPayload {
+    if (typeof payload !== "object" || payload === null) {
+      return false;
+    }
+    const textValue = Reflect.get(payload, "text");
+    return typeof textValue === "string";
+  }
+
+  private handleDropPayload(
+    payload: unknown,
+    position: Point,
+    window: FlashWindow,
+    cx: FlashContext
+  ): void {
+    if (this.options.readonly) {
+      return;
+    }
+    if (!this.isTextDragPayload(payload)) {
+      return;
+    }
+    const hit = this.hitTestPoint(position);
+    if (!hit) {
+      return;
+    }
+    this.ensureFocusHandle(cx, window);
+    if (this.controller.focusHandle) {
+      cx.focus(this.controller.focusHandle);
+    }
+    setFocused(this.getState(), true);
+    setSelection(this.getState(), { start: hit.index, end: hit.index });
+    setPreferredCaretX(this.getState(), hit.caretX);
+    if (this.exceedsMaxLength(payload.text)) {
+      return;
+    }
+    this.controller.insertText(payload.text);
+    this.options.onChange?.(this.getState().value);
+    this.revealCaret(window, cx);
+    this.markDirty(cx, window);
   }
 
   private handleKeyDown: KeyHandler = (event, window, cx) => {
@@ -956,6 +1029,26 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     return undefined;
   };
 
+  private handleDragStart: DragStartHandler<TextDragPayload> = (_event, _window, _cx) => {
+    return this.buildDragPayload();
+  };
+
+  private handleDrop: DropHandler<TextDragPayload> = (
+    payload: TextDragPayload,
+    position: Point,
+    window: FlashWindow,
+    cx: FlashContext
+  ) => {
+    this.handleDropPayload(payload, position, window, cx);
+  };
+
+  private handleCanDrop: CanDropPredicate<TextDragPayload> = (
+    payload: TextDragPayload,
+    _cx: FlashContext
+  ) => {
+    return this.isTextDragPayload(payload);
+  };
+
   private handleClick: ClickHandler = (event, window, cx) => {
     if (event.clickCount < 2) {
       return;
@@ -976,6 +1069,25 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     this.markDirty(cx, window);
     return { stopPropagation: true, preventDefault: true };
   };
+
+  private buildHandlers(): EventHandlers {
+    const handlers: EventHandlers = {
+      keyDown: this.handleKeyDown,
+      mouseDown: this.handleMouseDown,
+      mouseMove: this.handleMouseMove,
+      mouseUp: this.handleMouseUp,
+      click: this.handleClick,
+      textInput: this.handleTextInput,
+      compositionStart: this.handleCompositionStart,
+      compositionUpdate: this.handleCompositionUpdate,
+      compositionEnd: this.handleCompositionEnd,
+      dragStart: this.handleDragStart,
+      drop: this.handleDrop as DropHandler,
+      canDrop: this.handleCanDrop as CanDropPredicate,
+    };
+    this.handlers = handlers;
+    return handlers;
+  }
 
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextInputPrepaintState): void {
     const state = this.getState();
@@ -1032,20 +1144,10 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
   }
 
   hitTest(bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
-    this.handlers = {
-      keyDown: this.handleKeyDown,
-      mouseDown: this.handleMouseDown,
-      mouseMove: this.handleMouseMove,
-      mouseUp: this.handleMouseUp,
-      click: this.handleClick,
-      textInput: this.handleTextInput,
-      compositionStart: this.handleCompositionStart,
-      compositionUpdate: this.handleCompositionUpdate,
-      compositionEnd: this.handleCompositionEnd,
-    };
+    const handlers = this.buildHandlers();
     return {
       bounds,
-      handlers: this.handlers,
+      handlers,
       focusHandle: this.controller.focusHandle ?? null,
       scrollHandle: null,
       keyContext: TEXT_INPUT_CONTEXT,

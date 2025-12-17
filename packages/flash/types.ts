@@ -55,6 +55,10 @@ export function boundsContains(bounds: Bounds, point: Point): boolean {
 
 /**
  * RGBA color with components in 0-1 range.
+ *
+ * TODO: We should probably make Color a string, number, or struct, then use this
+ * for internal representations, which would allow Elements to accept `.color(c)`
+ * with a color arg that is more flexible.
  */
 export interface Color {
   r: number;

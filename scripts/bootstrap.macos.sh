@@ -11,6 +11,10 @@ brew install node@24
 echo "Installing Bun..."
 curl -fsSL https://bun.sh/install | bash
 
+# Installing GH CLI
+echo "Installing Github CLI..."
+brew install gh
+
 # Install Rust
 echo "Installing Rust..."
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
