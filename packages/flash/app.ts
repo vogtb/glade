@@ -5,7 +5,7 @@
  * the render cycle across windows.
  */
 
-import type { EntityId, WindowId, FocusId, FlashTask, ScrollOffset } from "./types.ts";
+import type { EntityId, WindowId, FocusId, FlashTask, ScrollOffset, Bounds } from "./types.ts";
 import {
   FlashHandle,
   FlashViewHandle,
@@ -301,6 +301,11 @@ export class FlashApp {
     return window?.getScrollOffset(handle.id) ?? { x: 0, y: 0 };
   }
 
+  getScrollViewport(handle: ScrollHandle): Bounds {
+    const window = this.windows.get(handle.windowId);
+    return window?.getScrollViewport(handle.id) ?? { x: 0, y: 0, width: 0, height: 0 };
+  }
+
   setScrollOffset(handle: ScrollHandle, offset: ScrollOffset): void {
     const window = this.windows.get(handle.windowId);
     window?.setScrollOffset(handle.id, offset);
@@ -540,6 +545,10 @@ class FlashAppContext implements FlashContext {
 
   getScrollOffset(handle: ScrollHandle): ScrollOffset {
     return this.app.getScrollOffset(handle);
+  }
+
+  getScrollViewport(handle: ScrollHandle): Bounds {
+    return this.app.getScrollViewport(handle);
   }
 
   setScrollOffset(handle: ScrollHandle, offset: ScrollOffset): void {

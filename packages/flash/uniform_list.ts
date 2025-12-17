@@ -364,7 +364,8 @@ export class UniformList<T> extends FlashElement<
       cx.updateScrollContentSize(
         this.scrollHandleRef,
         { width: bounds.width, height: totalHeight },
-        { width: bounds.width, height: bounds.height }
+        { width: bounds.width, height: bounds.height },
+        { x: bounds.x, y: bounds.y }
       );
     }
 

@@ -486,18 +486,19 @@ class DemoRootView implements FlashView {
 
   private renderNavButton(cx: FlashViewContext<this>, btn: DemoButton): FlashDiv {
     const isSelected = this.selectedDemo === btn.id;
-    const baseColor = isSelected ? btn.hoverColor : btn.color;
+    const grayColor = 0x4a4a55;
+    const baseColor = isSelected ? btn.hoverColor : grayColor;
 
     return div()
-      .h(40)
+      .h(26)
       .flexShrink0()
       .bg(rgb(baseColor))
       .rounded(8)
       .cursorPointer()
-      .border(isSelected ? 2 : 0)
-      .borderColor({ r: 1, g: 1, b: 1, a: 0.3 })
-      .hover((s) => s.bg(rgb(btn.hoverColor)).shadow("md"))
-      .active((s) => s.bg(rgb(btn.hoverColor)))
+      .border(2)
+      .borderColor({ r: 1, g: 1, b: 1, a: isSelected ? 0.3 : 0 })
+      .hover((s) => s.bg(rgb(isSelected ? btn.hoverColor : 0x5a5a65)).shadow("md"))
+      .active((s) => s.bg(rgb(isSelected ? btn.hoverColor : 0x5a5a65)))
       .flex()
       .itemsCenter()
       .px(12)
@@ -507,7 +508,9 @@ class DemoRootView implements FlashView {
           ecx.notify();
         })
       )
-      .child(text(btn.label).font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }));
+      .child(
+        text(btn.label).font("Inter").size(12).lineHeight(22).color({ r: 1, g: 1, b: 1, a: 1 })
+      );
   }
 
   private renderContent(cx: FlashViewContext<this>): FlashDiv {
@@ -2559,7 +2562,7 @@ async function main() {
 
   const ctx = await createWebGPUContext({
     width: 1200,
-    height: 900,
+    height: 780,
     title: "Flash App Demo",
   });
 

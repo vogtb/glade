@@ -661,7 +661,8 @@ export class List<T> extends FlashElement<ListRequestState, ListPrepaintState> {
       cx.updateScrollContentSize(
         scrollHandle,
         { width: bounds.width, height: totalHeight },
-        { width: bounds.width, height: bounds.height }
+        { width: bounds.width, height: bounds.height },
+        { x: bounds.x, y: bounds.y }
       );
     }
 

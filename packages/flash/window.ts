@@ -487,6 +487,19 @@ export class FlashWindow {
     return state?.offset ?? { x: 0, y: 0 };
   }
 
+  getScrollViewport(scrollId: ScrollHandleId): Bounds {
+    const state = this.scrollStates.get(scrollId);
+    if (!state) {
+      return { x: 0, y: 0, width: 0, height: 0 };
+    }
+    return {
+      x: state.viewportOrigin.x,
+      y: state.viewportOrigin.y,
+      width: state.viewportSize.width,
+      height: state.viewportSize.height,
+    };
+  }
+
   /**
    * Set the scroll offset for a scroll handle.
    */
@@ -536,7 +549,8 @@ export class FlashWindow {
   updateScrollContentSize(
     scrollId: ScrollHandleId,
     contentSize: { width: number; height: number },
-    viewportSize: { width: number; height: number }
+    viewportSize: { width: number; height: number },
+    viewportOrigin: { x: number; y: number }
   ): void {
     let state = this.scrollStates.get(scrollId);
     if (!state) {
@@ -545,6 +559,7 @@ export class FlashWindow {
     }
     state.contentSize = contentSize;
     state.viewportSize = viewportSize;
+    state.viewportOrigin = viewportOrigin;
     const clamped = clampScrollOffset(state);
     state.offset = clamped;
   }
@@ -1595,9 +1610,10 @@ export class FlashWindow {
       updateScrollContentSize: (
         handle: ScrollHandle,
         contentSize: { width: number; height: number },
-        viewportSize: { width: number; height: number }
+        viewportSize: { width: number; height: number },
+        viewportOrigin: { x: number; y: number }
       ): void => {
-        this.updateScrollContentSize(handle.id, contentSize, viewportSize);
+        this.updateScrollContentSize(handle.id, contentSize, viewportSize, viewportOrigin);
       },
 
       getScrollOffset: (handle: ScrollHandle): ScrollOffset => {

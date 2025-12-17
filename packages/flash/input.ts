@@ -7,10 +7,9 @@ import {
   type PaintContext,
 } from "./element.ts";
 import type { LayoutId } from "./layout.ts";
-import { renderTextDecorations } from "./text_input_render.ts";
-import type { Hitbox } from "./hitbox.ts";
 import type { FlashContext } from "./context.ts";
 import type { FlashWindow } from "./window.ts";
+import type { Hitbox } from "./hitbox.ts";
 import type {
   EventHandlers,
   HitTestNode,
@@ -21,8 +20,7 @@ import type {
   ClickHandler,
 } from "./dispatch.ts";
 import { Key } from "./keyboard.ts";
-import { TextInputController } from "./text_input_controller.ts";
-import type { FocusHandle } from "./entity.ts";
+import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import {
   computeCaretRect,
   cutSelectedText,
@@ -33,9 +31,37 @@ import {
   setFocused,
   setPreferredCaretX,
   valueWithComposition,
+  beginComposition,
+  cancelComposition,
+  commitComposition,
+  createTextInputState,
+  deleteBackward,
+  deleteForward,
+  insertText,
+  moveLeft,
+  moveRight,
+  moveToEnd,
+  moveToStart,
+  moveWordLeft,
+  moveWordRight,
+  redo,
+  selectAll,
+  setSelection,
+  startPointerSelection,
+  undo,
+  updateComposition,
+  updatePointerSelection,
+  selectionPrimitives,
+  compositionUnderlines,
+  caretPrimitive,
+  type PointerSelectionSession,
+  type SelectionRange,
   type TextHitTestResult,
   type TextInputState,
+  type TextInputStateInit,
 } from "./text.ts";
+import type { FontStyle } from "@glade/shaper";
+import { FlashScene } from "./scene.ts";
 
 export const TEXT_INPUT_CONTEXT = "flash:text-input";
 
@@ -59,6 +85,10 @@ export interface TextInputOptions {
   padding?: { x: number; y: number };
   caretBlinkInterval?: number;
   width?: number;
+  scrollHandle?: ScrollHandle;
+  scrollViewport?: Bounds;
+  scrollPadding?: number;
+  onCaretMove?: (caret: Bounds) => void;
 }
 
 interface TextInputRequestState {
@@ -77,6 +107,207 @@ interface TextInputPersistentState {
   controller: TextInputController;
 }
 
+export class TextInputController {
+  readonly state: TextInputState;
+  focusHandle: FocusHandle | null;
+  pointerSelection: PointerSelectionSession | null;
+
+  constructor(init: TextInputStateInit = {}) {
+    this.state = createTextInputState(init);
+    this.focusHandle = null;
+    this.pointerSelection = null;
+  }
+
+  setValue(value: string): void {
+    this.state.value = value;
+    this.state.selection = { start: value.length, end: value.length };
+    this.state.composition = null;
+    this.state.preferredCaretX = null;
+  }
+
+  setSelection(range: SelectionRange): void {
+    setSelection(this.state, range);
+  }
+
+  setFocused(focused: boolean): void {
+    setFocused(this.state, focused);
+  }
+
+  setPreferredCaretX(x: number | null): void {
+    setPreferredCaretX(this.state, x);
+  }
+
+  insertText(text: string): void {
+    insertText(this.state, text);
+  }
+
+  deleteBackward(): void {
+    deleteBackward(this.state);
+  }
+
+  deleteForward(): void {
+    deleteForward(this.state);
+  }
+
+  moveLeft(extendSelection: boolean): void {
+    moveLeft(this.state, extendSelection);
+  }
+
+  moveRight(extendSelection: boolean): void {
+    moveRight(this.state, extendSelection);
+  }
+
+  moveWordLeft(extendSelection: boolean): void {
+    moveWordLeft(this.state, extendSelection);
+  }
+
+  moveWordRight(extendSelection: boolean): void {
+    moveWordRight(this.state, extendSelection);
+  }
+
+  moveToStart(extendSelection: boolean): void {
+    moveToStart(this.state, extendSelection);
+  }
+
+  moveToEnd(extendSelection: boolean): void {
+    moveToEnd(this.state, extendSelection);
+  }
+
+  selectAll(): void {
+    selectAll(this.state);
+  }
+
+  undo(): boolean {
+    return undo(this.state);
+  }
+
+  redo(): boolean {
+    return redo(this.state);
+  }
+
+  beginComposition(): void {
+    beginComposition(this.state);
+  }
+
+  updateComposition(text: string): void {
+    updateComposition(this.state, text);
+  }
+
+  commitComposition(text: string): void {
+    commitComposition(this.state, text);
+  }
+
+  cancelComposition(): void {
+    cancelComposition(this.state);
+  }
+
+  startPointerSelection(
+    text: string,
+    hit: TextHitTestResult,
+    opts: { shiftExtend: boolean; clickCount: number }
+  ): void {
+    this.pointerSelection = startPointerSelection(this.state, text, hit, opts);
+  }
+
+  updatePointerSelection(text: string, hit: TextHitTestResult): void {
+    if (!this.pointerSelection) {
+      return;
+    }
+    updatePointerSelection(this.state, text, hit, this.pointerSelection);
+  }
+
+  endPointerSelection(): void {
+    this.pointerSelection = null;
+  }
+}
+
+export interface TextDecorationOptions {
+  x: number;
+  y: number;
+  fontSize: number;
+  lineHeight: number;
+  fontFamily: string;
+  maxWidth?: number;
+  style?: FontStyle;
+  selectionColor?: Color;
+  compositionColor?: Color;
+  caretColor?: Color;
+  caretThickness?: number;
+  caretBlinkInterval?: number;
+  time?: number;
+}
+
+export function renderTextDecorations(
+  scene: FlashScene,
+  state: TextInputState,
+  options: TextDecorationOptions
+): void {
+  const {
+    x,
+    y,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style,
+    selectionColor,
+    compositionColor,
+    caretColor,
+    caretThickness,
+    caretBlinkInterval,
+    time,
+  } = options;
+
+  if (selectionColor) {
+    const rects = selectionPrimitives(state, selectionColor, fontSize, lineHeight, fontFamily, {
+      maxWidth,
+      style,
+    });
+    for (const rect of rects) {
+      scene.addRect({
+        ...rect,
+        x: rect.x + x,
+        y: rect.y + y,
+      });
+    }
+  }
+
+  if (compositionColor) {
+    const underlines = compositionUnderlines(
+      state,
+      compositionColor,
+      fontSize,
+      lineHeight,
+      fontFamily,
+      { maxWidth, style }
+    );
+    for (const underline of underlines) {
+      scene.addUnderline({
+        ...underline,
+        x: underline.x + x,
+        y: underline.y + y,
+      });
+    }
+  }
+
+  if (caretColor) {
+    const caret = caretPrimitive(state, caretColor, fontSize, lineHeight, fontFamily, {
+      maxWidth,
+      style,
+      thickness: caretThickness,
+      time,
+      blinkInterval: caretBlinkInterval,
+    });
+    if (caret) {
+      scene.addRect({
+        ...caret,
+        x: caret.x + x,
+        y: caret.y + y,
+      });
+    }
+  }
+}
+
 export class FlashTextInput extends FlashElement<TextInputRequestState, TextInputPrepaintState> {
   private options: TextInputOptions;
   private controller: TextInputController;
@@ -88,6 +319,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
   private caretBlinkInterval = 0.8;
   private handlers: EventHandlers = {};
   private contentBounds: Bounds | null = null;
+  private scrollPadding = 8;
 
   constructor(initialValue = "", options: TextInputOptions = {}) {
     super();
@@ -100,6 +332,9 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     }
     if (options.caretBlinkInterval !== undefined) {
       this.caretBlinkInterval = options.caretBlinkInterval;
+    }
+    if (options.scrollPadding !== undefined) {
+      this.scrollPadding = options.scrollPadding;
     }
   }
 
@@ -232,6 +467,58 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     return nextLength > this.options.maxLength;
   }
 
+  private caretRect(): Bounds | null {
+    if (!this.contentBounds) {
+      return null;
+    }
+    const caret = computeCaretRect(
+      this.getState(),
+      this.fontSize,
+      this.getLineHeight(),
+      this.fontFamily,
+      this.contentMaxWidth()
+    );
+    if (!caret) {
+      return null;
+    }
+    return {
+      x: this.contentBounds.x + caret.x,
+      y: this.contentBounds.y + caret.y,
+      width: caret.width,
+      height: caret.height,
+    };
+  }
+
+  private revealCaret(window: FlashWindow, cx: FlashContext): void {
+    const caret = this.caretRect();
+    if (!caret) {
+      return;
+    }
+    this.options.onCaretMove?.(caret);
+    if (!this.options.scrollHandle) {
+      return;
+    }
+    const viewport = this.options.scrollViewport ?? cx.getScrollViewport(this.options.scrollHandle);
+    if (!viewport) {
+      return;
+    }
+    const offset = cx.getScrollOffset(this.options.scrollHandle);
+    const viewportTop = viewport.y;
+    const viewportBottom = viewportTop + viewport.height;
+    const padding = this.scrollPadding;
+    let nextOffsetY = offset.y;
+
+    if (caret.y < viewportTop + padding) {
+      nextOffsetY = Math.max(0, offset.y - (viewportTop + padding - caret.y));
+    } else if (caret.y + caret.height > viewportBottom - padding) {
+      nextOffsetY = offset.y + (caret.y + caret.height - (viewportBottom - padding));
+    }
+
+    if (nextOffsetY !== offset.y) {
+      cx.setScrollOffset(this.options.scrollHandle, { x: offset.x, y: nextOffsetY });
+    }
+  }
+
   requestLayout(
     cx: RequestLayoutContext
   ): import("./element.ts").RequestLayoutResult<TextInputRequestState> {
@@ -342,11 +629,13 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       this.options.onComposition?.({ type: "end", text: event.text });
       this.options.onChange?.(this.getState().value);
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
     this.controller.insertText(event.text);
     this.options.onChange?.(this.getState().value);
     this.markDirty(cx, window);
+    this.revealCaret(window, cx);
     return { stopPropagation: true, preventDefault: true };
   };
 
@@ -357,6 +646,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     this.controller.beginComposition();
     this.options.onComposition?.({ type: "start", text: event.text });
     this.markDirty(cx, window);
+    this.revealCaret(window, cx);
     return { stopPropagation: true, preventDefault: true };
   };
 
@@ -367,6 +657,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     this.controller.updateComposition(event.text);
     this.options.onComposition?.({ type: "update", text: event.text });
     this.markDirty(cx, window);
+    this.revealCaret(window, cx);
     return { stopPropagation: true, preventDefault: true };
   };
 
@@ -380,12 +671,14 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     if (event.text.length === 0) {
       this.controller.cancelComposition();
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
     this.controller.commitComposition(event.text);
     this.options.onComposition?.({ type: "end", text: event.text });
     this.options.onChange?.(this.getState().value);
     this.markDirty(cx, window);
+    this.revealCaret(window, cx);
     return { stopPropagation: true, preventDefault: true };
   };
 
@@ -399,18 +692,18 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     if (!state.multiline) {
       return;
     }
-    const caretRect = computeCaretRect(
+    const caret = computeCaretRect(
       state,
       this.fontSize,
       this.getLineHeight(),
       this.fontFamily,
       this.contentMaxWidth()
     );
-    if (!caretRect) {
+    if (!caret) {
       return;
     }
-    const targetX = state.preferredCaretX ?? caretRect.x;
-    const targetY = direction === -1 ? caretRect.y - 1 : caretRect.y + caretRect.height + 1;
+    const targetX = state.preferredCaretX ?? caret.x;
+    const targetY = direction === -1 ? caret.y - 1 : caret.y + caret.height + 1;
     const hit = this.hitTestPoint({
       x: (this.contentBounds?.x ?? 0) + targetX,
       y: (this.contentBounds?.y ?? 0) + targetY,
@@ -471,6 +764,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         this.controller.insertText(text);
         this.options.onChange?.(this.getState().value);
         this.markDirty(cx, window);
+        this.revealCaret(window, cx);
       })
       .catch((err) => {
         console.warn("Clipboard read failed:", err);
@@ -494,6 +788,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       if (code === Key.A) {
         this.controller.selectAll();
         this.markDirty(cx, window);
+        this.revealCaret(window, cx);
         return { stopPropagation: true, preventDefault: true };
       }
       if (code === Key.Z) {
@@ -507,6 +802,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
           }
         }
         this.markDirty(cx, window);
+        this.revealCaret(window, cx);
         return { stopPropagation: true, preventDefault: true };
       }
       if (code === Key.C) {
@@ -517,6 +813,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       if (code === Key.X) {
         if (!this.options.readonly && this.cutSelection(window)) {
           this.markDirty(cx, window);
+          this.revealCaret(window, cx);
           return { stopPropagation: true, preventDefault: true };
         }
       }
@@ -533,6 +830,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
           this.controller.insertText("\n");
           this.options.onChange?.(state.value);
           this.markDirty(cx, window);
+          this.revealCaret(window, cx);
         }
         return { stopPropagation: true, preventDefault: true };
       }
@@ -553,6 +851,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       this.controller.deleteBackward();
       this.options.onChange?.(state.value);
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
@@ -560,6 +859,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       this.controller.deleteForward();
       this.options.onChange?.(state.value);
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
@@ -570,6 +870,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         this.controller.moveLeft(extendSelection);
       }
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
@@ -580,28 +881,33 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         this.controller.moveRight(extendSelection);
       }
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
     if (code === Key.Home) {
       this.controller.moveToStart(extendSelection);
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
     if (code === Key.End) {
       this.controller.moveToEnd(extendSelection);
       this.markDirty(cx, window);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
     if (code === Key.Up) {
       this.moveVertical(-1, extendSelection, window, cx);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
     if (code === Key.Down) {
       this.moveVertical(1, extendSelection, window, cx);
+      this.revealCaret(window, cx);
       return { stopPropagation: true, preventDefault: true };
     }
 
@@ -622,6 +928,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         clickCount: 1,
       });
       setPreferredCaretX(state, hit.caretX);
+      this.revealCaret(window, cx);
     }
     this.markDirty(cx, window);
     return { stopPropagation: true, preventDefault: true };
@@ -634,6 +941,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     }
     this.controller.updatePointerSelection(valueWithComposition(this.getState()), hit);
     setPreferredCaretX(this.getState(), hit.caretX);
+    this.revealCaret(window, cx);
     this.markDirty(cx, window);
     return { stopPropagation: true, preventDefault: true };
   };
@@ -641,6 +949,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
   private handleMouseUp: MouseHandler = (_event, window, cx) => {
     if (this.controller.pointerSelection) {
       this.controller.endPointerSelection();
+      this.revealCaret(window, cx);
       this.markDirty(cx, window);
       return { stopPropagation: true, preventDefault: true };
     }
@@ -663,6 +972,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     }
     setPreferredCaretX(this.getState(), hit.caretX);
     this.controller.endPointerSelection();
+    this.revealCaret(window, cx);
     this.markDirty(cx, window);
     return { stopPropagation: true, preventDefault: true };
   };
@@ -672,7 +982,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     const focused = this.controller.focusHandle
       ? cx.isFocused(this.controller.focusHandle)
       : state.isFocused;
-    state.isFocused = focused;
+    setFocused(state, focused);
 
     const textColor = { r: 1, g: 1, b: 1, a: 1 };
     const placeholderColor = { r: 0.6, g: 0.6, b: 0.7, a: 1 };

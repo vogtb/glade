@@ -5,7 +5,7 @@
  * are available in different situations (reading, updating, rendering).
  */
 
-import type { EntityId, FocusId, WindowId, FlashTask, ScrollOffset } from "./types.ts";
+import type { EntityId, FocusId, WindowId, FlashTask, ScrollOffset, Bounds } from "./types.ts";
 import type {
   FlashHandle,
   FlashViewHandle,
@@ -46,6 +46,11 @@ export interface FlashReadContext {
    * Get the current scroll offset for a scroll handle.
    */
   getScrollOffset(handle: ScrollHandle): ScrollOffset;
+
+  /**
+   * Get the viewport bounds for a scroll handle in window coordinates.
+   */
+  getScrollViewport(handle: ScrollHandle): Bounds;
 }
 
 /**

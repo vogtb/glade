@@ -953,7 +953,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       cx.updateScrollContentSize(
         this.scrollHandleRef,
         { width: contentWidth, height: contentHeight },
-        { width: bounds.width, height: bounds.height }
+        { width: bounds.width, height: bounds.height },
+        { x: bounds.x, y: bounds.y }
       );
     }
 

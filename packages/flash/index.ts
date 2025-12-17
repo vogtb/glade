@@ -134,8 +134,13 @@ export {
 export { FlashDiv, div } from "./div.ts";
 
 // Text input element
-export { FlashTextInput, textInput, TEXT_INPUT_CONTEXT } from "./text_input.ts";
-export { TextInputController } from "./text_input_controller.ts";
+export {
+  FlashTextInput,
+  textInput,
+  TEXT_INPUT_CONTEXT,
+  TextInputController,
+  renderTextDecorations,
+} from "./input.ts";
 
 // Scene and GPU primitives
 export type {
@@ -212,7 +217,6 @@ export {
   selectionPrimitives,
   compositionUnderlines,
 } from "./text.ts";
-export { renderTextDecorations } from "./text_input_render.ts";
 
 // Event dispatch
 export type {

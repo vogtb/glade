@@ -198,7 +198,8 @@ export interface PrepaintContext {
   updateScrollContentSize(
     handle: ScrollHandle,
     contentSize: { width: number; height: number },
-    viewportSize: { width: number; height: number }
+    viewportSize: { width: number; height: number },
+    viewportOrigin: { x: number; y: number }
   ): void;
 
   /**

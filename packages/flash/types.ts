@@ -160,6 +160,7 @@ export interface ScrollState {
   viewportSize: Size;
   velocityX: number;
   velocityY: number;
+  viewportOrigin: Point;
 }
 
 /**
@@ -172,6 +173,7 @@ export function createScrollState(): ScrollState {
     viewportSize: { width: 0, height: 0 },
     velocityX: 0,
     velocityY: 0,
+    viewportOrigin: { x: 0, y: 0 },
   };
 }
 
