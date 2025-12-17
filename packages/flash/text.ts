@@ -1263,3 +1263,312 @@ export function clamp(value: number, min: number, max: number): number {
   }
   return value;
 }
+
+function graphemeBreaks(text: string): number[] {
+  const breaks: number[] = [0];
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    for (const segment of segmenter.segment(text)) {
+      if (segment.index !== undefined) {
+        breaks.push(segment.index);
+      }
+    }
+  } else {
+    let offset = 0;
+    for (const char of Array.from(text)) {
+      offset += char.length;
+      breaks.push(offset);
+    }
+  }
+  const last = breaks[breaks.length - 1];
+  if (last !== text.length) {
+    breaks.push(text.length);
+  }
+  return breaks;
+}
+
+function findPrevGrapheme(text: string, index: number): number {
+  const breaks = graphemeBreaks(text);
+  for (let i = breaks.length - 1; i >= 0; i--) {
+    if (breaks[i] !== undefined && breaks[i]! < index) {
+      return breaks[i]!;
+    }
+  }
+  return 0;
+}
+
+function findNextGrapheme(text: string, index: number): number {
+  const breaks = graphemeBreaks(text);
+  for (let i = 0; i < breaks.length; i++) {
+    if (breaks[i] !== undefined && breaks[i]! > index) {
+      return breaks[i]!;
+    }
+  }
+  return text.length;
+}
+
+function isWordChar(char: string): boolean {
+  if (char.length === 0) {
+    return false;
+  }
+  const code = char.codePointAt(0);
+  if (code === undefined) {
+    return false;
+  }
+  if (code >= 48 && code <= 57) {
+    return true;
+  }
+  if (code >= 65 && code <= 90) {
+    return true;
+  }
+  if (code >= 97 && code <= 122) {
+    return true;
+  }
+  return false;
+}
+
+function findWordBoundaryLeft(text: string, index: number): number {
+  if (index <= 0) {
+    return 0;
+  }
+  const breaks = graphemeBreaks(text);
+  for (let i = breaks.length - 2; i >= 0; i--) {
+    const pos = breaks[i]!;
+    const nextPos = breaks[i + 1]!;
+    if (pos >= index) {
+      continue;
+    }
+    const currentChar = text.slice(pos, nextPos);
+    const nextChar = text.slice(nextPos, breaks[i + 2] ?? text.length);
+    const currentIsWord = isWordChar(currentChar);
+    const nextIsWord = isWordChar(nextChar);
+    if (currentIsWord !== nextIsWord) {
+      return nextPos;
+    }
+    if (!currentIsWord && currentChar.trim().length === 0) {
+      if (nextChar.trim().length !== 0) {
+        return nextPos;
+      }
+    }
+  }
+  return 0;
+}
+
+function findWordBoundaryRight(text: string, index: number): number {
+  if (index >= text.length) {
+    return text.length;
+  }
+  const breaks = graphemeBreaks(text);
+  for (let i = 1; i < breaks.length; i++) {
+    const pos = breaks[i - 1]!;
+    const nextPos = breaks[i]!;
+    if (pos <= index) {
+      continue;
+    }
+    const prevChar = text.slice(breaks[i - 2] ?? 0, pos);
+    const currentChar = text.slice(pos, nextPos);
+    const prevIsWord = isWordChar(prevChar);
+    const currentIsWord = isWordChar(currentChar);
+    if (prevIsWord !== currentIsWord) {
+      return pos;
+    }
+    if (!prevIsWord && prevChar.trim().length === 0) {
+      if (currentChar.trim().length !== 0) {
+        return pos;
+      }
+    }
+  }
+  return text.length;
+}
+
+function clearComposition(state: TextInputState): void {
+  state.composition = null;
+  state.preferredCaretX = null;
+}
+
+function applyValueChange(state: TextInputState, start: number, end: number, text: string): void {
+  pushHistory(state);
+  const nextValue = `${state.value.slice(0, start)}${text}${state.value.slice(end)}`;
+  const caret = start + text.length;
+  state.value = nextValue;
+  state.selection = { start: caret, end: caret };
+  clearComposition(state);
+}
+
+export function insertText(state: TextInputState, text: string): void {
+  const target = state.composition ?? state.selection;
+  applyValueChange(state, target.start, target.end, text);
+}
+
+export function deleteBackward(state: TextInputState): void {
+  if (state.composition && state.composition.text.length > 0) {
+    const breaks = graphemeBreaks(state.composition.text);
+    const prev = breaks.length >= 2 ? breaks[breaks.length - 2]! : 0;
+    state.composition = {
+      start: state.composition.start,
+      end: state.composition.end,
+      text: state.composition.text.slice(0, prev),
+    };
+    state.selection = {
+      start: state.composition.start + state.composition.text.length,
+      end: state.composition.start + state.composition.text.length,
+    };
+    state.preferredCaretX = null;
+    return;
+  }
+
+  const { start, end } = state.selection;
+  if (start !== end) {
+    applyValueChange(state, start, end, "");
+    return;
+  }
+  const prev = findPrevGrapheme(state.value, start);
+  if (prev === start) {
+    return;
+  }
+  applyValueChange(state, prev, start, "");
+}
+
+export function deleteForward(state: TextInputState): void {
+  if (state.composition && state.composition.text.length > 0) {
+    state.composition = {
+      start: state.composition.start,
+      end: state.composition.end,
+      text: "",
+    };
+    state.selection = { start: state.composition.start, end: state.composition.start };
+    state.preferredCaretX = null;
+    return;
+  }
+
+  const { start, end } = state.selection;
+  if (start !== end) {
+    applyValueChange(state, start, end, "");
+    return;
+  }
+  const next = findNextGrapheme(state.value, end);
+  if (next === end) {
+    return;
+  }
+  applyValueChange(state, start, next, "");
+}
+
+export function moveLeft(state: TextInputState, extendSelection: boolean): void {
+  if (!extendSelection && state.selection.start !== state.selection.end) {
+    const anchor = Math.min(state.selection.start, state.selection.end);
+    state.selection = { start: anchor, end: anchor };
+    state.preferredCaretX = null;
+    return;
+  }
+  const caret = extendSelection ? state.selection.end : state.selection.start;
+  const prev = findPrevGrapheme(state.value, caret);
+  const anchor = extendSelection ? state.selection.start : prev;
+  const focus = extendSelection ? prev : prev;
+  state.selection = { start: anchor, end: focus };
+  state.preferredCaretX = null;
+}
+
+export function moveRight(state: TextInputState, extendSelection: boolean): void {
+  if (!extendSelection && state.selection.start !== state.selection.end) {
+    const anchor = Math.max(state.selection.start, state.selection.end);
+    state.selection = { start: anchor, end: anchor };
+    state.preferredCaretX = null;
+    return;
+  }
+  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const next = findNextGrapheme(state.value, caret);
+  const anchor = extendSelection ? state.selection.start : next;
+  const focus = extendSelection ? next : next;
+  state.selection = { start: anchor, end: focus };
+  state.preferredCaretX = null;
+}
+
+export function moveWordLeft(state: TextInputState, extendSelection: boolean): void {
+  const caret = extendSelection ? state.selection.end : state.selection.start;
+  const target = findWordBoundaryLeft(state.value, caret);
+  const anchor = extendSelection ? state.selection.start : target;
+  state.selection = { start: anchor, end: target };
+  state.preferredCaretX = null;
+}
+
+export function moveWordRight(state: TextInputState, extendSelection: boolean): void {
+  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const target = findWordBoundaryRight(state.value, caret);
+  const anchor = extendSelection ? state.selection.start : target;
+  state.selection = { start: anchor, end: target };
+  state.preferredCaretX = null;
+}
+
+export function moveToStart(state: TextInputState, extendSelection: boolean): void {
+  const anchor = extendSelection ? state.selection.start : 0;
+  state.selection = { start: anchor, end: 0 };
+  state.preferredCaretX = null;
+}
+
+export function moveToEnd(state: TextInputState, extendSelection: boolean): void {
+  const end = state.value.length;
+  const anchor = extendSelection ? state.selection.start : end;
+  state.selection = { start: anchor, end };
+  state.preferredCaretX = null;
+}
+
+export function selectAll(state: TextInputState): void {
+  state.selection = { start: 0, end: state.value.length };
+  state.preferredCaretX = null;
+}
+
+export function beginComposition(state: TextInputState): void {
+  state.composition = {
+    start: state.selection.start,
+    end: state.selection.end,
+    text: "",
+  };
+  state.preferredCaretX = null;
+}
+
+export function updateComposition(state: TextInputState, text: string): void {
+  if (!state.composition) {
+    beginComposition(state);
+  }
+  if (!state.composition) {
+    return;
+  }
+  state.composition = {
+    start: state.composition.start,
+    end: state.composition.end,
+    text,
+  };
+  const caret = state.composition.start + text.length;
+  state.selection = { start: caret, end: caret };
+  state.preferredCaretX = null;
+}
+
+export function commitComposition(state: TextInputState, text: string): void {
+  if (state.composition) {
+    applyValueChange(state, state.composition.start, state.composition.end, text);
+    return;
+  }
+  insertText(state, text);
+}
+
+export function cancelComposition(state: TextInputState): void {
+  clearComposition(state);
+}
+
+export function getSelectedText(state: TextInputState): string {
+  if (state.selection.start === state.selection.end) {
+    return "";
+  }
+  const start = Math.min(state.selection.start, state.selection.end);
+  const end = Math.max(state.selection.start, state.selection.end);
+  return state.value.slice(start, end);
+}
+
+export function cutSelectedText(state: TextInputState): string {
+  const text = getSelectedText(state);
+  if (text.length === 0) {
+    return "";
+  }
+  applyValueChange(state, state.selection.start, state.selection.end, "");
+  return text;
+}
