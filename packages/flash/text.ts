@@ -618,85 +618,8 @@ export class TextSystem {
             },
           ];
 
-    if (lines.length === 0) {
-      return {
-        index: 0,
-        lineIndex: 0,
-        lineStartIndex: 0,
-        lineEndIndex: 0,
-        caretX: 0,
-        caretY: 0,
-        lineTop: 0,
-        lineHeight,
-      };
-    }
-
     const byteToUtf16Index = buildByteToUtf16Index(text);
-
-    const lastLine = lines[lines.length - 1]!;
-    const clampedY = clamp(point.y, 0, lastLine.y + lastLine.lineHeight);
-    let lineIndex = 0;
-    for (let i = 0; i < lines.length; i++) {
-      const top = lines[i]!.y;
-      const bottom = top + lines[i]!.lineHeight;
-      if (clampedY >= top && clampedY <= bottom) {
-        lineIndex = i;
-        break;
-      }
-      if (clampedY > bottom) {
-        lineIndex = i;
-      }
-    }
-
-    const line = lines[lineIndex]!;
-    const localX = point.x;
-    let caretIndex = 0;
-    let caretX = 0;
-    let lineStartIndex = 0;
-    let lineEndIndex = text.length;
-
-    if (line.glyphs.length === 0) {
-      caretIndex = lineIndex === lines.length - 1 ? text.length : 0;
-      caretX = 0;
-      lineStartIndex = caretIndex;
-      lineEndIndex = caretIndex;
-    } else {
-      lineStartIndex = findLineStartIndex(line.glyphs, byteToUtf16Index);
-      lineEndIndex = findLineEndIndex(line.glyphs, byteToUtf16Index, text.length);
-      const firstStart = byteToUtf16Index.get(line.glyphs[0]!.start);
-      caretIndex = firstStart ?? 0;
-      caretX = localX <= 0 ? 0 : line.width;
-
-      for (let i = 0; i < line.glyphs.length; i++) {
-        const glyph = line.glyphs[i]!;
-        const startIndex = byteToUtf16Index.get(glyph.start);
-        const endIndex = byteToUtf16Index.get(glyph.end);
-        if (startIndex === undefined || endIndex === undefined) {
-          continue;
-        }
-        const glyphStartX = glyph.x;
-        const glyphEndX = glyph.x + glyph.xAdvance;
-        const mid = glyphStartX + (glyphEndX - glyphStartX) * 0.5;
-        if (localX < mid) {
-          caretIndex = startIndex;
-          caretX = glyphStartX;
-          break;
-        }
-        caretIndex = endIndex;
-        caretX = glyphEndX;
-      }
-    }
-
-    return {
-      index: caretIndex,
-      lineIndex,
-      lineStartIndex,
-      lineEndIndex,
-      caretX,
-      caretY: line.y,
-      lineTop: line.y,
-      lineHeight: line.lineHeight,
-    };
+    return hitTestLines(text, point, lines, byteToUtf16Index, lineHeight);
   }
 
   /**
@@ -1287,6 +1210,15 @@ export function createTextInputState(init: TextInputStateInit = {}): TextInputSt
   };
 }
 
+export function valueWithComposition(state: TextInputState): string {
+  if (!state.composition) {
+    return state.value;
+  }
+  const prefix = state.value.slice(0, state.composition.start);
+  const suffix = state.value.slice(state.composition.end);
+  return `${prefix}${state.composition.text}${suffix}`;
+}
+
 export function captureSnapshot(state: TextInputState): TextInputSnapshot {
   return {
     value: state.value,
@@ -1465,6 +1397,124 @@ function layoutDecoratedLines(
     lines,
     byteToUtf16Index: buildByteToUtf16Index(text),
   };
+}
+
+function hitTestLines(
+  text: string,
+  point: { x: number; y: number },
+  lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>,
+  byteToUtf16Index: Map<number, number>,
+  defaultLineHeight: number
+): TextHitTestResult {
+  if (lines.length === 0) {
+    return {
+      index: 0,
+      lineIndex: 0,
+      lineStartIndex: 0,
+      lineEndIndex: 0,
+      caretX: 0,
+      caretY: 0,
+      lineTop: 0,
+      lineHeight: defaultLineHeight,
+    };
+  }
+
+  const lastLine = lines[lines.length - 1]!;
+  const clampedY = clamp(point.y, 0, lastLine.y + lastLine.lineHeight);
+  let lineIndex = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const top = lines[i]!.y;
+    const bottom = top + lines[i]!.lineHeight;
+    if (clampedY >= top && clampedY <= bottom) {
+      lineIndex = i;
+      break;
+    }
+    if (clampedY > bottom) {
+      lineIndex = i;
+    }
+  }
+
+  const line = lines[lineIndex]!;
+  const localX = point.x;
+  let caretIndex = 0;
+  let caretX = 0;
+  let lineStartIndex = 0;
+  let lineEndIndex = text.length;
+
+  if (line.glyphs.length === 0) {
+    caretIndex = lineIndex === lines.length - 1 ? text.length : 0;
+    caretX = 0;
+    lineStartIndex = caretIndex;
+    lineEndIndex = caretIndex;
+  } else {
+    lineStartIndex = findLineStartIndex(line.glyphs, byteToUtf16Index);
+    lineEndIndex = findLineEndIndex(line.glyphs, byteToUtf16Index, text.length);
+    const firstStart = byteToUtf16Index.get(line.glyphs[0]!.start);
+    caretIndex = firstStart ?? 0;
+    caretX = localX <= 0 ? 0 : line.width;
+
+    for (let i = 0; i < line.glyphs.length; i++) {
+      const glyph = line.glyphs[i]!;
+      const startIndex = byteToUtf16Index.get(glyph.start);
+      const endIndex = byteToUtf16Index.get(glyph.end);
+      if (startIndex === undefined || endIndex === undefined) {
+        continue;
+      }
+      const glyphStartX = glyph.x;
+      const glyphEndX = glyph.x + glyph.xAdvance;
+      const mid = glyphStartX + (glyphEndX - glyphStartX) * 0.5;
+      if (localX < mid) {
+        caretIndex = startIndex;
+        caretX = glyphStartX;
+        break;
+      }
+      caretIndex = endIndex;
+      caretX = glyphEndX;
+    }
+  }
+
+  return {
+    index: caretIndex,
+    lineIndex,
+    lineStartIndex,
+    lineEndIndex,
+    caretX,
+    caretY: line.y,
+    lineTop: line.y,
+    lineHeight: line.lineHeight,
+  };
+}
+
+export function hitTestText(
+  text: string,
+  point: { x: number; y: number },
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  maxWidth?: number,
+  style?: FontStyle
+): TextHitTestResult {
+  const { lines, byteToUtf16Index } = layoutDecoratedLines(
+    text,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style
+  );
+  if (lines.length === 0) {
+    return {
+      index: 0,
+      lineIndex: 0,
+      lineStartIndex: 0,
+      lineEndIndex: 0,
+      caretX: 0,
+      caretY: 0,
+      lineTop: 0,
+      lineHeight,
+    };
+  }
+  return hitTestLines(text, point, lines, byteToUtf16Index, lineHeight);
 }
 
 function caretXAtIndex(
@@ -1991,11 +2041,12 @@ export function computeSelectionRects(
   maxWidth?: number,
   style?: FontStyle
 ): TextSelectionRect[] {
+  const text = valueWithComposition(state);
   if (state.selection.start === state.selection.end) {
     return [];
   }
   return computeRangeRects(
-    state.value,
+    text,
     state.selection,
     fontSize,
     lineHeight,
@@ -2013,6 +2064,7 @@ export function computeCompositionRects(
   maxWidth?: number,
   style?: FontStyle
 ): TextSelectionRect[] {
+  const text = valueWithComposition(state);
   if (!state.composition || state.composition.text.length === 0) {
     return [];
   }
@@ -2021,7 +2073,7 @@ export function computeCompositionRects(
     end: state.composition.start + state.composition.text.length,
   };
   return computeRangeRects(
-    state.value,
+    text,
     compositionRange,
     fontSize,
     lineHeight,
@@ -2039,9 +2091,10 @@ export function computeCaretRect(
   maxWidth?: number,
   style?: FontStyle
 ): TextSelectionRect | null {
+  const text = valueWithComposition(state);
   const caretIndex = state.selection.end;
   const { lines, byteToUtf16Index } = layoutDecoratedLines(
-    state.value,
+    text,
     fontSize,
     lineHeight,
     fontFamily,

@@ -37,7 +37,8 @@ import {
   deferred,
   anchored,
   type Point,
-  Key,
+  textInput,
+  TextInputController,
 } from "@glade/flash";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
@@ -414,7 +415,7 @@ class DemoRootView implements FlashView {
   private clipboardStatus = "Clipboard ready.";
   private clipboardLastText: string | null = null;
   private textInputHandle: FocusHandle | null = null;
-  private textInputValue = "";
+  private textInputController = new TextInputController({ multiline: true });
   private textInputStatus = "Click the field to focus, then type to insert characters.";
 
   render(cx: FlashViewContext<this>): FlashDiv {
@@ -709,9 +710,11 @@ class DemoRootView implements FlashView {
 
   private renderTextInputDemo(cx: FlashViewContext<this>): FlashDiv {
     const inputHandle = this.ensureTextInputHandle(cx);
+    const controller = this.textInputController;
+    const state = controller.state;
     const focused = cx.isFocused(inputHandle);
-    const lines =
-      this.textInputValue.length > 0 ? this.textInputValue.split("\n") : ["Start typing..."];
+    const selectionLength = Math.abs(state.selection.end - state.selection.start);
+    const compositionText = state.composition?.text ?? "";
 
     return div()
       .flex()
@@ -719,7 +722,7 @@ class DemoRootView implements FlashView {
       .gap(16)
       .children_(
         text("Text Input").font("Inter").size(28).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Demonstrates text input events, focus handling, and simple editing.")
+        text("Demonstrates IME composition, selection, clipboard, and caret rendering.")
           .font("Inter")
           .size(16)
           .color({ r: 0.75, g: 0.8, b: 0.9, a: 1 }),
@@ -728,63 +731,36 @@ class DemoRootView implements FlashView {
           .flexCol()
           .gap(12)
           .children_(
-            text("Click the field and type. Backspace deletes, Enter inserts a new line.")
+            text(
+              "Click to focus, type with IME, use Cmd/Ctrl+C/V/X for clipboard, and drag-select (double click for words, triple for lines)."
+            )
               .font("Inter")
               .size(14)
               .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-            div()
-              .bg({ r: 0.12, g: 0.13, b: 0.17, a: 1 })
-              .border(2)
-              .borderColor(focused ? rgb(0x6366f1) : { r: 0.25, g: 0.28, b: 0.35, a: 1 })
-              .rounded(12)
-              .p(12)
-              .trackFocus(inputHandle)
-              .tabStop({ index: 1 })
-              .onTextInput(
-                cx.listener((view, event, _window, ecx) => {
-                  view.textInputValue = `${view.textInputValue}${event.text}`;
-                  view.textInputStatus = `Inserted "${event.text}"`;
-                  ecx.notify();
-                })
-              )
-              .onKeyDown(
-                cx.listener((view, event, _window, ecx) => {
-                  const scancode = Number(event.code);
-                  if (scancode === Key.Backspace) {
-                    if (view.textInputValue.length > 0) {
-                      view.textInputValue = view.textInputValue.slice(0, -1);
-                      view.textInputStatus = "Backspace";
-                      ecx.notify();
-                    }
-                    return { stopPropagation: true };
-                  }
-                  if (scancode === Key.Enter) {
-                    view.textInputValue = `${view.textInputValue}\n`;
-                    view.textInputStatus = "Inserted newline";
-                    ecx.notify();
-                    return { stopPropagation: true };
-                  }
-                  return undefined;
-                })
-              )
-              .children_(
-                div()
-                  .flex()
-                  .flexCol()
-                  .gap(6)
-                  .children_(
-                    ...lines.map((line) =>
-                      text(line)
-                        .font("Inter")
-                        .size(16)
-                        .color(
-                          this.textInputValue.length === 0
-                            ? { r: 0.6, g: 0.65, b: 0.75, a: 1 }
-                            : { r: 0.92, g: 0.94, b: 0.98, a: 1 }
-                        )
-                    )
-                  )
-              ),
+            textInput("", {
+              controller,
+              focusHandle: inputHandle,
+              placeholder: "Type multi-line text…",
+              multiline: true,
+              selectionColor: { ...rgb(0x6366f1), a: 0.35 },
+              compositionColor: rgb(0x22c55e),
+              onChange: (_: string) => {
+                this.textInputStatus = "Editing…";
+                cx.notify();
+              },
+              onSubmit: (value: string) => {
+                this.textInputStatus = `Submit (${value.length} chars)`;
+                cx.notify();
+              },
+              onCancel: () => {
+                this.textInputStatus = "Canceled";
+                cx.notify();
+              },
+            })
+              .font("Inter")
+              .size(16)
+              .paddingPx(12, 10)
+              .caretBlink(0.7),
             div()
               .flex()
               .flexRow()
@@ -794,11 +770,23 @@ class DemoRootView implements FlashView {
                   .font("Inter")
                   .size(14)
                   .color({ r: 0.7, g: 0.85, b: 0.9, a: 1 }),
-                text(`Length: ${this.textInputValue.length}`)
+                text(`Length: ${state.value.length}`)
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.7, g: 0.85, b: 0.9, a: 1 }),
+                text(`Selection: ${selectionLength} chars`)
                   .font("Inter")
                   .size(14)
                   .color({ r: 0.7, g: 0.85, b: 0.9, a: 1 })
               ),
+            text(
+              compositionText.length > 0
+                ? `Composing: "${compositionText}" (${compositionText.length} chars)`
+                : "Composition: none"
+            )
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.7, g: 0.78, b: 0.9, a: 1 }),
             text(`Status: ${this.textInputStatus}`)
               .font("Inter")
               .size(14)

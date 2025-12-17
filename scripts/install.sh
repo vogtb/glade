@@ -1,33 +1,25 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-echo "=== Glade Installation Script ==="
+set -x
 
-# Check for Rust/Cargo
-if ! command -v cargo &> /dev/null; then
-    echo "Installing Rust via rustup..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
-fi
+echo "Installing dependencies for JS/TS..."
+pnpm install
+echo "Done installing dependencies for JS/TS"
 
-echo "Rust version: $(rustc --version)"
+echo "Installing dependencies for rust..."
+cargo update
+echo "Done installing dependencies for rust"
 
-# Check for wasm-pack
+echo "Installing components for rust..."
+rustup component add rustfmt clippy
+echo "Done installing components for rust"
+
 if ! command -v wasm-pack &> /dev/null; then
     echo "Installing wasm-pack..."
     curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+    echo "Done installing wasm-pack..."
 fi
 
-echo "wasm-pack version: $(wasm-pack --version)"
-
-# Add wasm32 target if not present
-if ! rustup target list --installed | grep -q wasm32-unknown-unknown; then
-    echo "Adding wasm32-unknown-unknown target..."
-    rustup target add wasm32-unknown-unknown
-fi
-
-echo ""
-echo "=== All dependencies installed ==="
-echo ""
-echo "To build the layout WASM module:"
-echo "  bun run build:layout"
+echo "Adding targets for rust..."
+rustup target add wasm32-unknown-unknown
+echo "Done adding targets for rust"

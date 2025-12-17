@@ -36,6 +36,9 @@
     "trackpad",
     "execCommand",
     "Tessellator",
-    "comptime"
+    "comptime",
+    "rustup",
+    "clippy",
+    "pipefail"
   ]
 }

@@ -133,6 +133,10 @@ export {
 // Div element
 export { FlashDiv, div } from "./div.ts";
 
+// Text input element
+export { FlashTextInput, textInput, TEXT_INPUT_CONTEXT } from "./text_input.ts";
+export { TextInputController } from "./text_input_controller.ts";
+
 // Scene and GPU primitives
 export type {
   RectPrimitive,
@@ -181,6 +185,7 @@ export type {
 } from "./text.ts";
 export {
   createTextInputState,
+  valueWithComposition,
   captureSnapshot,
   pushHistory,
   undo,
@@ -202,6 +207,7 @@ export {
   computeSelectionRects,
   computeCompositionRects,
   computeCaretRect,
+  hitTestText,
   caretPrimitive,
   selectionPrimitives,
   compositionUnderlines,
