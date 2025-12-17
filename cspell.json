@@ -33,6 +33,7 @@
     "Hitboxes",
     "GPUI",
     "Noto",
-    "trackpad"
+    "trackpad",
+    "execCommand"
   ]
 }

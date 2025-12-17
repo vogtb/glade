@@ -165,6 +165,29 @@ export type {
 
 export { GlyphAtlas, TextSystem, TextPipeline } from "./text.ts";
 
+// Text input state helpers
+export type {
+  SelectionRange,
+  CompositionRange,
+  TextInputSnapshot,
+  TextInputHistory,
+  TextInputState,
+  TextInputStateInit,
+} from "./text.ts";
+export {
+  createTextInputState,
+  captureSnapshot,
+  pushHistory,
+  undo,
+  redo,
+  restoreSnapshot,
+  setSelection,
+  setComposition,
+  setFocused,
+  setPreferredCaretX,
+  normalizeSelection,
+} from "./text.ts";
+
 // Event dispatch
 export type {
   FlashMouseEvent,

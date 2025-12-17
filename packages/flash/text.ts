@@ -1096,3 +1096,170 @@ const GPUShaderStage = {
   FRAGMENT: 2,
   COMPUTE: 4,
 } as const;
+
+/**
+ * State model for text input elements. Rendering and event wiring live elsewhere.
+ */
+export type SelectionRange = {
+  start: number;
+  end: number;
+};
+
+export type CompositionRange = {
+  start: number;
+  end: number;
+  text: string;
+};
+
+export type TextInputSnapshot = {
+  value: string;
+  selection: SelectionRange;
+  composition: CompositionRange | null;
+};
+
+export type TextInputHistory = {
+  past: TextInputSnapshot[];
+  future: TextInputSnapshot[];
+  limit: number;
+};
+
+export type TextInputState = {
+  value: string;
+  selection: SelectionRange;
+  composition: CompositionRange | null;
+  isFocused: boolean;
+  multiline: boolean;
+  preferredCaretX: number | null;
+  history: TextInputHistory;
+};
+
+export type TextInputStateInit = {
+  value?: string;
+  selectionStart?: number;
+  selectionEnd?: number;
+  isFocused?: boolean;
+  multiline?: boolean;
+  historyLimit?: number;
+};
+
+export function createTextInputState(init: TextInputStateInit = {}): TextInputState {
+  const value = init.value ?? "";
+  const selection = normalizeSelection(
+    {
+      start: init.selectionStart ?? value.length,
+      end: init.selectionEnd ?? value.length,
+    },
+    value.length
+  );
+
+  return {
+    value,
+    selection,
+    composition: null,
+    isFocused: init.isFocused ?? false,
+    multiline: init.multiline ?? false,
+    preferredCaretX: null,
+    history: {
+      past: [],
+      future: [],
+      limit: init.historyLimit ?? 100,
+    },
+  };
+}
+
+export function captureSnapshot(state: TextInputState): TextInputSnapshot {
+  return {
+    value: state.value,
+    selection: state.selection,
+    composition: state.composition,
+  };
+}
+
+export function pushHistory(state: TextInputState): void {
+  const snapshot = captureSnapshot(state);
+  state.history.past.push(snapshot);
+  if (state.history.past.length > state.history.limit) {
+    state.history.past.shift();
+  }
+  state.history.future = [];
+}
+
+export function undo(state: TextInputState): boolean {
+  if (state.history.past.length === 0) {
+    return false;
+  }
+  const current = captureSnapshot(state);
+  const previous = state.history.past.pop()!;
+  state.history.future.push(current);
+  restoreSnapshot(state, previous);
+  return true;
+}
+
+export function redo(state: TextInputState): boolean {
+  if (state.history.future.length === 0) {
+    return false;
+  }
+  const current = captureSnapshot(state);
+  const next = state.history.future.pop()!;
+  state.history.past.push(current);
+  restoreSnapshot(state, next);
+  return true;
+}
+
+export function restoreSnapshot(state: TextInputState, snapshot: TextInputSnapshot): void {
+  state.value = snapshot.value;
+  state.selection = normalizeSelection(snapshot.selection, snapshot.value.length);
+  state.composition = snapshot.composition;
+  state.preferredCaretX = null;
+}
+
+export function setSelection(state: TextInputState, selection: SelectionRange): void {
+  state.selection = normalizeSelection(selection, state.value.length);
+  state.preferredCaretX = null;
+}
+
+export function setComposition(state: TextInputState, composition: CompositionRange | null): void {
+  if (composition) {
+    const normalized = normalizeSelection(
+      { start: composition.start, end: composition.end },
+      state.value.length
+    );
+    state.composition = {
+      start: normalized.start,
+      end: normalized.end,
+      text: composition.text,
+    };
+  } else {
+    state.composition = null;
+  }
+}
+
+export function setFocused(state: TextInputState, focused: boolean): void {
+  state.isFocused = focused;
+  if (!focused) {
+    state.composition = null;
+  }
+}
+
+export function setPreferredCaretX(state: TextInputState, x: number | null): void {
+  state.preferredCaretX = x;
+}
+
+export function normalizeSelection(range: SelectionRange, textLength: number): SelectionRange {
+  const start = clamp(range.start, 0, textLength);
+  const end = clamp(range.end, 0, textLength);
+  if (end < start) {
+    return { start: end, end: start };
+  }
+  return { start, end };
+}
+
+export function clamp(value: number, min: number, max: number): number {
+  if (value < min) {
+    return min;
+  }
+  if (value > max) {
+    return max;
+  }
+  return value;
+}

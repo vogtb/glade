@@ -56,6 +56,7 @@ import {
   type WGPUSurface,
 } from "@glade/dawn";
 import { createMetalLayerForView } from "./metal.ts";
+import { attachIme, type ImeHandle } from "./ime.ts";
 
 // Map CursorStyle to GLFW cursor shape constants
 function cursorStyleToGLFWShape(style: CursorStyle): number {
@@ -241,6 +242,76 @@ export async function createWebGPUContext(
   let currentWinWidth = winSize.width;
   let currentWinHeight = winSize.height;
 
+  // IME handler (optional)
+  let imeHandle: ImeHandle | null = null;
+  const compositionStartListeners: CompositionCallback[] = [];
+  const compositionUpdateListeners: CompositionCallback[] = [];
+  const compositionEndListeners: CompositionCallback[] = [];
+  const textInputListeners: TextInputCallback[] = [];
+  const charListeners: CharCallback[] = [];
+  let compositionActive = false;
+
+  const emitComposition = (
+    which: "start" | "update" | "end",
+    text: string,
+    selectionStart: number,
+    selectionEnd: number
+  ) => {
+    const payload = { text, selectionStart, selectionEnd };
+    const listeners =
+      which === "start"
+        ? compositionStartListeners
+        : which === "update"
+          ? compositionUpdateListeners
+          : compositionEndListeners;
+    for (const cb of listeners) {
+      cb(payload);
+    }
+  };
+
+  const emitTextInput = (text: string, isComposing: boolean) => {
+    const payload = { text, isComposing };
+    for (const cb of textInputListeners) {
+      cb(payload);
+    }
+  };
+
+  // Fallback text input from GLFW char events (non-IME paths) and fan-out to listeners
+  const charCleanup = glfw.setCharCallback(window, (_win, codepoint) => {
+    const text = String.fromCodePoint(codepoint);
+    emitTextInput(text, false);
+    const event = { codepoint, char: text };
+    for (const cb of charListeners) {
+      cb(event);
+    }
+  });
+  cleanups.push(charCleanup);
+
+  // Try to attach native IME handler (optional)
+  const nsWindowPtr = glfw.getCocoaWindow(window);
+  if (nsWindowPtr) {
+    const handle = attachIme(nsWindowPtr, {
+      onComposing: (text, selectionStart, selectionEnd) => {
+        if (!compositionActive) {
+          compositionActive = true;
+          emitComposition("start", text, selectionStart, selectionEnd);
+        } else {
+          emitComposition("update", text, selectionStart, selectionEnd);
+        }
+      },
+      onCommit: (text) => {
+        emitTextInput(text, true);
+        emitComposition("end", "", 0, 0);
+        compositionActive = false;
+      },
+      onCancel: () => {
+        emitComposition("end", "", 0, 0);
+        compositionActive = false;
+      },
+    });
+    imeHandle = handle;
+  }
+
   const ctx: DarwinWebGPUContext = {
     gpu,
     adapter: adapter as unknown as GPUAdapter,
@@ -307,6 +378,10 @@ export async function createWebGPUContext(
     },
 
     destroy() {
+      if (imeHandle) {
+        imeHandle.detach();
+        imeHandle = null;
+      }
       for (const cleanup of cleanups) {
         cleanup();
       }
@@ -339,49 +414,51 @@ export async function createWebGPUContext(
     },
 
     onChar(callback: CharCallback): () => void {
-      const cleanup = glfw.setCharCallback(window, (_win, codepoint) => {
-        callback({
-          codepoint,
-          char: String.fromCodePoint(codepoint),
-        });
-      });
-      cleanups.push(cleanup);
+      charListeners.push(callback);
       return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        const idx = charListeners.indexOf(callback);
+        if (idx >= 0) {
+          charListeners.splice(idx, 1);
+        }
       };
     },
 
     onCompositionStart(_callback: CompositionCallback): () => void {
-      // TODO: hook into NSTextInputClient via objc bridge to surface real composition data.
-      return () => {};
+      compositionStartListeners.push(_callback);
+      return () => {
+        const idx = compositionStartListeners.indexOf(_callback);
+        if (idx >= 0) {
+          compositionStartListeners.splice(idx, 1);
+        }
+      };
     },
 
     onCompositionUpdate(_callback: CompositionCallback): () => void {
-      // TODO: hook into NSTextInputClient via objc bridge to surface real composition data.
-      return () => {};
+      compositionUpdateListeners.push(_callback);
+      return () => {
+        const idx = compositionUpdateListeners.indexOf(_callback);
+        if (idx >= 0) {
+          compositionUpdateListeners.splice(idx, 1);
+        }
+      };
     },
 
     onCompositionEnd(_callback: CompositionCallback): () => void {
-      // TODO: hook into NSTextInputClient via objc bridge to surface real composition data.
-      return () => {};
+      compositionEndListeners.push(_callback);
+      return () => {
+        const idx = compositionEndListeners.indexOf(_callback);
+        if (idx >= 0) {
+          compositionEndListeners.splice(idx, 1);
+        }
+      };
     },
 
     onTextInput(callback: TextInputCallback): () => void {
-      const cleanup = glfw.setCharCallback(window, (_win, codepoint) => {
-        const text = String.fromCodePoint(codepoint);
-        callback({
-          text,
-          isComposing: false,
-        });
-      });
-      cleanups.push(cleanup);
+      textInputListeners.push(callback);
       return () => {
-        cleanup();
-        const idx = cleanups.indexOf(cleanup);
+        const idx = textInputListeners.indexOf(callback);
         if (idx >= 0) {
-          cleanups.splice(idx, 1);
+          textInputListeners.splice(idx, 1);
         }
       };
     },
@@ -456,6 +533,9 @@ export async function createWebGPUContext(
 
     onFocus(callback: FocusCallback): () => void {
       const cleanup = glfw.setWindowFocusCallback(window, (_win, focused) => {
+        if (focused !== 0 && imeHandle) {
+          imeHandle.makeFirstResponder();
+        }
         callback({ focused: focused !== 0 });
       });
       cleanups.push(cleanup);
