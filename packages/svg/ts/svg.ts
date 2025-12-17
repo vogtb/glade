@@ -8,7 +8,7 @@
 import { initSync, SvgTessellator, type InitOutput } from "../pkg/svg";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
-const wasmBase64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm") as unknown as string;
+const wasmBase64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm");
 
 let wasmModule: InitOutput | null = null;
 let sharedTessellator: SvgTessellator | null = null;

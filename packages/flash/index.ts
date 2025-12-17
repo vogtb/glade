@@ -201,7 +201,12 @@ export {
   computeRangeRects,
   computeSelectionRects,
   computeCompositionRects,
+  computeCaretRect,
+  caretPrimitive,
+  selectionPrimitives,
+  compositionUnderlines,
 } from "./text.ts";
+export { renderTextDecorations } from "./text_input_render.ts";
 
 // Event dispatch
 export type {

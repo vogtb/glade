@@ -13,7 +13,7 @@ import type { FontId } from "../pkg/shaper";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed WASM as base64 at build time via Bun macro
-const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm") as unknown as string;
+const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
 
 let wasmModule: InitOutput | null = null;
 

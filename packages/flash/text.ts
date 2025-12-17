@@ -16,6 +16,7 @@ import {
   type FontStyle,
 } from "@glade/shaper";
 import type { Color } from "./types.ts";
+import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 
 /**
@@ -1434,6 +1435,38 @@ function findLineEndIndex(
   return max >= 0 ? max : fallback;
 }
 
+function layoutDecoratedLines(
+  text: string,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  maxWidth?: number,
+  style?: FontStyle
+): {
+  lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
+  byteToUtf16Index: Map<number, number>;
+} {
+  const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+  const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
+  const shaper = createTextShaper();
+  const lines =
+    effectiveMaxWidth !== undefined
+      ? shaper.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines
+      : [
+          {
+            glyphs: shaper.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
+            width: shaper.measureText(text, fontSize, lineHeight, undefined, effectiveStyle).width,
+            y: 0,
+            lineHeight,
+          },
+        ];
+
+  return {
+    lines,
+    byteToUtf16Index: buildByteToUtf16Index(text),
+  };
+}
+
 function caretXAtIndex(
   line: { glyphs: ShapedGlyph[]; width: number },
   map: Map<number, number>,
@@ -1909,26 +1942,19 @@ export function computeRangeRects(
   maxWidth?: number,
   style?: FontStyle
 ): TextSelectionRect[] {
-  const effectiveStyle: FontStyle = { ...style, family: fontFamily };
-  const effectiveMaxWidth = maxWidth !== undefined ? Math.max(maxWidth, 0) : undefined;
-  const shaper = createTextShaper();
-  const lines =
-    effectiveMaxWidth !== undefined
-      ? shaper.layoutText(text, fontSize, lineHeight, effectiveMaxWidth, effectiveStyle).lines
-      : [
-          {
-            glyphs: shaper.shapeLine(text, fontSize, lineHeight, effectiveStyle).glyphs,
-            width: shaper.measureText(text, fontSize, lineHeight, undefined, effectiveStyle).width,
-            y: 0,
-            lineHeight,
-          },
-        ];
+  const { lines, byteToUtf16Index } = layoutDecoratedLines(
+    text,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style
+  );
 
   if (lines.length === 0) {
     return [];
   }
 
-  const byteToUtf16Index = buildByteToUtf16Index(text);
   const rects: TextSelectionRect[] = [];
   const startIndex = Math.min(range.start, range.end);
   const endIndex = Math.max(range.start, range.end);
@@ -2003,4 +2029,165 @@ export function computeCompositionRects(
     maxWidth,
     style
   );
+}
+
+export function computeCaretRect(
+  state: TextInputState,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  maxWidth?: number,
+  style?: FontStyle
+): TextSelectionRect | null {
+  const caretIndex = state.selection.end;
+  const { lines, byteToUtf16Index } = layoutDecoratedLines(
+    state.value,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style
+  );
+  if (lines.length === 0) {
+    return null;
+  }
+
+  let targetLine = lines[lines.length - 1]!;
+  for (const line of lines) {
+    const lineStart = findLineStartIndex(line.glyphs, byteToUtf16Index);
+    const lineEnd = findLineEndIndex(line.glyphs, byteToUtf16Index, state.value.length);
+    if (caretIndex >= lineStart && caretIndex <= lineEnd) {
+      targetLine = line;
+      break;
+    }
+    if (caretIndex < lineStart) {
+      targetLine = line;
+      break;
+    }
+  }
+
+  const caretX = caretXAtIndex(targetLine, byteToUtf16Index, caretIndex, state.value.length);
+  return {
+    x: caretX,
+    y: targetLine.y,
+    width: 1,
+    height: targetLine.lineHeight,
+  };
+}
+
+export function caretPrimitive(
+  state: TextInputState,
+  color: Color,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  opts?: {
+    maxWidth?: number;
+    style?: FontStyle;
+    thickness?: number;
+    time?: number;
+    blinkInterval?: number;
+  }
+): RectPrimitive | null {
+  const caretRect = computeCaretRect(
+    state,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    opts?.maxWidth,
+    opts?.style
+  );
+  if (!caretRect) {
+    return null;
+  }
+  const blinkInterval = opts?.blinkInterval ?? 0.8;
+  if (opts?.time !== undefined) {
+    const phase = Math.floor((opts.time / blinkInterval) % 2);
+    if (phase === 1) {
+      return null;
+    }
+  }
+  const thickness = Math.max(1, opts?.thickness ?? 1);
+  return {
+    x: caretRect.x,
+    y: caretRect.y,
+    width: thickness,
+    height: caretRect.height,
+    color,
+    cornerRadius: 0,
+    borderWidth: 0,
+    borderColor: color,
+  };
+}
+
+export function selectionPrimitives(
+  state: TextInputState,
+  color: Color,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  opts?: { maxWidth?: number; style?: FontStyle; cornerRadius?: number }
+): RectPrimitive[] {
+  const rects = computeSelectionRects(
+    state,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    opts?.maxWidth,
+    opts?.style
+  );
+  if (rects.length === 0) {
+    return [];
+  }
+  const cornerRadius = opts?.cornerRadius ?? 2;
+  return rects.map((rect) => ({
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+    color,
+    cornerRadius,
+    borderWidth: 0,
+    borderColor: color,
+  }));
+}
+
+export function compositionUnderlines(
+  state: TextInputState,
+  color: Color,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  opts?: {
+    maxWidth?: number;
+    style?: FontStyle;
+    thickness?: number;
+    wavelength?: number;
+    amplitude?: number;
+  }
+): UnderlinePrimitive[] {
+  const rects = computeCompositionRects(
+    state,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    opts?.maxWidth,
+    opts?.style
+  );
+  if (rects.length === 0) {
+    return [];
+  }
+  const thickness = opts?.thickness ?? Math.max(1, fontSize * 0.08);
+  const wavelength = opts?.wavelength ?? 6;
+  const amplitude = opts?.amplitude ?? 2;
+  return rects.map((rect) => ({
+    x: rect.x,
+    y: rect.y + rect.height - thickness,
+    width: rect.width,
+    thickness,
+    color,
+    style: "wavy",
+    wavelength,
+    amplitude,
+  }));
 }

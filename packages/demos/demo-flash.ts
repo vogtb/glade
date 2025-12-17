@@ -58,11 +58,11 @@ const jetBrainsMonoSemiBoldBase64 = COMPTIME_embedAsBase64(
 const emojiFontFamily = "Noto Color Emoji";
 
 // Embed images as base64 at build time
-const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png") as unknown as string;
-const flowerJpgBase64 = COMPTIME_embedAsBase64("../../assets/flower.jpg") as unknown as string;
+const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png");
+const flowerJpgBase64 = COMPTIME_embedAsBase64("../../assets/flower.jpg");
 
 // Embed SVG as base64 at build time
-const gearSvgBase64 = COMPTIME_embedAsBase64("../../assets/gear.svg") as unknown as string;
+const gearSvgBase64 = COMPTIME_embedAsBase64("../../assets/gear.svg");
 
 // Global image tiles - set after window is created
 let demoImageTile: ImageTile | null = null;
