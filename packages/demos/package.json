@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
     "dev:webgpu:native": "bun ./demo-webgpu.ts",
     "dev:webgpu:web": "bun build ./demo-webgpu.ts --outdir=./dist --minify && bun ./serve.ts",
     "build:webgpu:native": "bun build ./demo-webgpu.ts --compile --outfile=./dist/demo-webgpu",
@@ -13,7 +15,9 @@
     "run:flash:web": "bun build ./demo-flash.ts --outdir=./dist --minify && open 'http://localhost:3000/flash.html' && bun ./serve.ts",
     "build:flash:native": "bun build ./demo-flash.ts --compile --outfile=./dist/demo-flash",
     "build:flash:web": "bun build ./demo-flash.ts ./demo-flash.ts --outdir=./dist --minify",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules"
   },
   "dependencies": {
     "@glade/comptime": "workspace:*",

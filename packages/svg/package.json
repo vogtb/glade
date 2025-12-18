@@ -9,10 +9,13 @@
     "pkg"
   ],
   "scripts": {
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build": "bun run build:wasm",
     "typecheck": "bunx tsc --noEmit",
-    "clean": "rm -rf pkg"
+    "clean": "rm -rf pkg",
+    "nuke": "rm -rf node_modules"
   },
   "dependencies": {
     "@glade/comptime": "workspace:*"

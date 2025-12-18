@@ -5,7 +5,11 @@
   "main": "browser.ts",
   "types": "browser.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules"
   },
   "dependencies": {
     "@glade/core": "workspace:*",

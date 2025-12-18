@@ -1,0 +1,43 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build.release": {
+      "dependsOn": ["^build.release", "gen", "^gen"],
+      "outputs": ["dist/**", "build/**", "deps/**"]
+    },
+    "build.debug": {
+      "dependsOn": ["^build.debug", "gen", "^gen"],
+      "outputs": ["dist/**", "build/**", "deps/**"]
+    },
+    "run.debug.web": {
+      "dependsOn": ["build.debug", "^build.debug"],
+      "cache": false,
+      "persistent": true
+    },
+    "run.debug.native": {
+      "dependsOn": ["build.debug", "^build.debug"],
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "cache": false
+    },
+    "format": {
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    },
+    "nuke": {
+      "dependsOn": ["clean", "^clean"]
+    },
+    "typecheck": {
+      "dependsOn": ["gen", "^gen"],
+      "cache": false
+    },
+    "gen": {
+      "cache": false,
+      "dependsOn": ["^gen"]
+    }
+  }
+}

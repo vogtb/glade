@@ -6,10 +6,6 @@
     "packages/*"
   ],
   "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "typecheck": "bun run --filter '*' typecheck",
     "demo:webgpu:native": "bun run --filter '@glade/demos' dev:webgpu:native",
     "demo:webgpu:web": "bun run --filter '@glade/demos' dev:webgpu:web",
@@ -33,6 +29,7 @@
     "eslint": "9.39.1",
     "globals": "16.5.0",
     "prettier": "3.7.4",
+    "turbo": "2.6.3",
     "typescript": "5.7.2",
     "typescript-eslint": "8.48.1"
   }
