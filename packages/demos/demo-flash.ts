@@ -750,6 +750,7 @@ class DemoRootView implements FlashView {
                   multiline: true,
                   selectionColor: { ...rgb(0x6366f1), a: 0.35 },
                   compositionColor: rgb(0x22c55e),
+                  width: 600,
                   onChange: (_: string) => {
                     this.textInputStatus = "Editing…";
                     cx.notify();

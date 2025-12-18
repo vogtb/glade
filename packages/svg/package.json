@@ -11,8 +11,9 @@
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",
-    "build:wasm": "wasm-pack build --target web --out-dir pkg",
-    "build": "bun run build:wasm",
+    "build.debug": "wasm-pack build --target web --out-dir pkg",
+    "build.release": "wasm-pack build --target web --out-dir pkg",
+    "build": "bun run build.debug",
     "typecheck": "bunx tsc --noEmit",
     "clean": "rm -rf pkg",
     "nuke": "rm -rf node_modules"

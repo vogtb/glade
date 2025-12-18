@@ -602,10 +602,20 @@ export class FlashTextElement extends FlashElement<NoState, NoState> {
 
     const layoutWidth = wrapWidth !== undefined ? Math.max(wrapWidth, 0) : metrics.width;
 
+    // The shaper's measureText returns height = line_y + line_height, where line_y
+    // includes the baseline offset (ascent). For proper layout, we need to normalize
+    // this to use lineHeight-based height that matches our rendering.
+    // For single-line text, height should be lineHeight.
+    // For multi-line, estimate lines from measured height and use lineHeight * numLines.
+    // The shaper's line_y offset is approximately 0.8 * fontSize (ascent).
+    const ascentOffset = this.fontSize * 0.8;
+    const estimatedLines = Math.max(1, Math.round((metrics.height - ascentOffset) / lineHeight));
+    const layoutHeight = estimatedLines * lineHeight;
+
     const layoutId = cx.requestLayout(
       {
         width: layoutWidth,
-        height: metrics.height,
+        height: layoutHeight,
       },
       []
     );

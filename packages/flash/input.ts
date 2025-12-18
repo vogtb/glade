@@ -651,12 +651,15 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     // For multiline, count actual lines based on measured height.
     // The shaper's measureText returns line_y + line_height which overshoots by ~0.8*lineHeight
     // (the first line's baseline offset), so we subtract that before dividing.
+    // Use floor instead of ceil since the height includes partial overshoot.
     let contentHeight: number;
     if (state.multiline && displayText.length > 0) {
       // Estimate number of lines: height ≈ firstLineOffset + numLines * lineHeight
       // where firstLineOffset ≈ 0.8 * lineHeight (ascent). So:
       // numLines ≈ (height - 0.8 * lineHeight) / lineHeight = height/lineHeight - 0.8
-      const estimatedLines = Math.max(1, Math.ceil(textMetrics.height / lineHeight - 0.8));
+      // Use floor + 0.5 tolerance to handle floating point and font metric variations
+      const rawLines = textMetrics.height / lineHeight - 0.8;
+      const estimatedLines = Math.max(1, Math.floor(rawLines + 0.1));
       contentHeight = estimatedLines * lineHeight;
     } else {
       contentHeight = lineHeight;

@@ -848,7 +848,13 @@ export class TextSystem {
     const fallbackFamilies = this.buildFallbackFamilies(fontFamily);
 
     for (const line of glyphLines) {
-      const baselineY = y + line.y + line.lineHeight;
+      // Center text vertically within line height.
+      // The baseline is positioned such that text (ascent + descent = fontSize)
+      // is centered within the lineHeight.
+      // baselineY = top + (lineHeight - fontSize) / 2 + ascent
+      // where ascent ≈ 0.8 * fontSize, so:
+      // baselineY = top + (lineHeight + fontSize * 0.6) / 2
+      const baselineY = y + line.y + (line.lineHeight + safeFontSize * 0.6) / 2;
 
       for (const glyph of line.glyphs) {
         const startIndex = byteToUtf16Index.get(glyph.start);
@@ -2413,11 +2419,9 @@ export function computeCaretRect(
 
   const caretX = caretXAtIndex(targetLine, byteToUtf16Index, caretIndex, state.value.length);
   // Position caret to align with where glyphs are rendered.
-  // Glyphs are positioned relative to baseline at (line.y + lineHeight),
-  // with their tops at approximately (baseline - ascent) where ascent ≈ 0.8 * fontSize.
-  // The caret should span from the glyph top to approximately the baseline + descent.
-  const ascent = fontSize * 0.8;
-  const caretTop = targetLine.y + targetLine.lineHeight - ascent;
+  // Glyphs are vertically centered within line height, so caret should be too.
+  // The caret top = line.y + (lineHeight - fontSize) / 2
+  const caretTop = targetLine.y + (targetLine.lineHeight - fontSize) / 2;
   return {
     x: caretX,
     y: caretTop,
@@ -2504,11 +2508,9 @@ export function computeCaretRectWithLayout(
 
   const caretX = caretXAtIndex(targetLine, layout.byteToUtf16Index, caretIndex, textLength);
   // Position caret to align with where glyphs are rendered.
-  // Glyphs are positioned relative to baseline at (line.y + lineHeight),
-  // with their tops at approximately (baseline - ascent) where ascent ≈ 0.8 * fontSize.
-  // The caret should span from the glyph top to approximately the baseline + descent.
-  const ascent = layout.fontSize * 0.8;
-  const caretTop = targetLine.y + targetLine.lineHeight - ascent;
+  // Glyphs are vertically centered within line height, so caret should be too.
+  // The caret top = line.y + (lineHeight - fontSize) / 2
+  const caretTop = targetLine.y + (targetLine.lineHeight - layout.fontSize) / 2;
   return {
     x: caretX,
     y: caretTop,
