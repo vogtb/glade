@@ -5,7 +5,11 @@
   "main": "dawn.ts",
   "types": "dawn.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules"
   },
   "devDependencies": {
     "@types/bun": "latest"

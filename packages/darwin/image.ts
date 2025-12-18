@@ -3,6 +3,11 @@
  *
  * These decoders work without Web APIs and are used when running
  * natively via Bun/Dawn where browser image decoding APIs aren't available.
+ *
+ * NOTE/TODO: This is very much a one-shot-and-it-works implementation for
+ * image decoding, and could definitely be improved upon either by using a
+ * library for this sort of thing, by using native Objective-C code, or
+ * Rust compiled to WASM.
  */
 
 /**

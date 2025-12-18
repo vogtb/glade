@@ -24,10 +24,11 @@ import { Key } from "./keyboard.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { DragPayload, DropHandler, CanDropPredicate } from "./drag.ts";
 import {
-  computeCaretRect,
+  computeCaretRectWithLayout,
+  createCachedTextLayout,
   cutSelectedText,
   getSelectedText,
-  hitTestText,
+  hitTestWithLayout,
   selectLineAtHit,
   selectWordAtHit,
   setFocused,
@@ -53,9 +54,10 @@ import {
   undo,
   updateComposition,
   updatePointerSelection,
-  selectionPrimitives,
-  compositionUnderlines,
-  caretPrimitive,
+  selectionPrimitivesWithLayout,
+  compositionUnderlinesWithLayout,
+  caretPrimitiveWithLayout,
+  type CachedTextLayout,
   type PointerSelectionSession,
   type SelectionRange,
   type TextHitTestResult,
@@ -119,10 +121,52 @@ export class TextInputController {
   focusHandle: FocusHandle | null;
   pointerSelection: PointerSelectionSession | null;
 
+  // Layout cache - avoids recomputing layout multiple times per frame
+  private cachedLayout: CachedTextLayout | null = null;
+  private layoutCacheKey: string = "";
+
   constructor(init: TextInputStateInit = {}) {
     this.state = createTextInputState(init);
     this.focusHandle = null;
     this.pointerSelection = null;
+  }
+
+  /**
+   * Get or create cached layout for current text and parameters.
+   * The layout is cached and reused until text or parameters change.
+   */
+  getLayout(
+    fontSize: number,
+    lineHeight: number,
+    fontFamily: string,
+    maxWidth?: number,
+    style?: FontStyle
+  ): CachedTextLayout {
+    const text = valueWithComposition(this.state);
+    const key = `${text}|${fontSize}|${lineHeight}|${fontFamily}|${maxWidth ?? ""}`;
+
+    if (this.cachedLayout && this.layoutCacheKey === key) {
+      return this.cachedLayout;
+    }
+
+    this.cachedLayout = createCachedTextLayout(
+      text,
+      fontSize,
+      lineHeight,
+      fontFamily,
+      maxWidth,
+      style
+    );
+    this.layoutCacheKey = key;
+    return this.cachedLayout;
+  }
+
+  /**
+   * Invalidate the cached layout. Call after text changes.
+   */
+  invalidateLayout(): void {
+    this.cachedLayout = null;
+    this.layoutCacheKey = "";
   }
 
   setValue(value: string): void {
@@ -130,6 +174,7 @@ export class TextInputController {
     this.state.selection = { start: value.length, end: value.length };
     this.state.composition = null;
     this.state.preferredCaretX = null;
+    this.invalidateLayout();
   }
 
   setSelection(range: SelectionRange): void {
@@ -146,14 +191,17 @@ export class TextInputController {
 
   insertText(text: string): void {
     insertText(this.state, text);
+    this.invalidateLayout();
   }
 
   deleteBackward(): void {
     deleteBackward(this.state);
+    this.invalidateLayout();
   }
 
   deleteForward(): void {
     deleteForward(this.state);
+    this.invalidateLayout();
   }
 
   moveLeft(extendSelection: boolean): void {
@@ -185,27 +233,39 @@ export class TextInputController {
   }
 
   undo(): boolean {
-    return undo(this.state);
+    const result = undo(this.state);
+    if (result) {
+      this.invalidateLayout();
+    }
+    return result;
   }
 
   redo(): boolean {
-    return redo(this.state);
+    const result = redo(this.state);
+    if (result) {
+      this.invalidateLayout();
+    }
+    return result;
   }
 
   beginComposition(): void {
     beginComposition(this.state);
+    this.invalidateLayout();
   }
 
   updateComposition(text: string): void {
     updateComposition(this.state, text);
+    this.invalidateLayout();
   }
 
   commitComposition(text: string): void {
     commitComposition(this.state, text);
+    this.invalidateLayout();
   }
 
   cancelComposition(): void {
     cancelComposition(this.state);
+    this.invalidateLayout();
   }
 
   startPointerSelection(
@@ -242,6 +302,8 @@ export interface TextDecorationOptions {
   caretThickness?: number;
   caretBlinkInterval?: number;
   time?: number;
+  /** Optional cached layout to use for decoration positioning */
+  layout?: CachedTextLayout;
 }
 
 export function renderTextDecorations(
@@ -263,13 +325,18 @@ export function renderTextDecorations(
     caretThickness,
     caretBlinkInterval,
     time,
+    layout,
   } = options;
 
   if (selectionColor) {
-    const rects = selectionPrimitives(state, selectionColor, fontSize, lineHeight, fontFamily, {
-      maxWidth,
-      style,
-    });
+    const rects = selectionPrimitivesWithLayout(
+      state,
+      selectionColor,
+      fontSize,
+      lineHeight,
+      fontFamily,
+      { maxWidth, style, layout }
+    );
     for (const rect of rects) {
       scene.addRect({
         ...rect,
@@ -280,13 +347,13 @@ export function renderTextDecorations(
   }
 
   if (compositionColor) {
-    const underlines = compositionUnderlines(
+    const underlines = compositionUnderlinesWithLayout(
       state,
       compositionColor,
       fontSize,
       lineHeight,
       fontFamily,
-      { maxWidth, style }
+      { maxWidth, style, layout }
     );
     for (const underline of underlines) {
       scene.addUnderline({
@@ -298,12 +365,13 @@ export function renderTextDecorations(
   }
 
   if (caretColor) {
-    const caret = caretPrimitive(state, caretColor, fontSize, lineHeight, fontFamily, {
+    const caret = caretPrimitiveWithLayout(state, caretColor, fontSize, lineHeight, fontFamily, {
       maxWidth,
       style,
       thickness: caretThickness,
       time,
       blinkInterval: caretBlinkInterval,
+      layout,
     });
     if (caret) {
       scene.addRect({
@@ -381,8 +449,8 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     return this;
   }
 
-  paddingPx(x: number, y: number): this {
-    this.padding = { x, y };
+  pad(v: number): this {
+    this.padding = { x: v, y: v };
     return this;
   }
 
@@ -454,8 +522,6 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     if (!this.contentBounds) {
       return null;
     }
-    const state = this.getState();
-    const text = valueWithComposition(state);
     // Clamp to the content bounds so drags just outside still hit-test to edges.
     const localX = Math.max(
       0,
@@ -467,7 +533,14 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     );
     const local = { x: localX, y: localY };
     const maxWidth = this.contentMaxWidth();
-    return hitTestText(text, local, this.fontSize, this.getLineHeight(), this.fontFamily, maxWidth);
+    // Use cached layout for efficient hit testing
+    const layout = this.controller.getLayout(
+      this.fontSize,
+      this.getLineHeight(),
+      this.fontFamily,
+      maxWidth
+    );
+    return hitTestWithLayout(layout, local);
   }
 
   private exceedsMaxLength(text: string): boolean {
@@ -484,13 +557,16 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     if (!this.contentBounds) {
       return null;
     }
-    const caret = computeCaretRect(
-      this.getState(),
+    const state = this.getState();
+    const maxWidth = this.contentMaxWidth();
+    // Use cached layout for efficient caret computation
+    const layout = this.controller.getLayout(
       this.fontSize,
       this.getLineHeight(),
       this.fontFamily,
-      this.contentMaxWidth()
+      maxWidth
     );
+    const caret = computeCaretRectWithLayout(layout, state.selection.end, state.value.length);
     if (!caret) {
       return null;
     }
@@ -571,8 +647,21 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         textMetrics.width + this.padding.x * 2,
         (placeholderMetrics?.width ?? 0) + this.padding.x * 2
       );
-    const layoutHeight =
-      Math.max(textMetrics.height, placeholderMetrics?.height ?? lineHeight) + this.padding.y * 2;
+    // For single-line inputs, use lineHeight directly.
+    // For multiline, count actual lines based on measured height.
+    // The shaper's measureText returns line_y + line_height which overshoots by ~0.8*lineHeight
+    // (the first line's baseline offset), so we subtract that before dividing.
+    let contentHeight: number;
+    if (state.multiline && displayText.length > 0) {
+      // Estimate number of lines: height ≈ firstLineOffset + numLines * lineHeight
+      // where firstLineOffset ≈ 0.8 * lineHeight (ascent). So:
+      // numLines ≈ (height - 0.8 * lineHeight) / lineHeight = height/lineHeight - 0.8
+      const estimatedLines = Math.max(1, Math.ceil(textMetrics.height / lineHeight - 0.8));
+      contentHeight = estimatedLines * lineHeight;
+    } else {
+      contentHeight = lineHeight;
+    }
+    const layoutHeight = contentHeight + this.padding.y * 2;
 
     const layoutId = cx.requestLayout(
       {
@@ -714,13 +803,15 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     if (!state.multiline) {
       return;
     }
-    const caret = computeCaretRect(
-      state,
+    const maxWidth = this.contentMaxWidth();
+    // Use cached layout for efficient caret computation
+    const layout = this.controller.getLayout(
       this.fontSize,
       this.getLineHeight(),
       this.fontFamily,
-      this.contentMaxWidth()
+      maxWidth
     );
+    const caret = computeCaretRectWithLayout(layout, state.selection.end, state.value.length);
     if (!caret) {
       return;
     }
@@ -1127,6 +1218,14 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       maxWidth,
     });
 
+    // Get cached layout for consistent decoration positioning
+    const layout = this.controller.getLayout(
+      this.fontSize,
+      this.getLineHeight(),
+      this.fontFamily,
+      maxWidth
+    );
+
     renderTextDecorations(cx.scene, state, {
       x: contentX,
       y: contentY,
@@ -1140,6 +1239,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       caretThickness: this.options.caretThickness,
       caretBlinkInterval: this.caretBlinkInterval,
       time: performance.now() / 1000,
+      layout,
     });
   }
 

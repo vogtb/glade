@@ -98,29 +98,27 @@ type DemoSection =
 interface DemoButton {
   id: DemoSection;
   label: string;
-  color: number;
-  hoverColor: number;
 }
 
 const DEMO_BUTTONS: DemoButton[] = [
-  { id: "inter-text", label: "Inter Text", color: 0x3b82f6, hoverColor: 0x2563eb },
-  { id: "wrapped-text", label: "Wrapped Text", color: 0x7c7cff, hoverColor: 0x6b6bf5 },
-  { id: "text-input", label: "Text Input", color: 0x9f7aea, hoverColor: 0x7c3aed },
-  { id: "emoji-text", label: "Emoji Text", color: 0xf472b6, hoverColor: 0xec4899 },
-  { id: "mono-text", label: "Monospace Text", color: 0x10b981, hoverColor: 0x059669 },
-  { id: "mono-semibold", label: "Mono SemiBold", color: 0xf59e0b, hoverColor: 0xd97706 },
-  { id: "underlined-text", label: "Underlined Text", color: 0xef4444, hoverColor: 0xdc2626 },
-  { id: "group-styles", label: "Group Styles", color: 0x8b5cf6, hoverColor: 0x7c3aed },
-  { id: "canvas", label: "Canvas", color: 0x22c55e, hoverColor: 0x16a34a },
-  { id: "vector-paths", label: "Vector Paths", color: 0xec4899, hoverColor: 0xdb2777 },
-  { id: "border-styles", label: "Border Styles", color: 0x06b6d4, hoverColor: 0x0891b2 },
-  { id: "png-images", label: "PNG Images", color: 0x84cc16, hoverColor: 0x65a30d },
-  { id: "jpg-images", label: "JPG Images", color: 0xf97316, hoverColor: 0xea580c },
-  { id: "virtual-scrolling", label: "Virtual Scrolling", color: 0x6366f1, hoverColor: 0x4f46e5 },
-  { id: "deferred-anchored", label: "Deferred/Anchored", color: 0xa855f7, hoverColor: 0x9333ea },
-  { id: "svg-icons", label: "SVG Icons", color: 0x14b8a6, hoverColor: 0x0d9488 },
-  { id: "focus-navigation", label: "Focus Nav", color: 0xec7063, hoverColor: 0xc0392b },
-  { id: "clipboard", label: "Clipboard", color: 0x22c55e, hoverColor: 0x16a34a },
+  { id: "inter-text", label: "Inter Text" },
+  { id: "wrapped-text", label: "Wrapped Text" },
+  { id: "text-input", label: "Text Input" },
+  { id: "emoji-text", label: "Emoji Text" },
+  { id: "mono-text", label: "Monospace Text" },
+  { id: "mono-semibold", label: "Mono SemiBold" },
+  { id: "underlined-text", label: "Underlined Text" },
+  { id: "group-styles", label: "Group Styles" },
+  { id: "canvas", label: "Canvas" },
+  { id: "vector-paths", label: "Vector Paths" },
+  { id: "border-styles", label: "Border Styles" },
+  { id: "png-images", label: "PNG Images" },
+  { id: "jpg-images", label: "JPG Images" },
+  { id: "virtual-scrolling", label: "Virtual Scrolling" },
+  { id: "deferred-anchored", label: "Deferred/Anchored" },
+  { id: "svg-icons", label: "SVG Icons" },
+  { id: "focus-navigation", label: "Focus Nav" },
+  { id: "clipboard", label: "Clipboard" },
 ];
 
 /**
@@ -488,19 +486,17 @@ class DemoRootView implements FlashView {
 
   private renderNavButton(cx: FlashViewContext<this>, btn: DemoButton): FlashDiv {
     const isSelected = this.selectedDemo === btn.id;
-    const grayColor = 0x4a4a55;
-    const baseColor = isSelected ? btn.hoverColor : grayColor;
 
     return div()
       .h(26)
       .flexShrink0()
-      .bg(rgb(baseColor))
-      .rounded(8)
+      .bg(rgb(isSelected ? 0x2563eb : 0x4a4a55))
+      .rounded(4)
       .cursorPointer()
       .border(2)
       .borderColor({ r: 1, g: 1, b: 1, a: isSelected ? 0.3 : 0 })
-      .hover((s) => s.bg(rgb(isSelected ? btn.hoverColor : 0x5a5a65)).shadow("md"))
-      .active((s) => s.bg(rgb(isSelected ? btn.hoverColor : 0x5a5a65)))
+      .hover((s) => s.bg(rgb(isSelected ? 0x2563eb : 0x5a5a65)).shadow("md"))
+      .active((s) => s.bg(rgb(isSelected ? 0x2563eb : 0x5a5a65)))
       .flex()
       .itemsCenter()
       .px(12)
@@ -511,7 +507,7 @@ class DemoRootView implements FlashView {
         })
       )
       .child(
-        text(btn.label).font("Inter").size(12).lineHeight(22).color({ r: 1, g: 1, b: 1, a: 1 })
+        text(btn.label).font("Inter").size(12).lineHeight(26).color({ r: 1, g: 1, b: 1, a: 1 })
       );
   }
 
@@ -742,30 +738,36 @@ class DemoRootView implements FlashView {
               .font("Inter")
               .size(14)
               .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-            textInput("", {
-              controller,
-              focusHandle: inputHandle,
-              placeholder: "Type multi-line text...",
-              multiline: true,
-              selectionColor: { ...rgb(0x6366f1), a: 0.35 },
-              compositionColor: rgb(0x22c55e),
-              onChange: (_: string) => {
-                this.textInputStatus = "Editing…";
-                cx.notify();
-              },
-              onSubmit: (value: string) => {
-                this.textInputStatus = `Submit (${value.length} chars)`;
-                cx.notify();
-              },
-              onCancel: () => {
-                this.textInputStatus = "Canceled";
-                cx.notify();
-              },
-            })
-              .font("Inter")
-              .size(16)
-              .paddingPx(12, 10)
-              .caretBlink(0.7),
+            div()
+              .border(1)
+              .borderColor({ r: 1, g: 0, b: 0, a: 1 })
+              .rounded(4)
+              .child(
+                textInput("", {
+                  controller,
+                  focusHandle: inputHandle,
+                  placeholder: "Type multi-line text...",
+                  multiline: true,
+                  selectionColor: { ...rgb(0x6366f1), a: 0.35 },
+                  compositionColor: rgb(0x22c55e),
+                  onChange: (_: string) => {
+                    this.textInputStatus = "Editing…";
+                    cx.notify();
+                  },
+                  onSubmit: (value: string) => {
+                    this.textInputStatus = `Submit (${value.length} chars)`;
+                    cx.notify();
+                  },
+                  onCancel: () => {
+                    this.textInputStatus = "Canceled";
+                    cx.notify();
+                  },
+                })
+                  .font("Inter")
+                  .size(16)
+                  .pad(4)
+                  .caretBlink(0.7)
+              ),
             div()
               .flex()
               .flexRow()

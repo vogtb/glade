@@ -78,7 +78,7 @@ import {
   FocusContextManager,
   FocusRestoration,
   type TabStopConfig,
-} from "./tab_stop.ts";
+} from "./tab.ts";
 import { FlashRenderer } from "./renderer.ts";
 import { RectPipeline } from "./rect.ts";
 import { ShadowPipeline } from "./shadow.ts";
@@ -1228,10 +1228,17 @@ export class FlashWindow {
           modifiers: { shift: false, ctrl: false, alt: false, meta: false },
         };
         let path = hitTest(this.hitTestTree, { x, y });
-        if (this.mouseDown && path.length === 0) {
-          const focusedPath = getFocusedPath(this.hitTestTree, this.getCurrentFocusId());
-          if (focusedPath.length > 0) {
-            path = focusedPath;
+        // When mouse is down, always route to the focused element.
+        // This ensures drag-to-select works even when cursor leaves the text input bounds.
+        // Without this, hitTest returns the path to whatever element is under the cursor,
+        // and the focused text input never receives mouseMove events during drag.
+        if (this.mouseDown) {
+          const focusId = this.getCurrentFocusId();
+          if (focusId !== null) {
+            const focusedPath = getFocusedPath(this.hitTestTree, focusId);
+            if (focusedPath.length > 0) {
+              path = focusedPath;
+            }
           }
         }
         dispatchMouseEvent("mouseMove", event, path, this, this.getContext());
@@ -1463,7 +1470,7 @@ export class FlashWindow {
     const mods = coreModsToFlashMods(event.mods);
     const flashEvent: FlashKeyEvent = {
       key: String.fromCharCode(event.key),
-      code: event.scancode.toString(),
+      code: event.key.toString(),
       modifiers: mods,
       repeat: event.action === 2,
     };

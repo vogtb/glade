@@ -36,7 +36,7 @@ import { DEFAULT_TOOLTIP_CONFIG, TooltipConfigBuilder } from "./tooltip.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { TabStopConfig } from "./tab_stop.ts";
+import type { TabStopConfig } from "./tab.ts";
 
 /**
  * State passed from requestLayout to prepaint for FlashDiv.

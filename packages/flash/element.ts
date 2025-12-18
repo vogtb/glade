@@ -224,7 +224,7 @@ export interface PrepaintContext {
   registerTabStop?(
     focusId: import("./types.ts").FocusId,
     bounds: Bounds,
-    config: import("./tab_stop.ts").TabStopConfig
+    config: import("./tab.ts").TabStopConfig
   ): void;
 }
 

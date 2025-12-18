@@ -3,6 +3,38 @@
  *
  * Provides text shaping, glyph atlas management, and GPU text rendering.
  * Inspired by Zed's GPUI text system architecture.
+ *
+ * COORDINATE SPACES
+ * =================
+ *
+ * This module uses three coordinate spaces:
+ *
+ * 1. TEXT-LOCAL SPACE
+ *    Origin: (0, 0) at top-left of first character
+ *    Used by:
+ *      - Shaper output: glyph.x, glyph.y positions
+ *      - Hit test results: caretX, caretY in TextHitTestResult
+ *      - Selection/caret rect computation
+ *      - Line layout: line.y positions
+ *
+ * 2. CONTENT-LOCAL SPACE
+ *    Origin: Top-left of content area (after padding in FlashTextInput)
+ *    Used by:
+ *      - hitTestPoint() input after subtracting contentBounds.x/y
+ *    Note: For text starting at origin, this equals text-local space.
+ *
+ * 3. WINDOW SPACE
+ *    Origin: Top-left of the window
+ *    Used by:
+ *      - Mouse events: event.x, event.y
+ *      - Final render positions for glyphs and decorations
+ *    Conversion from text-local: add contentBounds.x/y
+ *
+ * CONVERSION RULES:
+ *   - hitTestText(): Receives TEXT-LOCAL coords, returns TEXT-LOCAL results
+ *   - computeCaretRect(): Returns TEXT-LOCAL rect
+ *   - renderTextDecorations(): Receives TEXT-LOCAL rects, adds origin for WINDOW output
+ *   - prepareGlyphInstances(): Receives WINDOW origin (x,y), outputs WINDOW positions
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
@@ -21,11 +53,24 @@ import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 
 let sharedTextShaper: TextShaper | null = null;
 
+/**
+ * Get the shared text shaper instance.
+ * This is set by TextSystem when it initializes, ensuring all text operations
+ * use the same shaper with the same registered fonts.
+ */
 function getSharedTextShaper(): TextShaper {
   if (!sharedTextShaper) {
     sharedTextShaper = createTextShaper();
   }
   return sharedTextShaper;
+}
+
+/**
+ * Set the shared text shaper instance.
+ * Called by TextSystem to ensure all text operations use the same shaper.
+ */
+export function setSharedTextShaper(shaper: TextShaper): void {
+  sharedTextShaper = shaper;
 }
 
 /**
@@ -438,6 +483,10 @@ export class TextSystem {
 
   constructor(device: GPUDevice, atlasConfig?: Partial<GlyphAtlasConfig>) {
     this.shaper = createTextShaper();
+    // Set this shaper as the shared instance so that all text operations
+    // (hit testing, caret positioning, etc.) use the same shaper with
+    // the same registered fonts.
+    setSharedTextShaper(this.shaper);
     this.atlas = new GlyphAtlas(device, atlasConfig);
 
     // Set up WASM-based rasterizer for native environments (no OffscreenCanvas)
@@ -637,24 +686,37 @@ export class TextSystem {
     let lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
 
     try {
-      lines =
-        effectiveMaxWidth !== undefined
-          ? this.layoutText(text, safeFontSize, safeLineHeight, effectiveMaxWidth, effectiveStyle)
-              .lines
-          : [
-              {
-                glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
-                width: this.measureText(
-                  text,
-                  safeFontSize,
-                  safeLineHeight,
-                  undefined,
-                  effectiveStyle
-                ).width,
-                y: 0,
-                lineHeight: safeLineHeight,
-              },
-            ];
+      if (effectiveMaxWidth !== undefined) {
+        const layoutResult = this.layoutText(
+          text,
+          safeFontSize,
+          safeLineHeight,
+          effectiveMaxWidth,
+          effectiveStyle
+        );
+        // For empty text, layoutText returns no lines - create a fallback empty line
+        lines =
+          layoutResult.lines.length > 0
+            ? layoutResult.lines
+            : [
+                {
+                  glyphs: [],
+                  width: 0,
+                  y: 0,
+                  lineHeight: safeLineHeight,
+                },
+              ];
+      } else {
+        lines = [
+          {
+            glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
+            width: this.measureText(text, safeFontSize, safeLineHeight, undefined, effectiveStyle)
+              .width,
+            y: 0,
+            lineHeight: safeLineHeight,
+          },
+        ];
+      }
     } catch {
       lines = [
         {
@@ -710,26 +772,44 @@ export class TextSystem {
     const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
     let glyphLines: GlyphLine[];
     try {
-      glyphLines =
-        effectiveMaxWidth !== undefined
-          ? this.layoutText(
-              text,
-              safeFontSize,
-              safeLineHeight,
-              effectiveMaxWidth,
-              effectiveStyle
-            ).lines.map((line) => ({
-              glyphs: line.glyphs,
-              y: line.y,
-              lineHeight: line.lineHeight,
-            }))
-          : [
-              {
-                glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
-                y: 0,
-                lineHeight: safeLineHeight,
-              },
-            ];
+      if (effectiveMaxWidth !== undefined) {
+        const layoutResult = this.layoutText(
+          text,
+          safeFontSize,
+          safeLineHeight,
+          effectiveMaxWidth,
+          effectiveStyle
+        );
+        // For empty text, layoutText returns no lines - create a fallback empty line
+        if (layoutResult.lines.length > 0) {
+          // Normalize y values so the first line starts at y=0.
+          // cosmic-text's line_y includes baseline offset which we don't want here
+          // since baselineY calculation already adds lineHeight.
+          const firstLine = layoutResult.lines[0];
+          const firstLineY = firstLine ? firstLine.y : 0;
+          glyphLines = layoutResult.lines.map((line) => ({
+            glyphs: line.glyphs,
+            y: line.y - firstLineY,
+            lineHeight: line.lineHeight,
+          }));
+        } else {
+          glyphLines = [
+            {
+              glyphs: [],
+              y: 0,
+              lineHeight: safeLineHeight,
+            },
+          ];
+        }
+      } else {
+        glyphLines = [
+          {
+            glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
+            y: 0,
+            lineHeight: safeLineHeight,
+          },
+        ];
+      }
     } catch {
       glyphLines = [
         {
@@ -1251,6 +1331,69 @@ export type TextHitTestResult = {
   lineHeight: number;
 };
 
+/**
+ * Cached text layout that can be reused for hit testing, caret computation,
+ * selection rendering, and glyph rendering.
+ *
+ * Create once when text or layout parameters change, then reuse for all operations.
+ * This avoids recomputing layout multiple times per frame.
+ */
+export type CachedTextLayout = {
+  /** The text that was laid out (with composition applied if any) */
+  text: string;
+  /** Font size used for layout */
+  fontSize: number;
+  /** Line height used for layout */
+  lineHeight: number;
+  /** Font family used for layout */
+  fontFamily: string;
+  /** Max width for wrapping (undefined for single-line) */
+  maxWidth: number | undefined;
+  /** Font style options */
+  style: FontStyle | undefined;
+  /** Computed line layout */
+  lines: Array<{
+    glyphs: ShapedGlyph[];
+    width: number;
+    y: number;
+    lineHeight: number;
+  }>;
+  /** Pre-computed UTF-8 byte offset to UTF-16 character index mapping */
+  byteToUtf16Index: Map<number, number>;
+};
+
+/**
+ * Create a cached text layout for a string.
+ * Call once when text changes, then reuse for hit testing, caret, selection, etc.
+ */
+export function createCachedTextLayout(
+  text: string,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  maxWidth?: number,
+  style?: FontStyle
+): CachedTextLayout {
+  const { lines, byteToUtf16Index } = layoutDecoratedLines(
+    text,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style
+  );
+  return {
+    text,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    maxWidth,
+    style,
+    lines,
+    byteToUtf16Index,
+  };
+}
+
 export function createTextInputState(init: TextInputStateInit = {}): TextInputState {
   const value = init.value ?? "";
   const selection = normalizeSelection(
@@ -1455,30 +1598,53 @@ function layoutDecoratedLines(
   let lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
 
   try {
-    lines =
-      effectiveMaxWidth !== undefined
-        ? shaper.layoutText(
+    if (effectiveMaxWidth !== undefined) {
+      const layoutResult = shaper.layoutText(
+        text,
+        safeFontSize,
+        effectiveLineHeight,
+        effectiveMaxWidth,
+        effectiveStyle
+      );
+      // For empty text, layoutText returns no lines - create a fallback empty line
+      if (layoutResult.lines.length > 0) {
+        // Normalize y values so the first line starts at y=0.
+        // cosmic-text's line_y includes baseline offset which we don't want here
+        // since baselineY calculation already adds lineHeight.
+        const firstLine = layoutResult.lines[0];
+        const firstLineY = firstLine ? firstLine.y : 0;
+        lines = layoutResult.lines.map((line) => ({
+          glyphs: line.glyphs,
+          width: line.width,
+          y: line.y - firstLineY,
+          lineHeight: line.lineHeight,
+        }));
+      } else {
+        lines = [
+          {
+            glyphs: [],
+            width: 0,
+            y: 0,
+            lineHeight: effectiveLineHeight,
+          },
+        ];
+      }
+    } else {
+      lines = [
+        {
+          glyphs: shaper.shapeLine(text, safeFontSize, effectiveLineHeight, effectiveStyle).glyphs,
+          width: shaper.measureText(
             text,
             safeFontSize,
             effectiveLineHeight,
-            effectiveMaxWidth,
+            undefined,
             effectiveStyle
-          ).lines
-        : [
-            {
-              glyphs: shaper.shapeLine(text, safeFontSize, effectiveLineHeight, effectiveStyle)
-                .glyphs,
-              width: shaper.measureText(
-                text,
-                safeFontSize,
-                effectiveLineHeight,
-                undefined,
-                effectiveStyle
-              ).width,
-              y: 0,
-              lineHeight: effectiveLineHeight,
-            },
-          ];
+          ).width,
+          y: 0,
+          lineHeight: effectiveLineHeight,
+        },
+      ];
+    }
   } catch {
     const safeWidth = Math.max(1, fallbackWidth);
     lines = [
@@ -1613,6 +1779,34 @@ export function hitTestText(
     };
   }
   return hitTestLines(text, point, lines, byteToUtf16Index, lineHeight);
+}
+
+/**
+ * Hit test using a pre-computed cached layout.
+ * More efficient than hitTestText when layout is reused.
+ *
+ * @param layout - Cached text layout from createCachedTextLayout()
+ * @param point - Point in TEXT-LOCAL coordinates
+ * @returns Hit test result with character index and caret position
+ */
+export function hitTestWithLayout(
+  layout: CachedTextLayout,
+  point: { x: number; y: number }
+): TextHitTestResult {
+  if (layout.lines.length === 0) {
+    return {
+      index: 0,
+      lineIndex: 0,
+      lineStartIndex: 0,
+      lineEndIndex: 0,
+      caretX: 0,
+      caretY: 0,
+      lineTop: 0,
+      lineHeight: layout.lineHeight,
+    };
+  }
+  const defaultLineHeight = layout.lineHeight > 0 ? layout.lineHeight : layout.fontSize;
+  return hitTestLines(layout.text, point, layout.lines, layout.byteToUtf16Index, defaultLineHeight);
 }
 
 function caretXAtIndex(
@@ -2218,11 +2412,108 @@ export function computeCaretRect(
   }
 
   const caretX = caretXAtIndex(targetLine, byteToUtf16Index, caretIndex, state.value.length);
+  // Position caret to align with where glyphs are rendered.
+  // Glyphs are positioned relative to baseline at (line.y + lineHeight),
+  // with their tops at approximately (baseline - ascent) where ascent ≈ 0.8 * fontSize.
+  // The caret should span from the glyph top to approximately the baseline + descent.
+  const ascent = fontSize * 0.8;
+  const caretTop = targetLine.y + targetLine.lineHeight - ascent;
   return {
     x: caretX,
-    y: targetLine.y,
+    y: caretTop,
     width: 1,
-    height: targetLine.lineHeight,
+    height: fontSize,
+  };
+}
+
+/**
+ * Compute range rectangles using a pre-computed cached layout.
+ * More efficient than computeRangeRects when layout is reused.
+ *
+ * @param layout - Cached text layout from createCachedTextLayout()
+ * @param range - Selection range to compute rectangles for
+ * @returns Array of rectangles in TEXT-LOCAL coordinates
+ */
+export function computeRangeRectsWithLayout(
+  layout: CachedTextLayout,
+  range: SelectionRange
+): TextSelectionRect[] {
+  if (layout.lines.length === 0) {
+    return [];
+  }
+
+  const rects: TextSelectionRect[] = [];
+  const startIndex = Math.min(range.start, range.end);
+  const endIndex = Math.max(range.start, range.end);
+
+  for (const line of layout.lines) {
+    const lineStart = findLineStartIndex(line.glyphs, layout.byteToUtf16Index);
+    const lineEnd = findLineEndIndex(line.glyphs, layout.byteToUtf16Index, layout.text.length);
+
+    const overlapStart = Math.max(startIndex, lineStart);
+    const overlapEnd = Math.min(endIndex, lineEnd);
+    if (overlapStart >= overlapEnd) {
+      continue;
+    }
+
+    const xStart = caretXAtIndex(line, layout.byteToUtf16Index, overlapStart, layout.text.length);
+    const xEnd = caretXAtIndex(line, layout.byteToUtf16Index, overlapEnd, layout.text.length);
+
+    rects.push({
+      x: Math.min(xStart, xEnd),
+      y: line.y,
+      width: Math.abs(xEnd - xStart),
+      height: line.lineHeight,
+    });
+  }
+
+  return rects;
+}
+
+/**
+ * Compute caret rectangle using a pre-computed cached layout.
+ * More efficient than computeCaretRect when layout is reused.
+ *
+ * @param layout - Cached text layout from createCachedTextLayout()
+ * @param caretIndex - Character index for caret position
+ * @param textLength - Length of the original text (for line end detection)
+ * @returns Caret rectangle in TEXT-LOCAL coordinates, or null if no lines
+ */
+export function computeCaretRectWithLayout(
+  layout: CachedTextLayout,
+  caretIndex: number,
+  textLength: number
+): TextSelectionRect | null {
+  if (layout.lines.length === 0) {
+    return null;
+  }
+
+  let targetLine = layout.lines[layout.lines.length - 1]!;
+  for (const line of layout.lines) {
+    const lineStart = findLineStartIndex(line.glyphs, layout.byteToUtf16Index);
+    const lineEnd = findLineEndIndex(line.glyphs, layout.byteToUtf16Index, textLength);
+    if (caretIndex >= lineStart && caretIndex <= lineEnd) {
+      targetLine = line;
+      break;
+    }
+    if (caretIndex < lineStart) {
+      targetLine = line;
+      break;
+    }
+  }
+
+  const caretX = caretXAtIndex(targetLine, layout.byteToUtf16Index, caretIndex, textLength);
+  // Position caret to align with where glyphs are rendered.
+  // Glyphs are positioned relative to baseline at (line.y + lineHeight),
+  // with their tops at approximately (baseline - ascent) where ascent ≈ 0.8 * fontSize.
+  // The caret should span from the glyph top to approximately the baseline + descent.
+  const ascent = layout.fontSize * 0.8;
+  const caretTop = targetLine.y + targetLine.lineHeight - ascent;
+  return {
+    x: caretX,
+    y: caretTop,
+    width: 1,
+    height: layout.fontSize,
   };
 }
 
@@ -2303,6 +2594,157 @@ export function selectionPrimitives(
     borderWidth: 0,
     borderColor: color,
   }));
+}
+
+/**
+ * Compute selection primitives using an optional cached layout.
+ * If layout is provided, uses it; otherwise computes a new layout.
+ */
+export function selectionPrimitivesWithLayout(
+  state: TextInputState,
+  color: Color,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  opts?: { maxWidth?: number; style?: FontStyle; cornerRadius?: number; layout?: CachedTextLayout }
+): RectPrimitive[] {
+  let rects: TextSelectionRect[];
+  if (opts?.layout) {
+    rects = computeRangeRectsWithLayout(opts.layout, state.selection);
+  } else {
+    rects = computeSelectionRects(
+      state,
+      fontSize,
+      lineHeight,
+      fontFamily,
+      opts?.maxWidth,
+      opts?.style
+    );
+  }
+  if (rects.length === 0) {
+    return [];
+  }
+  const cornerRadius = opts?.cornerRadius ?? 2;
+  return rects.map((rect) => ({
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+    color,
+    cornerRadius,
+    borderWidth: 0,
+    borderColor: color,
+  }));
+}
+
+/**
+ * Compute composition underlines using an optional cached layout.
+ * If layout is provided, uses it; otherwise computes a new layout.
+ */
+export function compositionUnderlinesWithLayout(
+  state: TextInputState,
+  color: Color,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  opts?: {
+    maxWidth?: number;
+    style?: FontStyle;
+    thickness?: number;
+    wavelength?: number;
+    amplitude?: number;
+    layout?: CachedTextLayout;
+  }
+): UnderlinePrimitive[] {
+  let rects: TextSelectionRect[];
+  if (opts?.layout && state.composition) {
+    // Compute composition range in the composed text
+    const compositionRange = {
+      start: state.composition.start,
+      end: state.composition.start + state.composition.text.length,
+    };
+    rects = computeRangeRectsWithLayout(opts.layout, compositionRange);
+  } else {
+    rects = computeCompositionRects(
+      state,
+      fontSize,
+      lineHeight,
+      fontFamily,
+      opts?.maxWidth,
+      opts?.style
+    );
+  }
+  if (rects.length === 0) {
+    return [];
+  }
+  const thickness = opts?.thickness ?? Math.max(1, fontSize * 0.08);
+  const wavelength = opts?.wavelength ?? 6;
+  const amplitude = opts?.amplitude ?? 2;
+  return rects.map((rect) => ({
+    x: rect.x,
+    y: rect.y + rect.height - thickness,
+    width: rect.width,
+    thickness,
+    color,
+    style: "wavy",
+    wavelength,
+    amplitude,
+  }));
+}
+
+/**
+ * Compute caret primitive using an optional cached layout.
+ * If layout is provided, uses it; otherwise computes a new layout.
+ */
+export function caretPrimitiveWithLayout(
+  state: TextInputState,
+  color: Color,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  opts?: {
+    maxWidth?: number;
+    style?: FontStyle;
+    thickness?: number;
+    time?: number;
+    blinkInterval?: number;
+    layout?: CachedTextLayout;
+  }
+): RectPrimitive | null {
+  let caretRect: TextSelectionRect | null;
+  if (opts?.layout) {
+    caretRect = computeCaretRectWithLayout(opts.layout, state.selection.end, state.value.length);
+  } else {
+    caretRect = computeCaretRect(
+      state,
+      fontSize,
+      lineHeight,
+      fontFamily,
+      opts?.maxWidth,
+      opts?.style
+    );
+  }
+  if (!caretRect) {
+    return null;
+  }
+  const blinkInterval = opts?.blinkInterval ?? 0.8;
+  if (opts?.time !== undefined) {
+    const phase = Math.floor((opts.time / blinkInterval) % 2);
+    if (phase === 1) {
+      return null;
+    }
+  }
+  const thickness = Math.max(1, opts?.thickness ?? 1);
+  return {
+    x: caretRect.x,
+    y: caretRect.y,
+    width: thickness,
+    height: caretRect.height,
+    color,
+    cornerRadius: 0,
+    borderWidth: 0,
+    borderColor: color,
+  };
 }
 
 export function compositionUnderlines(

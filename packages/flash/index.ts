@@ -316,9 +316,9 @@ export { Key, parseKeystroke, matchesKeystroke, formatKeystroke } from "./keyboa
 export { FocusStack, FocusNavigator, FocusContextStack } from "./focus.ts";
 
 // Tab stops and navigation
-export type { TabStopConfig, TabStop } from "./tab_stop.ts";
+export type { TabStopConfig, TabStop } from "./tab.ts";
 
-export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab_stop.ts";
+export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab.ts";
 
 // Action system
 export type { Action, KeyBinding } from "./actions.ts";
@@ -402,3 +402,46 @@ export { AnchoredElement, anchored, edges } from "./anchored.ts";
 export type { SvgPathCommand, ParsedSvgPath, ParsedSvg, TessellatedMesh } from "./svg.ts";
 
 export { SvgElement, svg, parseSvg, SvgIcons, clearSvgCache } from "./svg.ts";
+
+// Ideal text editor system
+export type {
+  DocumentOffset,
+  DocumentPosition,
+  VisualPoint,
+  PositionedGlyph,
+  TextLine,
+  TextDocument,
+  TextSelection,
+  CompositionState,
+  SelectionMode,
+  SelectionGesture,
+  HitTestResult,
+  TextRect,
+} from "./editor.ts";
+
+export {
+  offset,
+  createSelection,
+  collapseToFocus,
+  collapseToAnchor,
+  collapseToStart,
+  collapseToEnd,
+  extendTo,
+  selectAll as selectAllText,
+  prevGrapheme,
+  nextGrapheme,
+  wordBoundaryLeft,
+  wordBoundaryRight,
+  wordStart,
+  wordEnd,
+  createTextDocument,
+  lineAtOffset,
+  lineAtY,
+  offsetToPosition,
+  positionToOffset,
+  offsetToPoint,
+  pointToOffset,
+  selectionRects,
+  caretRect,
+  TextEditor,
+} from "./editor.ts";
