@@ -18,11 +18,10 @@ import type {
   TextInputHandler,
   CompositionHandler,
   ClickHandler,
-  DragStartHandler,
 } from "./dispatch.ts";
 import { Key } from "./keyboard.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
-import type { DragPayload, DropHandler, CanDropPredicate } from "./drag.ts";
+
 import {
   computeCaretRectWithLayout,
   createCachedTextLayout,
@@ -68,10 +67,6 @@ import type { FontStyle } from "@glade/shaper";
 import { FlashScene } from "./scene.ts";
 
 export const TEXT_INPUT_CONTEXT = "flash:text-input";
-
-type TextDragPayload = {
-  text: string;
-};
 
 export interface TextInputOptions {
   value?: string;
@@ -880,57 +875,6 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     return true;
   }
 
-  private buildDragPayload(): DragPayload<TextDragPayload> | null {
-    if (this.options.readonly) {
-      return null;
-    }
-    const text = getSelectedText(this.getState());
-    if (!text) {
-      return null;
-    }
-    return { data: { text } };
-  }
-
-  private isTextDragPayload(payload: unknown): payload is TextDragPayload {
-    if (typeof payload !== "object" || payload === null) {
-      return false;
-    }
-    const textValue = Reflect.get(payload, "text");
-    return typeof textValue === "string";
-  }
-
-  private handleDropPayload(
-    payload: unknown,
-    position: Point,
-    window: FlashWindow,
-    cx: FlashContext
-  ): void {
-    if (this.options.readonly) {
-      return;
-    }
-    if (!this.isTextDragPayload(payload)) {
-      return;
-    }
-    const hit = this.hitTestPoint(position);
-    if (!hit) {
-      return;
-    }
-    this.ensureFocusHandle(cx, window);
-    if (this.controller.focusHandle) {
-      cx.focus(this.controller.focusHandle);
-    }
-    setFocused(this.getState(), true);
-    setSelection(this.getState(), { start: hit.index, end: hit.index });
-    setPreferredCaretX(this.getState(), hit.caretX);
-    if (this.exceedsMaxLength(payload.text)) {
-      return;
-    }
-    this.controller.insertText(payload.text);
-    this.options.onChange?.(this.getState().value);
-    this.revealCaret(window, cx);
-    this.markDirty(cx, window);
-  }
-
   private handleKeyDown: KeyHandler = (event, window, cx) => {
     const state = this.getState();
     const focused = this.controller.focusHandle
@@ -1115,26 +1059,6 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     return undefined;
   };
 
-  private handleDragStart: DragStartHandler<TextDragPayload> = (_event, _window, _cx) => {
-    return this.buildDragPayload();
-  };
-
-  private handleDrop: DropHandler<TextDragPayload> = (
-    payload: TextDragPayload,
-    position: Point,
-    window: FlashWindow,
-    cx: FlashContext
-  ) => {
-    this.handleDropPayload(payload, position, window, cx);
-  };
-
-  private handleCanDrop: CanDropPredicate<TextDragPayload> = (
-    payload: TextDragPayload,
-    _cx: FlashContext
-  ) => {
-    return this.isTextDragPayload(payload);
-  };
-
   private handleClick: ClickHandler = (event, window, cx) => {
     if (event.clickCount < 2) {
       return;
@@ -1167,9 +1091,6 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       compositionStart: this.handleCompositionStart,
       compositionUpdate: this.handleCompositionUpdate,
       compositionEnd: this.handleCompositionEnd,
-      dragStart: this.handleDragStart,
-      drop: this.handleDrop as DropHandler,
-      canDrop: this.handleCanDrop as CanDropPredicate,
     };
     this.handlers = handlers;
     return handlers;
