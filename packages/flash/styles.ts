@@ -101,6 +101,10 @@ export interface Styles {
   minHeight?: number | string;
   maxHeight?: number | string;
 
+  // Percentage-based sizing (0-100)
+  widthPercent?: number;
+  heightPercent?: number;
+
   // Spacing
   paddingTop?: number;
   paddingRight?: number;

@@ -209,6 +209,10 @@ export class FlashLayoutEngine {
     if (typeof style.minHeight === "number") result.minHeight = style.minHeight;
     if (typeof style.maxHeight === "number") result.maxHeight = style.maxHeight;
 
+    // Percentage-based sizing
+    if (typeof style.widthPercent === "number") result.widthPercent = style.widthPercent;
+    if (typeof style.heightPercent === "number") result.heightPercent = style.heightPercent;
+
     if (style.paddingTop !== undefined) result.paddingTop = style.paddingTop;
     if (style.paddingRight !== undefined) result.paddingRight = style.paddingRight;
     if (style.paddingBottom !== undefined) result.paddingBottom = style.paddingBottom;

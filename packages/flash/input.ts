@@ -125,6 +125,9 @@ export class TextInputController {
   private cachedLayout: CachedTextLayout | null = null;
   private layoutCacheKey: string = "";
 
+  // Content bounds from last prepaint - used for multiline height calculation
+  contentBounds: Bounds | null = null;
+
   constructor(init: TextInputStateInit = {}) {
     this.state = createTextInputState(init);
     this.focusHandle = null;
@@ -393,7 +396,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
   private padding = { x: 8, y: 6 };
   private caretBlinkInterval = 0.8;
   private handlers: EventHandlers = {};
-  private contentBounds: Bounds | null = null;
+
   private scrollPadding = 8;
 
   constructor(initialValue = "", options: TextInputOptions = {}) {
@@ -512,24 +515,30 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
   }
 
   private contentMaxWidth(): number | undefined {
-    if (!this.contentBounds || !this.getState().multiline) {
+    if (!this.controller.contentBounds || !this.getState().multiline) {
       return undefined;
     }
-    return Math.max(this.contentBounds.width, 1);
+    return Math.max(this.controller.contentBounds.width, 1);
   }
 
   private hitTestPoint(point: { x: number; y: number }): TextHitTestResult | null {
-    if (!this.contentBounds) {
+    if (!this.controller.contentBounds) {
       return null;
     }
     // Clamp to the content bounds so drags just outside still hit-test to edges.
     const localX = Math.max(
       0,
-      Math.min(point.x - this.contentBounds.x, Math.max(this.contentBounds.width, 0))
+      Math.min(
+        point.x - this.controller.contentBounds.x,
+        Math.max(this.controller.contentBounds.width, 0)
+      )
     );
     const localY = Math.max(
       0,
-      Math.min(point.y - this.contentBounds.y, Math.max(this.contentBounds.height, 0))
+      Math.min(
+        point.y - this.controller.contentBounds.y,
+        Math.max(this.controller.contentBounds.height, 0)
+      )
     );
     const local = { x: localX, y: localY };
     const maxWidth = this.contentMaxWidth();
@@ -554,7 +563,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
   }
 
   private caretRect(): Bounds | null {
-    if (!this.contentBounds) {
+    if (!this.controller.contentBounds) {
       return null;
     }
     const state = this.getState();
@@ -571,8 +580,8 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       return null;
     }
     return {
-      x: this.contentBounds.x + caret.x,
-      y: this.contentBounds.y + caret.y,
+      x: this.controller.contentBounds.x + caret.x,
+      y: this.controller.contentBounds.y + caret.y,
       width: caret.width,
       height: caret.height,
     };
@@ -614,75 +623,62 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     this.syncController(cx);
     const state = this.getState();
     const lineHeight = this.getLineHeight();
-    const displayText = valueWithComposition(state);
 
-    const placeholderMetrics = this.options.placeholder
-      ? cx.measureText(this.options.placeholder, {
-          fontSize: this.fontSize,
-          fontFamily: this.fontFamily,
-          fontWeight: this.fontWeight,
+    // Height calculation: for multiline, we need to measure actual content height
+    // For single-line, it's just one line of text
+    let layoutHeight: number;
+    if (state.multiline) {
+      const displayText = valueWithComposition(state);
+      if (
+        displayText.length > 0 &&
+        this.controller.contentBounds &&
+        this.controller.contentBounds.width > 0
+      ) {
+        // Use cached layout from previous frame to estimate line count
+        const layout = this.controller.getLayout(
+          this.fontSize,
           lineHeight,
-          maxWidth: undefined,
-        })
-      : null;
-
-    const defaultWidth = this.padding.x * 2 + 240;
-    const baseWidth =
-      this.options.width ??
-      Math.max(defaultWidth, (placeholderMetrics?.width ?? 0) + this.padding.x * 2);
-    const maxWidth = state.multiline ? Math.max(baseWidth - this.padding.x * 2, 0) : undefined;
-
-    const textMetrics = cx.measureText(displayText, {
-      fontSize: this.fontSize,
-      fontFamily: this.fontFamily,
-      fontWeight: this.fontWeight,
-      lineHeight,
-      maxWidth,
-    });
-
-    const layoutWidth =
-      this.options.width ??
-      Math.max(
-        baseWidth,
-        textMetrics.width + this.padding.x * 2,
-        (placeholderMetrics?.width ?? 0) + this.padding.x * 2
-      );
-    // For single-line inputs, use lineHeight directly.
-    // For multiline, count actual lines based on measured height.
-    // The shaper's measureText returns line_y + line_height which overshoots by ~0.8*lineHeight
-    // (the first line's baseline offset), so we subtract that before dividing.
-    // Use floor instead of ceil since the height includes partial overshoot.
-    let contentHeight: number;
-    if (state.multiline && displayText.length > 0) {
-      // Estimate number of lines: height ≈ firstLineOffset + numLines * lineHeight
-      // where firstLineOffset ≈ 0.8 * lineHeight (ascent). So:
-      // numLines ≈ (height - 0.8 * lineHeight) / lineHeight = height/lineHeight - 0.8
-      // Use floor + 0.5 tolerance to handle floating point and font metric variations
-      const rawLines = textMetrics.height / lineHeight - 0.8;
-      const estimatedLines = Math.max(1, Math.floor(rawLines + 0.1));
-      contentHeight = estimatedLines * lineHeight;
+          this.fontFamily,
+          this.controller.contentBounds.width
+        );
+        // Calculate height from actual line layout
+        const lineCount = layout.lines.length;
+        layoutHeight = lineCount * lineHeight + this.padding.y * 2;
+        console.log(
+          `[TextInput] multiline height: lineCount=${lineCount}, contentBounds.width=${this.controller.contentBounds.width}, layoutHeight=${layoutHeight}`
+        );
+      } else {
+        // Empty multiline or first frame - use single line height
+        // The height will adjust on the next frame once we have contentBounds
+        layoutHeight = lineHeight + this.padding.y * 2;
+        console.log(
+          `[TextInput] multiline fallback: contentBounds=${JSON.stringify(this.controller.contentBounds)}, displayText.length=${displayText.length}`
+        );
+      }
     } else {
-      contentHeight = lineHeight;
+      // Single-line: always one line of text
+      layoutHeight = lineHeight + this.padding.y * 2;
     }
-    const layoutHeight = contentHeight + this.padding.y * 2;
 
-    const layoutId = cx.requestLayout(
-      {
-        width: layoutWidth,
-        height: layoutHeight,
-      },
-      []
-    );
+    // Build layout style - only set width if explicitly specified
+    // When no width is set, use widthPercent: 100 to fill parent width
+    const layoutStyle: { width?: number; widthPercent?: number; height: number } = {
+      height: layoutHeight,
+    };
+    if (this.options.width !== undefined) {
+      layoutStyle.width = this.options.width;
+    } else {
+      // Fill parent width when no explicit width is specified
+      layoutStyle.widthPercent = 100;
+    }
 
-    const placeholderLayoutId = placeholderMetrics
-      ? cx.requestLayout(
-          {
-            width: placeholderMetrics.width,
-            height: placeholderMetrics.height,
-          },
-          []
-        )
-      : null;
+    const layoutId = cx.requestLayout(layoutStyle, []);
+
+    // Handle placeholder layout if needed
+    let placeholderLayoutId: LayoutId | null = null;
+    if (this.options.placeholder && valueWithComposition(state).length === 0) {
+      placeholderLayoutId = cx.requestLayout({ height: layoutHeight }, []);
+    }
 
     return {
       layoutId,
@@ -699,7 +695,7 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     requestState: TextInputRequestState
   ): TextInputPrepaintState {
     const handlers = this.buildHandlers();
-    this.contentBounds = {
+    this.controller.contentBounds = {
       x: bounds.x + this.padding.x,
       y: bounds.y + this.padding.y,
       width: bounds.width - this.padding.x * 2,
@@ -821,8 +817,8 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     const targetX = state.preferredCaretX ?? caret.x;
     const targetY = direction === -1 ? caret.y - 1 : caret.y + caret.height + 1;
     const hit = this.hitTestPoint({
-      x: (this.contentBounds?.x ?? 0) + targetX,
-      y: (this.contentBounds?.y ?? 0) + targetY,
+      x: (this.controller.contentBounds?.x ?? 0) + targetX,
+      y: (this.controller.contentBounds?.y ?? 0) + targetY,
     });
     if (!hit) {
       return;
