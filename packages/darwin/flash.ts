@@ -113,6 +113,21 @@ class DarwinRenderTarget implements FlashRenderTarget {
   private cursorCallbackRegistered = false;
   private cursorMoveListeners: Array<(x: number, y: number) => void> = [];
 
+  // Mouse button tracking - GLFW only allows one callback, so we multiplex
+  private mouseButtonCallbackRegistered = false;
+  private mouseDownListeners: Array<
+    (x: number, y: number, button: number, mods: Modifiers) => void
+  > = [];
+  private mouseUpListeners: Array<(x: number, y: number, button: number, mods: Modifiers) => void> =
+    [];
+  private clickState = {
+    lastClickTime: 0,
+    clickCount: 0,
+  };
+  private clickListeners: Array<
+    (x: number, y: number, clickCount: number, mods: Modifiers) => void
+  > = [];
+
   constructor(ctx: WebGPUContext) {
     this.ctx = ctx as DarwinWebGPUContextExt;
   }
@@ -128,6 +143,45 @@ class DarwinRenderTarget implements FlashRenderTarget {
       this.cursorY = event.y;
       for (const listener of this.cursorMoveListeners) {
         listener(event.x, event.y);
+      }
+    });
+  }
+
+  private ensureMouseButtonTracking(): void {
+    if (this.mouseButtonCallbackRegistered) {
+      return;
+    }
+    this.mouseButtonCallbackRegistered = true;
+
+    this.ctx.onMouseButton((event) => {
+      const mods = coreModsToFlashMods(event.mods);
+
+      if (event.action === 1) {
+        // Press
+        for (const listener of this.mouseDownListeners) {
+          listener(this.cursorX, this.cursorY, event.button, mods);
+        }
+      } else if (event.action === 0) {
+        // Release
+        for (const listener of this.mouseUpListeners) {
+          listener(this.cursorX, this.cursorY, event.button, mods);
+        }
+
+        // Handle click (only for left button)
+        if (event.button === 0) {
+          const now = performance.now();
+          const DOUBLE_CLICK_TIME = 300;
+          if (now - this.clickState.lastClickTime < DOUBLE_CLICK_TIME) {
+            this.clickState.clickCount++;
+          } else {
+            this.clickState.clickCount = 1;
+          }
+          this.clickState.lastClickTime = now;
+
+          for (const listener of this.clickListeners) {
+            listener(this.cursorX, this.cursorY, this.clickState.clickCount, mods);
+          }
+        }
       }
     });
   }
@@ -176,31 +230,27 @@ class DarwinRenderTarget implements FlashRenderTarget {
     callback: (x: number, y: number, button: number, mods: Modifiers) => void
   ): () => void {
     this.ensureCursorTracking();
-
-    const buttonCleanup = this.ctx.onMouseButton((event) => {
-      if (event.action === 1) {
-        // Press
-        callback(this.cursorX, this.cursorY, event.button, coreModsToFlashMods(event.mods));
-      }
-    });
+    this.ensureMouseButtonTracking();
+    this.mouseDownListeners.push(callback);
 
     return () => {
-      buttonCleanup();
+      const idx = this.mouseDownListeners.indexOf(callback);
+      if (idx >= 0) {
+        this.mouseDownListeners.splice(idx, 1);
+      }
     };
   }
 
   onMouseUp(callback: (x: number, y: number, button: number, mods: Modifiers) => void): () => void {
     this.ensureCursorTracking();
-
-    const buttonCleanup = this.ctx.onMouseButton((event) => {
-      if (event.action === 0) {
-        // Release
-        callback(this.cursorX, this.cursorY, event.button, coreModsToFlashMods(event.mods));
-      }
-    });
+    this.ensureMouseButtonTracking();
+    this.mouseUpListeners.push(callback);
 
     return () => {
-      buttonCleanup();
+      const idx = this.mouseUpListeners.indexOf(callback);
+      if (idx >= 0) {
+        this.mouseUpListeners.splice(idx, 1);
+      }
     };
   }
 
@@ -220,27 +270,14 @@ class DarwinRenderTarget implements FlashRenderTarget {
     callback: (x: number, y: number, clickCount: number, mods: Modifiers) => void
   ): () => void {
     this.ensureCursorTracking();
-
-    let lastClickTime = 0;
-    let clickCount = 0;
-    const DOUBLE_CLICK_TIME = 300;
-
-    const buttonCleanup = this.ctx.onMouseButton((event) => {
-      if (event.action === 0 && event.button === 0) {
-        // Release left button
-        const now = performance.now();
-        if (now - lastClickTime < DOUBLE_CLICK_TIME) {
-          clickCount++;
-        } else {
-          clickCount = 1;
-        }
-        lastClickTime = now;
-        callback(this.cursorX, this.cursorY, clickCount, coreModsToFlashMods(event.mods));
-      }
-    });
+    this.ensureMouseButtonTracking();
+    this.clickListeners.push(callback);
 
     return () => {
-      buttonCleanup();
+      const idx = this.clickListeners.indexOf(callback);
+      if (idx >= 0) {
+        this.clickListeners.splice(idx, 1);
+      }
     };
   }
 

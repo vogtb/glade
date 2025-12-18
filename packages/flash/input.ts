@@ -644,16 +644,10 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         // Calculate height from actual line layout
         const lineCount = layout.lines.length;
         layoutHeight = lineCount * lineHeight + this.padding.y * 2;
-        console.log(
-          `[TextInput] multiline height: lineCount=${lineCount}, contentBounds.width=${this.controller.contentBounds.width}, layoutHeight=${layoutHeight}`
-        );
       } else {
         // Empty multiline or first frame - use single line height
         // The height will adjust on the next frame once we have contentBounds
         layoutHeight = lineHeight + this.padding.y * 2;
-        console.log(
-          `[TextInput] multiline fallback: contentBounds=${JSON.stringify(this.controller.contentBounds)}, displayText.length=${displayText.length}`
-        );
       }
     } else {
       // Single-line: always one line of text
@@ -707,19 +701,21 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
         index: this.options.tabIndex ?? 0,
       });
     }
+    const hitTestNode = {
+      bounds,
+      handlers,
+      focusHandle: this.controller.focusHandle ?? null,
+      scrollHandle: null,
+      keyContext: TEXT_INPUT_CONTEXT,
+      children: [],
+    };
+
     return {
       layoutId: requestState.layoutId,
       placeholderLayoutId: requestState.placeholderLayoutId,
       bounds,
       hitbox,
-      hitTestNode: {
-        bounds,
-        handlers,
-        focusHandle: this.controller.focusHandle ?? null,
-        scrollHandle: null,
-        keyContext: TEXT_INPUT_CONTEXT,
-        children: [],
-      },
+      hitTestNode,
     };
   }
 
