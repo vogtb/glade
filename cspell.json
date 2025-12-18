@@ -39,6 +39,7 @@
     "comptime",
     "rustup",
     "clippy",
-    "pipefail"
+    "pipefail",
+    "vogtb"
   ]
 }

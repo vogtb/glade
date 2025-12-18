@@ -43,13 +43,6 @@ export function initLayout(): InitOutput {
 }
 
 /**
- * Check if the WASM module is initialized.
- */
-export function isInitialized(): boolean {
-  return wasmModule !== null;
-}
-
-/**
  * Create a new layout engine instance.
  * Automatically initializes WASM if not already done.
  */

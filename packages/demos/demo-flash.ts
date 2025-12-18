@@ -745,7 +745,7 @@ class DemoRootView implements FlashView {
             textInput("", {
               controller,
               focusHandle: inputHandle,
-              placeholder: "Type multi-line text…",
+              placeholder: "Type multi-line text...",
               multiline: true,
               selectionColor: { ...rgb(0x6366f1), a: 0.35 },
               compositionColor: rgb(0x22c55e),

@@ -10,6 +10,9 @@ import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 const wasmBase64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm");
 
+// TODO: we should not be using a single wasm module here. We should be creating
+// one inside the flash app, and using it FOR EVERYTHING inside the app because
+// global mutable state is bad.
 let wasmModule: InitOutput | null = null;
 let sharedTessellator: SvgTessellator | null = null;
 
@@ -29,10 +32,6 @@ export function initSvg(): InitOutput {
   const wasmBytes = base64ToBytes(wasmBase64);
   wasmModule = initSync({ module: wasmBytes });
   return wasmModule;
-}
-
-export function isInitialized(): boolean {
-  return wasmModule !== null;
 }
 
 export function createSvgTessellator(): SvgTessellator {
