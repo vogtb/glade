@@ -1289,6 +1289,46 @@ export type SelectionRange = {
   end: number;
 };
 
+/**
+ * Common interface for any state that supports text selection.
+ * Used by both TextInputState (editable) and TextSelectionState (read-only).
+ */
+export interface SelectableState {
+  /** The text content to select within */
+  readonly text: string;
+  /** Current selection range */
+  selection: SelectionRange;
+  /** Preferred X coordinate for vertical cursor movement */
+  preferredCaretX: number | null;
+}
+
+/**
+ * Lightweight selection state for non-editable selectable text.
+ * Unlike TextInputState, this has no editing capabilities (no composition, history, etc.)
+ */
+export type TextSelectionState = {
+  /** The text content (immutable - selection only) */
+  readonly text: string;
+  /** Current selection range */
+  selection: SelectionRange;
+  /** Whether the element is focused */
+  isFocused: boolean;
+  /** Preferred X coordinate for vertical cursor movement */
+  preferredCaretX: number | null;
+};
+
+/**
+ * Create a new text selection state for read-only selectable text.
+ */
+export function createTextSelectionState(text: string): TextSelectionState {
+  return {
+    text,
+    selection: { start: 0, end: 0 },
+    isFocused: false,
+    preferredCaretX: null,
+  };
+}
+
 export type CompositionRange = {
   start: number;
   end: number;
@@ -2097,6 +2137,212 @@ export function moveToEnd(state: TextInputState, extendSelection: boolean): void
 export function selectAll(state: TextInputState): void {
   state.selection = { start: 0, end: state.value.length };
   state.preferredCaretX = null;
+}
+
+// ============ SelectableState functions ============
+// These work with both TextSelectionState and TextInputState (via the text property)
+
+/**
+ * Move selection left for selectable state.
+ */
+export function selectionMoveLeft(state: SelectableState, extendSelection: boolean): void {
+  if (!extendSelection && state.selection.start !== state.selection.end) {
+    const anchor = Math.min(state.selection.start, state.selection.end);
+    state.selection = { start: anchor, end: anchor };
+    state.preferredCaretX = null;
+    return;
+  }
+  const caret = extendSelection ? state.selection.end : state.selection.start;
+  const prev = findPrevGrapheme(state.text, caret);
+  const anchor = extendSelection ? state.selection.start : prev;
+  state.selection = { start: anchor, end: prev };
+  state.preferredCaretX = null;
+}
+
+/**
+ * Move selection right for selectable state.
+ */
+export function selectionMoveRight(state: SelectableState, extendSelection: boolean): void {
+  if (!extendSelection && state.selection.start !== state.selection.end) {
+    const anchor = Math.max(state.selection.start, state.selection.end);
+    state.selection = { start: anchor, end: anchor };
+    state.preferredCaretX = null;
+    return;
+  }
+  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const next = findNextGrapheme(state.text, caret);
+  const anchor = extendSelection ? state.selection.start : next;
+  state.selection = { start: anchor, end: next };
+  state.preferredCaretX = null;
+}
+
+/**
+ * Move selection to previous word boundary.
+ */
+export function selectionMoveWordLeft(state: SelectableState, extendSelection: boolean): void {
+  const caret = extendSelection ? state.selection.end : state.selection.start;
+  const target = findWordBoundaryLeft(state.text, caret);
+  const anchor = extendSelection ? state.selection.start : target;
+  state.selection = { start: anchor, end: target };
+  state.preferredCaretX = null;
+}
+
+/**
+ * Move selection to next word boundary.
+ */
+export function selectionMoveWordRight(state: SelectableState, extendSelection: boolean): void {
+  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const target = findWordBoundaryRight(state.text, caret);
+  const anchor = extendSelection ? state.selection.start : target;
+  state.selection = { start: anchor, end: target };
+  state.preferredCaretX = null;
+}
+
+/**
+ * Move selection to start of text.
+ */
+export function selectionMoveToStart(state: SelectableState, extendSelection: boolean): void {
+  const anchor = extendSelection ? state.selection.start : 0;
+  state.selection = { start: anchor, end: 0 };
+  state.preferredCaretX = null;
+}
+
+/**
+ * Move selection to end of text.
+ */
+export function selectionMoveToEnd(state: SelectableState, extendSelection: boolean): void {
+  const end = state.text.length;
+  const anchor = extendSelection ? state.selection.start : end;
+  state.selection = { start: anchor, end };
+  state.preferredCaretX = null;
+}
+
+/**
+ * Select all text.
+ */
+export function selectionSelectAll(state: SelectableState): void {
+  state.selection = { start: 0, end: state.text.length };
+  state.preferredCaretX = null;
+}
+
+/**
+ * Get selected text from a selectable state.
+ */
+export function getSelectionText(state: SelectableState): string {
+  if (state.selection.start === state.selection.end) {
+    return "";
+  }
+  const start = Math.min(state.selection.start, state.selection.end);
+  const end = Math.max(state.selection.start, state.selection.end);
+  return state.text.slice(start, end);
+}
+
+/**
+ * Apply hit test result to selection.
+ */
+export function selectionApplyHitTest(
+  state: SelectableState,
+  hit: TextHitTestResult,
+  extendSelection: boolean
+): void {
+  if (extendSelection) {
+    state.selection = { start: state.selection.start, end: hit.index };
+  } else {
+    state.selection = { start: hit.index, end: hit.index };
+  }
+  state.preferredCaretX = hit.caretX;
+}
+
+/**
+ * Select word at hit test position.
+ */
+export function selectionSelectWord(state: SelectableState, hit: TextHitTestResult): void {
+  const start = findWordBoundaryLeft(state.text, hit.index);
+  const end = findWordBoundaryRight(state.text, hit.index);
+  state.selection = { start, end };
+  state.preferredCaretX = hit.caretX;
+}
+
+/**
+ * Select line at hit test position.
+ */
+export function selectionSelectLine(state: SelectableState, hit: TextHitTestResult): void {
+  state.selection = { start: hit.lineStartIndex, end: hit.lineEndIndex };
+  state.preferredCaretX = hit.caretX;
+}
+
+/**
+ * Start pointer selection for selectable state.
+ */
+export function selectionStartPointer(
+  state: SelectableState,
+  hit: TextHitTestResult,
+  opts: { shiftExtend: boolean; clickCount: number }
+): PointerSelectionSession {
+  const behavior: SelectionBehavior =
+    opts.clickCount >= 3 ? "line" : opts.clickCount === 2 ? "word" : "caret";
+  if (opts.shiftExtend) {
+    const anchor: SelectionAnchor = {
+      start: state.selection.start,
+      end: state.selection.end,
+      behavior,
+    };
+    selectionUpdateWithAnchor(state, hit, anchor);
+    return { anchor };
+  }
+  const anchor = selectionBegin(state, hit, behavior);
+  return { anchor };
+}
+
+/**
+ * Update pointer selection for selectable state.
+ */
+export function selectionUpdatePointer(
+  state: SelectableState,
+  hit: TextHitTestResult,
+  session: PointerSelectionSession
+): void {
+  selectionUpdateWithAnchor(state, hit, session.anchor);
+}
+
+function selectionBegin(
+  state: SelectableState,
+  hit: TextHitTestResult,
+  behavior: SelectionBehavior
+): SelectionAnchor {
+  const range = selectionRangeForBehavior(state.text, hit, behavior);
+  state.selection = range;
+  state.preferredCaretX = hit.caretX;
+  return { start: range.start, end: range.end, behavior };
+}
+
+function selectionUpdateWithAnchor(
+  state: SelectableState,
+  hit: TextHitTestResult,
+  anchor: SelectionAnchor
+): void {
+  const range = selectionRangeForBehavior(state.text, hit, anchor.behavior);
+  const start = Math.min(anchor.start, range.start);
+  const end = Math.max(anchor.end, range.end);
+  state.selection = { start, end };
+  state.preferredCaretX = hit.caretX;
+}
+
+function selectionRangeForBehavior(
+  text: string,
+  hit: TextHitTestResult,
+  behavior: SelectionBehavior
+): SelectionRange {
+  if (behavior === "word") {
+    return {
+      start: findWordBoundaryLeft(text, hit.index),
+      end: findWordBoundaryRight(text, hit.index),
+    };
+  }
+  if (behavior === "line") {
+    return { start: hit.lineStartIndex, end: hit.lineEndIndex };
+  }
+  return { start: hit.index, end: hit.index };
 }
 
 export function beginComposition(state: TextInputState): void {

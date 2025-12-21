@@ -1278,9 +1278,22 @@ export class FlashWindow {
 
     if (target.onMouseUp) {
       const cleanup = target.onMouseUp((x, y, button, mods) => {
+        const wasMouseDown = this.mouseDown;
         this.mouseDown = false;
         const event: FlashMouseEvent = { x, y, button, modifiers: mods };
-        const path = hitTest(this.hitTestTree, { x, y });
+        let path = hitTest(this.hitTestTree, { x, y });
+
+        // When mouse was down, also route mouseUp to the focused element
+        // This ensures drag-to-select works even when cursor leaves the text bounds
+        if (wasMouseDown) {
+          const focusId = this.getCurrentFocusId();
+          if (focusId !== null) {
+            const focusedPath = getFocusedPath(this.hitTestTree, focusId);
+            if (focusedPath.length > 0) {
+              path = focusedPath;
+            }
+          }
+        }
 
         // Handle drop if dragging
         if (this.dragTracker.isDragging()) {

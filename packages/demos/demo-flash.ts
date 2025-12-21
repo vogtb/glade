@@ -625,7 +625,34 @@ class DemoRootView implements FlashView {
           .font("Inter")
           .size(24)
           .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-        text("32px: The quick brown fox").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 })
+        text("32px: The quick brown fox").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Selectable Text").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text(
+          "Click and drag to select this text. Try double-click for word, triple-click for line."
+        )
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+          .selectable(),
+        text(
+          "This paragraph is selectable. You can use Cmd+A to select all, Cmd+C to copy, and arrow keys to move the cursor. The selection highlight will appear when you drag across the text."
+        )
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+          .maxWidth(520)
+          .selectable(),
+        text("Custom selection color example")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 })
+          .selectable()
+          .selectionColor({ r: 0.2, g: 0.6, b: 0.3, a: 0.4 }),
+        text("This text is NOT selectable (default behavior)")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
       );
   }
 
