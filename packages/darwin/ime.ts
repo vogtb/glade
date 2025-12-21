@@ -1,7 +1,7 @@
 import { dlopen, FFIType, JSCallback, type Pointer } from "bun:ffi";
 import fs from "fs";
 // @ts-expect-error - Bun-specific import attribute for embedded dylib
-import IME_HANDLER_PATH from "../../vendor/ime_handler.dylib" with { type: "file" };
+import IME_HANDLER_PATH from "../../libs/ime_handler.dylib" with { type: "file" };
 
 export interface ImeHandle {
   detach(): void;

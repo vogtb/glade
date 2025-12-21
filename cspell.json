@@ -40,6 +40,7 @@
     "rustup",
     "clippy",
     "pipefail",
-    "vogtb"
+    "vogtb",
+    "dylibs"
   ]
 }

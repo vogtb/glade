@@ -1,4 +1,4 @@
-import type { Color, Bounds, Point } from "./types.ts";
+import type { Color, Bounds } from "./types.ts";
 import { rgb } from "./types.ts";
 import {
   FlashElement,

@@ -428,12 +428,8 @@ export class FlashApp {
     // Flush pending effects
     this.flushEffects();
 
-    // Render and present dirty windows
-    for (const windowId of this.dirtyWindows) {
-      const window = this.windows.get(windowId);
-      if (!window) {
-        continue;
-      }
+    // Always render all windows every frame (needed for animations like cursor blink)
+    for (const [windowId, window] of this.windows) {
       if (window.isClosed()) {
         this.windows.delete(windowId);
         continue;
