@@ -572,14 +572,6 @@ export abstract class FlashContainerElement<
 // ============ Text Element ============
 
 /**
- * Request state for text element - carries info from layout to paint.
- */
-interface TextRequestState {
-  /** The wrap width used during measurement, or undefined if no wrapping */
-  measureWrapWidth: number | undefined;
-}
-
-/**
  * Prepaint state for text element.
  */
 interface TextPrepaintState {
@@ -587,8 +579,6 @@ interface TextPrepaintState {
   hitbox: Hitbox | null;
   handlers: EventHandlers;
   hitTestNode?: HitTestNode;
-  /** The wrap width used during measurement, or undefined if no wrapping */
-  measureWrapWidth: number | undefined;
 }
 
 /**
@@ -597,7 +587,7 @@ interface TextPrepaintState {
  * By default, text is not selectable. Call `.selectable()` to enable selection.
  * By default, text wraps to fit its parent container. Call `.noWrap()` to disable.
  */
-export class FlashTextElement extends FlashElement<TextRequestState, TextPrepaintState> {
+export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   private textColor: Color = { r: 1, g: 1, b: 1, a: 1 };
   private fontSize = 14;
   private fontFamily = "system-ui";
@@ -697,14 +687,8 @@ export class FlashTextElement extends FlashElement<TextRequestState, TextPrepain
     return this.cachedLayout;
   }
 
-  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TextRequestState> {
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
     const lineHeight = this.getLineHeight();
-
-    // Determine wrap width for this text element
-    // If noWrap is set, never wrap
-    // If maxWidth is explicitly set, use that
-    // Otherwise, we'll get the wrap width from the measure callback (stored in registry)
-    const explicitWrapWidth = this.noWrapValue ? undefined : (this.maxWidthValue ?? undefined);
 
     // Register with window for measure callback during layout
     const measureId = cx.registerTextMeasure({
@@ -727,10 +711,10 @@ export class FlashTextElement extends FlashElement<TextRequestState, TextPrepain
       measureId
     );
 
-    return { layoutId, requestState: { measureWrapWidth: explicitWrapWidth } };
+    return { layoutId, requestState: undefined };
   }
 
-  prepaint(cx: PrepaintContext, bounds: Bounds, requestState: TextRequestState): TextPrepaintState {
+  prepaint(cx: PrepaintContext, bounds: Bounds, _requestState: NoState): TextPrepaintState {
     let hitbox: Hitbox | null = null;
 
     // Register with cross-element selection manager if selectable
@@ -750,16 +734,37 @@ export class FlashTextElement extends FlashElement<TextRequestState, TextPrepain
       hitbox,
       handlers: {},
       hitTestNode: undefined,
-      measureWrapWidth: requestState.measureWrapWidth,
     };
   }
 
-  paint(cx: PaintContext, bounds: Bounds, prepaintState: TextPrepaintState): void {
+  paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextPrepaintState): void {
     const lineHeight = this.getLineHeight();
 
-    // Use the wrap width from measurement phase
-    // This ensures paint uses the same wrapping as layout
-    const wrapWidth = prepaintState.measureWrapWidth;
+    // Determine wrap width for rendering:
+    // - If noWrap is set, don't wrap (undefined)
+    // - If explicit maxWidth is set, use that
+    // - If layout gave us single-line height, don't constrain (text fits naturally)
+    // - Otherwise, use bounds.width (text should wrap to its layout bounds)
+    //
+    // The key insight: if bounds.height <= lineHeight, the text measured as single-line
+    // during layout. In this case, we should NOT constrain the wrap width because:
+    // 1. The text already fits on one line
+    // 2. Constraining to bounds.width (which equals the measured width) can cause
+    //    spurious wrapping due to floating point precision differences between
+    //    measurement and rendering
+    let wrapWidth: number | undefined;
+    if (this.noWrapValue) {
+      wrapWidth = undefined;
+    } else if (this.maxWidthValue !== null) {
+      wrapWidth = this.maxWidthValue;
+    } else if (bounds.height <= lineHeight * 1.01) {
+      // Single-line text - don't constrain, it already fits
+      // (1.01 factor for floating point tolerance)
+      wrapWidth = undefined;
+    } else {
+      // Multi-line text - constrain to layout bounds
+      wrapWidth = bounds.width;
+    }
 
     // Selection rendering is handled by CrossElementSelectionManager
     // Just render the text glyphs
