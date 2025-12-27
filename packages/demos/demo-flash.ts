@@ -75,6 +75,7 @@ let flowerImageTile: ImageTile | null = null;
 type DemoSection =
   | "inter-text"
   | "wrapped-text"
+  | "text-newline"
   | "text-input"
   | "emoji-text"
   | "mono-text"
@@ -105,6 +106,7 @@ interface DemoButton {
 const DEMO_BUTTONS: DemoButton[] = [
   { id: "inter-text", label: "Inter Text" },
   { id: "wrapped-text", label: "Wrapped Text" },
+  { id: "text-newline", label: "Text New Line" },
   { id: "text-input", label: "Text Input" },
   { id: "emoji-text", label: "Emoji Text" },
   { id: "mono-text", label: "Monospace Text" },
@@ -535,6 +537,8 @@ class DemoRootView implements FlashView {
         return this.renderInterTextDemo();
       case "wrapped-text":
         return this.renderWrappedTextDemo();
+      case "text-newline":
+        return this.renderTextNewLineDemo();
       case "text-input":
         return this.renderTextInputDemo(cx);
       case "emoji-text":
@@ -740,6 +744,235 @@ class DemoRootView implements FlashView {
               .size(14)
               .color({ r: 0.8, g: 0.85, b: 0.95, a: 1 })
               .maxWidth(520)
+          )
+      );
+  }
+
+  private renderTextNewLineDemo(): FlashDiv {
+    const textColor = { r: 0.9, g: 0.95, b: 1, a: 1 };
+    const labelColor = { r: 0.6, g: 0.65, b: 0.75, a: 1 };
+    const bgColor = { r: 0.15, g: 0.17, b: 0.22, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .p(24)
+      .children_(
+        // Title
+        text("Text Whitespace Handling")
+          .font("Inter")
+          .size(24)
+          .weight(600)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("CSS-like whitespace modes for text elements")
+          .font("Inter")
+          .size(14)
+          .color(labelColor),
+
+        // Example 1: Default behavior (normal)
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg(bgColor)
+          .rounded(8)
+          .children_(
+            text("1. Default (whitespace: normal)")
+              .font("Inter")
+              .size(12)
+              .weight(600)
+              .color(labelColor),
+            text('text("Line 1\\nLine 2\\nLine 3")')
+              .font("JetBrains Mono")
+              .size(12)
+              .color({ r: 0.5, g: 0.8, b: 0.5, a: 1 }),
+            text("Result: Newlines collapse to spaces").font("Inter").size(11).color(labelColor),
+            div()
+              .flex()
+              .p(12)
+              .bg({ r: 0.1, g: 0.12, b: 0.15, a: 1 })
+              .rounded(4)
+              .child(text("Line 1\nLine 2\nLine 3").font("Inter").size(16).color(textColor))
+          ),
+
+        // Example 2: preLine() - preserve newlines
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg(bgColor)
+          .rounded(8)
+          .children_(
+            text("2. Preserve newlines (whitespace: pre-line)")
+              .font("Inter")
+              .size(12)
+              .weight(600)
+              .color(labelColor),
+            text('text("Line 1\\nLine 2\\nLine 3").preLine()')
+              .font("JetBrains Mono")
+              .size(12)
+              .color({ r: 0.5, g: 0.8, b: 0.5, a: 1 }),
+            text("Result: Newlines preserved, spaces collapsed")
+              .font("Inter")
+              .size(11)
+              .color(labelColor),
+            div()
+              .flex()
+              .p(12)
+              .bg({ r: 0.1, g: 0.12, b: 0.15, a: 1 })
+              .rounded(4)
+              .child(
+                text("Line 1\nLine 2\nLine 3").font("Inter").size(16).color(textColor).preLine()
+              )
+          ),
+
+        // Example 3: pre() - preserve all whitespace
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg(bgColor)
+          .rounded(8)
+          .children_(
+            text("3. Preserve all whitespace (whitespace: pre)")
+              .font("Inter")
+              .size(12)
+              .weight(600)
+              .color(labelColor),
+            text('text("  spaced   out  \\n  indented").pre()')
+              .font("JetBrains Mono")
+              .size(12)
+              .color({ r: 0.5, g: 0.8, b: 0.5, a: 1 }),
+            text("Result: All spaces and newlines preserved")
+              .font("Inter")
+              .size(11)
+              .color(labelColor),
+            div()
+              .flex()
+              .p(12)
+              .bg({ r: 0.1, g: 0.12, b: 0.15, a: 1 })
+              .rounded(4)
+              .child(
+                text("  spaced   out  \n  indented").font("Inter").size(16).color(textColor).pre()
+              )
+          ),
+
+        // Example 4: Multiple spaces collapse
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg(bgColor)
+          .rounded(8)
+          .children_(
+            text("4. Space collapsing comparison")
+              .font("Inter")
+              .size(12)
+              .weight(600)
+              .color(labelColor),
+            text('Input: "hello    world"')
+              .font("JetBrains Mono")
+              .size(12)
+              .color({ r: 0.5, g: 0.8, b: 0.5, a: 1 }),
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                div()
+                  .flex()
+                  .gap(12)
+                  .itemsCenter()
+                  .children_(
+                    text("normal:").font("Inter").size(12).color(labelColor),
+                    div()
+                      .p(8)
+                      .bg({ r: 0.1, g: 0.12, b: 0.15, a: 1 })
+                      .rounded(4)
+                      .child(text("hello    world").font("Inter").size(14).color(textColor))
+                  ),
+                div()
+                  .flex()
+                  .gap(12)
+                  .itemsCenter()
+                  .children_(
+                    text("pre:").font("Inter").size(12).color(labelColor),
+                    div()
+                      .p(8)
+                      .bg({ r: 0.1, g: 0.12, b: 0.15, a: 1 })
+                      .rounded(4)
+                      .child(text("hello    world").font("Inter").size(14).color(textColor).pre())
+                  )
+              )
+          ),
+
+        // Example 5: Real-world use case
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg(bgColor)
+          .rounded(8)
+          .children_(
+            text("5. Real-world example: Code snippet")
+              .font("Inter")
+              .size(12)
+              .weight(600)
+              .color(labelColor),
+            div()
+              .flex()
+              .p(12)
+              .bg({ r: 0.08, g: 0.1, b: 0.12, a: 1 })
+              .rounded(4)
+              .child(
+                text("function hello() {\n  console.log('world');\n}")
+                  .font("JetBrains Mono")
+                  .size(14)
+                  .color({ r: 0.4, g: 0.9, b: 0.6, a: 1 })
+                  .preLine()
+              )
+          ),
+
+        // API summary
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg({ r: 0.12, g: 0.14, b: 0.18, a: 1 })
+          .rounded(8)
+          .children_(
+            text("API Summary")
+              .font("Inter")
+              .size(14)
+              .weight(600)
+              .color({ r: 1, g: 1, b: 1, a: 1 }),
+            text('.whitespace("normal") - Collapse all whitespace (default)')
+              .font("JetBrains Mono")
+              .size(11)
+              .color(labelColor),
+            text('.whitespace("pre") or .pre() - Preserve all whitespace')
+              .font("JetBrains Mono")
+              .size(11)
+              .color(labelColor),
+            text('.whitespace("pre-line") or .preLine() - Preserve newlines only')
+              .font("JetBrains Mono")
+              .size(11)
+              .color(labelColor),
+            text('.whitespace("pre-wrap") or .preWrap() - Preserve whitespace + wrap')
+              .font("JetBrains Mono")
+              .size(11)
+              .color(labelColor),
+            text('.whitespace("nowrap") or .noWrap() - Collapse + no wrap')
+              .font("JetBrains Mono")
+              .size(11)
+              .color(labelColor)
           )
       );
   }

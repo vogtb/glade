@@ -74,6 +74,16 @@ export type Cursor = "default" | "pointer" | "text" | "grab" | "grabbing" | "not
  */
 export type BorderStyle = "solid" | "dashed";
 
+/**
+ * Whitespace handling mode (mirrors CSS white-space property).
+ * - "normal": Collapse whitespace (including newlines), wrap text
+ * - "nowrap": Collapse whitespace, no wrapping
+ * - "pre": Preserve all whitespace, no wrapping
+ * - "pre-wrap": Preserve all whitespace, wrap text
+ * - "pre-line": Preserve newlines, collapse other whitespace, wrap text
+ */
+export type WhitespaceMode = "normal" | "nowrap" | "pre" | "pre-wrap" | "pre-line";
+
 // ============ CSS Grid Types ============
 
 /**

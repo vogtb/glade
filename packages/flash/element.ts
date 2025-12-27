@@ -12,7 +12,7 @@
 
 import type { Bounds, Color, ContentMask, TransformationMatrix, FocusId } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
-import type { Styles, Cursor } from "./styles.ts";
+import type { Styles, Cursor, WhitespaceMode } from "./styles.ts";
 import type { HitTestNode, EventHandlers } from "./dispatch.ts";
 import type { FlashViewContext, FlashContext } from "./context.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
@@ -21,7 +21,7 @@ import type { FlashScene } from "./scene.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { FlashWindow as _FlashWindow } from "./window.ts";
-import { createCachedTextLayout, type CachedTextLayout } from "./text.ts";
+import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
 import { rgb } from "./types.ts";
 
 // ============ Debug Info Types ============
@@ -595,6 +595,7 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   private lineHeightValue: number | null = null;
   private maxWidthValue: number | null = null;
   private noWrapValue = false;
+  private whitespaceMode: WhitespaceMode = "normal";
 
   // Selection support
   private isSelectable = false;
@@ -640,10 +641,49 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
 
   /**
    * Disable text wrapping. Text will extend to its natural width.
+   * Also sets whitespace mode to "nowrap" which collapses newlines.
    */
   noWrap(): this {
     this.noWrapValue = true;
+    // noWrap implies whitespace: nowrap (collapse newlines)
+    if (this.whitespaceMode === "normal") {
+      this.whitespaceMode = "nowrap";
+    }
     return this;
+  }
+
+  /**
+   * Set whitespace handling mode (CSS white-space equivalent).
+   * - "normal" (default): Collapse whitespace (including newlines), wrap text
+   * - "nowrap": Collapse whitespace, no wrapping
+   * - "pre": Preserve all whitespace, no wrapping
+   * - "pre-wrap": Preserve all whitespace, wrap text
+   * - "pre-line": Preserve newlines, collapse other whitespace, wrap text
+   */
+  whitespace(mode: WhitespaceMode): this {
+    this.whitespaceMode = mode;
+    return this;
+  }
+
+  /**
+   * Preserve all whitespace, no wrapping (like HTML <pre>).
+   */
+  pre(): this {
+    return this.whitespace("pre");
+  }
+
+  /**
+   * Preserve newlines, collapse other whitespace, wrap text.
+   */
+  preLine(): this {
+    return this.whitespace("pre-line");
+  }
+
+  /**
+   * Preserve all whitespace, wrap text.
+   */
+  preWrap(): this {
+    return this.whitespace("pre-wrap");
   }
 
   /**
@@ -670,14 +710,15 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   private getLayout(): CachedTextLayout {
     const lineHeight = this.getLineHeight();
     const maxWidth = this.maxWidthValue ?? undefined;
-    const key = `${this.textContent}|${this.fontSize}|${lineHeight}|${this.fontFamily}|${maxWidth ?? ""}`;
+    const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
+    const key = `${normalizedText}|${this.fontSize}|${lineHeight}|${this.fontFamily}|${maxWidth ?? ""}|${this.whitespaceMode}`;
 
     if (this.cachedLayout && this.cachedLayoutKey === key) {
       return this.cachedLayout;
     }
 
     this.cachedLayout = createCachedTextLayout(
-      this.textContent,
+      normalizedText,
       this.fontSize,
       lineHeight,
       this.fontFamily,
@@ -690,14 +731,22 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
     const lineHeight = this.getLineHeight();
 
+    // Normalize whitespace before measurement
+    const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
+
+    // Determine if wrapping is allowed based on whitespace mode
+    // pre and nowrap modes disable wrapping
+    const allowWrap = this.whitespaceMode !== "nowrap" && this.whitespaceMode !== "pre";
+    const effectiveNoWrap = this.noWrapValue || !allowWrap;
+
     // Register with window for measure callback during layout
     const measureId = cx.registerTextMeasure({
-      text: this.textContent,
+      text: normalizedText,
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: this.fontWeight,
       lineHeight,
-      noWrap: this.noWrapValue,
+      noWrap: effectiveNoWrap,
       maxWidth: this.maxWidthValue,
     });
 
@@ -740,37 +789,25 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextPrepaintState): void {
     const lineHeight = this.getLineHeight();
 
-    // Determine wrap width for rendering.
-    //
-    // Key insight: Text should only wrap during paint if there's an EXPLICIT
-    // wrapping constraint (noWrap=false with maxWidth set). The layout bounds
-    // represent where the text should be positioned, not a wrapping constraint.
-    //
-    // During measurement, text without explicit maxWidth measures at its natural
-    // (unwrapped) width. The paint phase should honor that - if text measured
-    // as single-line, it should render as single-line regardless of bounds.
-    //
-    // Using bounds.width for wrapping causes issues because:
-    // 1. bounds.width equals the measured text width (intrinsic size)
-    // 2. Floating point precision differences between measure and render
-    //    can cause spurious wrapping at the same "width"
-    // 3. For text in flex/grid containers, the text's bounds are its own
-    //    measured size, not the container's size
+    // Normalize whitespace before rendering
+    const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
+
+    // Determine wrap width for rendering based on whitespace mode.
+    // pre and nowrap modes disable wrapping.
     let wrapWidth: number | undefined;
-    if (this.noWrapValue) {
+    if (this.noWrapValue || this.whitespaceMode === "nowrap" || this.whitespaceMode === "pre") {
       wrapWidth = undefined;
     } else if (this.maxWidthValue !== null) {
       // Only wrap if explicitly told to via maxWidth
       wrapWidth = this.maxWidthValue;
     } else {
       // No explicit constraint - don't wrap during paint
-      // The text measured at natural width during layout
       wrapWidth = undefined;
     }
 
     // Selection rendering is handled by CrossElementSelectionManager
     // Just render the text glyphs
-    cx.paintGlyphs(this.textContent, bounds, this.textColor, {
+    cx.paintGlyphs(normalizedText, bounds, this.textColor, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: this.fontWeight,
