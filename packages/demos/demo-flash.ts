@@ -90,7 +90,8 @@ type DemoSection =
   | "deferred-anchored"
   | "svg-icons"
   | "focus-navigation"
-  | "clipboard";
+  | "clipboard"
+  | "cross-element-selection";
 
 /**
  * Demo button configuration.
@@ -119,6 +120,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "svg-icons", label: "SVG Icons" },
   { id: "focus-navigation", label: "Focus Nav" },
   { id: "clipboard", label: "Clipboard" },
+  { id: "cross-element-selection", label: "Cross-Element Selection" },
 ];
 
 /**
@@ -563,6 +565,8 @@ class DemoRootView implements FlashView {
         return this.renderFocusNavigationDemo(cx);
       case "clipboard":
         return this.renderClipboardDemo(cx);
+      case "cross-element-selection":
+        return this.renderCrossElementSelectionDemo();
       default:
         return div();
     }
@@ -2168,6 +2172,115 @@ class DemoRootView implements FlashView {
             text(lastText).font("Inter").size(15).color({ r: 0.92, g: 0.94, b: 1, a: 1 })
           ),
         text(this.clipboardStatus).font("Inter").size(13).color({ r: 0.72, g: 0.76, b: 0.86, a: 1 })
+      );
+  }
+
+  private renderCrossElementSelectionDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Cross-Element Text Selection")
+          .font("Inter")
+          .size(26)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Select text across multiple paragraphs by clicking and dragging.")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.78, g: 0.82, b: 0.94, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .bg(rgb(0x111827))
+          .rounded(12)
+          .p(20)
+          .border(1)
+          .borderColor({ r: 0.23, g: 0.25, b: 0.34, a: 1 })
+          .children_(
+            text(
+              "First paragraph: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+            )
+              .font("Inter")
+              .size(16)
+              .lineHeight(24)
+              .color({ r: 0.95, g: 0.96, b: 1, a: 1 })
+              .selectable(),
+            text(
+              "Second paragraph: Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+            )
+              .font("Inter")
+              .size(16)
+              .lineHeight(24)
+              .color({ r: 0.95, g: 0.96, b: 1, a: 1 })
+              .selectable(),
+            text(
+              "Third paragraph: Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+            )
+              .font("Inter")
+              .size(16)
+              .lineHeight(24)
+              .color({ r: 0.95, g: 0.96, b: 1, a: 1 })
+              .selectable(),
+            text("Non-selectable text (should be skipped in selection).")
+              .font("Inter")
+              .size(16)
+              .lineHeight(24)
+              .color({ r: 0.5, g: 0.52, b: 0.58, a: 1 }),
+            text(
+              "Fourth paragraph: Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+            )
+              .font("Inter")
+              .size(16)
+              .lineHeight(24)
+              .color({ r: 0.95, g: 0.96, b: 1, a: 1 })
+              .selectable(),
+            text(
+              "Fifth paragraph: Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores."
+            )
+              .font("Inter")
+              .size(16)
+              .lineHeight(24)
+              .color({ r: 0.95, g: 0.96, b: 1, a: 1 })
+              .selectable()
+          ),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .bg(rgb(0x0f172a))
+          .rounded(10)
+          .p(14)
+          .border(1)
+          .borderColor({ r: 0.2, g: 0.22, b: 0.32, a: 1 })
+          .children_(
+            text("Try:")
+              .font("Inter")
+              .size(14)
+              .weight(600)
+              .color({ r: 0.86, g: 0.88, b: 0.96, a: 1 }),
+            text("• Click and drag to select text across paragraphs")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.72, g: 0.76, b: 0.86, a: 1 }),
+            text("• Cmd+C to copy selected text to clipboard")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.72, g: 0.76, b: 0.86, a: 1 }),
+            text("• Cmd+A to select all text in all selectable elements")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.72, g: 0.76, b: 0.86, a: 1 }),
+            text("• Notice non-selectable text is skipped")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.72, g: 0.76, b: 0.86, a: 1 }),
+            text("• Selected text is joined with newlines when copied")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.72, g: 0.76, b: 0.86, a: 1 })
+          )
       );
   }
 

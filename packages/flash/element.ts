@@ -13,43 +13,15 @@
 import type { Bounds, Color, ContentMask, TransformationMatrix, FocusId } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles, Cursor } from "./styles.ts";
-import type {
-  HitTestNode,
-  EventHandlers,
-  KeyHandler,
-  MouseHandler,
-  ClickHandler,
-} from "./dispatch.ts";
+import type { HitTestNode, EventHandlers } from "./dispatch.ts";
 import type { FlashViewContext, FlashContext } from "./context.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { ScrollOffset } from "./types.ts";
 import type { FlashScene } from "./scene.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
-import type { HitboxBehavior } from "./hitbox.ts";
+import { HitboxBehavior } from "./hitbox.ts";
 import type { FlashWindow as _FlashWindow } from "./window.ts";
-import {
-  createTextSelectionState,
-  createCachedTextLayout,
-  hitTestWithLayout,
-  selectionMoveLeft,
-  selectionMoveRight,
-  selectionMoveWordLeft,
-  selectionMoveWordRight,
-  selectionMoveToStart,
-  selectionMoveToEnd,
-  selectionSelectAll,
-  selectionStartPointer,
-  selectionUpdatePointer,
-  selectionSelectWord,
-  selectionSelectLine,
-  getSelectionText,
-  computeRangeRectsWithLayout,
-  type TextSelectionState,
-  type CachedTextLayout,
-  type PointerSelectionSession,
-  type TextHitTestResult,
-} from "./text.ts";
-import { Key } from "./keyboard.ts";
+import { createCachedTextLayout, type CachedTextLayout } from "./text.ts";
 import { rgb } from "./types.ts";
 
 // ============ Debug Info Types ============
@@ -168,6 +140,11 @@ export interface PrepaintContext {
    * Stable identity for the current element.
    */
   readonly elementId: GlobalElementId;
+
+  /**
+   * Get the window instance.
+   */
+  getWindow(): _FlashWindow;
 
   /**
    * Get the computed bounds for a layout ID.
@@ -575,15 +552,6 @@ export abstract class FlashContainerElement<
 // ============ Text Element ============
 
 /**
- * Persistent state for selectable text, cached across frames.
- */
-interface SelectableTextPersistentState {
-  selectionState: TextSelectionState;
-  focusHandle: FocusHandle | null;
-  pointerSelection: PointerSelectionSession | null;
-}
-
-/**
  * Prepaint state for text element.
  */
 interface TextPrepaintState {
@@ -613,9 +581,6 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   // Cached layout for hit testing and selection rendering
   private cachedLayout: CachedTextLayout | null = null;
   private cachedLayoutKey = "";
-
-  // Cached persistent state reference for hitTest access
-  private currentPersistentState: SelectableTextPersistentState | null = null;
 
   constructor(private textContent: string) {
     super();
@@ -692,36 +657,6 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
     return this.cachedLayout;
   }
 
-  private hitTestPoint(bounds: Bounds, point: { x: number; y: number }): TextHitTestResult | null {
-    const localX = Math.max(0, Math.min(point.x - bounds.x, Math.max(bounds.width, 0)));
-    const localY = Math.max(0, Math.min(point.y - bounds.y, Math.max(bounds.height, 0)));
-    const layout = this.getLayout();
-    return hitTestWithLayout(layout, { x: localX, y: localY });
-  }
-
-  private getPersistentState(
-    cx: RequestLayoutContext | PrepaintContext | PaintContext
-  ): SelectableTextPersistentState {
-    const existing = cx.getPersistentState<SelectableTextPersistentState>();
-    if (existing) {
-      // Update text if it changed
-      if (existing.selectionState.text !== this.textContent) {
-        const newState = createTextSelectionState(this.textContent);
-        existing.selectionState = newState;
-      }
-      this.currentPersistentState = existing;
-      return existing;
-    }
-    const newState: SelectableTextPersistentState = {
-      selectionState: createTextSelectionState(this.textContent),
-      focusHandle: null,
-      pointerSelection: null,
-    };
-    cx.setPersistentState(newState);
-    this.currentPersistentState = newState;
-    return newState;
-  }
-
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
     const lineHeight = this.getLineHeight();
     const wrapWidth = this.maxWidthValue ?? undefined;
@@ -753,81 +688,33 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
       []
     );
 
-    // Initialize persistent state for selectable text
-    if (this.isSelectable) {
-      this.getPersistentState(cx);
-    }
-
     return { layoutId, requestState: undefined };
   }
 
   prepaint(cx: PrepaintContext, bounds: Bounds, _requestState: NoState): TextPrepaintState {
     let hitbox: Hitbox | null = null;
-    let handlers: EventHandlers = {};
-    let hitTestNode: HitTestNode | undefined;
 
+    // Register with cross-element selection manager if selectable
     if (this.isSelectable) {
-      hitbox = cx.insertHitbox(bounds, undefined, "text");
-      handlers = this.buildHandlers(bounds);
+      const layout = this.getLayout();
+      const window = cx.getWindow();
+      const manager = window.getCrossElementSelection();
+      const key = manager.computeKeyForRegistration(this.textContent, bounds);
+      manager.registerElement(key, this.textContent, bounds, layout, true);
 
-      // Get persistent state (focusHandle is created on first mouseDown)
-      const persistent = this.getPersistentState(cx);
-
-      hitTestNode = {
-        bounds,
-        handlers,
-        focusHandle: persistent.focusHandle,
-        scrollHandle: null,
-        keyContext: "flash:selectable-text",
-        children: [],
-      };
+      // Create hitbox with text cursor for selectable text
+      hitbox = cx.insertHitbox(bounds, HitboxBehavior.Normal, "text");
     }
 
-    return { bounds, hitbox, handlers, hitTestNode };
+    return { bounds, hitbox, handlers: {}, hitTestNode: undefined };
   }
 
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextPrepaintState): void {
     const lineHeight = this.getLineHeight();
     const wrapWidth = this.maxWidthValue ?? undefined;
 
-    // Render selection highlights if selectable and has selection
-    if (this.isSelectable) {
-      const persistent = this.getPersistentState(cx);
-      const { selectionState } = persistent;
-
-      // Check actual focus state from the system
-      const isFocused = persistent.focusHandle ? cx.isFocused(persistent.focusHandle) : false;
-
-      // Sync focus state - clear selection when we lose focus
-      if (!isFocused && selectionState.isFocused) {
-        selectionState.isFocused = false;
-        selectionState.selection = { start: 0, end: 0 };
-        persistent.pointerSelection = null;
-      }
-
-      // Only render selection if focused and has non-empty selection
-      if (isFocused && selectionState.selection.start !== selectionState.selection.end) {
-        const layout = this.getLayout();
-        const rects = computeRangeRectsWithLayout(layout, selectionState.selection);
-
-        for (const rect of rects) {
-          cx.paintRect(
-            {
-              x: bounds.x + rect.x,
-              y: bounds.y + rect.y,
-              width: rect.width,
-              height: rect.height,
-            },
-            {
-              backgroundColor: this.selectionColorValue,
-              borderRadius: 2,
-            }
-          );
-        }
-      }
-    }
-
-    // Render text
+    // Selection rendering is handled by CrossElementSelectionManager
+    // Just render the text glyphs
     cx.paintGlyphs(this.textContent, bounds, this.textColor, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
@@ -837,194 +724,9 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
     });
   }
 
-  hitTest(bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
-    if (!this.isSelectable) {
-      return null;
-    }
-
-    const handlers = this.buildHandlers(bounds);
-    return {
-      bounds,
-      handlers,
-      focusHandle: this.currentPersistentState?.focusHandle ?? null,
-      scrollHandle: null,
-      keyContext: "flash:selectable-text",
-      children: [],
-    };
-  }
-
-  private buildHandlers(bounds: Bounds): EventHandlers {
-    const handleMouseDown: MouseHandler = (event, window, cx) => {
-      const persistent = this.currentPersistentState;
-      if (!persistent) {
-        return;
-      }
-
-      // Create focus handle if needed
-      if (!persistent.focusHandle) {
-        persistent.focusHandle = cx.newFocusHandle(window.id);
-      }
-
-      // Take focus
-      cx.focus(persistent.focusHandle);
-      persistent.selectionState.isFocused = true;
-
-      // Hit test and start selection
-      const hit = this.hitTestPoint(bounds, { x: event.x, y: event.y });
-      if (hit) {
-        persistent.pointerSelection = selectionStartPointer(persistent.selectionState, hit, {
-          shiftExtend: event.modifiers.shift,
-          clickCount: 1,
-        });
-      }
-
-      cx.markWindowDirty(window.id);
-      return { stopPropagation: true, preventDefault: true };
-    };
-
-    const handleMouseMove: MouseHandler = (event, window, cx) => {
-      const persistent = this.currentPersistentState;
-      if (!persistent || !persistent.pointerSelection) {
-        return;
-      }
-
-      // Check if we're still focused and mouse is still down
-      // If not, clear the pointer selection
-      const isFocused = persistent.focusHandle ? cx.isFocused(persistent.focusHandle) : false;
-      if (!isFocused) {
-        persistent.pointerSelection = null;
-        return;
-      }
-
-      const hit = this.hitTestPoint(bounds, { x: event.x, y: event.y });
-      if (hit) {
-        selectionUpdatePointer(persistent.selectionState, hit, persistent.pointerSelection);
-      }
-
-      cx.markWindowDirty(window.id);
-      return { stopPropagation: true, preventDefault: true };
-    };
-
-    const handleMouseUp: MouseHandler = (_event, window, cx) => {
-      const persistent = this.currentPersistentState;
-      if (!persistent) {
-        return undefined;
-      }
-
-      if (persistent.pointerSelection) {
-        persistent.pointerSelection = null;
-        cx.markWindowDirty(window.id);
-        return { stopPropagation: true, preventDefault: true };
-      }
-      return undefined;
-    };
-
-    const handleClick: ClickHandler = (event, window, cx) => {
-      if (event.clickCount < 2) {
-        return;
-      }
-
-      const persistent = this.currentPersistentState;
-      if (!persistent) {
-        return;
-      }
-
-      const hit = this.hitTestPoint(bounds, { x: event.x, y: event.y });
-      if (!hit) {
-        return;
-      }
-
-      if (event.clickCount >= 3) {
-        selectionSelectLine(persistent.selectionState, hit);
-      } else {
-        selectionSelectWord(persistent.selectionState, hit);
-      }
-
-      persistent.pointerSelection = null;
-      cx.markWindowDirty(window.id);
-      return { stopPropagation: true, preventDefault: true };
-    };
-
-    const handleKeyDown: KeyHandler = (event, window, cx) => {
-      const persistent = this.currentPersistentState;
-      if (!persistent) {
-        return;
-      }
-
-      // Only handle if focused
-      if (!persistent.focusHandle || !cx.isFocused(persistent.focusHandle)) {
-        return;
-      }
-
-      const { selectionState } = persistent;
-      const code = Number(event.code);
-      const mods = event.modifiers;
-      const extendSelection = mods.shift;
-
-      // Cmd+A: Select all
-      if (mods.meta && !mods.alt && !mods.ctrl && code === Key.A) {
-        selectionSelectAll(selectionState);
-        cx.markWindowDirty(window.id);
-        return { stopPropagation: true, preventDefault: true };
-      }
-
-      // Cmd+C: Copy
-      if (mods.meta && !mods.alt && !mods.ctrl && code === Key.C) {
-        const text = getSelectionText(selectionState);
-        if (text) {
-          const clipboard = window.getClipboard();
-          if (clipboard.supportsWriteText) {
-            clipboard.writeText(text).catch((err) => {
-              console.warn("Clipboard write failed:", err);
-            });
-          }
-        }
-        return { stopPropagation: true, preventDefault: true };
-      }
-
-      // Arrow keys for cursor movement
-      if (code === Key.Left) {
-        if (mods.alt || mods.ctrl) {
-          selectionMoveWordLeft(selectionState, extendSelection);
-        } else {
-          selectionMoveLeft(selectionState, extendSelection);
-        }
-        cx.markWindowDirty(window.id);
-        return { stopPropagation: true, preventDefault: true };
-      }
-
-      if (code === Key.Right) {
-        if (mods.alt || mods.ctrl) {
-          selectionMoveWordRight(selectionState, extendSelection);
-        } else {
-          selectionMoveRight(selectionState, extendSelection);
-        }
-        cx.markWindowDirty(window.id);
-        return { stopPropagation: true, preventDefault: true };
-      }
-
-      if (code === Key.Home) {
-        selectionMoveToStart(selectionState, extendSelection);
-        cx.markWindowDirty(window.id);
-        return { stopPropagation: true, preventDefault: true };
-      }
-
-      if (code === Key.End) {
-        selectionMoveToEnd(selectionState, extendSelection);
-        cx.markWindowDirty(window.id);
-        return { stopPropagation: true, preventDefault: true };
-      }
-
-      return undefined;
-    };
-
-    return {
-      mouseDown: handleMouseDown,
-      mouseMove: handleMouseMove,
-      mouseUp: handleMouseUp,
-      click: handleClick,
-      keyDown: handleKeyDown,
-    };
+  hitTest(_bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
+    // Selection is now handled by CrossElementSelectionManager
+    return null;
   }
 }
 

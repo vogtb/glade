@@ -87,6 +87,7 @@ import { PathPipeline } from "./path.ts";
 import { UnderlinePipeline } from "./underline.ts";
 import { ImageAtlas, ImagePipeline, type ImageTile, type DecodedImage } from "./image.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
+import { CrossElementSelectionManager } from "./select.ts";
 
 /**
  * Options for creating a window.
@@ -240,6 +241,9 @@ export class FlashWindow {
   private fpsFrameCount = 0;
   private fpsLastTime = 0;
   private fpsEnabled = true;
+
+  // Cross-element text selection
+  private crossElementSelection: CrossElementSelectionManager | null = null;
 
   constructor(
     readonly id: WindowId,
@@ -757,6 +761,26 @@ export class FlashWindow {
     return this.currentContentMask;
   }
 
+  // ============ Cross-Element Text Selection ============
+
+  /**
+   * Get the cross-element selection manager.
+   */
+  getCrossElementSelection(): CrossElementSelectionManager {
+    if (!this.crossElementSelection) {
+      this.crossElementSelection = new CrossElementSelectionManager(this);
+    }
+    return this.crossElementSelection;
+  }
+
+  /**
+   * Get persistent element state map.
+   * Used by CrossElementSelectionManager to store state.
+   */
+  getElementState(): Map<GlobalElementId, unknown> {
+    return this.elementState;
+  }
+
   // ============ Inspector/Debug Mode ============
 
   /**
@@ -871,6 +895,14 @@ export class FlashWindow {
     }
 
     this.updateFocusContexts();
+
+    // Paint cross-element selection highlights (after elements, before inspector)
+    if (this.crossElementSelection) {
+      // Compute visual order before painting (needed for getSelectionRanges)
+      this.crossElementSelection.computeVisualOrder();
+      const selectionColor = { r: 0.23, g: 0.51, b: 0.96, a: 0.35 }; // Blue with 35% opacity
+      this.crossElementSelection.paintSelectionHighlights(this.scene, selectionColor);
+    }
 
     // Build inspector debug info from hit test tree if inspector is enabled
     if (this.inspector.isEnabled()) {
@@ -1026,6 +1058,8 @@ export class FlashWindow {
     this.focusContextManager.clear();
     // Clear deferred draw queue from previous frame
     this.deferredDrawQueue = [];
+    // Clear cross-element selection registry
+    this.crossElementSelection?.beginFrame();
   }
 
   private paintDeferredElements(): void {
@@ -1061,6 +1095,9 @@ export class FlashWindow {
     const hoveredHitboxId =
       this.mouseHitTest.hoverHitboxCount > 0 ? (this.mouseHitTest.ids[0] ?? null) : null;
     this.tooltipManager.update(hoveredHitboxId, this.platform.now(), this.getContext());
+
+    // Compute visual order and validate cross-element selection
+    this.crossElementSelection?.endFrame();
   }
 
   private updateCursor(): void {
@@ -1227,6 +1264,18 @@ export class FlashWindow {
           button: 0,
           modifiers: { shift: false, ctrl: false, alt: false, meta: false },
         };
+
+        // Intercept for cross-element selection if mouse is down
+        if (this.mouseDown) {
+          const manager = this.getCrossElementSelection();
+          if (manager.hasSelectableElements()) {
+            const result = manager.handleMouseMove(event, this, this.getContext());
+            if (result?.stopPropagation) {
+              return; // Manager handled it
+            }
+          }
+        }
+
         let path = hitTest(this.hitTestTree, { x, y });
         // When mouse is down, always route to the focused element.
         // This ensures drag-to-select works even when cursor leaves the text input bounds.
@@ -1248,6 +1297,20 @@ export class FlashWindow {
 
     if (target.onMouseDown) {
       const cleanup = target.onMouseDown((x, y, button, mods) => {
+        // Intercept for cross-element selection FIRST
+        const manager = this.getCrossElementSelection();
+        if (manager.hasSelectableElements() && button === 0) {
+          const result = manager.handleMouseDown(
+            { x, y, button, modifiers: mods },
+            this,
+            this.getContext()
+          );
+          if (result?.stopPropagation) {
+            this.mouseDown = true;
+            return; // Manager handled it
+          }
+        }
+
         this.mouseDown = true;
         const event: FlashMouseEvent = { x, y, button, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
@@ -1278,6 +1341,20 @@ export class FlashWindow {
 
     if (target.onMouseUp) {
       const cleanup = target.onMouseUp((x, y, button, mods) => {
+        // Intercept for cross-element selection
+        const manager = this.getCrossElementSelection();
+        if (manager.hasSelectableElements() && button === 0) {
+          const result = manager.handleMouseUp(
+            { x, y, button, modifiers: mods },
+            this,
+            this.getContext()
+          );
+          if (result?.stopPropagation) {
+            this.mouseDown = false;
+            return; // Manager handled it
+          }
+        }
+
         const wasMouseDown = this.mouseDown;
         this.mouseDown = false;
         const event: FlashMouseEvent = { x, y, button, modifiers: mods };
@@ -1479,7 +1556,7 @@ export class FlashWindow {
       return;
     }
 
-    // If action dispatch didn't handle it, dispatch as regular key event
+    // Try cross-element selection manager for keyboard commands
     const mods = coreModsToFlashMods(event.mods);
     const flashEvent: FlashKeyEvent = {
       key: String.fromCharCode(event.key),
@@ -1488,6 +1565,15 @@ export class FlashWindow {
       repeat: event.action === 2,
     };
 
+    const manager = this.getCrossElementSelection();
+    if (manager.hasSelectableElements() && event.action === 1) {
+      const selectionResult = manager.handleKeyDown(flashEvent, this, cx);
+      if (selectionResult?.stopPropagation) {
+        return;
+      }
+    }
+
+    // If action dispatch didn't handle it, dispatch as regular key event
     const type = event.action === 0 ? "keyUp" : "keyDown";
     dispatchKeyEvent(type, flashEvent, path, this, cx);
   }
@@ -1600,6 +1686,10 @@ export class FlashWindow {
 
     return {
       elementId,
+
+      getWindow: (): FlashWindow => {
+        return this;
+      },
 
       getBounds: (layoutId: LayoutId): Bounds => {
         return layoutEngine.layoutBounds(layoutId);
