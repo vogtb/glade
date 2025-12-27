@@ -7,7 +7,11 @@ use js_sys::Function;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use taffy::prelude::*;
-use taffy::{Overflow, Point as TaffyPoint};
+use taffy::style_helpers::TaffyGridLine;
+use taffy::{
+    GridAutoFlow, GridPlacement, MaxTrackSizingFunction, MinTrackSizingFunction,
+    NonRepeatedTrackSizingFunction, Overflow, Point as TaffyPoint, TrackSizingFunction,
+};
 use wasm_bindgen::prelude::*;
 
 /// Opaque layout node ID exposed to JS.
@@ -73,6 +77,51 @@ impl LayoutBounds {
     }
 }
 
+// ============ CSS Grid Input Types ============
+
+/// Track size input from JavaScript.
+/// Maps to Flash's TrackSize type.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
+pub enum TrackSizeInput {
+    Fixed {
+        value: f32,
+    },
+    Fr {
+        value: f32,
+    },
+    Auto,
+    MinContent,
+    MaxContent,
+    Minmax {
+        min: Box<TrackSizeInput>,
+        max: Box<TrackSizeInput>,
+    },
+}
+
+/// Grid template input from JavaScript.
+/// Maps to Flash's GridTemplate type.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
+pub enum GridTemplateInput {
+    /// N equal columns/rows of 1fr each
+    Count { value: u16 },
+    /// Explicit track sizing
+    Tracks { tracks: Vec<TrackSizeInput> },
+}
+
+/// Grid placement input from JavaScript.
+/// Maps to Flash's GridPlacement type.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
+pub enum GridPlacementInput {
+    Auto,
+    Line { value: i16 },
+    Span { value: u16 },
+}
+
+// ============ Style Input ============
+
 /// Style input from JavaScript.
 /// Maps to Flash's Styles interface.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -90,6 +139,19 @@ pub struct StyleInput {
     pub gap: Option<f32>,
     pub row_gap: Option<f32>,
     pub column_gap: Option<f32>,
+
+    // CSS Grid Container
+    pub grid_template_columns: Option<GridTemplateInput>,
+    pub grid_template_rows: Option<GridTemplateInput>,
+    pub grid_auto_columns: Option<TrackSizeInput>,
+    pub grid_auto_rows: Option<TrackSizeInput>,
+    pub grid_auto_flow: Option<String>,
+
+    // CSS Grid Item
+    pub grid_column_start: Option<GridPlacementInput>,
+    pub grid_column_end: Option<GridPlacementInput>,
+    pub grid_row_start: Option<GridPlacementInput>,
+    pub grid_row_end: Option<GridPlacementInput>,
 
     // Sizing
     pub width: Option<f32>,
@@ -139,6 +201,110 @@ pub struct StyleInput {
     pub border_width: Option<f32>,
 }
 
+// ============ Grid Type Conversions ============
+
+impl TrackSizeInput {
+    /// Convert to Taffy's NonRepeatedTrackSizingFunction
+    fn to_taffy(&self) -> NonRepeatedTrackSizingFunction {
+        match self {
+            TrackSizeInput::Fixed { value } => NonRepeatedTrackSizingFunction {
+                min: MinTrackSizingFunction::Fixed(LengthPercentage::Length(*value)),
+                max: MaxTrackSizingFunction::Fixed(LengthPercentage::Length(*value)),
+            },
+            TrackSizeInput::Fr { value } => {
+                // Standard fr: minmax(0, Nfr) - allows shrinking to 0
+                NonRepeatedTrackSizingFunction {
+                    min: MinTrackSizingFunction::Fixed(LengthPercentage::Length(0.0)),
+                    max: MaxTrackSizingFunction::Fraction(*value),
+                }
+            }
+            TrackSizeInput::Auto => NonRepeatedTrackSizingFunction {
+                min: MinTrackSizingFunction::Auto,
+                max: MaxTrackSizingFunction::Auto,
+            },
+            TrackSizeInput::MinContent => NonRepeatedTrackSizingFunction {
+                min: MinTrackSizingFunction::MinContent,
+                max: MaxTrackSizingFunction::MinContent,
+            },
+            TrackSizeInput::MaxContent => NonRepeatedTrackSizingFunction {
+                min: MinTrackSizingFunction::MaxContent,
+                max: MaxTrackSizingFunction::MaxContent,
+            },
+            TrackSizeInput::Minmax { min, max } => NonRepeatedTrackSizingFunction {
+                min: min.to_min_track(),
+                max: max.to_max_track(),
+            },
+        }
+    }
+
+    /// Convert to MinTrackSizingFunction (for minmax min value)
+    fn to_min_track(&self) -> MinTrackSizingFunction {
+        match self {
+            TrackSizeInput::Fixed { value } => {
+                MinTrackSizingFunction::Fixed(LengthPercentage::Length(*value))
+            }
+            TrackSizeInput::Fr { .. } => {
+                // Fr not valid for min, treat as 0
+                MinTrackSizingFunction::Fixed(LengthPercentage::Length(0.0))
+            }
+            TrackSizeInput::Auto => MinTrackSizingFunction::Auto,
+            TrackSizeInput::MinContent => MinTrackSizingFunction::MinContent,
+            TrackSizeInput::MaxContent => MinTrackSizingFunction::MaxContent,
+            TrackSizeInput::Minmax { min, .. } => min.to_min_track(),
+        }
+    }
+
+    /// Convert to MaxTrackSizingFunction (for minmax max value)
+    fn to_max_track(&self) -> MaxTrackSizingFunction {
+        match self {
+            TrackSizeInput::Fixed { value } => {
+                MaxTrackSizingFunction::Fixed(LengthPercentage::Length(*value))
+            }
+            TrackSizeInput::Fr { value } => MaxTrackSizingFunction::Fraction(*value),
+            TrackSizeInput::Auto => MaxTrackSizingFunction::Auto,
+            TrackSizeInput::MinContent => MaxTrackSizingFunction::MinContent,
+            TrackSizeInput::MaxContent => MaxTrackSizingFunction::MaxContent,
+            TrackSizeInput::Minmax { max, .. } => max.to_max_track(),
+        }
+    }
+}
+
+impl GridTemplateInput {
+    /// Convert to Vec<TrackSizingFunction> for Taffy
+    fn to_taffy(&self) -> Vec<TrackSizingFunction> {
+        match self {
+            GridTemplateInput::Count { value } => {
+                // N columns/rows of 1fr each (GPUI pattern: minmax(0, 1fr))
+                (0..*value)
+                    .map(|_| {
+                        TrackSizingFunction::Single(NonRepeatedTrackSizingFunction {
+                            min: MinTrackSizingFunction::Fixed(LengthPercentage::Length(0.0)),
+                            max: MaxTrackSizingFunction::Fraction(1.0),
+                        })
+                    })
+                    .collect()
+            }
+            GridTemplateInput::Tracks { tracks } => tracks
+                .iter()
+                .map(|t| TrackSizingFunction::Single(t.to_taffy()))
+                .collect(),
+        }
+    }
+}
+
+impl GridPlacementInput {
+    /// Convert to Taffy's GridPlacement
+    fn to_taffy(&self) -> GridPlacement {
+        match self {
+            GridPlacementInput::Auto => GridPlacement::Auto,
+            GridPlacementInput::Line { value } => GridPlacement::from_line_index(*value),
+            GridPlacementInput::Span { value } => GridPlacement::Span(*value),
+        }
+    }
+}
+
+// ============ StyleInput Conversion ============
+
 impl StyleInput {
     fn to_taffy(&self) -> Style {
         let mut style = Style::default();
@@ -148,6 +314,7 @@ impl StyleInput {
             style.display = match d.as_str() {
                 "flex" => Display::Flex,
                 "block" => Display::Block,
+                "grid" => Display::Grid,
                 "none" => Display::None,
                 _ => Display::Flex,
             };
@@ -361,6 +528,43 @@ impl StyleInput {
                 bottom: LengthPercentage::Length(bw),
                 left: LengthPercentage::Length(bw),
             };
+        }
+
+        // CSS Grid Container Properties
+        if let Some(ref cols) = self.grid_template_columns {
+            style.grid_template_columns = cols.to_taffy();
+        }
+        if let Some(ref rows) = self.grid_template_rows {
+            style.grid_template_rows = rows.to_taffy();
+        }
+        if let Some(ref auto_cols) = self.grid_auto_columns {
+            style.grid_auto_columns = vec![auto_cols.to_taffy()];
+        }
+        if let Some(ref auto_rows) = self.grid_auto_rows {
+            style.grid_auto_rows = vec![auto_rows.to_taffy()];
+        }
+        if let Some(ref flow) = self.grid_auto_flow {
+            style.grid_auto_flow = match flow.as_str() {
+                "row" => GridAutoFlow::Row,
+                "column" => GridAutoFlow::Column,
+                "row-dense" => GridAutoFlow::RowDense,
+                "column-dense" => GridAutoFlow::ColumnDense,
+                _ => GridAutoFlow::Row,
+            };
+        }
+
+        // CSS Grid Item Properties
+        if let Some(ref start) = self.grid_column_start {
+            style.grid_column.start = start.to_taffy();
+        }
+        if let Some(ref end) = self.grid_column_end {
+            style.grid_column.end = end.to_taffy();
+        }
+        if let Some(ref start) = self.grid_row_start {
+            style.grid_row.start = start.to_taffy();
+        }
+        if let Some(ref end) = self.grid_row_end {
+            style.grid_row.end = end.to_taffy();
         }
 
         style

@@ -266,6 +266,20 @@ export class FlashLayoutEngine {
     if (style.rowGap !== undefined) result.rowGap = style.rowGap;
     if (style.columnGap !== undefined) result.columnGap = style.columnGap;
 
+    // CSS Grid Container
+    if (style.gridTemplateColumns !== undefined)
+      result.gridTemplateColumns = style.gridTemplateColumns;
+    if (style.gridTemplateRows !== undefined) result.gridTemplateRows = style.gridTemplateRows;
+    if (style.gridAutoColumns !== undefined) result.gridAutoColumns = style.gridAutoColumns;
+    if (style.gridAutoRows !== undefined) result.gridAutoRows = style.gridAutoRows;
+    if (style.gridAutoFlow !== undefined) result.gridAutoFlow = style.gridAutoFlow;
+
+    // CSS Grid Item
+    if (style.gridColumnStart !== undefined) result.gridColumnStart = style.gridColumnStart;
+    if (style.gridColumnEnd !== undefined) result.gridColumnEnd = style.gridColumnEnd;
+    if (style.gridRowStart !== undefined) result.gridRowStart = style.gridRowStart;
+    if (style.gridRowEnd !== undefined) result.gridRowEnd = style.gridRowEnd;
+
     if (typeof style.width === "number") result.width = style.width;
     if (typeof style.height === "number") result.height = style.height;
     if (typeof style.minWidth === "number") result.minWidth = style.minWidth;

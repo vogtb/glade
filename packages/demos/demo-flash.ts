@@ -81,6 +81,7 @@ type DemoSection =
   | "mono-semibold"
   | "underlined-text"
   | "group-styles"
+  | "grid-layout"
   | "canvas"
   | "vector-paths"
   | "border-styles"
@@ -110,6 +111,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "mono-semibold", label: "Mono SemiBold" },
   { id: "underlined-text", label: "Underlined Text" },
   { id: "group-styles", label: "Group Styles" },
+  { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
   { id: "border-styles", label: "Border Styles" },
@@ -490,7 +492,7 @@ class DemoRootView implements FlashView {
     const isSelected = this.selectedDemo === btn.id;
 
     return div()
-      .h(26)
+      .h(22)
       .flexShrink0()
       .bg(rgb(isSelected ? 0x2563eb : 0x4a4a55))
       .rounded(4)
@@ -501,7 +503,7 @@ class DemoRootView implements FlashView {
       .active((s) => s.bg(rgb(isSelected ? 0x2563eb : 0x5a5a65)))
       .flex()
       .itemsCenter()
-      .px(12)
+      .px(10)
       .onClick(
         cx.listener((view, _event, _window, ecx) => {
           view.selectedDemo = btn.id;
@@ -509,7 +511,7 @@ class DemoRootView implements FlashView {
         })
       )
       .child(
-        text(btn.label).font("Inter").size(12).lineHeight(26).color({ r: 1, g: 1, b: 1, a: 1 })
+        text(btn.label).font("Inter").size(12).lineHeight(22).color({ r: 1, g: 1, b: 1, a: 1 })
       );
   }
 
@@ -545,6 +547,8 @@ class DemoRootView implements FlashView {
         return this.renderUnderlinedTextDemo();
       case "group-styles":
         return this.renderGroupStylesDemo();
+      case "grid-layout":
+        return this.renderGridLayoutDemo();
       case "canvas":
         return this.renderCanvasDemo();
       case "vector-paths":
@@ -1084,6 +1088,350 @@ class DemoRootView implements FlashView {
             groupButton("Red", "group-c", 0x991b1b, 0xb91c1c, 0xef4444),
             groupButton("Green", "group-c", 0x166534, 0x15803d, 0x22c55e),
             groupButton("Blue", "group-c", 0x1e40af, 0x1d4ed8, 0x3b82f6)
+          )
+      );
+  }
+
+  private renderGridLayoutDemo(): FlashDiv {
+    // Colors for grid cells
+    const red = { r: 0.9, g: 0.3, b: 0.3, a: 1 };
+    const green = { r: 0.3, g: 0.8, b: 0.4, a: 1 };
+    const blue = { r: 0.3, g: 0.5, b: 0.9, a: 1 };
+    const purple = { r: 0.6, g: 0.3, b: 0.9, a: 1 };
+    const orange = { r: 0.95, g: 0.6, b: 0.2, a: 1 };
+    const teal = { r: 0.2, g: 0.7, b: 0.7, a: 1 };
+    const pink = { r: 0.9, g: 0.4, b: 0.6, a: 1 };
+    const yellow = { r: 0.9, g: 0.8, b: 0.2, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        // Header
+        text("CSS Grid Layout").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Taffy-powered CSS Grid with Tailwind-like API")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Example 1: Simple 3-column grid
+        text("Simple 3-Column Grid").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text(".grid().gridCols(3).gap(8)")
+          .font("JetBrains Mono")
+          .size(12)
+          .color({ r: 0.5, g: 0.7, b: 0.5, a: 1 }),
+        div()
+          .grid()
+          .gridCols(3)
+          .gap(8)
+          .children_(
+            div()
+              .h(60)
+              .rounded(8)
+              .bg(red)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("1").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(60)
+              .rounded(8)
+              .bg(green)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("2").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(60)
+              .rounded(8)
+              .bg(blue)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("3").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(60)
+              .rounded(8)
+              .bg(purple)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("4").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(60)
+              .rounded(8)
+              .bg(orange)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("5").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(60)
+              .rounded(8)
+              .bg(teal)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("6").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 }))
+          ),
+
+        // Example 2: Column spans
+        text("Column Spans").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text(".colSpan(2) and .colSpanFull()")
+          .font("JetBrains Mono")
+          .size(12)
+          .color({ r: 0.5, g: 0.7, b: 0.5, a: 1 }),
+        div()
+          .grid()
+          .gridCols(3)
+          .gap(8)
+          .children_(
+            div()
+              .colSpanFull()
+              .h(50)
+              .rounded(8)
+              .bg(pink)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("Full Width (colSpanFull)")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .colSpan(2)
+              .h(50)
+              .rounded(8)
+              .bg(blue)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Span 2").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(50)
+              .rounded(8)
+              .bg(green)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("1").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .h(50)
+              .rounded(8)
+              .bg(orange)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("1").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .colSpan(2)
+              .h(50)
+              .rounded(8)
+              .bg(purple)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Span 2").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }))
+          ),
+
+        // Example 3: Dashboard layout
+        text("Dashboard Layout").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text(".gridColsTemplate([200, '1fr', '1fr']) with rowSpan")
+          .font("JetBrains Mono")
+          .size(12)
+          .color({ r: 0.5, g: 0.7, b: 0.5, a: 1 }),
+        div()
+          .grid()
+          .gridColsTemplate([180, "1fr", "1fr"])
+          .gridRows(3)
+          .gap(8)
+          .h(200)
+          .children_(
+            // Header spans all columns
+            div()
+              .colSpanFull()
+              .rounded(8)
+              .bg({ r: 0.2, g: 0.2, b: 0.3, a: 1 })
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Header").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })),
+            // Sidebar spans 2 rows
+            div()
+              .rowSpan(2)
+              .rounded(8)
+              .bg({ r: 0.15, g: 0.2, b: 0.25, a: 1 })
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("Sidebar").font("Inter").size(14).color({ r: 0.6, g: 0.7, b: 0.8, a: 1 })
+              ),
+            // Main content
+            div()
+              .colSpan(2)
+              .rounded(8)
+              .bg({ r: 0.25, g: 0.25, b: 0.35, a: 1 })
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("Main Content").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+              ),
+            // Footer spans remaining columns
+            div()
+              .colSpan(2)
+              .rounded(8)
+              .bg({ r: 0.2, g: 0.2, b: 0.3, a: 1 })
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("Footer").font("Inter").size(14).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }))
+          ),
+
+        // Example 4: 4-column grid with varied content
+        text("4-Column Responsive Grid")
+          .font("Inter")
+          .size(18)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text(".gridCols(4).gap(12)")
+          .font("JetBrains Mono")
+          .size(12)
+          .color({ r: 0.5, g: 0.7, b: 0.5, a: 1 }),
+        div()
+          .grid()
+          .gridCols(4)
+          .gap(12)
+          .children_(
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(red)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("A").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(green)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("B").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(blue)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("C").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(purple)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("D").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(orange)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("E").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(teal)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("F").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(pink)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("G").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .h(80)
+              .rounded(8)
+              .bg(yellow)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("H").font("Inter").size(20).weight(700).color({ r: 1, g: 1, b: 1, a: 1 }))
+          ),
+
+        // Example 5: Grid area placement
+        text("Explicit Grid Placement")
+          .font("Inter")
+          .size(18)
+          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text(".gridCell(col, row) and .gridArea()")
+          .font("JetBrains Mono")
+          .size(12)
+          .color({ r: 0.5, g: 0.7, b: 0.5, a: 1 }),
+        div()
+          .grid()
+          .gridCols(4)
+          .gridRows(3)
+          .gap(8)
+          .h(180)
+          .children_(
+            // Large feature area
+            div()
+              .gridArea(1, 1, 3, 3)
+              .rounded(8)
+              .bg(blue)
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("Feature (2x2)").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            // Side items
+            div()
+              .gridCell(3, 1)
+              .rounded(8)
+              .bg(green)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("A").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .gridCell(4, 1)
+              .rounded(8)
+              .bg(orange)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("B").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .gridCell(3, 2)
+              .rounded(8)
+              .bg(purple)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("C").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            div()
+              .gridCell(4, 2)
+              .rounded(8)
+              .bg(pink)
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("D").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })),
+            // Bottom row
+            div()
+              .colSpanFull()
+              .rounded(8)
+              .bg({ r: 0.3, g: 0.3, b: 0.4, a: 1 })
+              .itemsCenter()
+              .justifyCenter()
+              .child(
+                text("Bottom Bar (row 3)")
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+              )
           )
       );
   }

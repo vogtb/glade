@@ -424,8 +424,8 @@ export class FlashWindow {
   private measureTextCallback(
     measureId: number,
     knownWidth: number,
-    knownHeight: number,
-    availableWidth: number,
+    _knownHeight: number,
+    _availableWidth: number,
     _availableHeight: number
   ): { width: number; height: number } {
     const data = this.measureRegistry.get(measureId);
@@ -433,7 +433,22 @@ export class FlashWindow {
       return { width: 0, height: 0 };
     }
 
-    // Determine effective max width
+    // Determine effective max width for text wrapping.
+    //
+    // The key insight: text should only wrap if there's an explicit constraint.
+    // Without explicit wrapping constraints, text should measure at its natural
+    // (single-line) width. This is especially important for CSS Grid, where
+    // Taffy may pass small availableWidth values during content-sizing passes.
+    //
+    // Priority:
+    // 1. noWrap: true -> never wrap
+    // 2. explicit maxWidth -> use that width
+    // 3. explicit knownWidth from parent -> use that width
+    // 4. Otherwise -> measure at natural width (no wrapping)
+    //
+    // Note: We intentionally don't use availableWidth for wrapping decisions
+    // when there's no explicit constraint. Grid/flex containers should expand
+    // to fit content, not constrain content to fit arbitrary available space.
     let effectiveMaxWidth: number | undefined;
 
     if (data.noWrap) {
@@ -442,14 +457,12 @@ export class FlashWindow {
     } else if (data.maxWidth !== null) {
       // Explicit .maxWidth() takes precedence
       effectiveMaxWidth = data.maxWidth;
-    } else if (!Number.isNaN(knownWidth)) {
-      // Parent set explicit width
+    } else if (!Number.isNaN(knownWidth) && knownWidth > 0) {
+      // Parent set explicit width - use it for wrapping
       effectiveMaxWidth = knownWidth;
-    } else if (Number.isFinite(availableWidth)) {
-      // Use available space from parent
-      effectiveMaxWidth = availableWidth;
     } else {
-      // No constraint - don't wrap
+      // No explicit constraint - measure at natural width (don't wrap)
+      // This allows grid cells and flex items to size to their content
       effectiveMaxWidth = undefined;
     }
 

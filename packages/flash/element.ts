@@ -740,30 +740,32 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextPrepaintState): void {
     const lineHeight = this.getLineHeight();
 
-    // Determine wrap width for rendering:
-    // - If noWrap is set, don't wrap (undefined)
-    // - If explicit maxWidth is set, use that
-    // - If layout gave us single-line height, don't constrain (text fits naturally)
-    // - Otherwise, use bounds.width (text should wrap to its layout bounds)
+    // Determine wrap width for rendering.
     //
-    // The key insight: if bounds.height <= lineHeight, the text measured as single-line
-    // during layout. In this case, we should NOT constrain the wrap width because:
-    // 1. The text already fits on one line
-    // 2. Constraining to bounds.width (which equals the measured width) can cause
-    //    spurious wrapping due to floating point precision differences between
-    //    measurement and rendering
+    // Key insight: Text should only wrap during paint if there's an EXPLICIT
+    // wrapping constraint (noWrap=false with maxWidth set). The layout bounds
+    // represent where the text should be positioned, not a wrapping constraint.
+    //
+    // During measurement, text without explicit maxWidth measures at its natural
+    // (unwrapped) width. The paint phase should honor that - if text measured
+    // as single-line, it should render as single-line regardless of bounds.
+    //
+    // Using bounds.width for wrapping causes issues because:
+    // 1. bounds.width equals the measured text width (intrinsic size)
+    // 2. Floating point precision differences between measure and render
+    //    can cause spurious wrapping at the same "width"
+    // 3. For text in flex/grid containers, the text's bounds are its own
+    //    measured size, not the container's size
     let wrapWidth: number | undefined;
     if (this.noWrapValue) {
       wrapWidth = undefined;
     } else if (this.maxWidthValue !== null) {
+      // Only wrap if explicitly told to via maxWidth
       wrapWidth = this.maxWidthValue;
-    } else if (bounds.height <= lineHeight * 1.01) {
-      // Single-line text - don't constrain, it already fits
-      // (1.01 factor for floating point tolerance)
-      wrapWidth = undefined;
     } else {
-      // Multi-line text - constrain to layout bounds
-      wrapWidth = bounds.width;
+      // No explicit constraint - don't wrap during paint
+      // The text measured at natural width during layout
+      wrapWidth = undefined;
     }
 
     // Selection rendering is handled by CrossElementSelectionManager

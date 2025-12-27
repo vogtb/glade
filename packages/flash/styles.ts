@@ -16,7 +16,7 @@ export type ShadowPreset = "none" | "sm" | "md" | "lg" | "xl" | "2xl";
 /**
  * Display mode.
  */
-export type Display = "flex" | "block" | "none";
+export type Display = "flex" | "block" | "grid" | "none";
 
 /**
  * Flex direction.
@@ -74,6 +74,52 @@ export type Cursor = "default" | "pointer" | "text" | "grab" | "grabbing" | "not
  */
 export type BorderStyle = "solid" | "dashed";
 
+// ============ CSS Grid Types ============
+
+/**
+ * Grid auto-flow direction and packing algorithm.
+ */
+export type GridAutoFlow = "row" | "column" | "row-dense" | "column-dense";
+
+/**
+ * Grid placement for an item (start or end position).
+ * - "auto": Automatic placement by grid algorithm
+ * - number: Line number (1-indexed, negative counts from end)
+ * - { span: number }: Span across N tracks
+ * - { line: number }: Explicit line number (alternative to bare number)
+ */
+export type GridPlacement = "auto" | number | { span: number } | { line: number };
+
+/**
+ * Values usable in track sizing, including minmax().
+ */
+export type TrackSizeValue = number | `${number}fr` | "auto" | "min-content" | "max-content";
+
+/**
+ * Track sizing function for grid templates.
+ * Supports CSS Grid track sizing including fr units, minmax, and content sizing.
+ * - number: Fixed pixels
+ * - `${number}fr`: Fraction unit (e.g., "1fr", "2fr")
+ * - "auto": Auto size based on content
+ * - "min-content": Minimum content size
+ * - "max-content": Maximum content size
+ * - { min, max }: minmax() function
+ */
+export type TrackSize =
+  | number
+  | `${number}fr`
+  | "auto"
+  | "min-content"
+  | "max-content"
+  | { min: TrackSizeValue; max: TrackSizeValue };
+
+/**
+ * Grid template definition.
+ * - number: Creates N columns/rows with 1fr sizing each (GPUI-style shorthand)
+ * - TrackSize[]: Explicit track sizing for each column/row
+ */
+export type GridTemplate = number | TrackSize[];
+
 /**
  * Complete style definition for a Flash element.
  */
@@ -92,6 +138,19 @@ export interface Styles {
   gap?: number;
   rowGap?: number;
   columnGap?: number;
+
+  // CSS Grid Container
+  gridTemplateColumns?: GridTemplate;
+  gridTemplateRows?: GridTemplate;
+  gridAutoColumns?: TrackSize;
+  gridAutoRows?: TrackSize;
+  gridAutoFlow?: GridAutoFlow;
+
+  // CSS Grid Item
+  gridColumnStart?: GridPlacement;
+  gridColumnEnd?: GridPlacement;
+  gridRowStart?: GridPlacement;
+  gridRowEnd?: GridPlacement;
 
   // Sizing
   width?: number | string;

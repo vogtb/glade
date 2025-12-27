@@ -236,6 +236,201 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  // ============ CSS Grid Layout ============
+
+  /**
+   * Enable grid display mode.
+   * Equivalent to Tailwind's `grid` class.
+   */
+  grid(): this {
+    this.styles.display = "grid";
+    return this;
+  }
+
+  /**
+   * Set number of grid columns with equal 1fr sizing.
+   * Equivalent to Tailwind's `grid-cols-N` classes.
+   * @param count Number of columns (e.g., 3 for grid-cols-3)
+   */
+  gridCols(count: number): this {
+    this.styles.gridTemplateColumns = count;
+    return this;
+  }
+
+  /**
+   * Set explicit grid column template with custom track sizes.
+   * For advanced layouts needing specific column widths.
+   * @param tracks Array of track sizes
+   * @example gridColsTemplate([200, "1fr", "2fr"]) // 200px, 1fr, 2fr
+   * @example gridColsTemplate(["auto", { min: 100, max: "1fr" }])
+   */
+  gridColsTemplate(tracks: import("./styles.ts").TrackSize[]): this {
+    this.styles.gridTemplateColumns = tracks;
+    return this;
+  }
+
+  /**
+   * Set number of grid rows with equal 1fr sizing.
+   * Equivalent to Tailwind's `grid-rows-N` classes.
+   */
+  gridRows(count: number): this {
+    this.styles.gridTemplateRows = count;
+    return this;
+  }
+
+  /**
+   * Set explicit grid row template with custom track sizes.
+   */
+  gridRowsTemplate(tracks: import("./styles.ts").TrackSize[]): this {
+    this.styles.gridTemplateRows = tracks;
+    return this;
+  }
+
+  /**
+   * Set auto-generated column sizing for implicit columns.
+   * Equivalent to Tailwind's `auto-cols-*` classes.
+   */
+  gridAutoCols(size: import("./styles.ts").TrackSize): this {
+    this.styles.gridAutoColumns = size;
+    return this;
+  }
+
+  /**
+   * Set auto-generated row sizing for implicit rows.
+   * Equivalent to Tailwind's `auto-rows-*` classes.
+   */
+  gridAutoRows(size: import("./styles.ts").TrackSize): this {
+    this.styles.gridAutoRows = size;
+    return this;
+  }
+
+  /**
+   * Set grid auto-flow direction.
+   * Equivalent to Tailwind's `grid-flow-*` classes.
+   */
+  gridFlow(flow: import("./styles.ts").GridAutoFlow): this {
+    this.styles.gridAutoFlow = flow;
+    return this;
+  }
+
+  /** Shorthand for gridFlow("row"). */
+  gridFlowRow(): this {
+    return this.gridFlow("row");
+  }
+
+  /** Shorthand for gridFlow("column"). */
+  gridFlowCol(): this {
+    return this.gridFlow("column");
+  }
+
+  /** Shorthand for gridFlow("row-dense"). */
+  gridFlowRowDense(): this {
+    return this.gridFlow("row-dense");
+  }
+
+  /** Shorthand for gridFlow("column-dense"). */
+  gridFlowColDense(): this {
+    return this.gridFlow("column-dense");
+  }
+
+  // ============ CSS Grid Item Placement ============
+
+  /**
+   * Set column start position.
+   * Equivalent to Tailwind's `col-start-N` classes.
+   */
+  colStart(line: number): this {
+    this.styles.gridColumnStart = line;
+    return this;
+  }
+
+  /**
+   * Set column end position.
+   * Equivalent to Tailwind's `col-end-N` classes.
+   */
+  colEnd(line: number): this {
+    this.styles.gridColumnEnd = line;
+    return this;
+  }
+
+  /**
+   * Span across N columns from current position.
+   * Equivalent to Tailwind's `col-span-N` classes.
+   */
+  colSpan(count: number): this {
+    this.styles.gridColumnEnd = { span: count };
+    return this;
+  }
+
+  /**
+   * Span all columns (col-span-full).
+   * Sets column from line 1 to line -1 (last line).
+   */
+  colSpanFull(): this {
+    this.styles.gridColumnStart = 1;
+    this.styles.gridColumnEnd = -1;
+    return this;
+  }
+
+  /**
+   * Set row start position.
+   * Equivalent to Tailwind's `row-start-N` classes.
+   */
+  rowStart(line: number): this {
+    this.styles.gridRowStart = line;
+    return this;
+  }
+
+  /**
+   * Set row end position.
+   * Equivalent to Tailwind's `row-end-N` classes.
+   */
+  rowEnd(line: number): this {
+    this.styles.gridRowEnd = line;
+    return this;
+  }
+
+  /**
+   * Span across N rows from current position.
+   * Equivalent to Tailwind's `row-span-N` classes.
+   */
+  rowSpan(count: number): this {
+    this.styles.gridRowEnd = { span: count };
+    return this;
+  }
+
+  /**
+   * Span all rows (row-span-full).
+   * Sets row from line 1 to line -1 (last line).
+   */
+  rowSpanFull(): this {
+    this.styles.gridRowStart = 1;
+    this.styles.gridRowEnd = -1;
+    return this;
+  }
+
+  /**
+   * Place item at specific grid cell (1-indexed).
+   * Convenience method combining colStart and rowStart.
+   */
+  gridCell(col: number, row: number): this {
+    this.styles.gridColumnStart = col;
+    this.styles.gridRowStart = row;
+    return this;
+  }
+
+  /**
+   * Place item in a grid area defined by start/end positions.
+   * Convenience method for setting all four grid placement properties.
+   */
+  gridArea(colStart: number, rowStart: number, colEnd: number, rowEnd: number): this {
+    this.styles.gridColumnStart = colStart;
+    this.styles.gridColumnEnd = colEnd;
+    this.styles.gridRowStart = rowStart;
+    this.styles.gridRowEnd = rowEnd;
+    return this;
+  }
+
   // Padding
   p(v: number): this {
     this.styles.paddingTop = v;
