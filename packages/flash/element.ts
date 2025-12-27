@@ -96,6 +96,26 @@ export interface RequestLayoutContext {
   requestLayout(styles: Partial<Styles>, childLayoutIds: LayoutId[]): LayoutId;
 
   /**
+   * Request layout for a measurable element (e.g., text).
+   * The measureId is used during layout to call back for measurement.
+   */
+  requestMeasurableLayout(styles: Partial<Styles>, measureId: number): LayoutId;
+
+  /**
+   * Register text for measurement during layout.
+   * Returns a measure ID that will be used in the callback.
+   */
+  registerTextMeasure(data: {
+    text: string;
+    fontSize: number;
+    fontFamily: string;
+    fontWeight: number;
+    lineHeight: number;
+    noWrap: boolean;
+    maxWidth: number | null;
+  }): number;
+
+  /**
    * Measure text with the given options.
    */
   measureText(
@@ -552,6 +572,14 @@ export abstract class FlashContainerElement<
 // ============ Text Element ============
 
 /**
+ * Request state for text element - carries info from layout to paint.
+ */
+interface TextRequestState {
+  /** The wrap width used during measurement, or undefined if no wrapping */
+  measureWrapWidth: number | undefined;
+}
+
+/**
  * Prepaint state for text element.
  */
 interface TextPrepaintState {
@@ -559,20 +587,24 @@ interface TextPrepaintState {
   hitbox: Hitbox | null;
   handlers: EventHandlers;
   hitTestNode?: HitTestNode;
+  /** The wrap width used during measurement, or undefined if no wrapping */
+  measureWrapWidth: number | undefined;
 }
 
 /**
  * Simple text element with optional selection support.
  *
  * By default, text is not selectable. Call `.selectable()` to enable selection.
+ * By default, text wraps to fit its parent container. Call `.noWrap()` to disable.
  */
-export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
+export class FlashTextElement extends FlashElement<TextRequestState, TextPrepaintState> {
   private textColor: Color = { r: 1, g: 1, b: 1, a: 1 };
   private fontSize = 14;
   private fontFamily = "system-ui";
   private fontWeight = 400;
   private lineHeightValue: number | null = null;
   private maxWidthValue: number | null = null;
+  private noWrapValue = false;
 
   // Selection support
   private isSelectable = false;
@@ -617,6 +649,14 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
   }
 
   /**
+   * Disable text wrapping. Text will extend to its natural width.
+   */
+  noWrap(): this {
+    this.noWrapValue = true;
+    return this;
+  }
+
+  /**
    * Enable text selection for this element.
    * When enabled, users can select text with mouse and copy with Cmd+C.
    */
@@ -657,41 +697,40 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
     return this.cachedLayout;
   }
 
-  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TextRequestState> {
     const lineHeight = this.getLineHeight();
-    const wrapWidth = this.maxWidthValue ?? undefined;
-    const metrics = cx.measureText(this.textContent, {
+
+    // Determine wrap width for this text element
+    // If noWrap is set, never wrap
+    // If maxWidth is explicitly set, use that
+    // Otherwise, we'll get the wrap width from the measure callback (stored in registry)
+    const explicitWrapWidth = this.noWrapValue ? undefined : (this.maxWidthValue ?? undefined);
+
+    // Register with window for measure callback during layout
+    const measureId = cx.registerTextMeasure({
+      text: this.textContent,
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: this.fontWeight,
       lineHeight,
-      maxWidth: wrapWidth,
+      noWrap: this.noWrapValue,
+      maxWidth: this.maxWidthValue,
     });
 
-    const layoutWidth = wrapWidth !== undefined ? Math.max(wrapWidth, 0) : metrics.width;
-
-    // The shaper's measureText returns height = line_y + line_height, where line_y
-    // includes the baseline offset (ascent). For proper layout, we need to normalize
-    // this to use lineHeight-based height that matches our rendering.
-    // For single-line text, height should be lineHeight.
-    // For multi-line, estimate lines from measured height and use lineHeight * numLines.
-    // The shaper's line_y offset is approximately 0.8 * fontSize (ascent).
-    const ascentOffset = this.fontSize * 0.8;
-    const estimatedLines = Math.max(1, Math.round((metrics.height - ascentOffset) / lineHeight));
-    const layoutHeight = estimatedLines * lineHeight;
-
-    const layoutId = cx.requestLayout(
+    // Create a measurable leaf node - Taffy will call back during layout
+    // to get the actual size based on available space from parent
+    const layoutId = cx.requestMeasurableLayout(
       {
-        width: layoutWidth,
-        height: layoutHeight,
+        // If maxWidth is set, use it as a max constraint
+        maxWidth: this.maxWidthValue ?? undefined,
       },
-      []
+      measureId
     );
 
-    return { layoutId, requestState: undefined };
+    return { layoutId, requestState: { measureWrapWidth: explicitWrapWidth } };
   }
 
-  prepaint(cx: PrepaintContext, bounds: Bounds, _requestState: NoState): TextPrepaintState {
+  prepaint(cx: PrepaintContext, bounds: Bounds, requestState: TextRequestState): TextPrepaintState {
     let hitbox: Hitbox | null = null;
 
     // Register with cross-element selection manager if selectable
@@ -706,12 +745,21 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
       hitbox = cx.insertHitbox(bounds, HitboxBehavior.Normal, "text");
     }
 
-    return { bounds, hitbox, handlers: {}, hitTestNode: undefined };
+    return {
+      bounds,
+      hitbox,
+      handlers: {},
+      hitTestNode: undefined,
+      measureWrapWidth: requestState.measureWrapWidth,
+    };
   }
 
-  paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextPrepaintState): void {
+  paint(cx: PaintContext, bounds: Bounds, prepaintState: TextPrepaintState): void {
     const lineHeight = this.getLineHeight();
-    const wrapWidth = this.maxWidthValue ?? undefined;
+
+    // Use the wrap width from measurement phase
+    // This ensures paint uses the same wrapping as layout
+    const wrapWidth = prepaintState.measureWrapWidth;
 
     // Selection rendering is handled by CrossElementSelectionManager
     // Just render the text glyphs

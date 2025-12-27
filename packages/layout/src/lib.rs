@@ -3,6 +3,7 @@
 //! Provides a wrapper around Taffy's flexbox/grid layout engine,
 //! exposing it via wasm-bindgen for use in TypeScript.
 
+use js_sys::Function;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use taffy::prelude::*;
@@ -63,7 +64,12 @@ pub struct LayoutBounds {
 impl LayoutBounds {
     #[wasm_bindgen(constructor)]
     pub fn new(x: f32, y: f32, width: f32, height: f32) -> Self {
-        Self { x, y, width, height }
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 }
 
@@ -361,10 +367,19 @@ impl StyleInput {
     }
 }
 
+/// Context stored with each Taffy node.
+/// For measurable nodes (e.g., text), stores the measure ID that maps to JS-side data.
+#[derive(Clone, Debug, Default)]
+pub struct NodeContext {
+    /// If Some, this node requires measurement via JS callback.
+    /// The u64 is a unique ID that JS uses to look up measurement data.
+    pub measure_id: Option<u64>,
+}
+
 /// The main layout engine, wrapping Taffy.
 #[wasm_bindgen]
 pub struct TaffyLayoutEngine {
-    tree: TaffyTree<()>,
+    tree: TaffyTree<NodeContext>,
     node_map: HashMap<u64, NodeId>,
     reverse_map: HashMap<NodeId, u64>,
     next_id: u64,
@@ -392,7 +407,36 @@ impl TaffyLayoutEngine {
         let taffy_style = style_input.to_taffy();
         let node_id = self
             .tree
-            .new_leaf(taffy_style)
+            .new_leaf_with_context(taffy_style, NodeContext::default())
+            .map_err(|e| JsValue::from_str(&format!("Taffy error: {:?}", e)))?;
+
+        let id = self.next_id;
+        self.next_id += 1;
+        self.node_map.insert(id, node_id);
+        self.reverse_map.insert(node_id, id);
+
+        Ok(LayoutId(id))
+    }
+
+    /// Create a new measurable leaf node (e.g., text).
+    /// The measure_id is used by JS to identify which element to measure.
+    #[wasm_bindgen]
+    pub fn new_measurable_leaf(
+        &mut self,
+        style_js: JsValue,
+        measure_id: u64,
+    ) -> Result<LayoutId, JsValue> {
+        let style_input: StyleInput = serde_wasm_bindgen::from_value(style_js)
+            .map_err(|e| JsValue::from_str(&format!("Failed to parse style: {}", e)))?;
+
+        let taffy_style = style_input.to_taffy();
+        let context = NodeContext {
+            measure_id: Some(measure_id),
+        };
+
+        let node_id = self
+            .tree
+            .new_leaf_with_context(taffy_style, context)
             .map_err(|e| JsValue::from_str(&format!("Taffy error: {:?}", e)))?;
 
         let id = self.next_id;
@@ -506,6 +550,93 @@ impl TaffyLayoutEngine {
         Ok(())
     }
 
+    /// Compute layout with a measure function callback for measurable nodes.
+    ///
+    /// The callback receives: (measure_id, known_width, known_height, available_width, available_height)
+    /// And should return: { width: number, height: number }
+    #[wasm_bindgen]
+    pub fn compute_layout_with_measure(
+        &mut self,
+        root_id: &LayoutId,
+        available_width: f32,
+        available_height: f32,
+        measure_callback: &Function,
+    ) -> Result<(), JsValue> {
+        let node_id = self
+            .node_map
+            .get(&root_id.0)
+            .ok_or_else(|| JsValue::from_str("Invalid layout ID"))?;
+
+        let this = JsValue::null();
+
+        self.tree
+            .compute_layout_with_measure(
+                *node_id,
+                Size {
+                    width: AvailableSpace::Definite(available_width),
+                    height: AvailableSpace::Definite(available_height),
+                },
+                |known_dimensions, available_space, _node_id, node_context, _style| {
+                    // Only call JS for nodes with measure_id
+                    let Some(context) = node_context else {
+                        return Size::ZERO;
+                    };
+                    let Some(measure_id) = context.measure_id else {
+                        return Size::ZERO;
+                    };
+
+                    // Convert AvailableSpace to f64 for JS
+                    // For MinContent and MaxContent, we pass Infinity to signal "don't wrap"
+                    // The JS callback will interpret Infinity as no wrapping constraint
+                    let avail_width = match available_space.width {
+                        AvailableSpace::Definite(v) => v as f64,
+                        AvailableSpace::MinContent => f64::INFINITY,
+                        AvailableSpace::MaxContent => f64::INFINITY,
+                    };
+                    let avail_height = match available_space.height {
+                        AvailableSpace::Definite(v) => v as f64,
+                        AvailableSpace::MinContent => f64::INFINITY,
+                        AvailableSpace::MaxContent => f64::INFINITY,
+                    };
+
+                    // Convert known dimensions (None becomes NaN in JS)
+                    let known_w = known_dimensions.width.map(|v| v as f64).unwrap_or(f64::NAN);
+                    let known_h = known_dimensions
+                        .height
+                        .map(|v| v as f64)
+                        .unwrap_or(f64::NAN);
+
+                    // Call JS: measure_callback(measure_id, known_w, known_h, avail_w, avail_h)
+                    let args = js_sys::Array::new();
+                    args.push(&JsValue::from(measure_id as f64));
+                    args.push(&JsValue::from(known_w));
+                    args.push(&JsValue::from(known_h));
+                    args.push(&JsValue::from(avail_width));
+                    args.push(&JsValue::from(avail_height));
+
+                    let result = match measure_callback.apply(&this, &args) {
+                        Ok(r) => r,
+                        Err(_) => return Size::ZERO,
+                    };
+
+                    // Parse result: { width, height }
+                    let width = js_sys::Reflect::get(&result, &"width".into())
+                        .ok()
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(0.0) as f32;
+                    let height = js_sys::Reflect::get(&result, &"height".into())
+                        .ok()
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(0.0) as f32;
+
+                    Size { width, height }
+                },
+            )
+            .map_err(|e| JsValue::from_str(&format!("Taffy error: {:?}", e)))?;
+
+        Ok(())
+    }
+
     /// Get the computed layout for a node.
     #[wasm_bindgen]
     pub fn get_layout(&self, layout_id: &LayoutId) -> Result<LayoutBounds, JsValue> {
@@ -514,9 +645,10 @@ impl TaffyLayoutEngine {
             .get(&layout_id.0)
             .ok_or_else(|| JsValue::from_str("Invalid layout ID"))?;
 
-        let layout = self.tree.layout(*node_id).map_err(|e| {
-            JsValue::from_str(&format!("Failed to get layout: {:?}", e))
-        })?;
+        let layout = self
+            .tree
+            .layout(*node_id)
+            .map_err(|e| JsValue::from_str(&format!("Failed to get layout: {:?}", e)))?;
 
         Ok(LayoutBounds {
             x: layout.location.x,
@@ -573,39 +705,54 @@ mod tests {
         let mut engine = TaffyLayoutEngine::new();
 
         // Create a simple column layout
-        let child1 = engine.tree.new_leaf(Style {
-            size: Size {
-                width: Dimension::Length(100.0),
-                height: Dimension::Length(50.0),
-            },
-            ..Default::default()
-        }).unwrap();
-
-        let child2 = engine.tree.new_leaf(Style {
-            size: Size {
-                width: Dimension::Length(100.0),
-                height: Dimension::Length(50.0),
-            },
-            ..Default::default()
-        }).unwrap();
-
-        let root = engine.tree.new_with_children(
-            Style {
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
+        let child1 = engine
+            .tree
+            .new_leaf(Style {
                 size: Size {
-                    width: Dimension::Length(200.0),
-                    height: Dimension::Length(200.0),
+                    width: Dimension::Length(100.0),
+                    height: Dimension::Length(50.0),
                 },
                 ..Default::default()
-            },
-            &[child1, child2],
-        ).unwrap();
+            })
+            .unwrap();
 
-        engine.tree.compute_layout(root, Size {
-            width: AvailableSpace::Definite(200.0),
-            height: AvailableSpace::Definite(200.0),
-        }).unwrap();
+        let child2 = engine
+            .tree
+            .new_leaf(Style {
+                size: Size {
+                    width: Dimension::Length(100.0),
+                    height: Dimension::Length(50.0),
+                },
+                ..Default::default()
+            })
+            .unwrap();
+
+        let root = engine
+            .tree
+            .new_with_children(
+                Style {
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    size: Size {
+                        width: Dimension::Length(200.0),
+                        height: Dimension::Length(200.0),
+                    },
+                    ..Default::default()
+                },
+                &[child1, child2],
+            )
+            .unwrap();
+
+        engine
+            .tree
+            .compute_layout(
+                root,
+                Size {
+                    width: AvailableSpace::Definite(200.0),
+                    height: AvailableSpace::Definite(200.0),
+                },
+            )
+            .unwrap();
 
         let root_layout = engine.tree.layout(root).unwrap();
         assert_eq!(root_layout.size.width, 200.0);

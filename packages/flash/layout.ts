@@ -13,6 +13,7 @@ import {
   type TaffyLayoutEngine,
   type LayoutId as WasmLayoutId,
   type StyleInput,
+  type MeasureCallback,
 } from "@glade/layout";
 import type { Bounds } from "./types.ts";
 import type { Styles } from "./styles.ts";
@@ -97,6 +98,23 @@ export class FlashLayoutEngine {
   }
 
   /**
+   * Request layout for a measurable element (e.g., text).
+   * The measureId is used during layout to call back for measurement.
+   */
+  requestMeasurableLayout(style: Partial<Styles>, measureId: number): LayoutId {
+    const styleInput = this.convertStyle(style);
+    const wasmStyle = styleToWasm(styleInput);
+
+    const wasmId = this.engine.new_measurable_leaf(wasmStyle, BigInt(measureId));
+
+    const layoutId = Number(wasmId.id) as LayoutId;
+    this.wasmIdToLayoutId.set(wasmId.id, layoutId);
+    this.layoutIdToWasmId.set(layoutId, wasmId);
+
+    return layoutId;
+  }
+
+  /**
    * Compute layout for the tree rooted at the given node.
    */
   computeLayout(rootId: LayoutId, availableWidth: number, availableHeight: number): void {
@@ -111,6 +129,52 @@ export class FlashLayoutEngine {
     const scaledHeight = availableHeight * this.scaleFactor;
 
     this.engine.compute_layout(wasmId, scaledWidth, scaledHeight);
+  }
+
+  /**
+   * Compute layout with measure callback for measurable nodes (e.g., text).
+   */
+  computeLayoutWithMeasure(
+    rootId: LayoutId,
+    availableWidth: number,
+    availableHeight: number,
+    measureCallback: MeasureCallback
+  ): void {
+    this.absoluteBoundsCache.clear();
+
+    const wasmId = this.layoutIdToWasmId.get(rootId);
+    if (!wasmId) {
+      throw new Error(`Unknown layout ID: ${rootId}`);
+    }
+
+    const scaledWidth = availableWidth * this.scaleFactor;
+    const scaledHeight = availableHeight * this.scaleFactor;
+    const sf = this.scaleFactor;
+
+    // Wrap callback to handle scaling
+    const scaledCallback = (
+      measureId: number,
+      knownW: number,
+      knownH: number,
+      availW: number,
+      availH: number
+    ) => {
+      // Convert from scaled to logical coordinates for measurement
+      const result = measureCallback(
+        measureId,
+        Number.isNaN(knownW) ? knownW : knownW / sf,
+        Number.isNaN(knownH) ? knownH : knownH / sf,
+        Number.isFinite(availW) ? availW / sf : availW,
+        Number.isFinite(availH) ? availH / sf : availH
+      );
+      // Convert result back to scaled coordinates
+      return {
+        width: result.width * sf,
+        height: result.height * sf,
+      };
+    };
+
+    this.engine.compute_layout_with_measure(wasmId, scaledWidth, scaledHeight, scaledCallback);
   }
 
   /**

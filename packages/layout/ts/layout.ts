@@ -55,6 +55,18 @@ export function createLayoutEngine(): TaffyLayoutEngine {
 export type { LayoutId, LayoutBounds, TaffyLayoutEngine, InitOutput };
 
 /**
+ * Callback type for measuring nodes during layout computation.
+ * Called by Taffy when it needs the intrinsic size of a measurable node.
+ */
+export type MeasureCallback = (
+  measureId: number,
+  knownWidth: number,
+  knownHeight: number,
+  availableWidth: number,
+  availableHeight: number
+) => { width: number; height: number };
+
+/**
  * Style input for layout computation.
  * Maps to Flash's Styles interface.
  */

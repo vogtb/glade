@@ -245,6 +245,21 @@ export class FlashWindow {
   // Cross-element text selection
   private crossElementSelection: CrossElementSelectionManager | null = null;
 
+  // Text measure registry for layout callbacks
+  private measureRegistry = new Map<
+    number,
+    {
+      text: string;
+      fontSize: number;
+      fontFamily: string;
+      fontWeight: number;
+      lineHeight: number;
+      noWrap: boolean;
+      maxWidth: number | null;
+    }
+  >();
+  private nextMeasureId = 1;
+
   constructor(
     readonly id: WindowId,
     private platform: FlashPlatform,
@@ -383,6 +398,84 @@ export class FlashWindow {
    */
   getTextSystem(): TextSystem {
     return this.textSystem;
+  }
+
+  /**
+   * Register text for measurement during layout.
+   * Returns a measure ID that will be used in the callback.
+   */
+  registerTextMeasure(data: {
+    text: string;
+    fontSize: number;
+    fontFamily: string;
+    fontWeight: number;
+    lineHeight: number;
+    noWrap: boolean;
+    maxWidth: number | null;
+  }): number {
+    const id = this.nextMeasureId++;
+    this.measureRegistry.set(id, data);
+    return id;
+  }
+
+  /**
+   * Measure callback invoked by Taffy during layout.
+   */
+  private measureTextCallback(
+    measureId: number,
+    knownWidth: number,
+    knownHeight: number,
+    availableWidth: number,
+    _availableHeight: number
+  ): { width: number; height: number } {
+    const data = this.measureRegistry.get(measureId);
+    if (!data) {
+      return { width: 0, height: 0 };
+    }
+
+    // Determine effective max width
+    let effectiveMaxWidth: number | undefined;
+
+    if (data.noWrap) {
+      // No wrapping - use infinite width
+      effectiveMaxWidth = undefined;
+    } else if (data.maxWidth !== null) {
+      // Explicit .maxWidth() takes precedence
+      effectiveMaxWidth = data.maxWidth;
+    } else if (!Number.isNaN(knownWidth)) {
+      // Parent set explicit width
+      effectiveMaxWidth = knownWidth;
+    } else if (Number.isFinite(availableWidth)) {
+      // Use available space from parent
+      effectiveMaxWidth = availableWidth;
+    } else {
+      // No constraint - don't wrap
+      effectiveMaxWidth = undefined;
+    }
+
+    // Measure text with computed constraints
+    const rawResult = this.textSystem.measureText(
+      data.text,
+      data.fontSize,
+      data.lineHeight,
+      effectiveMaxWidth,
+      { family: data.fontFamily, weight: data.fontWeight }
+    );
+
+    // The shaper's measureText returns height = line_y + line_height, where line_y
+    // includes the baseline offset (ascent). For proper layout, we need to normalize
+    // this to use lineHeight-based height that matches our rendering.
+    // For single-line text, height should be lineHeight.
+    // For multi-line, estimate lines from measured height and use lineHeight * numLines.
+    // The shaper's line_y offset is approximately 0.8 * fontSize (ascent).
+    const ascentOffset = data.fontSize * 0.8;
+    const estimatedLines = Math.max(
+      1,
+      Math.round((rawResult.height - ascentOffset) / data.lineHeight)
+    );
+    const normalizedHeight = estimatedLines * data.lineHeight;
+
+    return { width: rawResult.width, height: normalizedHeight };
   }
 
   /**
@@ -868,7 +961,12 @@ export class FlashWindow {
     const { layoutId: rootLayoutId, requestState: rootRequestState } =
       element.requestLayout(requestLayoutCx);
 
-    this.layoutEngine.computeLayout(rootLayoutId, this.width, this.height);
+    this.layoutEngine.computeLayoutWithMeasure(
+      rootLayoutId,
+      this.width,
+      this.height,
+      this.measureTextCallback.bind(this)
+    );
 
     const rootBounds = this.layoutEngine.layoutBounds(rootLayoutId);
     const prepaintCx = this.createPrepaintContext(rootElementId);
@@ -1060,6 +1158,9 @@ export class FlashWindow {
     this.deferredDrawQueue = [];
     // Clear cross-element selection registry
     this.crossElementSelection?.beginFrame();
+    // Clear measure registry for new frame
+    this.measureRegistry.clear();
+    this.nextMeasureId = 1;
   }
 
   private paintDeferredElements(): void {
@@ -1631,6 +1732,22 @@ export class FlashWindow {
 
       requestLayout: (styles: Partial<Styles>, childLayoutIds: LayoutId[]): LayoutId => {
         return layoutEngine.requestLayout(styles, childLayoutIds);
+      },
+
+      requestMeasurableLayout: (styles: Partial<Styles>, measureId: number): LayoutId => {
+        return layoutEngine.requestMeasurableLayout(styles, measureId);
+      },
+
+      registerTextMeasure: (data: {
+        text: string;
+        fontSize: number;
+        fontFamily: string;
+        fontWeight: number;
+        lineHeight: number;
+        noWrap: boolean;
+        maxWidth: number | null;
+      }): number => {
+        return this.registerTextMeasure(data);
       },
 
       measureText: (
