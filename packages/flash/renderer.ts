@@ -12,6 +12,8 @@ import type { TextPipeline, TextSystem, GlyphInstance } from "./text.ts";
 import type { PathPipeline } from "./path.ts";
 import type { UnderlinePipeline } from "./underline.ts";
 import type { ImagePipeline, ImageInstance } from "./image.ts";
+import type { HostTexturePipeline } from "./host_texture_pipeline.ts";
+import type { HostTexturePrimitive } from "./scene.ts";
 
 /**
  * Renderer configuration.
@@ -69,6 +71,7 @@ export class FlashRenderer {
   private pathPipeline: PathPipeline | null = null;
   private underlinePipeline: UnderlinePipeline | null = null;
   private imagePipeline: ImagePipeline | null = null;
+  private hostTexturePipeline: HostTexturePipeline | null = null;
 
   constructor(
     private device: GPUDevice,
@@ -184,6 +187,14 @@ export class FlashRenderer {
   setImagePipeline(pipeline: ImagePipeline): void {
     this.imagePipeline = pipeline;
     pipeline.createBindGroup(this.uniformBuffer!);
+  }
+
+  /**
+   * Set the host texture pipeline.
+   */
+  setHostTexturePipeline(pipeline: HostTexturePipeline): void {
+    this.hostTexturePipeline = pipeline;
+    pipeline.setUniformBuffer(this.uniformBuffer!);
   }
 
   /**
@@ -343,6 +354,7 @@ export class FlashRenderer {
     const allUnderlines: (typeof layers)[number]["underlines"] = [];
     const allGlyphs: (typeof layers)[number]["glyphs"] = [];
     const allImages: (typeof layers)[number]["images"] = [];
+    const allHostTextures: HostTexturePrimitive[] = [];
 
     for (const layer of layers) {
       allShadows.push(...layer.shadows);
@@ -351,6 +363,7 @@ export class FlashRenderer {
       allUnderlines.push(...layer.underlines);
       allGlyphs.push(...layer.glyphs);
       allImages.push(...layer.images);
+      allHostTextures.push(...layer.hostTextures);
     }
 
     // Sort by draw order and render each type once
@@ -387,6 +400,11 @@ export class FlashRenderer {
       this.imagePipeline.render(pass, sorted as ImageInstance[]);
     }
 
+    if (allHostTextures.length > 0 && this.hostTexturePipeline) {
+      const sorted = allHostTextures.sort(byOrder);
+      this.hostTexturePipeline.render(pass, sorted);
+    }
+
     pass.end();
     this.device.queue.submit([encoder.finish()]);
   }
@@ -403,6 +421,7 @@ export class FlashRenderer {
     this.pathPipeline?.destroy();
     this.underlinePipeline?.destroy();
     this.imagePipeline?.destroy();
+    this.hostTexturePipeline?.destroy();
   }
 }
 

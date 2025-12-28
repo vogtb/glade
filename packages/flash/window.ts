@@ -86,6 +86,8 @@ import { TextSystem, TextPipeline } from "./text.ts";
 import { PathPipeline } from "./path.ts";
 import { UnderlinePipeline } from "./underline.ts";
 import { ImageAtlas, ImagePipeline, type ImageTile, type DecodedImage } from "./image.ts";
+import { HostTexturePipeline } from "./host_texture_pipeline.ts";
+import type { WebGPUHost, WebGPUHostInput } from "./webgpu_host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 import { CrossElementSelectionManager } from "./select.ts";
 
@@ -229,7 +231,12 @@ export class FlashWindow {
   private renderer: FlashRenderer;
   private textSystem: TextSystem;
   private imageAtlas: ImageAtlas;
+  private hostTexturePipeline: HostTexturePipeline;
   private didRenderThisFrame = false;
+
+  // WebGPU host rendering
+  private pendingHostRenders: Array<{ host: WebGPUHost; input: WebGPUHostInput }> = [];
+  private lastFrameTime = 0;
 
   // Inspector/Debug Mode
   private inspector: Inspector;
@@ -332,6 +339,10 @@ export class FlashWindow {
     const imagePipeline = new ImagePipeline(device, format, this.imageAtlas, 10000, sampleCount);
     this.renderer.setImagePipeline(imagePipeline);
 
+    // Initialize host texture pipeline at startup (not lazily) to ensure GPU validation completes
+    this.hostTexturePipeline = new HostTexturePipeline(device, format, 100, sampleCount);
+    this.renderer.setHostTexturePipeline(this.hostTexturePipeline);
+
     // Initialize key dispatcher
     this.keyDispatcher = new KeyDispatcher(this.keymap, this.actionRegistry);
 
@@ -398,6 +409,52 @@ export class FlashWindow {
    */
   getTextSystem(): TextSystem {
     return this.textSystem;
+  }
+
+  // ============ WebGPU Host Support ============
+
+  /**
+   * Get the GPU device for WebGPU host creation.
+   */
+  getDevice(): GPUDevice {
+    return this.device;
+  }
+
+  /**
+   * Get the texture format for WebGPU host creation.
+   */
+  getFormat(): GPUTextureFormat {
+    return this.format;
+  }
+
+  /**
+   * Get the current mouse position.
+   */
+  getMousePosition(): Point {
+    return this.mousePosition;
+  }
+
+  /**
+   * Check if any mouse button is currently pressed.
+   */
+  isMouseDown(): boolean {
+    return this.mouseDown;
+  }
+
+  /**
+   * Schedule a WebGPU host to be rendered this frame.
+   * Called by WebGPUHostElement during prepaint.
+   */
+  scheduleHostRender(host: WebGPUHost, input: WebGPUHostInput): void {
+    this.pendingHostRenders.push({ host, input });
+  }
+
+  /**
+   * Clear the host texture bind group cache.
+   * Call this when host textures are recreated (e.g., on resize).
+   */
+  clearHostTextureCache(): void {
+    this.hostTexturePipeline.clearBindGroupCache();
   }
 
   /**
@@ -1027,6 +1084,9 @@ export class FlashWindow {
 
     this.endFrame();
 
+    // Render WebGPU hosts before main Flash pass
+    this.renderHosts();
+
     // Get texture and render scene to GPU
     const texture = this.renderTarget.getCurrentTexture();
     const textureView = texture.createView();
@@ -1212,6 +1272,25 @@ export class FlashWindow {
 
     // Compute visual order and validate cross-element selection
     this.crossElementSelection?.endFrame();
+  }
+
+  /**
+   * Render all scheduled WebGPU hosts.
+   * Called before the main Flash render pass.
+   */
+  private renderHosts(): void {
+    if (this.pendingHostRenders.length === 0) {
+      return;
+    }
+
+    const encoder = this.device.createCommandEncoder();
+    for (const { host, input } of this.pendingHostRenders) {
+      host.render(input, encoder);
+    }
+    this.device.queue.submit([encoder.finish()]);
+
+    // Clear for next frame
+    this.pendingHostRenders = [];
   }
 
   private updateCursor(): void {
@@ -2088,6 +2167,25 @@ export class FlashWindow {
           cornerRadius: options?.cornerRadius ?? 0,
           opacity: options?.opacity ?? 1,
           grayscale: options?.grayscale ? 1 : 0,
+        });
+      },
+
+      paintHostTexture: (
+        textureView: GPUTextureView,
+        bounds: Bounds,
+        options?: {
+          cornerRadius?: number;
+          opacity?: number;
+        }
+      ): void => {
+        scene.addHostTexture({
+          textureView,
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+          cornerRadius: options?.cornerRadius ?? 0,
+          opacity: options?.opacity ?? 1,
         });
       },
 

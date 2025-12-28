@@ -483,12 +483,6 @@ export class CrossElementSelectionManager {
    */
   paintSelectionHighlights(scene: FlashScene, color: Color): void {
     const ranges = this.getSelectionRanges();
-    console.log(
-      "[SEL] paintSelectionHighlights, ranges:",
-      ranges.length,
-      "isActive:",
-      this.state.isActive
-    );
 
     for (const { key, range } of ranges) {
       const elem = this.registry.get(key);

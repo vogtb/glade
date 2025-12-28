@@ -158,6 +158,33 @@ export interface PathPrimitive {
 }
 
 /**
+ * Host texture primitive for rendering WebGPU host content.
+ * Used to embed custom WebGPU rendering within Flash UI.
+ */
+export interface HostTexturePrimitive {
+  /** The texture view to sample from */
+  textureView: GPUTextureView;
+  /** Screen position X */
+  x: number;
+  /** Screen position Y */
+  y: number;
+  /** Display width */
+  width: number;
+  /** Display height */
+  height: number;
+  /** Corner radius for rounded display */
+  cornerRadius: number;
+  /** Opacity (0-1) */
+  opacity: number;
+  /** Clip bounds */
+  clipBounds?: ClipBounds;
+  /** Transform matrix */
+  transform?: TransformationMatrix;
+  /** Draw order for z-sorting. Assigned automatically by FlashScene. */
+  order?: DrawOrder;
+}
+
+/**
  * Underline style.
  */
 export type UnderlineStyle = "solid" | "wavy";
@@ -193,6 +220,7 @@ export interface SceneLayer {
   images: ImagePrimitive[];
   paths: PathPrimitive[];
   underlines: UnderlinePrimitive[];
+  hostTextures: HostTexturePrimitive[];
 }
 
 /**
@@ -343,6 +371,7 @@ export class FlashScene {
       images: [],
       paths: [],
       underlines: [],
+      hostTextures: [],
     });
     this.currentLayerIndex = this.layers.length - 1;
   }
@@ -554,6 +583,36 @@ export class FlashScene {
   }
 
   /**
+   * Add a host texture to the current layer.
+   */
+  addHostTexture(hostTexture: HostTexturePrimitive): void {
+    const bounds = {
+      x: hostTexture.x,
+      y: hostTexture.y,
+      width: hostTexture.width,
+      height: hostTexture.height,
+    };
+    if (this.isClippedOut(bounds)) {
+      return;
+    }
+    const clipBounds = this.getCurrentClipBounds();
+    const transform = this.getCurrentTransform();
+    const hasTransform =
+      transform.a !== 1 ||
+      transform.b !== 0 ||
+      transform.c !== 0 ||
+      transform.d !== 1 ||
+      transform.tx !== 0 ||
+      transform.ty !== 0;
+    this.currentLayer.hostTextures.push({
+      ...hostTexture,
+      clipBounds: clipBounds ?? hostTexture.clipBounds,
+      transform: hasTransform ? transform : hostTexture.transform,
+      order: this.assignDrawOrder(bounds),
+    });
+  }
+
+  /**
    * Clear all layers and reset to initial state.
    */
   clear(): void {
@@ -583,6 +642,7 @@ export class FlashScene {
     images: number;
     paths: number;
     underlines: number;
+    hostTextures: number;
     layers: number;
   } {
     let rects = 0;
@@ -591,6 +651,7 @@ export class FlashScene {
     let images = 0;
     let paths = 0;
     let underlines = 0;
+    let hostTextures = 0;
     for (const layer of this.layers) {
       rects += layer.rects.length;
       shadows += layer.shadows.length;
@@ -598,7 +659,17 @@ export class FlashScene {
       images += layer.images.length;
       paths += layer.paths.length;
       underlines += layer.underlines.length;
+      hostTextures += layer.hostTextures.length;
     }
-    return { rects, shadows, glyphs, images, paths, underlines, layers: this.layers.length };
+    return {
+      rects,
+      shadows,
+      glyphs,
+      images,
+      paths,
+      underlines,
+      hostTextures,
+      layers: this.layers.length,
+    };
   }
 }

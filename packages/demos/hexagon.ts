@@ -1,4 +1,3 @@
-import type { WebGPUContext } from "@glade/core";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
 import type { DemoResources } from "./common";
 
@@ -152,7 +151,10 @@ function createIndices(): Uint16Array {
   return new Uint16Array(indices);
 }
 
-export function initHexagonDemo(ctx: WebGPUContext, format: GPUTextureFormat): DemoResources {
+export function initHexagonDemo(
+  ctx: { device: GPUDevice },
+  format: GPUTextureFormat
+): DemoResources {
   const { device } = ctx;
 
   const { positions, colors } = createGeometry();

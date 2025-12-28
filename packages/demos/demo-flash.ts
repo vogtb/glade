@@ -39,7 +39,12 @@ import {
   type Point,
   textInput,
   TextInputController,
+  webgpuHost,
+  type WebGPUHost,
 } from "@glade/flash";
+import { createGalaxyHost } from "./webgpu_hosts/galaxy_host.ts";
+import { createSimpleDemoHost } from "./webgpu_hosts/simple_host.ts";
+import { initHexagonDemo } from "./hexagon.ts";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed fonts as base64 at build time via Bun macro
@@ -93,7 +98,8 @@ type DemoSection =
   | "svg-icons"
   | "focus-navigation"
   | "clipboard"
-  | "cross-element-selection";
+  | "cross-element-selection"
+  | "webgpu-demos";
 
 /**
  * Demo button configuration.
@@ -125,6 +131,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "focus-navigation", label: "Focus Nav" },
   { id: "clipboard", label: "Clipboard" },
   { id: "cross-element-selection", label: "Cross-Element Selection" },
+  { id: "webgpu-demos", label: "WebGPU Demos" },
 ];
 
 /**
@@ -424,6 +431,10 @@ class DemoRootView implements FlashView {
   private textInputController = new TextInputController({ multiline: true });
   private textInputStatus = "Click the field to focus, then type to insert characters.";
 
+  // WebGPU host demos
+  private galaxyHost: WebGPUHost | null = null;
+  private hexagonHost: WebGPUHost | null = null;
+
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -575,6 +586,8 @@ class DemoRootView implements FlashView {
         return this.renderClipboardDemo(cx);
       case "cross-element-selection":
         return this.renderCrossElementSelectionDemo();
+      case "webgpu-demos":
+        return this.renderWebGPUDemosSection(cx);
       default:
         return div();
     }
@@ -2861,6 +2874,98 @@ class DemoRootView implements FlashView {
               .font("Inter")
               .size(13)
               .color({ r: 0.72, g: 0.76, b: 0.86, a: 1 })
+          )
+      );
+  }
+
+  private renderWebGPUDemosSection(cx: FlashViewContext<this>): FlashDiv {
+    const window = cx.window;
+    const device = window.getDevice();
+    const format = window.getFormat();
+
+    // Lazy init hosts
+    // Galaxy demo still disabled - compute pipeline issues
+    // if (!this.galaxyHost) {
+    //   this.galaxyHost = createGalaxyHost(device, format, 400, 300);
+    // }
+    if (!this.hexagonHost) {
+      this.hexagonHost = createSimpleDemoHost(device, format, 400, 300, (ctx, f) =>
+        initHexagonDemo(ctx, f)
+      );
+    }
+
+    const labelColor = { r: 0.7, g: 0.75, b: 0.85, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        text("WebGPU Demos").font("Inter").size(28).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Custom WebGPU rendering embedded within Flash UI layout")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.75, g: 0.8, b: 0.9, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        div()
+          .flex()
+          .flexRow()
+          .flexWrap()
+          .gap(24)
+          .children_(
+            // Galaxy demo - disabled for debugging
+            // div()
+            //   .flex()
+            //   .flexCol()
+            //   .gap(8)
+            //   .children_(
+            //     webgpuHost(this.galaxyHost, 400, 300).rounded(12),
+            //     text("Galaxy Simulation").font("Inter").size(14).color(labelColor),
+            //     text("Particle physics with compute shaders")
+            //       .font("Inter")
+            //       .size(12)
+            //       .color({ r: 0.5, g: 0.55, b: 0.65, a: 1 })
+            //   ),
+            // Hexagon demo
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                webgpuHost(this.hexagonHost, 400, 300).rounded(12),
+                text("Hexagon").font("Inter").size(14).color(labelColor),
+                text("Animated hexagon with mouse interaction")
+                  .font("Inter")
+                  .size(12)
+                  .color({ r: 0.5, g: 0.55, b: 0.65, a: 1 })
+              )
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg({ r: 0.12, g: 0.14, b: 0.18, a: 1 })
+          .rounded(8)
+          .children_(
+            text("How it works")
+              .font("Inter")
+              .size(16)
+              .weight(600)
+              .color({ r: 1, g: 1, b: 1, a: 1 }),
+            text("Each demo implements the WebGPUHost interface and renders to its own texture.")
+              .font("Inter")
+              .size(13)
+              .color(labelColor),
+            text("Flash samples these textures during its render pass, enabling full compositing.")
+              .font("Inter")
+              .size(13)
+              .color(labelColor),
+            text("Mouse coordinates are automatically transformed to local demo space.")
+              .font("Inter")
+              .size(13)
+              .color(labelColor)
           )
       );
   }

@@ -354,6 +354,19 @@ export type { ImageId, DecodedImage, ImageTile, ImageInstance, ImageAtlasConfig 
 
 export { ImageAtlas, ImagePipeline } from "./image.ts";
 
+// WebGPU Host rendering
+export type { RenderTexture } from "./render_texture.ts";
+
+export { createRenderTexture } from "./render_texture.ts";
+
+export type { WebGPUHost, WebGPUHostInput } from "./webgpu_host.ts";
+
+export type { HostTexturePrimitive } from "./scene.ts";
+
+export { HostTexturePipeline } from "./host_texture_pipeline.ts";
+
+export { WebGPUHostElement, webgpuHost } from "./webgpu_host_element.ts";
+
 // Buffer utilities
 export {
   DynamicBuffer,

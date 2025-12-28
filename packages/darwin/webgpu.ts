@@ -1542,13 +1542,17 @@ export class DawnGPUDevice {
     usage: number;
     mappedAtCreation?: boolean;
   }): DawnGPUBuffer {
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "Buffer";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     // WGPUBufferDescriptor struct layout (from webgpu.h):
     // { nextInChain: ptr(8), label: WGPUStringView(16), usage: u64(8), size: u64(8), mappedAtCreation: u32(4) }
     // Total: 48 bytes
     const descBuffer = Buffer.alloc(48);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8); // label.data
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16); // label.length
     descBuffer.writeBigUInt64LE(BigInt(convertBufferUsage(descriptor.usage)), 24); // usage (u64!)
     descBuffer.writeBigUInt64LE(BigInt(descriptor.size), 32); // size
     descBuffer.writeUInt32LE(descriptor.mappedAtCreation ? 1 : 0, 40); // mappedAtCreation
@@ -1561,6 +1565,10 @@ export class DawnGPUDevice {
   }
 
   createShaderModule(descriptor: { label?: string; code: string }): DawnGPUShaderModule {
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "ShaderModule";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     // WGPUShaderSourceWGSL chained struct
     const code = descriptor.code;
     const codeBuffer = Buffer.from(code + "\0", "utf8");
@@ -1577,8 +1585,8 @@ export class DawnGPUDevice {
     // WGPUShaderModuleDescriptor
     const descBuffer = Buffer.alloc(32);
     descBuffer.writeBigUInt64LE(BigInt(ptr(wgslSource)), 0); // nextInChain -> wgslSource
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8); // label.data
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16); // label.length
 
     const module = dawn.wgpuDeviceCreateShaderModule(this._handle, ptr(descBuffer));
     if (!module) {
@@ -1698,10 +1706,14 @@ export class DawnGPUDevice {
     // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
     const entriesPtr = ptr(entriesBuffer);
 
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "BindGroupLayout";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     const descBuffer = Buffer.alloc(40);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8); // label.data
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16); // label.length
     descBuffer.writeBigUInt64LE(BigInt(numEntries), 24); // entryCount
     descBuffer.writeBigUInt64LE(BigInt(entriesPtr as unknown as number), 32); // entries
 
@@ -1770,10 +1782,14 @@ export class DawnGPUDevice {
     // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
     const entriesPtr = ptr(entriesBuffer);
 
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "BindGroup";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     const descBuffer = Buffer.alloc(48);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8); // label.data
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16); // label.length
     descBuffer.writeBigUInt64LE(BigInt(descriptor.layout._handle as unknown as number), 24); // layout
     descBuffer.writeBigUInt64LE(BigInt(numEntries), 32); // entryCount
     descBuffer.writeBigUInt64LE(BigInt(entriesPtr as unknown as number), 40); // entries
@@ -1800,12 +1816,21 @@ export class DawnGPUDevice {
     // Get pointer AFTER all writes are done (Bun Buffer ptr() issue)
     const layoutsPtr = ptr(layoutsBuffer);
 
-    const descBuffer = Buffer.alloc(40);
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "PipelineLayout";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
+    // WGPUPipelineLayoutDescriptor struct layout:
+    // { nextInChain: ptr(8), label: WGPUStringView(16), bindGroupLayoutCount: size_t(8),
+    //   bindGroupLayouts: ptr(8), immediateSize: u32(4), padding(4) }
+    // Total: 48 bytes
+    const descBuffer = Buffer.alloc(48);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8); // label.data
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16); // label.length
     descBuffer.writeBigUInt64LE(BigInt(numLayouts), 24); // bindGroupLayoutCount
     descBuffer.writeBigUInt64LE(BigInt(layoutsPtr as unknown as number), 32); // bindGroupLayouts
+    descBuffer.writeUInt32LE(0, 40); // immediateSize = 0 (IMPORTANT: must be 0 or ImmediateAddressSpace feature required)
 
     const pipelineLayout = dawn.wgpuDeviceCreatePipelineLayout(this._handle, ptr(descBuffer));
     if (!pipelineLayout) {
@@ -1987,6 +2012,10 @@ export class DawnGPUDevice {
         ? null
         : (descriptor.layout as unknown as DawnGPUPipelineLayout | null);
 
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "RenderPipeline";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     // WGPURenderPipelineDescriptor struct layout:
     // { nextInChain: ptr(8), label: WGPUStringView(16), layout: ptr(8),
     //   vertex: WGPUVertexState(64), primitive: WGPUPrimitiveState(32),
@@ -2000,9 +2029,9 @@ export class DawnGPUDevice {
     offset += 8;
 
     // label: WGPUStringView { data: ptr, length: size_t }
-    descBuffer.writeBigUInt64LE(BigInt(0), offset); // label.data = NULL
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), offset);
     offset += 8;
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), offset); // label.length = WGPU_STRLEN
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), offset); // exclude null terminator
     offset += 8;
 
     // layout: ptr
@@ -2135,10 +2164,14 @@ export class DawnGPUDevice {
   }
 
   createCommandEncoder(descriptor?: { label?: string }): DawnGPUCommandEncoder {
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor?.label ?? "CommandEncoder";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     const descBuffer = Buffer.alloc(32);
     descBuffer.writeBigUInt64LE(BigInt(0), 0); // nextInChain
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8); // label.data
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16); // label.length
 
     const encoder = dawn.wgpuDeviceCreateCommandEncoder(this._handle, ptr(descBuffer));
     if (!encoder) {
@@ -2148,6 +2181,10 @@ export class DawnGPUDevice {
   }
 
   createTexture(descriptor: GPUTextureDescriptor): DawnGPUTexture {
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "Texture";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     // WGPUTextureDescriptor struct layout (from webgpu.h):
     // { nextInChain: ptr(8), label: WGPUStringView(16), usage: u64(8), dimension: u32(4),
     //   size: WGPUExtent3D(12), format: u32(4), mipLevelCount: u32(4), sampleCount: u32(4),
@@ -2159,8 +2196,8 @@ export class DawnGPUDevice {
     descBuffer.writeBigUInt64LE(BigInt(0), 0);
 
     // label (WGPUStringView: data ptr + length)
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data = NULL
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length = WGPU_STRLEN
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8);
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16);
 
     // usage (u64)
     descBuffer.writeBigUInt64LE(BigInt(convertTextureUsage(descriptor.usage)), 24);
@@ -2204,6 +2241,10 @@ export class DawnGPUDevice {
   }
 
   createSampler(descriptor?: GPUSamplerDescriptor): DawnGPUSampler {
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor?.label ?? "Sampler";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     // WGPUSamplerDescriptor struct layout (from webgpu.h):
     // { nextInChain: ptr(8), label: WGPUStringView(16), addressModeU: u32(4), addressModeV: u32(4),
     //   addressModeW: u32(4), magFilter: u32(4), minFilter: u32(4), mipmapFilter: u32(4),
@@ -2215,8 +2256,8 @@ export class DawnGPUDevice {
     descBuffer.writeBigUInt64LE(BigInt(0), 0);
 
     // label (WGPUStringView: data ptr + length)
-    descBuffer.writeBigUInt64LE(BigInt(0), 8); // label.data = NULL
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), 16); // label.length = WGPU_STRLEN
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), 8);
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), 16);
 
     // addressModeU (u32)
     const addressModeU = addressModeMap[descriptor?.addressModeU ?? "clamp-to-edge"] ?? 0x01;
@@ -2273,6 +2314,10 @@ export class DawnGPUDevice {
         ? null
         : (descriptor.layout as unknown as DawnGPUPipelineLayout | null);
 
+    // Label buffer (must stay in scope until after FFI call)
+    const labelStr = descriptor.label ?? "ComputePipeline";
+    const labelBuffer = Buffer.from(labelStr + "\0", "utf8");
+
     // WGPUComputePipelineDescriptor struct layout:
     // { nextInChain: ptr(8), label: WGPUStringView(16), layout: ptr(8), compute: WGPUProgrammableStageDescriptor(48) }
     // WGPUProgrammableStageDescriptor: { nextInChain: ptr(8), module: ptr(8), entryPoint: WGPUStringView(16), constantCount: size_t(8), constants: ptr(8) }
@@ -2285,9 +2330,9 @@ export class DawnGPUDevice {
     offset += 8;
 
     // label: WGPUStringView { data: ptr, length: size_t }
-    descBuffer.writeBigUInt64LE(BigInt(0), offset); // label.data = NULL
+    descBuffer.writeBigUInt64LE(BigInt(ptr(labelBuffer)), offset);
     offset += 8;
-    descBuffer.writeBigUInt64LE(BigInt("0xFFFFFFFFFFFFFFFF"), offset); // label.length = WGPU_STRLEN
+    descBuffer.writeBigUInt64LE(BigInt(labelBuffer.length - 1), offset); // exclude null terminator
     offset += 8;
 
     // layout: ptr

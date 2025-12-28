@@ -369,6 +369,18 @@ export interface PaintContext {
   ): void;
 
   /**
+   * Paint a host texture primitive (WebGPU host content).
+   */
+  paintHostTexture(
+    textureView: GPUTextureView,
+    bounds: Bounds,
+    options?: {
+      cornerRadius?: number;
+      opacity?: number;
+    }
+  ): void;
+
+  /**
    * Get persistent state cached across frames for this element.
    */
   getPersistentState<T = unknown>(): T | undefined;
