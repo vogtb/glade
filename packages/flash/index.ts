@@ -442,6 +442,18 @@ export { FlashIcon, icon } from "./icon.ts";
 // Link element
 export { FlashLink, link } from "./link.ts";
 
+// Checkbox element
+export type { CheckedState, CheckedChangeHandler } from "./checkbox.ts";
+export { FlashCheckbox, checkbox } from "./checkbox.ts";
+
+// Radio group elements
+export type { RadioValueChangeHandler } from "./radio.ts";
+export { FlashRadioGroup, FlashRadioGroupItem, radioGroup, radioItem } from "./radio.ts";
+
+// Switch element
+export type { SwitchChangeHandler } from "./switch.ts";
+export { FlashSwitch, switchToggle, toggle } from "./switch.ts";
+
 // Ideal text editor system
 export type {
   DocumentOffset,

@@ -44,6 +44,10 @@ import {
   TextInputController,
   webgpuHost,
   type WebGPUHost,
+  checkbox,
+  radioGroup,
+  radioItem,
+  switchToggle,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
 import { createHexagonHost } from "./hexagon.ts";
@@ -96,6 +100,7 @@ type DemoSection =
   | "divider"
   | "icon"
   | "link"
+  | "controls"
   | "grid-layout"
   | "canvas"
   | "vector-paths"
@@ -132,6 +137,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "divider", label: "Divider" },
   { id: "icon", label: "Icon" },
   { id: "link", label: "Link" },
+  { id: "controls", label: "Controls" },
   { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
@@ -463,6 +469,14 @@ class DemoRootView implements FlashView {
     | "terrain"
     | "galaxy" = "hexagon";
 
+  // Toggle controls demo state
+  private checkboxChecked = false;
+  private checkboxIndeterminate = false;
+  private radioValue = "option1";
+  private switchEnabled = false;
+  private notificationsEnabled = true;
+  private darkModeEnabled = false;
+
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -596,6 +610,8 @@ class DemoRootView implements FlashView {
         return this.renderIconDemo();
       case "link":
         return this.renderLinkDemo();
+      case "controls":
+        return this.renderControlsDemo(cx);
       case "grid-layout":
         return this.renderGridLayoutDemo();
       case "canvas":
@@ -1811,6 +1827,384 @@ class DemoRootView implements FlashView {
               .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
             link("GitHub repository", "https://github.com").font("Inter").size(14),
             text("to contribute.").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+          )
+      );
+  }
+
+  private renderControlsDemo(cx: FlashViewContext<this>): FlashDiv {
+    const labelColor = { r: 0.9, g: 0.9, b: 1, a: 1 };
+    const dimColor = { r: 0.6, g: 0.6, b: 0.7, a: 1 };
+    const checkedBg = { r: 0.4, g: 0.6, b: 1, a: 1 };
+    const greenBg = { r: 0.2, g: 0.8, b: 0.4, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        // Header
+        text("Controls").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Checkbox, Radio Group, and Switch components")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Checkbox Section
+        text("Checkbox").font("Inter").size(20).color(labelColor),
+        text("A control that allows toggling between checked and unchecked states")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            // Basic checkbox
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .itemsCenter()
+              .children_(
+                checkbox()
+                  .checked(this.checkboxChecked)
+                  .onCheckedChange((checked) => {
+                    this.checkboxChecked = checked;
+                    cx.notify();
+                  }),
+                text("Accept terms and conditions").font("Inter").size(14).color(labelColor)
+              ),
+            // Indeterminate checkbox
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .itemsCenter()
+              .children_(
+                checkbox()
+                  .indeterminate(this.checkboxIndeterminate)
+                  .checked(!this.checkboxIndeterminate && this.checkboxChecked)
+                  .onCheckedChange(() => {
+                    if (this.checkboxIndeterminate) {
+                      this.checkboxIndeterminate = false;
+                      this.checkboxChecked = true;
+                    } else {
+                      this.checkboxChecked = !this.checkboxChecked;
+                    }
+                    cx.notify();
+                  }),
+                text("Select all items (indeterminate when partial)")
+                  .font("Inter")
+                  .size(14)
+                  .color(labelColor)
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .children_(
+                div()
+                  .px(12)
+                  .py(6)
+                  .bg({ r: 0.2, g: 0.2, b: 0.25, a: 1 })
+                  .rounded(4)
+                  .cursorPointer()
+                  .hover((s) => s.bg({ r: 0.25, g: 0.25, b: 0.3, a: 1 }))
+                  .onClick(() => {
+                    this.checkboxIndeterminate = true;
+                    cx.notify();
+                    return { stopPropagation: true };
+                  })
+                  .child(text("Set Indeterminate").font("Inter").size(12).color(dimColor)),
+                div()
+                  .px(12)
+                  .py(6)
+                  .bg({ r: 0.2, g: 0.2, b: 0.25, a: 1 })
+                  .rounded(4)
+                  .cursorPointer()
+                  .hover((s) => s.bg({ r: 0.25, g: 0.25, b: 0.3, a: 1 }))
+                  .onClick(() => {
+                    this.checkboxIndeterminate = false;
+                    this.checkboxChecked = false;
+                    cx.notify();
+                    return { stopPropagation: true };
+                  })
+                  .child(text("Reset").font("Inter").size(12).color(dimColor))
+              ),
+            // Disabled checkbox
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .itemsCenter()
+              .children_(
+                checkbox().checked(true).disabled(true),
+                text("Disabled (checked)").font("Inter").size(14).color(dimColor)
+              ),
+            // Custom styled checkbox
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .itemsCenter()
+              .children_(
+                checkbox()
+                  .size(24)
+                  .checked(this.checkboxChecked)
+                  .checkedBg(greenBg)
+                  .rounded(6)
+                  .onCheckedChange((checked) => {
+                    this.checkboxChecked = checked;
+                    cx.notify();
+                  }),
+                text("Custom styled (green, larger)").font("Inter").size(14).color(labelColor)
+              )
+          ),
+
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+        // Radio Group Section
+        text("Radio Group").font("Inter").size(20).color(labelColor),
+        text("A set of checkable buttons where only one can be checked at a time")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            // Vertical radio group
+            div()
+              .flex()
+              .flexRow()
+              .gap(32)
+              .children_(
+                div()
+                  .flex()
+                  .flexCol()
+                  .gap(8)
+                  .children_(
+                    text("Vertical Layout").font("Inter").size(13).color(dimColor),
+                    radioGroup()
+                      .flexCol()
+                      .gap(12)
+                      .value(this.radioValue)
+                      .onValueChange((value) => {
+                        this.radioValue = value;
+                        cx.notify();
+                      })
+                      .items(radioItem("option1"), radioItem("option2"), radioItem("option3")),
+                    div()
+                      .flex()
+                      .flexCol()
+                      .gap(4)
+                      .ml(26)
+                      .children_(
+                        text("Option 1 - Default").font("Inter").size(13).color(labelColor),
+                        text("Option 2 - Alternative").font("Inter").size(13).color(labelColor),
+                        text("Option 3 - Another choice").font("Inter").size(13).color(labelColor)
+                      )
+                  ),
+                div()
+                  .flex()
+                  .flexCol()
+                  .gap(8)
+                  .children_(
+                    text("Horizontal Layout").font("Inter").size(13).color(dimColor),
+                    radioGroup()
+                      .flexRow()
+                      .gap(16)
+                      .value(this.radioValue)
+                      .onValueChange((value) => {
+                        this.radioValue = value;
+                        cx.notify();
+                      })
+                      .items(radioItem("option1"), radioItem("option2"), radioItem("option3"))
+                  )
+              ),
+            text(`Selected: ${this.radioValue}`).font("Inter").size(13).color(checkedBg),
+            // Custom styled radio group
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                text("Custom Styled").font("Inter").size(13).color(dimColor),
+                radioGroup()
+                  .flexRow()
+                  .gap(16)
+                  .itemSize(22)
+                  .checkedBg(greenBg)
+                  .indicatorColor({ r: 1, g: 1, b: 1, a: 1 })
+                  .value(this.radioValue)
+                  .onValueChange((value) => {
+                    this.radioValue = value;
+                    cx.notify();
+                  })
+                  .items(radioItem("option1"), radioItem("option2"), radioItem("option3"))
+              ),
+            // Disabled radio group
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                text("Disabled").font("Inter").size(13).color(dimColor),
+                radioGroup()
+                  .flexRow()
+                  .gap(16)
+                  .disabled(true)
+                  .value("option2")
+                  .items(radioItem("option1"), radioItem("option2"), radioItem("option3"))
+              )
+          ),
+
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+        // Switch Section
+        text("Switch").font("Inter").size(20).color(labelColor),
+        text("A toggle control for on/off states, commonly used for settings")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            // Basic switch
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .itemsCenter()
+              .justifyBetween()
+              .w(300)
+              .children_(
+                text("Enable feature").font("Inter").size(14).color(labelColor),
+                switchToggle()
+                  .checked(this.switchEnabled)
+                  .onCheckedChange((checked) => {
+                    this.switchEnabled = checked;
+                    cx.notify();
+                  })
+              ),
+            // Settings-style switches
+            div()
+              .flex()
+              .flexCol()
+              .gap(12)
+              .p(12)
+              .bg({ r: 0.15, g: 0.15, b: 0.18, a: 1 })
+              .rounded(6)
+              .w(320)
+              .children_(
+                div()
+                  .flex()
+                  .flexRow()
+                  .itemsCenter()
+                  .justifyBetween()
+                  .children_(
+                    div()
+                      .flex()
+                      .flexCol()
+                      .gap(2)
+                      .children_(
+                        text("Notifications").font("Inter").size(14).color(labelColor),
+                        text("Receive push notifications").font("Inter").size(12).color(dimColor)
+                      ),
+                    switchToggle()
+                      .checked(this.notificationsEnabled)
+                      .checkedTrack(greenBg)
+                      .onCheckedChange((checked) => {
+                        this.notificationsEnabled = checked;
+                        cx.notify();
+                      })
+                  ),
+                div().h(1).bg({ r: 0.25, g: 0.25, b: 0.3, a: 1 }),
+                div()
+                  .flex()
+                  .flexRow()
+                  .itemsCenter()
+                  .justifyBetween()
+                  .children_(
+                    div()
+                      .flex()
+                      .flexCol()
+                      .gap(2)
+                      .children_(
+                        text("Dark Mode").font("Inter").size(14).color(labelColor),
+                        text("Use dark color scheme").font("Inter").size(12).color(dimColor)
+                      ),
+                    switchToggle()
+                      .checked(this.darkModeEnabled)
+                      .onCheckedChange((checked) => {
+                        this.darkModeEnabled = checked;
+                        cx.notify();
+                      })
+                  )
+              ),
+            // Disabled switch
+            div()
+              .flex()
+              .flexRow()
+              .gap(12)
+              .itemsCenter()
+              .children_(
+                switchToggle().checked(true).disabled(true),
+                text("Disabled (on)").font("Inter").size(14).color(dimColor)
+              ),
+            // Custom sized switches
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                text("Size Variations").font("Inter").size(13).color(dimColor),
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(16)
+                  .itemsCenter()
+                  .children_(
+                    switchToggle()
+                      .size(36, 20)
+                      .checked(this.switchEnabled)
+                      .onCheckedChange((checked) => {
+                        this.switchEnabled = checked;
+                        cx.notify();
+                      }),
+                    text("Small").font("Inter").size(12).color(dimColor),
+                    switchToggle()
+                      .size(44, 24)
+                      .checked(this.switchEnabled)
+                      .onCheckedChange((checked) => {
+                        this.switchEnabled = checked;
+                        cx.notify();
+                      }),
+                    text("Default").font("Inter").size(12).color(dimColor),
+                    switchToggle()
+                      .size(56, 30)
+                      .checked(this.switchEnabled)
+                      .onCheckedChange((checked) => {
+                        this.switchEnabled = checked;
+                        cx.notify();
+                      }),
+                    text("Large").font("Inter").size(12).color(dimColor)
+                  )
+              )
           )
       );
   }

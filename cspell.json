@@ -41,6 +41,7 @@
     "clippy",
     "pipefail",
     "vogtb",
-    "dylibs"
+    "dylibs",
+    "checkmark"
   ]
 }
