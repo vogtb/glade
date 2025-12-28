@@ -22,6 +22,8 @@ import type {
   ScrollState,
 } from "./types.ts";
 import { createScrollState, clampScrollOffset } from "./types.ts";
+import type { ScrollbarDragState } from "./scrollbar.ts";
+import { calculateDragScrollOffset } from "./scrollbar.ts";
 import { CursorStyle } from "@glade/core/events.ts";
 import type { Clipboard, CharEvent, CompositionEvent, TextInputEvent } from "@glade/core";
 import type { FlashViewHandle, ScrollHandle } from "./entity.ts";
@@ -199,6 +201,7 @@ export class FlashWindow {
 
   private scrollStates = new Map<ScrollHandleId, ScrollState>();
   private nextScrollHandleId = 1;
+  private scrollbarDragState: ScrollbarDragState | null = null;
 
   // Hitbox tracking
   private hitboxFrame: HitboxFrame = createHitboxFrame();
@@ -763,6 +766,69 @@ export class FlashWindow {
     state.viewportOrigin = viewportOrigin;
     const clamped = clampScrollOffset(state);
     state.offset = clamped;
+  }
+
+  /**
+   * Get the scroll state for a scroll handle.
+   * Returns null if the scroll handle has not been initialized.
+   */
+  getScrollState(scrollId: ScrollHandleId): ScrollState | null {
+    return this.scrollStates.get(scrollId) ?? null;
+  }
+
+  // ============ Scrollbar Drag Management ============
+
+  /**
+   * Start a scrollbar thumb drag operation.
+   */
+  startScrollbarDrag(state: ScrollbarDragState): void {
+    this.scrollbarDragState = state;
+  }
+
+  /**
+   * Update scroll position during scrollbar drag.
+   */
+  updateScrollbarDrag(currentMousePos: number): void {
+    if (!this.scrollbarDragState) return;
+
+    const newOffset = calculateDragScrollOffset(this.scrollbarDragState, currentMousePos);
+    const scrollState = this.scrollStates.get(this.scrollbarDragState.scrollHandleId);
+    if (!scrollState) return;
+
+    if (this.scrollbarDragState.axis === "y") {
+      this.setScrollOffset(this.scrollbarDragState.scrollHandleId, {
+        x: scrollState.offset.x,
+        y: newOffset,
+      });
+    } else {
+      this.setScrollOffset(this.scrollbarDragState.scrollHandleId, {
+        x: newOffset,
+        y: scrollState.offset.y,
+      });
+    }
+
+    this.getContext().markWindowDirty(this.id);
+  }
+
+  /**
+   * End scrollbar drag operation.
+   */
+  endScrollbarDrag(): void {
+    this.scrollbarDragState = null;
+  }
+
+  /**
+   * Check if a scrollbar is currently being dragged.
+   */
+  isScrollbarDragging(): boolean {
+    return this.scrollbarDragState !== null;
+  }
+
+  /**
+   * Get the current scrollbar drag state.
+   */
+  getScrollbarDragState(): ScrollbarDragState | null {
+    return this.scrollbarDragState;
   }
 
   // ============ Hitbox Management ============
@@ -1459,6 +1525,14 @@ export class FlashWindow {
         this.mousePosition = { x, y };
         // Mark window dirty to trigger re-render for hover effects
         this.getContext().markWindowDirty(this.id);
+
+        // Handle scrollbar drag if active
+        if (this.scrollbarDragState) {
+          const pos = this.scrollbarDragState.axis === "y" ? y : x;
+          this.updateScrollbarDrag(pos);
+          return; // Don't dispatch other events during scrollbar drag
+        }
+
         // Update drag position if active
         if (this.pendingDragStart || this.dragTracker.getActiveDrag()) {
           const isDragging = this.dragTracker.updatePosition({ x, y });
@@ -1584,6 +1658,14 @@ export class FlashWindow {
 
         const wasMouseDown = this.mouseDown;
         this.mouseDown = false;
+
+        // End scrollbar drag if active
+        if (this.scrollbarDragState) {
+          this.endScrollbarDrag();
+          this.getContext().markWindowDirty(this.id);
+          return;
+        }
+
         const event: FlashMouseEvent = { x, y, button, modifiers: mods };
         let path = hitTest(this.hitTestTree, { x, y });
 
@@ -2295,6 +2377,10 @@ export class FlashWindow {
 
       getComputedWrapWidth: (measureId: number): number | undefined => {
         return this.getComputedWrapWidth(measureId);
+      },
+
+      getWindow: (): FlashWindow => {
+        return this;
       },
     };
   }

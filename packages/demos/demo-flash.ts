@@ -103,6 +103,7 @@ type DemoSection =
   | "png-images"
   | "jpg-images"
   | "virtual-scrolling"
+  | "scrollbars"
   | "deferred-anchored"
   | "svg-icons"
   | "focus-navigation"
@@ -138,6 +139,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "png-images", label: "PNG Images" },
   { id: "jpg-images", label: "JPG Images" },
   { id: "virtual-scrolling", label: "Virtual Scrolling" },
+  { id: "scrollbars", label: "Scrollbars" },
   { id: "deferred-anchored", label: "Deferred/Anchored" },
   { id: "svg-icons", label: "SVG Icons" },
   { id: "focus-navigation", label: "Focus Nav" },
@@ -420,6 +422,9 @@ class DemoRootView implements FlashView {
   private leftNavScrollHandle: ScrollHandle | null = null;
   private uniformListScrollHandle: ScrollHandle | null = null;
   private variableListScrollHandle: ScrollHandle | null = null;
+  private scrollbarDemoHandle1: ScrollHandle | null = null;
+  private scrollbarDemoHandle2: ScrollHandle | null = null;
+  private scrollbarDemoHandle3: ScrollHandle | null = null;
   private variableListState: ListState | null = null;
   private selectedDemo: DemoSection = "inter-text";
   private popupVisible = false;
@@ -605,6 +610,8 @@ class DemoRootView implements FlashView {
         return this.renderJpgImagesDemo();
       case "virtual-scrolling":
         return this.renderVirtualScrollingDemo(cx);
+      case "scrollbars":
+        return this.renderScrollbarsDemo(cx);
       case "deferred-anchored":
         return this.renderDeferredAnchoredDemo(cx);
       case "svg-icons":
@@ -2640,6 +2647,186 @@ class DemoRootView implements FlashView {
                   .rounded(8)
                   .p(4)
               )
+          )
+      );
+  }
+
+  private renderScrollbarsDemo(cx: FlashViewContext<this>): FlashDiv {
+    // Initialize scroll handles if needed
+    if (!this.scrollbarDemoHandle1) {
+      this.scrollbarDemoHandle1 = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.scrollbarDemoHandle2) {
+      this.scrollbarDemoHandle2 = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.scrollbarDemoHandle3) {
+      this.scrollbarDemoHandle3 = cx.newScrollHandle(cx.windowId);
+    }
+
+    // Generate sample content items for scrollable areas
+    const sampleItems = Array.from({ length: 30 }, (_, i) => `Item ${i + 1}: Sample content line`);
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Scrollbars").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Draggable scrollbars with visual scroll position indication")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Row with multiple scrollbar demos
+        div()
+          .flex()
+          .flexRow()
+          .gap(24)
+          .children_(
+            // Default scrollbar (auto visibility)
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                text("Default (Auto)").font("Inter").size(14).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+                text("Scrollbar appears when content overflows")
+                  .font("Inter")
+                  .size(12)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                div()
+                  .w(220)
+                  .h(200)
+                  .bg({ r: 0.12, g: 0.12, b: 0.16, a: 1 })
+                  .rounded(8)
+                  .border(1)
+                  .borderColor({ r: 0.25, g: 0.25, b: 0.3, a: 1 })
+                  .overflowAuto()
+                  .trackScroll(this.scrollbarDemoHandle1)
+                  .p(8)
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .children_(
+                    ...sampleItems.map((item) =>
+                      div()
+                        .h(20)
+                        .flexShrink0()
+                        .child(
+                          text(item).font("Inter").size(12).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+                        )
+                    )
+                  )
+              ),
+
+            // Always visible scrollbar
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                text("Always Visible").font("Inter").size(14).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+                text("Scrollbar is always shown")
+                  .font("Inter")
+                  .size(12)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                div()
+                  .w(220)
+                  .h(200)
+                  .bg({ r: 0.12, g: 0.12, b: 0.16, a: 1 })
+                  .rounded(8)
+                  .border(1)
+                  .borderColor({ r: 0.25, g: 0.25, b: 0.3, a: 1 })
+                  .overflowScroll()
+                  .trackScroll(this.scrollbarDemoHandle2)
+                  .scrollbarAlways()
+                  .p(8)
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .children_(
+                    ...sampleItems.map((item) =>
+                      div()
+                        .h(20)
+                        .flexShrink0()
+                        .child(
+                          text(item).font("Inter").size(12).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+                        )
+                    )
+                  )
+              ),
+
+            // Custom styled scrollbar
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .children_(
+                text("Custom Style").font("Inter").size(14).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+                text("Custom colors and width")
+                  .font("Inter")
+                  .size(12)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                div()
+                  .w(220)
+                  .h(200)
+                  .bg({ r: 0.12, g: 0.12, b: 0.16, a: 1 })
+                  .rounded(8)
+                  .border(1)
+                  .borderColor({ r: 0.25, g: 0.25, b: 0.3, a: 1 })
+                  .overflowAuto()
+                  .trackScroll(this.scrollbarDemoHandle3)
+                  .scrollbar({
+                    width: 12,
+                    thumbColor: { r: 0.4, g: 0.6, b: 0.9, a: 0.8 },
+                    thumbHoverColor: { r: 0.5, g: 0.7, b: 1, a: 0.9 },
+                    thumbActiveColor: { r: 0.6, g: 0.8, b: 1, a: 1 },
+                    trackColor: { r: 0.15, g: 0.15, b: 0.2, a: 0.5 },
+                  })
+                  .scrollbarAlways()
+                  .p(8)
+                  .flex()
+                  .flexCol()
+                  .gap(4)
+                  .children_(
+                    ...sampleItems.map((item) =>
+                      div()
+                        .h(20)
+                        .flexShrink0()
+                        .child(
+                          text(item).font("Inter").size(12).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+                        )
+                    )
+                  )
+              )
+          ),
+
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+
+        // Interaction instructions
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .children_(
+            text("Interactions:").font("Inter").size(14).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text("• Scroll with mouse wheel or trackpad")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Drag the scrollbar thumb to scroll")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Click the track to jump to that position")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+            text("• Hover over scrollbar for highlight effect")
+              .font("Inter")
+              .size(12)
+              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
           )
       );
   }

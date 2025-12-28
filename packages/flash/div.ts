@@ -37,6 +37,17 @@ import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { TabStopConfig } from "./tab.ts";
+import type { ScrollbarConfig, ScrollbarDragState } from "./scrollbar.ts";
+import {
+  DEFAULT_SCROLLBAR_CONFIG,
+  calculateThumbMetrics,
+  calculateVerticalTrackBounds,
+  calculateHorizontalTrackBounds,
+  calculateThumbBounds,
+  getThumbColor,
+  isPointInThumb,
+  trackClickToScrollOffset,
+} from "./scrollbar.ts";
 
 /**
  * State passed from requestLayout to prepaint for FlashDiv.
@@ -60,6 +71,21 @@ interface DivPrepaintState {
   childBounds: Bounds[];
   hitbox: Hitbox | null;
   hitTestNode: HitTestNode;
+  // Scrollbar state
+  verticalScrollbar: {
+    trackBounds: Bounds;
+    thumbBounds: Bounds;
+    hitbox: Hitbox;
+    thumbSize: number;
+    maxScroll: number;
+  } | null;
+  horizontalScrollbar: {
+    trackBounds: Bounds;
+    thumbBounds: Bounds;
+    hitbox: Hitbox;
+    thumbSize: number;
+    maxScroll: number;
+  } | null;
 }
 
 /**
@@ -83,6 +109,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private tooltipBuilderFn: TooltipBuilder | null = null;
   private tooltipConfigValue: TooltipConfig = DEFAULT_TOOLTIP_CONFIG;
   private tabStopConfigValue: TabStopConfig | null = null;
+  private scrollbarConfigValue: Partial<ScrollbarConfig> | null = null;
 
   // ============ Layout Styles (Tailwind-like API) ============
 
@@ -958,6 +985,46 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
+  /**
+   * Configure scrollbar appearance.
+   */
+  scrollbar(config: Partial<ScrollbarConfig>): this {
+    this.scrollbarConfigValue = { ...this.scrollbarConfigValue, ...config };
+    return this;
+  }
+
+  /**
+   * Set scrollbar width.
+   */
+  scrollbarWidth(width: number): this {
+    this.scrollbarConfigValue = { ...this.scrollbarConfigValue, width };
+    return this;
+  }
+
+  /**
+   * Always show scrollbars when content is scrollable.
+   */
+  scrollbarAlways(): this {
+    this.scrollbarConfigValue = { ...this.scrollbarConfigValue, visibility: "always" };
+    return this;
+  }
+
+  /**
+   * Show scrollbars only on hover.
+   */
+  scrollbarOnHover(): this {
+    this.scrollbarConfigValue = { ...this.scrollbarConfigValue, visibility: "hover" };
+    return this;
+  }
+
+  /**
+   * Hide scrollbars completely.
+   */
+  hideScrollbar(): this {
+    this.scrollbarConfigValue = { ...this.scrollbarConfigValue, visibility: "never" };
+    return this;
+  }
+
   // ============ Hitbox ============
 
   /**
@@ -1163,13 +1230,193 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       }
     }
 
+    // Calculate scrollbar state if this is a scroll container
+    // (before building hitTestNode so we can add scrollbar nodes as children)
+    let verticalScrollbar: DivPrepaintState["verticalScrollbar"] = null;
+    let horizontalScrollbar: DivPrepaintState["horizontalScrollbar"] = null;
+
+    if (this.scrollHandleRef) {
+      const scrollState = cx.getWindow().getScrollState(this.scrollHandleRef.id);
+      if (scrollState) {
+        const config = { ...DEFAULT_SCROLLBAR_CONFIG, ...this.scrollbarConfigValue };
+
+        // Check if scrollbars should be visible
+        const showScrollbars = config.visibility !== "never";
+        const isVerticalScrollable =
+          scrollState.contentSize.height > scrollState.viewportSize.height;
+        const isHorizontalScrollable =
+          scrollState.contentSize.width > scrollState.viewportSize.width;
+
+        if (showScrollbars && isVerticalScrollable) {
+          const trackBounds = calculateVerticalTrackBounds(bounds, config, isHorizontalScrollable);
+          const metrics = calculateThumbMetrics(
+            scrollState.contentSize.height,
+            scrollState.viewportSize.height,
+            scrollState.offset.y,
+            trackBounds.height,
+            config.minThumbSize
+          );
+
+          if (metrics.isScrollable) {
+            const thumbBounds = calculateThumbBounds(
+              trackBounds,
+              metrics.thumbPosition,
+              metrics.thumbSize,
+              "y"
+            );
+            const scrollbarHitbox = cx.insertHitbox(trackBounds, HitboxBehavior.Normal, "default");
+            const maxScroll = scrollState.contentSize.height - scrollState.viewportSize.height;
+            verticalScrollbar = {
+              trackBounds,
+              thumbBounds,
+              hitbox: scrollbarHitbox,
+              thumbSize: metrics.thumbSize,
+              maxScroll,
+            };
+          }
+        }
+
+        if (showScrollbars && isHorizontalScrollable) {
+          const trackBounds = calculateHorizontalTrackBounds(bounds, config, isVerticalScrollable);
+          const metrics = calculateThumbMetrics(
+            scrollState.contentSize.width,
+            scrollState.viewportSize.width,
+            scrollState.offset.x,
+            trackBounds.width,
+            config.minThumbSize
+          );
+
+          if (metrics.isScrollable) {
+            const thumbBounds = calculateThumbBounds(
+              trackBounds,
+              metrics.thumbPosition,
+              metrics.thumbSize,
+              "x"
+            );
+            const scrollbarHitbox = cx.insertHitbox(trackBounds, HitboxBehavior.Normal, "default");
+            const maxScroll = scrollState.contentSize.width - scrollState.viewportSize.width;
+            horizontalScrollbar = {
+              trackBounds,
+              thumbBounds,
+              hitbox: scrollbarHitbox,
+              thumbSize: metrics.thumbSize,
+              maxScroll,
+            };
+          }
+        }
+      }
+    }
+
+    // Build scrollbar hit test nodes with mouseDown handlers
+    const scrollbarHitTestNodes: HitTestNode[] = [];
+    const scrollHandleRef = this.scrollHandleRef;
+
+    if (verticalScrollbar && scrollHandleRef) {
+      const vScrollbar = verticalScrollbar;
+      const scrollHandleId = scrollHandleRef.id;
+
+      scrollbarHitTestNodes.push({
+        bounds: vScrollbar.trackBounds,
+        handlers: {
+          mouseDown: (event, window, _cx) => {
+            const clickY = event.y - vScrollbar.trackBounds.y;
+            const scrollState = window.getScrollState(scrollHandleId);
+            if (!scrollState) return;
+
+            // Check if click is on thumb or track
+            if (isPointInThumb({ x: event.x, y: event.y }, vScrollbar.thumbBounds)) {
+              // Start thumb drag
+              const dragState: ScrollbarDragState = {
+                axis: "y",
+                scrollHandleId,
+                startOffset: scrollState.offset.y,
+                startMousePos: event.y,
+                trackLength: vScrollbar.trackBounds.height,
+                thumbSize: vScrollbar.thumbSize,
+                maxScroll: vScrollbar.maxScroll,
+              };
+              window.startScrollbarDrag(dragState);
+            } else {
+              // Track click - jump to position
+              const newOffset = trackClickToScrollOffset(
+                clickY,
+                vScrollbar.thumbSize,
+                vScrollbar.trackBounds.height,
+                scrollState.contentSize.height,
+                scrollState.viewportSize.height
+              );
+              window.setScrollOffset(scrollHandleId, {
+                x: scrollState.offset.x,
+                y: newOffset,
+              });
+            }
+            return { stopPropagation: true };
+          },
+        },
+        focusHandle: null,
+        scrollHandle: null,
+        keyContext: null,
+        children: [],
+      });
+    }
+
+    if (horizontalScrollbar && scrollHandleRef) {
+      const hScrollbar = horizontalScrollbar;
+      const scrollHandleId = scrollHandleRef.id;
+
+      scrollbarHitTestNodes.push({
+        bounds: hScrollbar.trackBounds,
+        handlers: {
+          mouseDown: (event, window, _cx) => {
+            const clickX = event.x - hScrollbar.trackBounds.x;
+            const scrollState = window.getScrollState(scrollHandleId);
+            if (!scrollState) return;
+
+            // Check if click is on thumb or track
+            if (isPointInThumb({ x: event.x, y: event.y }, hScrollbar.thumbBounds)) {
+              // Start thumb drag
+              const dragState: ScrollbarDragState = {
+                axis: "x",
+                scrollHandleId,
+                startOffset: scrollState.offset.x,
+                startMousePos: event.x,
+                trackLength: hScrollbar.trackBounds.width,
+                thumbSize: hScrollbar.thumbSize,
+                maxScroll: hScrollbar.maxScroll,
+              };
+              window.startScrollbarDrag(dragState);
+            } else {
+              // Track click - jump to position
+              const newOffset = trackClickToScrollOffset(
+                clickX,
+                hScrollbar.thumbSize,
+                hScrollbar.trackBounds.width,
+                scrollState.contentSize.width,
+                scrollState.viewportSize.width
+              );
+              window.setScrollOffset(scrollHandleId, {
+                x: newOffset,
+                y: scrollState.offset.y,
+              });
+            }
+            return { stopPropagation: true };
+          },
+        },
+        focusHandle: null,
+        scrollHandle: null,
+        keyContext: null,
+        children: [],
+      });
+    }
+
+    // Build final hit test node with scrollbar children at the end (on top)
     const hitTestNode: HitTestNode = {
       bounds,
       handlers: this.handlers,
       focusHandle: this.focusHandleRef,
       scrollHandle: this.scrollHandleRef,
       keyContext: this.keyContextValue,
-      children: childHitTestNodes,
+      children: [...childHitTestNodes, ...scrollbarHitTestNodes],
     };
 
     return {
@@ -1179,6 +1426,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       childBounds: adjustedChildBounds,
       hitbox,
       hitTestNode,
+      verticalScrollbar,
+      horizontalScrollbar,
     };
   }
 
@@ -1274,6 +1523,9 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
       } else {
         paintChildren();
       }
+
+      // Paint scrollbars on top of children
+      this.paintScrollbars(cx, prepaintState);
     };
 
     // Wrap content in stacking context if needed
@@ -1282,6 +1534,84 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     } else {
       paintContent();
     }
+  }
+
+  /**
+   * Paint scrollbars if present.
+   */
+  private paintScrollbars(cx: PaintContext, prepaintState: DivPrepaintState): void {
+    const { verticalScrollbar, horizontalScrollbar } = prepaintState;
+    const config = { ...DEFAULT_SCROLLBAR_CONFIG, ...this.scrollbarConfigValue };
+
+    // Check visibility based on configuration
+    const shouldShow = this.shouldShowScrollbars(cx, prepaintState, config);
+    if (!shouldShow) return;
+
+    // Paint vertical scrollbar
+    if (verticalScrollbar) {
+      const isThumbHovered = cx.isHitboxHovered(verticalScrollbar.hitbox);
+      const isDragging = cx.getWindow().isScrollbarDragging?.() ?? false;
+
+      // Paint track
+      cx.paintRect(verticalScrollbar.trackBounds, {
+        backgroundColor: config.trackColor,
+        borderRadius: config.cornerRadius,
+      });
+
+      // Paint thumb
+      const thumbColor = getThumbColor(config, isThumbHovered, isDragging);
+      cx.paintRect(verticalScrollbar.thumbBounds, {
+        backgroundColor: thumbColor,
+        borderRadius: config.cornerRadius,
+      });
+    }
+
+    // Paint horizontal scrollbar
+    if (horizontalScrollbar) {
+      const isThumbHovered = cx.isHitboxHovered(horizontalScrollbar.hitbox);
+      const isDragging = cx.getWindow().isScrollbarDragging?.() ?? false;
+
+      // Paint track
+      cx.paintRect(horizontalScrollbar.trackBounds, {
+        backgroundColor: config.trackColor,
+        borderRadius: config.cornerRadius,
+      });
+
+      // Paint thumb
+      const thumbColor = getThumbColor(config, isThumbHovered, isDragging);
+      cx.paintRect(horizontalScrollbar.thumbBounds, {
+        backgroundColor: thumbColor,
+        borderRadius: config.cornerRadius,
+      });
+    }
+  }
+
+  /**
+   * Determine if scrollbars should be shown based on visibility setting.
+   */
+  private shouldShowScrollbars(
+    cx: PaintContext,
+    prepaintState: DivPrepaintState,
+    config: ScrollbarConfig
+  ): boolean {
+    if (config.visibility === "never") return false;
+    if (config.visibility === "always") return true;
+
+    // For "hover" visibility, show when container or scrollbar is hovered
+    if (config.visibility === "hover") {
+      const containerHovered = prepaintState.hitbox
+        ? cx.isHitboxHovered(prepaintState.hitbox)
+        : false;
+      const verticalHovered = prepaintState.verticalScrollbar
+        ? cx.isHitboxHovered(prepaintState.verticalScrollbar.hitbox)
+        : false;
+      const horizontalHovered = prepaintState.horizontalScrollbar
+        ? cx.isHitboxHovered(prepaintState.horizontalScrollbar.hitbox)
+        : false;
+      return containerHovered || verticalHovered || horizontalHovered;
+    }
+
+    return true;
   }
 
   hitTest(bounds: Bounds, childBounds: Bounds[]): HitTestNode {

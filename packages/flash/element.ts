@@ -462,6 +462,11 @@ export interface PaintContext {
    * This ensures paint uses the exact same wrap constraint as measurement.
    */
   getComputedWrapWidth(measureId: number): number | undefined;
+
+  /**
+   * Get the window instance.
+   */
+  getWindow(): _FlashWindow;
 }
 
 // ============ Element Base Classes ============

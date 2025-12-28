@@ -99,6 +99,27 @@ export {
   overflowClipsContent,
 } from "./styles.ts";
 
+// Scrollbar
+export type {
+  ScrollbarConfig,
+  ScrollbarDragState,
+  ScrollbarVisibility,
+  ThumbMetrics,
+} from "./scrollbar.ts";
+
+export {
+  DEFAULT_SCROLLBAR_CONFIG,
+  calculateThumbMetrics,
+  calculateVerticalTrackBounds,
+  calculateHorizontalTrackBounds,
+  calculateThumbBounds,
+  thumbPositionToScrollOffset,
+  trackClickToScrollOffset,
+  calculateDragScrollOffset,
+  isPointInThumb,
+  getThumbColor,
+} from "./scrollbar.ts";
+
 // Elements
 export type {
   FlashView,
