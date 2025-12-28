@@ -1,14 +1,384 @@
 /**
- * Host texture rendering pipeline for Flash.
+ * WebGPU Host System for Flash.
  *
- * Renders textures from WebGPU hosts (custom rendering) into the Flash UI.
- * Unlike ImagePipeline which uses an atlas, this pipeline binds individual
- * textures and caches bind groups per unique texture view.
+ * This module provides the infrastructure for embedding custom WebGPU rendering
+ * within the Flash UI system. It includes:
+ * - RenderTexture: Abstraction for offscreen render targets
+ * - WebGPUHost: Interface for custom WebGPU rendering
+ * - WebGPUHostElement: Flash element for embedding hosts in the layout
+ * - HostTexturePipeline: GPU pipeline for rendering host textures
  */
 
-import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
+import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
+import type { Bounds } from "./types.ts";
+import type { HitTestNode } from "./dispatch.ts";
 import type { HostTexturePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import {
+  FlashElement,
+  type RequestLayoutContext,
+  type PrepaintContext,
+  type PaintContext,
+  type RequestLayoutResult,
+} from "./element.ts";
+
+// =============================================================================
+// RenderTexture
+// =============================================================================
+
+/**
+ * A GPU texture that can be used as a render target and then sampled.
+ */
+export interface RenderTexture {
+  readonly texture: GPUTexture;
+  readonly textureView: GPUTextureView;
+  readonly width: number;
+  readonly height: number;
+  readonly format: GPUTextureFormat;
+
+  /**
+   * Resize the texture. Destroys the old texture and creates a new one.
+   */
+  resize(width: number, height: number): void;
+
+  /**
+   * Destroy the texture and release GPU resources.
+   */
+  destroy(): void;
+}
+
+class RenderTextureImpl implements RenderTexture {
+  private device: GPUDevice;
+  private _texture: GPUTexture;
+  private _textureView: GPUTextureView;
+  private _width: number;
+  private _height: number;
+  private _format: GPUTextureFormat;
+
+  constructor(device: GPUDevice, width: number, height: number, format: GPUTextureFormat) {
+    this.device = device;
+    this._width = Math.max(1, Math.floor(width));
+    this._height = Math.max(1, Math.floor(height));
+    this._format = format;
+
+    const { texture, textureView } = this.createTexture();
+    this._texture = texture;
+    this._textureView = textureView;
+  }
+
+  private createTexture(): { texture: GPUTexture; textureView: GPUTextureView } {
+    const texture = this.device.createTexture({
+      size: { width: this._width, height: this._height },
+      format: this._format,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    });
+    const textureView = texture.createView();
+    return { texture, textureView };
+  }
+
+  get texture(): GPUTexture {
+    return this._texture;
+  }
+
+  get textureView(): GPUTextureView {
+    return this._textureView;
+  }
+
+  get width(): number {
+    return this._width;
+  }
+
+  get height(): number {
+    return this._height;
+  }
+
+  get format(): GPUTextureFormat {
+    return this._format;
+  }
+
+  resize(width: number, height: number): void {
+    const newWidth = Math.max(1, Math.floor(width));
+    const newHeight = Math.max(1, Math.floor(height));
+
+    if (newWidth === this._width && newHeight === this._height) {
+      return;
+    }
+
+    this._texture.destroy();
+    this._width = newWidth;
+    this._height = newHeight;
+
+    const { texture, textureView } = this.createTexture();
+    this._texture = texture;
+    this._textureView = textureView;
+  }
+
+  destroy(): void {
+    this._texture.destroy();
+  }
+}
+
+/**
+ * Create a new render texture for offscreen rendering.
+ *
+ * @param device - The GPU device
+ * @param width - Initial width in pixels
+ * @param height - Initial height in pixels
+ * @param format - Texture format (should match the Flash window format)
+ */
+export function createRenderTexture(
+  device: GPUDevice,
+  width: number,
+  height: number,
+  format: GPUTextureFormat
+): RenderTexture {
+  return new RenderTextureImpl(device, width, height, format);
+}
+
+// =============================================================================
+// WebGPUHost Interface
+// =============================================================================
+
+/**
+ * Input state passed to WebGPU hosts each frame.
+ */
+export interface WebGPUHostInput {
+  /** Current time in seconds since start */
+  time: number;
+  /** Time since last frame in seconds */
+  deltaTime: number;
+  /** Mouse X position in local coordinates (0 to width) */
+  mouseX: number;
+  /** Mouse Y position in local coordinates (0 to height) */
+  mouseY: number;
+  /** Whether mouse button is currently pressed */
+  mouseDown: boolean;
+  /** Current width in pixels */
+  width: number;
+  /** Current height in pixels */
+  height: number;
+}
+
+/**
+ * Interface for custom WebGPU rendering within Flash.
+ *
+ * Implementations render to an offscreen texture which Flash then
+ * composites into the UI.
+ */
+export interface WebGPUHost {
+  /**
+   * Called when the element bounds change.
+   * Implementations should resize their render texture.
+   */
+  resize(width: number, height: number): void;
+
+  /**
+   * Render to the offscreen texture.
+   *
+   * Called each frame before Flash's main render pass.
+   * Use the provided command encoder to record render/compute passes.
+   *
+   * @param input - Frame input state (time, mouse, dimensions)
+   * @param encoder - Command encoder to record GPU commands
+   */
+  render(input: WebGPUHostInput, encoder: GPUCommandEncoder): void;
+
+  /**
+   * Get the render texture that Flash will sample.
+   */
+  getTexture(): RenderTexture;
+
+  /**
+   * Cleanup GPU resources.
+   * Called when the element is removed from the UI.
+   */
+  destroy(): void;
+}
+
+/**
+ * Factory function type for creating WebGPU hosts.
+ */
+export type WebGPUHostFactory = (
+  device: GPUDevice,
+  format: GPUTextureFormat,
+  initialWidth: number,
+  initialHeight: number
+) => WebGPUHost;
+
+// =============================================================================
+// WebGPUHostElement
+// =============================================================================
+
+/**
+ * Request layout state for WebGPUHostElement.
+ */
+interface HostRequestState {
+  width: number;
+  height: number;
+}
+
+/**
+ * Prepaint state for WebGPUHostElement.
+ */
+interface HostPrepaintState {
+  bounds: Bounds;
+  input: WebGPUHostInput;
+}
+
+/**
+ * Element for embedding WebGPU host content within Flash UI.
+ *
+ * Usage:
+ * ```typescript
+ * const galaxyHost = createGalaxyHost(device, format, 400, 300);
+ *
+ * div().children_(
+ *   webgpuHost(galaxyHost, 400, 300)
+ *     .rounded(12)
+ *     .opacity(0.95)
+ * );
+ * ```
+ */
+export class WebGPUHostElement extends FlashElement<HostRequestState, HostPrepaintState> {
+  private cornerRadiusValue = 0;
+  private opacityValue = 1;
+
+  constructor(
+    private host: WebGPUHost,
+    private displayWidth: number,
+    private displayHeight: number
+  ) {
+    super();
+  }
+
+  /**
+   * Set the corner radius for rounded display.
+   */
+  rounded(radius: number): this {
+    this.cornerRadiusValue = radius;
+    return this;
+  }
+
+  /**
+   * Set the opacity (0-1).
+   */
+  opacity(value: number): this {
+    this.opacityValue = value;
+    return this;
+  }
+
+  /**
+   * Set the display width.
+   */
+  width(w: number): this {
+    this.displayWidth = w;
+    return this;
+  }
+
+  /**
+   * Set the display height.
+   */
+  height(h: number): this {
+    this.displayHeight = h;
+    return this;
+  }
+
+  /**
+   * Set both width and height.
+   */
+  size(w: number, h: number): this {
+    this.displayWidth = w;
+    this.displayHeight = h;
+    return this;
+  }
+
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<HostRequestState> {
+    const layoutId = cx.requestLayout(
+      {
+        width: this.displayWidth,
+        height: this.displayHeight,
+      },
+      []
+    );
+
+    return {
+      layoutId,
+      requestState: {
+        width: this.displayWidth,
+        height: this.displayHeight,
+      },
+    };
+  }
+
+  prepaint(
+    cx: PrepaintContext,
+    bounds: Bounds,
+    _requestState: HostRequestState
+  ): HostPrepaintState {
+    const window = cx.getWindow();
+
+    // Resize texture if needed
+    const texture = this.host.getTexture();
+    const targetWidth = Math.floor(bounds.width);
+    const targetHeight = Math.floor(bounds.height);
+
+    if (texture.width !== targetWidth || texture.height !== targetHeight) {
+      // Clear cache for old texture before resizing
+      window.clearHostTextureCache();
+      this.host.resize(targetWidth, targetHeight);
+    }
+
+    // Compute local mouse coordinates
+    const mousePos = window.getMousePosition();
+    const localMouseX = mousePos.x - bounds.x;
+    const localMouseY = mousePos.y - bounds.y;
+
+    // Build input for this frame
+    const now = performance.now();
+    const input: WebGPUHostInput = {
+      time: now / 1000,
+      deltaTime: 1 / 60, // Assume 60fps for now
+      mouseX: localMouseX,
+      mouseY: localMouseY,
+      mouseDown: window.isMouseDown(),
+      width: bounds.width,
+      height: bounds.height,
+    };
+
+    // Schedule host render
+    window.scheduleHostRender(this.host, input);
+
+    return { bounds, input };
+  }
+
+  paint(cx: PaintContext, bounds: Bounds, _prepaintState: HostPrepaintState): void {
+    const texture = this.host.getTexture();
+    cx.paintHostTexture(texture.textureView, bounds, {
+      cornerRadius: this.cornerRadiusValue,
+      opacity: this.opacityValue,
+    });
+  }
+
+  hitTest(_bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
+    // WebGPU hosts don't participate in hit testing by default
+    return null;
+  }
+}
+
+/**
+ * Factory function to create a WebGPU host element.
+ *
+ * @param host - The WebGPU host that provides custom rendering
+ * @param width - Initial display width
+ * @param height - Initial display height
+ */
+export function webgpuHost(host: WebGPUHost, width: number, height: number): WebGPUHostElement {
+  return new WebGPUHostElement(host, width, height);
+}
+
+// =============================================================================
+// HostTexturePipeline
+// =============================================================================
 
 /**
  * WGSL shader for host texture rendering.
@@ -185,14 +555,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
  */
 const FLOATS_PER_INSTANCE = 24;
 const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
-
-/**
- * Cached bind group for a texture view.
- */
-interface TextureBindGroupEntry {
-  textureView: GPUTextureView;
-  bindGroup: GPUBindGroup;
-}
 
 /**
  * Host texture rendering pipeline.

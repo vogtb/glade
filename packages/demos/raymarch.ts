@@ -1,5 +1,6 @@
-import type { WebGPUContext } from "@glade/core";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
+import type { WebGPUHost, WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
+import { createRenderTexture } from "@glade/flash/host.ts";
 import type { DemoResources } from "./common";
 
 const VERTEX_SHADER = `
@@ -405,7 +406,10 @@ fn main(@location(0) v_uv: vec2f) -> @location(0) vec4f {
 }
 `;
 
-export function initRaymarchDemo(ctx: WebGPUContext, format: GPUTextureFormat): DemoResources {
+export function initRaymarchDemo(
+  ctx: { device: GPUDevice },
+  format: GPUTextureFormat
+): DemoResources {
   const { device } = ctx;
 
   const dummyPositions = new Float32Array([0, 0]);
@@ -477,4 +481,84 @@ export function initRaymarchDemo(ctx: WebGPUContext, format: GPUTextureFormat): 
     instanceCount: 1,
     useInstancing: true,
   };
+}
+
+class RaymarchHost implements WebGPUHost {
+  private renderTexture: RenderTexture;
+  private resources: DemoResources | null = null;
+  private ready = false;
+
+  constructor(
+    private device: GPUDevice,
+    private format: GPUTextureFormat,
+    width: number,
+    height: number
+  ) {
+    this.renderTexture = createRenderTexture(device, width, height, format);
+    this.initAsync();
+  }
+
+  private async initAsync(): Promise<void> {
+    this.resources = initRaymarchDemo({ device: this.device }, this.format);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    this.ready = true;
+  }
+
+  resize(width: number, height: number): void {
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    this.renderTexture.resize(width, height);
+  }
+
+  render(input: WebGPUHostInput, encoder: GPUCommandEncoder): void {
+    if (!this.ready || !this.resources) {
+      return;
+    }
+
+    const { time, mouseX, mouseY, width, height } = input;
+
+    const uniformData = new Float32Array([time, 0, width, height, mouseX, mouseY, 0, 0]);
+    this.device.queue.writeBuffer(this.resources.uniformBuffer, 0, uniformData);
+
+    const textureView = this.renderTexture.textureView;
+
+    const renderPass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: textureView,
+          clearValue: { r: 0.02, g: 0.02, b: 0.05, a: 1.0 },
+          loadOp: "clear",
+          storeOp: "store",
+        },
+      ],
+    });
+
+    renderPass.setPipeline(this.resources.pipeline);
+    renderPass.setBindGroup(0, this.resources.bindGroup);
+    renderPass.draw(3);
+    renderPass.end();
+  }
+
+  getTexture(): RenderTexture {
+    return this.renderTexture;
+  }
+
+  destroy(): void {
+    this.renderTexture.destroy();
+    if (this.resources) {
+      this.resources.positionBuffer?.destroy();
+      this.resources.colorBuffer?.destroy();
+      this.resources.uniformBuffer?.destroy();
+    }
+  }
+}
+
+export function createRaymarchHost(
+  device: GPUDevice,
+  format: GPUTextureFormat,
+  width: number,
+  height: number
+): WebGPUHost {
+  return new RaymarchHost(device, format, width, height);
 }

@@ -42,9 +42,12 @@ import {
   webgpuHost,
   type WebGPUHost,
 } from "@glade/flash";
-import { createGalaxyHost } from "./webgpu_hosts/galaxy_host.ts";
-import { createSimpleDemoHost } from "./webgpu_hosts/simple_host.ts";
-import { initHexagonDemo } from "./hexagon.ts";
+import { createGalaxyHost } from "./galaxy.ts";
+import { createHexagonHost } from "./hexagon.ts";
+import { createMetaballHost } from "./metaball.ts";
+import { createParticleHost } from "./particle.ts";
+import { createRaymarchHost } from "./raymarch.ts";
+import { createTerrainHost } from "./terrain.ts";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed fonts as base64 at build time via Bun macro
@@ -434,6 +437,17 @@ class DemoRootView implements FlashView {
   // WebGPU host demos
   private galaxyHost: WebGPUHost | null = null;
   private hexagonHost: WebGPUHost | null = null;
+  private metaballHost: WebGPUHost | null = null;
+  private particleHost: WebGPUHost | null = null;
+  private raymarchHost: WebGPUHost | null = null;
+  private terrainHost: WebGPUHost | null = null;
+  private selectedWebGPUDemo:
+    | "hexagon"
+    | "metaball"
+    | "particle"
+    | "raymarch"
+    | "terrain"
+    | "galaxy" = "hexagon";
 
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
@@ -2883,18 +2897,86 @@ class DemoRootView implements FlashView {
     const device = window.getDevice();
     const format = window.getFormat();
 
-    // Lazy init hosts
-    // Galaxy demo still disabled - compute pipeline issues
-    // if (!this.galaxyHost) {
-    //   this.galaxyHost = createGalaxyHost(device, format, 400, 300);
-    // }
+    // Lazy init all hosts
     if (!this.hexagonHost) {
-      this.hexagonHost = createSimpleDemoHost(device, format, 400, 300, (ctx, f) =>
-        initHexagonDemo(ctx, f)
-      );
+      this.hexagonHost = createHexagonHost(device, format, 500, 400);
+    }
+    if (!this.metaballHost) {
+      this.metaballHost = createMetaballHost(device, format, 500, 400);
+    }
+    if (!this.particleHost) {
+      this.particleHost = createParticleHost(device, format, 500, 400);
+    }
+    if (!this.raymarchHost) {
+      this.raymarchHost = createRaymarchHost(device, format, 500, 400);
+    }
+    if (!this.terrainHost) {
+      this.terrainHost = createTerrainHost(device, format, 500, 400);
+    }
+    if (!this.galaxyHost) {
+      this.galaxyHost = createGalaxyHost(device, format, 500, 400);
     }
 
     const labelColor = { r: 0.7, g: 0.75, b: 0.85, a: 1 };
+    const dimColor = { r: 0.5, g: 0.55, b: 0.65, a: 1 };
+
+    // Demo metadata
+    const demos = [
+      { id: "hexagon" as const, label: "Hexagon", desc: "Animated hexagon with mouse interaction" },
+      { id: "metaball" as const, label: "Metaball", desc: "Organic blob simulation" },
+      { id: "particle" as const, label: "Particle", desc: "Orbiting particle system" },
+      { id: "raymarch" as const, label: "Raymarch", desc: "3D raymarched scene" },
+      { id: "terrain" as const, label: "Terrain", desc: "Procedural terrain flyover" },
+      { id: "galaxy" as const, label: "Galaxy", desc: "Particle physics with compute shaders" },
+    ];
+
+    // Get current host
+    const currentHost = (() => {
+      switch (this.selectedWebGPUDemo) {
+        case "hexagon":
+          return this.hexagonHost;
+        case "metaball":
+          return this.metaballHost;
+        case "particle":
+          return this.particleHost;
+        case "raymarch":
+          return this.raymarchHost;
+        case "terrain":
+          return this.terrainHost;
+        case "galaxy":
+          return this.galaxyHost;
+      }
+    })();
+
+    const currentDemo = demos.find((d) => d.id === this.selectedWebGPUDemo);
+
+    // Selector button builder
+    const selectorButton = (demo: (typeof demos)[number]) => {
+      const isSelected = this.selectedWebGPUDemo === demo.id;
+      return div()
+        .flex()
+        .flexCol()
+        .gap(4)
+        .p(10)
+        .bg(isSelected ? { r: 0.25, g: 0.3, b: 0.4, a: 1 } : { r: 0.12, g: 0.14, b: 0.18, a: 1 })
+        .rounded(3)
+        .border(2)
+        .borderColor(
+          isSelected ? { r: 0.4, g: 0.5, b: 0.7, a: 1 } : { r: 0.3, g: 0.3, b: 0.4, a: 0.5 }
+        )
+        .onMouseDown(() => {
+          this.selectedWebGPUDemo = demo.id;
+          cx.notify();
+        })
+        .children_(
+          text(demo.label)
+            .font("Inter")
+            .size(14)
+            .weight(isSelected ? 600 : 400)
+            .color({ r: 1, g: 1, b: 1, a: 1 }),
+          text(demo.desc).font("Inter").size(11).color(dimColor)
+        );
+    };
 
     return div()
       .flex()
@@ -2907,37 +2989,41 @@ class DemoRootView implements FlashView {
           .size(16)
           .color({ r: 0.75, g: 0.8, b: 0.9, a: 1 }),
         div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        // Main content: demo view + selector grid
         div()
           .flex()
           .flexRow()
-          .flexWrap()
           .gap(24)
           .children_(
-            // Galaxy demo - disabled for debugging
-            // div()
-            //   .flex()
-            //   .flexCol()
-            //   .gap(8)
-            //   .children_(
-            //     webgpuHost(this.galaxyHost, 400, 300).rounded(12),
-            //     text("Galaxy Simulation").font("Inter").size(14).color(labelColor),
-            //     text("Particle physics with compute shaders")
-            //       .font("Inter")
-            //       .size(12)
-            //       .color({ r: 0.5, g: 0.55, b: 0.65, a: 1 })
-            //   ),
-            // Hexagon demo
+            // Current demo display
             div()
               .flex()
               .flexCol()
               .gap(8)
               .children_(
-                webgpuHost(this.hexagonHost, 400, 300).rounded(12),
-                text("Hexagon").font("Inter").size(14).color(labelColor),
-                text("Animated hexagon with mouse interaction")
+                webgpuHost(currentHost!, 500, 400).rounded(12),
+                text(currentDemo?.label ?? "")
                   .font("Inter")
-                  .size(12)
-                  .color({ r: 0.5, g: 0.55, b: 0.65, a: 1 })
+                  .size(16)
+                  .weight(600)
+                  .color({ r: 1, g: 1, b: 1, a: 1 }),
+                text(currentDemo?.desc ?? "")
+                  .font("Inter")
+                  .size(13)
+                  .color(dimColor)
+              ),
+            // Selector grid
+            div()
+              .flex()
+              .flexCol()
+              .gap(12)
+              .children_(
+                text("Select Demo").font("Inter").size(14).weight(600).color(labelColor),
+                div()
+                  .grid()
+                  .gridCols(2)
+                  .gap(8)
+                  .children_(...demos.map(selectorButton))
               )
           ),
         div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),

@@ -1,5 +1,7 @@
 import type { WebGPUContext } from "@glade/core";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
+import type { WebGPUHost, WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
+import { createRenderTexture } from "@glade/flash/host.ts";
 import type { DemoResources } from "./common";
 
 // Galaxy simulation with thousands of stars orbiting a central black hole
@@ -735,4 +737,292 @@ export function renderGalaxy(
   if ("present" in context && typeof context.present === "function") {
     (context as unknown as { present: () => void }).present();
   }
+}
+
+class GalaxyHost implements WebGPUHost {
+  private renderTexture: RenderTexture;
+  private resources: GalaxyResources | null = null;
+  private ready = false;
+
+  constructor(
+    private device: GPUDevice,
+    private format: GPUTextureFormat,
+    width: number,
+    height: number
+  ) {
+    this.renderTexture = createRenderTexture(device, width, height, format);
+    this.initResourcesAsync();
+  }
+
+  private async initResourcesAsync(): Promise<void> {
+    this.resources = await this.initResources();
+    this.ready = true;
+  }
+
+  private async initResources(): Promise<GalaxyResources> {
+    const { device, format } = this;
+    const totalParticles = NUM_STARS + NUM_DUST + 1;
+
+    const starData = initStarData();
+
+    const starBuffer = device.createBuffer({
+      size: starData.byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(starBuffer, 0, starData);
+
+    const uniformBuffer = device.createBuffer({
+      size: 32,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const computeUniformBuffer = device.createBuffer({
+      size: 32,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const positionBuffer = device.createBuffer({
+      size: 8,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    const colorBuffer = device.createBuffer({
+      size: 12,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+
+    // Background pipeline
+    const bgBindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+      ],
+    });
+
+    const bgPipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [bgBindGroupLayout],
+    });
+
+    const bgPipeline = await device.createRenderPipelineAsync({
+      layout: bgPipelineLayout,
+      vertex: {
+        module: device.createShaderModule({ code: BG_VERTEX_SHADER }),
+        entryPoint: "main",
+        buffers: [],
+      },
+      fragment: {
+        module: device.createShaderModule({ code: BG_FRAGMENT_SHADER }),
+        entryPoint: "main",
+        targets: [{ format }],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+
+    const bgBindGroup = device.createBindGroup({
+      layout: bgBindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+    });
+
+    // Render pipeline
+    const renderBindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: { type: "read-only-storage" },
+        },
+      ],
+    });
+
+    const renderPipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [renderBindGroupLayout],
+    });
+
+    const pipeline = await device.createRenderPipelineAsync({
+      layout: renderPipelineLayout,
+      vertex: {
+        module: device.createShaderModule({ code: VERTEX_SHADER }),
+        entryPoint: "main",
+        buffers: [],
+      },
+      fragment: {
+        module: device.createShaderModule({ code: FRAGMENT_SHADER }),
+        entryPoint: "main",
+        targets: [
+          {
+            format,
+            blend: {
+              color: {
+                srcFactor: "src-alpha",
+                dstFactor: "one",
+                operation: "add",
+              },
+              alpha: {
+                srcFactor: "one",
+                dstFactor: "one",
+                operation: "add",
+              },
+            },
+          },
+        ],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+
+    const bindGroup = device.createBindGroup({
+      layout: renderBindGroupLayout,
+      entries: [
+        { binding: 0, resource: { buffer: uniformBuffer } },
+        { binding: 1, resource: { buffer: starBuffer } },
+      ],
+    });
+
+    // Compute pipeline
+    const computeBindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: { type: "uniform" },
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: { type: "storage" },
+        },
+      ],
+    });
+
+    const computePipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [computeBindGroupLayout],
+    });
+
+    const computePipeline = await device.createComputePipelineAsync({
+      layout: computePipelineLayout,
+      compute: {
+        module: device.createShaderModule({ code: COMPUTE_SHADER }),
+        entryPoint: "main",
+      },
+    });
+
+    const computeBindGroup = device.createBindGroup({
+      layout: computeBindGroupLayout,
+      entries: [
+        { binding: 0, resource: { buffer: computeUniformBuffer } },
+        { binding: 1, resource: { buffer: starBuffer } },
+      ],
+    });
+
+    return {
+      pipeline,
+      positionBuffer,
+      colorBuffer,
+      indexBuffer: null,
+      uniformBuffer,
+      bindGroup,
+      indexCount: 0,
+      vertexCount: 6,
+      instanceCount: totalParticles,
+      useInstancing: true,
+      computePipeline,
+      starBuffer,
+      computeBindGroup,
+      computeUniformBuffer,
+      bgPipeline,
+      bgBindGroup,
+      numStars: totalParticles,
+    };
+  }
+
+  resize(width: number, height: number): void {
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    this.renderTexture.resize(width, height);
+  }
+
+  render(input: WebGPUHostInput, encoder: GPUCommandEncoder): void {
+    if (!this.ready || !this.resources) {
+      return;
+    }
+
+    const { time, deltaTime, mouseX, mouseY, width, height, mouseDown } = input;
+
+    const uniformData = new Float32Array([time, 0, width, height, mouseX, mouseY, 0, 0]);
+    this.device.queue.writeBuffer(this.resources.uniformBuffer, 0, uniformData);
+
+    const computeUniformData = new Float32Array([
+      time,
+      Math.min(deltaTime, 0.1),
+      width,
+      height,
+      mouseX,
+      mouseY,
+      mouseDown ? 1.0 : 0.0,
+      0,
+    ]);
+    this.device.queue.writeBuffer(this.resources.computeUniformBuffer, 0, computeUniformData);
+
+    // Compute pass
+    const computePass = encoder.beginComputePass();
+    computePass.setPipeline(this.resources.computePipeline);
+    computePass.setBindGroup(0, this.resources.computeBindGroup);
+    computePass.dispatchWorkgroups(Math.ceil(this.resources.numStars / 64));
+    computePass.end();
+
+    // Render pass
+    const textureView = this.renderTexture.textureView;
+
+    const renderPass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: textureView,
+          clearValue: { r: 0.01, g: 0.01, b: 0.02, a: 1.0 },
+          loadOp: "clear",
+          storeOp: "store",
+        },
+      ],
+    });
+
+    renderPass.setPipeline(this.resources.bgPipeline);
+    renderPass.setBindGroup(0, this.resources.bgBindGroup);
+    renderPass.draw(3);
+
+    renderPass.setPipeline(this.resources.pipeline);
+    renderPass.setBindGroup(0, this.resources.bindGroup);
+    renderPass.draw(6, this.resources.numStars);
+
+    renderPass.end();
+  }
+
+  getTexture(): RenderTexture {
+    return this.renderTexture;
+  }
+
+  destroy(): void {
+    this.renderTexture.destroy();
+    if (this.resources) {
+      this.resources.starBuffer.destroy();
+      this.resources.uniformBuffer.destroy();
+      this.resources.computeUniformBuffer.destroy();
+      this.resources.positionBuffer.destroy();
+      this.resources.colorBuffer.destroy();
+    }
+  }
+}
+
+export function createGalaxyHost(
+  device: GPUDevice,
+  format: GPUTextureFormat,
+  width: number,
+  height: number
+): WebGPUHost {
+  return new GalaxyHost(device, format, width, height);
 }

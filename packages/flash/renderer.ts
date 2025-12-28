@@ -12,7 +12,7 @@ import type { TextPipeline, TextSystem, GlyphInstance } from "./text.ts";
 import type { PathPipeline } from "./path.ts";
 import type { UnderlinePipeline } from "./underline.ts";
 import type { ImagePipeline, ImageInstance } from "./image.ts";
-import type { HostTexturePipeline } from "./host_texture_pipeline.ts";
+import type { HostTexturePipeline } from "./host.ts";
 import type { HostTexturePrimitive } from "./scene.ts";
 
 /**

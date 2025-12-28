@@ -86,8 +86,8 @@ import { TextSystem, TextPipeline } from "./text.ts";
 import { PathPipeline } from "./path.ts";
 import { UnderlinePipeline } from "./underline.ts";
 import { ImageAtlas, ImagePipeline, type ImageTile, type DecodedImage } from "./image.ts";
-import { HostTexturePipeline } from "./host_texture_pipeline.ts";
-import type { WebGPUHost, WebGPUHostInput } from "./webgpu_host.ts";
+import { HostTexturePipeline } from "./host.ts";
+import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 import { CrossElementSelectionManager } from "./select.ts";
 
