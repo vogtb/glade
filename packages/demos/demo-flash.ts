@@ -48,6 +48,8 @@ import {
   radioGroup,
   radioItem,
   switchToggle,
+  tabs,
+  tab,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
 import { createHexagonHost } from "./hexagon.ts";
@@ -101,6 +103,7 @@ type DemoSection =
   | "icon"
   | "link"
   | "controls"
+  | "tabs"
   | "grid-layout"
   | "canvas"
   | "vector-paths"
@@ -138,6 +141,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "icon", label: "Icon" },
   { id: "link", label: "Link" },
   { id: "controls", label: "Controls" },
+  { id: "tabs", label: "Tabs" },
   { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
@@ -477,6 +481,9 @@ class DemoRootView implements FlashView {
   private notificationsEnabled = true;
   private darkModeEnabled = false;
 
+  // Tabs demo state
+  private selectedTab = "account";
+
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -612,6 +619,8 @@ class DemoRootView implements FlashView {
         return this.renderLinkDemo();
       case "controls":
         return this.renderControlsDemo(cx);
+      case "tabs":
+        return this.renderTabsDemo(cx);
       case "grid-layout":
         return this.renderGridLayoutDemo();
       case "canvas":
@@ -2205,6 +2214,315 @@ class DemoRootView implements FlashView {
                     text("Large").font("Inter").size(12).color(dimColor)
                   )
               )
+          )
+      );
+  }
+
+  private renderTabsDemo(cx: FlashViewContext<this>): FlashDiv {
+    const labelColor = { r: 0.9, g: 0.9, b: 1, a: 1 };
+    const dimColor = { r: 0.6, g: 0.6, b: 0.7, a: 1 };
+    const accentColor = { r: 0.4, g: 0.6, b: 1, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        // Header
+        text("Tabs").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Layered content sections with tab-based navigation")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Basic Tabs Example
+        text("Basic Tabs").font("Inter").size(20).color(labelColor),
+        text("Click on a tab to switch between content panels")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+        div()
+          .flex()
+          .flexCol()
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            tabs()
+              .wFull()
+              .value(this.selectedTab)
+              .onValueChange((value) => {
+                this.selectedTab = value;
+                cx.notify();
+              })
+              .items(
+                tab("account", "Account").content(
+                  div()
+                    .flex()
+                    .flexCol()
+                    .gap(12)
+                    .children_(
+                      text("Account Settings").font("Inter").size(18).weight(600).color(labelColor),
+                      text("Manage your account preferences and personal information.")
+                        .font("Inter")
+                        .size(14)
+                        .color(dimColor),
+                      div()
+                        .flex()
+                        .flexRow()
+                        .gap(8)
+                        .itemsCenter()
+                        .children_(
+                          icon("settings", 16).color(accentColor),
+                          text("Profile").font("Inter").size(14).color(labelColor)
+                        ),
+                      div()
+                        .flex()
+                        .flexRow()
+                        .gap(8)
+                        .itemsCenter()
+                        .children_(
+                          icon("info", 16).color(accentColor),
+                          text("Email Notifications").font("Inter").size(14).color(labelColor)
+                        )
+                    )
+                ),
+                tab("security", "Security").content(
+                  div()
+                    .flex()
+                    .flexCol()
+                    .gap(12)
+                    .children_(
+                      text("Security Settings")
+                        .font("Inter")
+                        .size(18)
+                        .weight(600)
+                        .color(labelColor),
+                      text("Configure your security options and password.")
+                        .font("Inter")
+                        .size(14)
+                        .color(dimColor),
+                      div()
+                        .flex()
+                        .flexRow()
+                        .gap(8)
+                        .itemsCenter()
+                        .children_(
+                          icon("heart", 16).color(accentColor),
+                          text("Change Password").font("Inter").size(14).color(labelColor)
+                        ),
+                      div()
+                        .flex()
+                        .flexRow()
+                        .gap(8)
+                        .itemsCenter()
+                        .children_(
+                          icon("check", 16).color(accentColor),
+                          text("Two-Factor Authentication").font("Inter").size(14).color(labelColor)
+                        )
+                    )
+                ),
+                tab("notifications", "Notifications").content(
+                  div()
+                    .flex()
+                    .flexCol()
+                    .gap(12)
+                    .children_(
+                      text("Notification Preferences")
+                        .font("Inter")
+                        .size(18)
+                        .weight(600)
+                        .color(labelColor),
+                      text("Choose how you want to be notified.")
+                        .font("Inter")
+                        .size(14)
+                        .color(dimColor),
+                      div()
+                        .flex()
+                        .flexRow()
+                        .gap(8)
+                        .itemsCenter()
+                        .children_(
+                          icon("star", 16).color(accentColor),
+                          text("Push Notifications").font("Inter").size(14).color(labelColor)
+                        ),
+                      div()
+                        .flex()
+                        .flexRow()
+                        .gap(8)
+                        .itemsCenter()
+                        .children_(
+                          icon("info", 16).color(accentColor),
+                          text("Email Digests").font("Inter").size(14).color(labelColor)
+                        )
+                    )
+                )
+              )
+          ),
+
+        // Styled Tabs Example
+        text("Custom Styled Tabs").font("Inter").size(20).color(labelColor),
+        text("Tabs with custom colors and styling").font("Inter").size(14).color(dimColor),
+        div()
+          .flex()
+          .flexCol()
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            tabs()
+              .wFull()
+              .value(
+                this.selectedTab === "account"
+                  ? "overview"
+                  : this.selectedTab === "security"
+                    ? "analytics"
+                    : "reports"
+              )
+              .onValueChange((value) => {
+                if (value === "overview") {
+                  this.selectedTab = "account";
+                } else if (value === "analytics") {
+                  this.selectedTab = "security";
+                } else {
+                  this.selectedTab = "notifications";
+                }
+                cx.notify();
+              })
+              .triggerBg({ r: 0.08, g: 0.08, b: 0.1, a: 1 })
+              .triggerActiveBg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+              .indicatorColor({ r: 0.3, g: 0.8, b: 0.5, a: 1 })
+              .contentBg({ r: 0.1, g: 0.1, b: 0.12, a: 1 })
+              .contentPadding(20)
+              .items(
+                tab("overview", "Overview").content(
+                  div()
+                    .flex()
+                    .flexCol()
+                    .gap(8)
+                    .children_(
+                      text("Dashboard Overview")
+                        .font("Inter")
+                        .size(16)
+                        .weight(600)
+                        .color(labelColor),
+                      text("View your key metrics and performance at a glance.")
+                        .font("Inter")
+                        .size(14)
+                        .color(dimColor)
+                    )
+                ),
+                tab("analytics", "Analytics").content(
+                  div()
+                    .flex()
+                    .flexCol()
+                    .gap(8)
+                    .children_(
+                      text("Analytics Dashboard")
+                        .font("Inter")
+                        .size(16)
+                        .weight(600)
+                        .color(labelColor),
+                      text("Deep dive into your data with detailed charts and reports.")
+                        .font("Inter")
+                        .size(14)
+                        .color(dimColor)
+                    )
+                ),
+                tab("reports", "Reports").content(
+                  div()
+                    .flex()
+                    .flexCol()
+                    .gap(8)
+                    .children_(
+                      text("Generated Reports")
+                        .font("Inter")
+                        .size(16)
+                        .weight(600)
+                        .color(labelColor),
+                      text("Access and download your saved reports.")
+                        .font("Inter")
+                        .size(14)
+                        .color(dimColor)
+                    )
+                )
+              )
+          ),
+
+        // Disabled Tab Example
+        text("Disabled Tab").font("Inter").size(20).color(labelColor),
+        text("Individual tabs can be disabled").font("Inter").size(14).color(dimColor),
+        div()
+          .flex()
+          .flexCol()
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            tabs()
+              .wFull()
+              .value("enabled")
+              .items(
+                tab("enabled", "Enabled").content(
+                  div()
+                    .flex()
+                    .flexCol()
+                    .gap(8)
+                    .children_(
+                      text("This tab is enabled").font("Inter").size(14).color(labelColor),
+                      text("You can click on it and see this content.")
+                        .font("Inter")
+                        .size(14)
+                        .color(dimColor)
+                    )
+                ),
+                tab("premium", "Premium")
+                  .disabled(true)
+                  .content(
+                    div().child(text("Premium content").font("Inter").size(14).color(labelColor))
+                  ),
+                tab("coming-soon", "Coming Soon")
+                  .disabled(true)
+                  .content(
+                    div().child(text("Coming soon...").font("Inter").size(14).color(labelColor))
+                  )
+              )
+          ),
+
+        // API Info
+        text("API").font("Inter").size(20).color(labelColor),
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg({ r: 0.08, g: 0.08, b: 0.1, a: 1 })
+          .rounded(8)
+          .children_(
+            text("tabs()").font("JetBrains Mono").size(14).color(accentColor),
+            text("  .value(selectedValue)       // Current selected tab value")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .onValueChange(handler)     // Called when tab changes")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .items(tab1, tab2, ...)     // Add tab items")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("").size(8),
+            text("tab(value, label)").font("JetBrains Mono").size(14).color(accentColor),
+            text("  .content(element)           // Content to show when selected")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .disabled(true)             // Disable this tab")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor)
           )
       );
   }

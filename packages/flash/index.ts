@@ -454,6 +454,10 @@ export { FlashRadioGroup, FlashRadioGroupItem, radioGroup, radioItem } from "./r
 export type { SwitchChangeHandler } from "./switch.ts";
 export { FlashSwitch, switchToggle, toggle } from "./switch.ts";
 
+// Tabs elements
+export type { TabValueChangeHandler } from "./tabs.ts";
+export { FlashTabs, FlashTab, tabs, tab } from "./tabs.ts";
+
 // Ideal text editor system
 export type {
   DocumentOffset,
