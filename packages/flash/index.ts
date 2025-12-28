@@ -133,6 +133,9 @@ export {
 // Div element
 export { FlashDiv, div } from "./div.ts";
 
+// Divider element
+export { FlashDivider, divider } from "./divider.ts";
+
 // Text input element
 export {
   FlashTextInput,

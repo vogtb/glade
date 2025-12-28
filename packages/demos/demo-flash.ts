@@ -12,6 +12,7 @@ import {
   type FlashView,
   type FlashViewContext,
   div,
+  divider,
   rgb,
   text,
   path,
@@ -90,6 +91,7 @@ type DemoSection =
   | "mono-semibold"
   | "underlined-text"
   | "group-styles"
+  | "divider"
   | "grid-layout"
   | "canvas"
   | "vector-paths"
@@ -122,6 +124,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "mono-semibold", label: "Mono SemiBold" },
   { id: "underlined-text", label: "Underlined Text" },
   { id: "group-styles", label: "Group Styles" },
+  { id: "divider", label: "Divider" },
   { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
@@ -576,6 +579,8 @@ class DemoRootView implements FlashView {
         return this.renderUnderlinedTextDemo();
       case "group-styles":
         return this.renderGroupStylesDemo();
+      case "divider":
+        return this.renderDividerDemo();
       case "grid-layout":
         return this.renderGridLayoutDemo();
       case "canvas":
@@ -1348,6 +1353,133 @@ class DemoRootView implements FlashView {
             groupButton("Red", "group-c", 0x991b1b, 0xb91c1c, 0xef4444),
             groupButton("Green", "group-c", 0x166534, 0x15803d, 0x22c55e),
             groupButton("Blue", "group-c", 0x1e40af, 0x1d4ed8, 0x3b82f6)
+          )
+      );
+  }
+
+  private renderDividerDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Divider").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Visual separators for content sections")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        divider().color({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Horizontal divider examples
+        text("Horizontal Dividers").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            text("Section One").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("Content for the first section goes here.")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+            divider().color({ r: 0.3, g: 0.3, b: 0.4, a: 1 }).margin(4),
+            text("Section Two").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("Content for the second section goes here.")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+            divider().color({ r: 0.3, g: 0.3, b: 0.4, a: 1 }).margin(4),
+            text("Section Three").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("Content for the third section goes here.")
+              .font("Inter")
+              .size(13)
+              .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+          ),
+
+        // Vertical divider examples
+        text("Vertical Dividers").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .p(16)
+          .h(80)
+          .itemsCenter()
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            text("Blog").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            divider().vertical().color({ r: 0.3, g: 0.3, b: 0.4, a: 1 }).margin(8),
+            text("Docs").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            divider().vertical().color({ r: 0.3, g: 0.3, b: 0.4, a: 1 }).margin(8),
+            text("Source").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            divider().vertical().color({ r: 0.3, g: 0.3, b: 0.4, a: 1 }).margin(8),
+            text("API").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+          ),
+
+        // Styled dividers
+        text("Styled Dividers").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .children_(
+                text("Default (1px):")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                div()
+                  .flex1()
+                  .child(divider().color({ r: 0.5, g: 0.5, b: 0.6, a: 1 }))
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .children_(
+                text("Thick (2px):").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                div()
+                  .flex1()
+                  .child(divider().color({ r: 0.4, g: 0.6, b: 0.9, a: 1 }).thickness(2))
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .children_(
+                text("Extra thick (4px):")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                div()
+                  .flex1()
+                  .child(divider().color({ r: 0.9, g: 0.4, b: 0.4, a: 1 }).thickness(4))
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .children_(
+                text("Colored:").font("Inter").size(13).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                div()
+                  .flex1()
+                  .child(divider().color({ r: 0.4, g: 0.9, b: 0.5, a: 1 }).thickness(2))
+              )
           )
       );
   }
