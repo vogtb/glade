@@ -1990,6 +1990,10 @@ export class FlashWindow {
       registerTabStop: (focusId: FocusId, bounds: Bounds, config: TabStopConfig): void => {
         registerTabStopFn(focusId, bounds, config);
       },
+
+      getComputedWrapWidth: (measureId: number): number | undefined => {
+        return this.getComputedWrapWidth(measureId);
+      },
     };
   }
 

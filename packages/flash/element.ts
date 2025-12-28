@@ -254,6 +254,13 @@ export interface PrepaintContext {
     bounds: Bounds,
     config: import("./tab.ts").TabStopConfig
   ): void;
+
+  /**
+   * Get the computed wrap width for a text element.
+   * Returns the effectiveMaxWidth that was used during measurement.
+   * This ensures prepaint uses the exact same wrap constraint as measurement.
+   */
+  getComputedWrapWidth?(measureId: number): number | undefined;
 }
 
 /**
@@ -734,11 +741,10 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
     return this.lineHeightValue ?? this.fontSize * 1.2;
   }
 
-  private getLayout(): CachedTextLayout {
+  private getLayoutWithWrapWidth(wrapWidth: number | undefined): CachedTextLayout {
     const lineHeight = this.getLineHeight();
-    const maxWidth = this.maxWidthValue ?? undefined;
     const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
-    const key = `${normalizedText}|${this.fontSize}|${lineHeight}|${this.fontFamily}|${maxWidth ?? ""}|${this.whitespaceMode}`;
+    const key = `${normalizedText}|${this.fontSize}|${lineHeight}|${this.fontFamily}|${wrapWidth ?? ""}|${this.whitespaceMode}`;
 
     if (this.cachedLayout && this.cachedLayoutKey === key) {
       return this.cachedLayout;
@@ -749,7 +755,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
       this.fontSize,
       lineHeight,
       this.fontFamily,
-      maxWidth
+      wrapWidth
     );
     this.cachedLayoutKey = key;
     return this.cachedLayout;
@@ -800,7 +806,14 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
 
     // Register with cross-element selection manager if selectable
     if (this.isSelectable) {
-      const layout = this.getLayout();
+      // Get the computed wrap width to ensure layout matches actual rendering
+      let wrapWidth: number | undefined;
+      if (this.noWrapValue || this.whitespaceMode === "nowrap" || this.whitespaceMode === "pre") {
+        wrapWidth = undefined;
+      } else {
+        wrapWidth = cx.getComputedWrapWidth?.(requestState.measureId);
+      }
+      const layout = this.getLayoutWithWrapWidth(wrapWidth);
       const window = cx.getWindow();
       const manager = window.getCrossElementSelection();
       const key = manager.computeKeyForRegistration(this.textContent, bounds);
