@@ -448,6 +448,13 @@ export interface PaintContext {
    * @param callback - The paint callback to execute within the stacking context
    */
   withStackingContext(bounds: Bounds, zIndex: number, callback: () => void): void;
+
+  /**
+   * Get the computed wrap width for a text element by its measure ID.
+   * Returns the effectiveMaxWidth that was used during measurement.
+   * This ensures paint uses the exact same wrap constraint as measurement.
+   */
+  getComputedWrapWidth(measureId: number): number | undefined;
 }
 
 // ============ Element Base Classes ============
@@ -584,13 +591,21 @@ export abstract class FlashContainerElement<
 // ============ Text Element ============
 
 /**
- * Prepaint state for text element.
+ * Request layout state for text element - carries measureId from layout to prepaint.
+ */
+interface TextRequestLayoutState {
+  measureId: number;
+}
+
+/**
+ * Prepaint state for text element - carries measureId from prepaint to paint.
  */
 interface TextPrepaintState {
   bounds: Bounds;
   hitbox: Hitbox | null;
   handlers: EventHandlers;
   hitTestNode?: HitTestNode;
+  measureId: number;
 }
 
 /**
@@ -599,7 +614,7 @@ interface TextPrepaintState {
  * By default, text is not selectable. Call `.selectable()` to enable selection.
  * By default, text wraps to fit its parent container. Call `.noWrap()` to disable.
  */
-export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
+export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextPrepaintState> {
   private textColor: Color = { r: 1, g: 1, b: 1, a: 1 };
   private fontSize = 14;
   private fontFamily = "system-ui";
@@ -740,7 +755,7 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
     return this.cachedLayout;
   }
 
-  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TextRequestLayoutState> {
     const lineHeight = this.getLineHeight();
 
     // Normalize whitespace before measurement
@@ -772,10 +787,15 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
       measureId
     );
 
-    return { layoutId, requestState: undefined };
+    // Pass measureId through state so paint can retrieve the computed wrap width
+    return { layoutId, requestState: { measureId } };
   }
 
-  prepaint(cx: PrepaintContext, bounds: Bounds, _requestState: NoState): TextPrepaintState {
+  prepaint(
+    cx: PrepaintContext,
+    bounds: Bounds,
+    requestState: TextRequestLayoutState
+  ): TextPrepaintState {
     let hitbox: Hitbox | null = null;
 
     // Register with cross-element selection manager if selectable
@@ -795,26 +815,25 @@ export class FlashTextElement extends FlashElement<NoState, TextPrepaintState> {
       hitbox,
       handlers: {},
       hitTestNode: undefined,
+      measureId: requestState.measureId,
     };
   }
 
-  paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextPrepaintState): void {
+  paint(cx: PaintContext, bounds: Bounds, prepaintState: TextPrepaintState): void {
     const lineHeight = this.getLineHeight();
 
     // Normalize whitespace before rendering
     const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
 
-    // Determine wrap width for rendering based on whitespace mode.
-    // pre and nowrap modes disable wrapping.
+    // Retrieve the wrap width that was computed during measurement.
+    // This ensures paint uses the EXACT same constraint as measurement.
     let wrapWidth: number | undefined;
     if (this.noWrapValue || this.whitespaceMode === "nowrap" || this.whitespaceMode === "pre") {
+      // Explicitly disabled wrapping
       wrapWidth = undefined;
-    } else if (this.maxWidthValue !== null) {
-      // Only wrap if explicitly told to via maxWidth
-      wrapWidth = this.maxWidthValue;
     } else {
-      // No explicit constraint - don't wrap during paint
-      wrapWidth = undefined;
+      // Get the wrap width that was actually used during measurement
+      wrapWidth = cx.getComputedWrapWidth(prepaintState.measureId);
     }
 
     // Selection rendering is handled by CrossElementSelectionManager

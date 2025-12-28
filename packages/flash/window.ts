@@ -263,6 +263,8 @@ export class FlashWindow {
       lineHeight: number;
       noWrap: boolean;
       maxWidth: number | null;
+      // Computed during measurement, retrieved during paint
+      computedWrapWidth?: number;
     }
   >();
   private nextMeasureId = 1;
@@ -482,7 +484,7 @@ export class FlashWindow {
     measureId: number,
     knownWidth: number,
     _knownHeight: number,
-    _availableWidth: number,
+    availableWidth: number,
     _availableHeight: number
   ): { width: number; height: number } {
     const data = this.measureRegistry.get(measureId);
@@ -492,21 +494,18 @@ export class FlashWindow {
 
     // Determine effective max width for text wrapping.
     //
-    // The key insight: text should only wrap if there's an explicit constraint.
-    // Without explicit wrapping constraints, text should measure at its natural
-    // (single-line) width. This is especially important for CSS Grid, where
-    // Taffy may pass small availableWidth values during content-sizing passes.
-    //
     // Priority:
     // 1. noWrap: true -> never wrap
     // 2. explicit maxWidth -> use that width
     // 3. explicit knownWidth from parent -> use that width
-    // 4. Otherwise -> measure at natural width (no wrapping)
+    // 4. finite availableWidth AND text exceeds it -> wrap to fit
+    // 5. Otherwise -> measure at natural width (no wrapping)
     //
-    // Note: We intentionally don't use availableWidth for wrapping decisions
-    // when there's no explicit constraint. Grid/flex containers should expand
-    // to fit content, not constrain content to fit arbitrary available space.
+    // Note: Taffy passes Infinity for availableWidth during MinContent/MaxContent
+    // sizing passes. We only wrap when availableWidth is finite AND the text's
+    // natural width exceeds it.
     let effectiveMaxWidth: number | undefined;
+    const fontStyle = { family: data.fontFamily, weight: data.fontWeight };
 
     if (data.noWrap) {
       // No wrapping - use infinite width
@@ -515,13 +514,30 @@ export class FlashWindow {
       // Explicit .maxWidth() takes precedence
       effectiveMaxWidth = data.maxWidth;
     } else if (!Number.isNaN(knownWidth) && knownWidth > 0) {
-      // Parent set explicit width - use it for wrapping
+      // Parent set explicit width on text node - use it for wrapping
       effectiveMaxWidth = knownWidth;
+    } else if (Number.isFinite(availableWidth) && availableWidth > 0) {
+      // Parent has definite available width - only wrap if text exceeds it
+      const naturalWidth = this.textSystem.measureText(
+        data.text,
+        data.fontSize,
+        data.lineHeight,
+        undefined,
+        fontStyle
+      ).width;
+      if (naturalWidth > availableWidth) {
+        effectiveMaxWidth = availableWidth;
+      } else {
+        effectiveMaxWidth = undefined;
+      }
     } else {
-      // No explicit constraint - measure at natural width (don't wrap)
-      // This allows grid cells and flex items to size to their content
+      // No constraint (infinite available space) - measure at natural width
       effectiveMaxWidth = undefined;
     }
+
+    // Store the computed wrap width for retrieval during paint
+    // This ensures paint uses the exact same constraint as measurement
+    data.computedWrapWidth = effectiveMaxWidth;
 
     // Measure text with computed constraints
     const rawResult = this.textSystem.measureText(
@@ -529,7 +545,7 @@ export class FlashWindow {
       data.fontSize,
       data.lineHeight,
       effectiveMaxWidth,
-      { family: data.fontFamily, weight: data.fontWeight }
+      fontStyle
     );
 
     // The shaper's measureText returns height = line_y + line_height, where line_y
@@ -546,6 +562,15 @@ export class FlashWindow {
     const normalizedHeight = estimatedLines * data.lineHeight;
 
     return { width: rawResult.width, height: normalizedHeight };
+  }
+
+  /**
+   * Get the computed wrap width for a text element.
+   * Returns the effectiveMaxWidth that was used during measurement.
+   */
+  getComputedWrapWidth(measureId: number): number | undefined {
+    const data = this.measureRegistry.get(measureId);
+    return data?.computedWrapWidth;
   }
 
   /**
@@ -2253,6 +2278,10 @@ export class FlashWindow {
         } finally {
           scene.popStackingContext();
         }
+      },
+
+      getComputedWrapWidth: (measureId: number): number | undefined => {
+        return this.getComputedWrapWidth(measureId);
       },
     };
   }
