@@ -1,7 +1,6 @@
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
 import type { WebGPUHost, WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
 import { createRenderTexture } from "@glade/flash/host.ts";
-import type { DemoResources } from "./common";
 
 const VERTEX_SHADER = `
 struct VertexOutput {
@@ -406,86 +405,15 @@ fn main(@location(0) v_uv: vec2f) -> @location(0) vec4f {
 }
 `;
 
-export function initRaymarchDemo(
-  ctx: { device: GPUDevice },
-  format: GPUTextureFormat
-): DemoResources {
-  const { device } = ctx;
-
-  const dummyPositions = new Float32Array([0, 0]);
-  const dummyColors = new Float32Array([1, 1, 1]);
-
-  const positionBuffer = device.createBuffer({
-    size: dummyPositions.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(positionBuffer, 0, dummyPositions);
-
-  const colorBuffer = device.createBuffer({
-    size: dummyColors.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(colorBuffer, 0, dummyColors);
-
-  const uniformBuffer = device.createBuffer({
-    size: 32,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        buffer: { type: "uniform" },
-      },
-    ],
-  });
-
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout],
-  });
-
-  const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
-  const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
-
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: {
-      module: vertexModule,
-      entryPoint: "main",
-      buffers: [],
-    },
-    fragment: {
-      module: fragmentModule,
-      entryPoint: "main",
-      targets: [{ format }],
-    },
-    primitive: { topology: "triangle-list" },
-  });
-
-  const bindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-  });
-
-  return {
-    pipeline,
-    positionBuffer,
-    colorBuffer,
-    indexBuffer: null,
-    uniformBuffer,
-    bindGroup,
-    indexCount: 0,
-    vertexCount: 3,
-    instanceCount: 1,
-    useInstancing: true,
-  };
-}
+type RaymarchResources = {
+  pipeline: GPURenderPipeline;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
+};
 
 class RaymarchHost implements WebGPUHost {
   private renderTexture: RenderTexture;
-  private resources: DemoResources | null = null;
+  private resources: RaymarchResources | null = null;
   private ready = false;
 
   constructor(
@@ -499,9 +427,61 @@ class RaymarchHost implements WebGPUHost {
   }
 
   private async initAsync(): Promise<void> {
-    this.resources = initRaymarchDemo({ device: this.device }, this.format);
+    this.resources = this.initResources();
     await new Promise((resolve) => setTimeout(resolve, 0));
     this.ready = true;
+  }
+
+  private initResources(): RaymarchResources {
+    const { device, format } = this;
+
+    const uniformBuffer = device.createBuffer({
+      size: 32,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const bindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+      ],
+    });
+
+    const pipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout],
+    });
+
+    const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
+    const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
+
+    const pipeline = device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: {
+        module: vertexModule,
+        entryPoint: "main",
+        buffers: [],
+      },
+      fragment: {
+        module: fragmentModule,
+        entryPoint: "main",
+        targets: [{ format }],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+
+    const bindGroup = device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+    });
+
+    return {
+      pipeline,
+      uniformBuffer,
+      bindGroup,
+    };
   }
 
   resize(width: number, height: number): void {
@@ -547,9 +527,7 @@ class RaymarchHost implements WebGPUHost {
   destroy(): void {
     this.renderTexture.destroy();
     if (this.resources) {
-      this.resources.positionBuffer?.destroy();
-      this.resources.colorBuffer?.destroy();
-      this.resources.uniformBuffer?.destroy();
+      this.resources.uniformBuffer.destroy();
     }
   }
 }

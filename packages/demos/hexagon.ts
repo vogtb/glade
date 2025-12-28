@@ -1,7 +1,6 @@
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
 import type { WebGPUHost, WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
 import { createRenderTexture } from "@glade/flash/host.ts";
-import type { DemoResources } from "./common";
 
 const VERTEX_SHADER = `
 struct VertexInput {
@@ -153,117 +152,19 @@ function createIndices(): Uint16Array {
   return new Uint16Array(indices);
 }
 
-export function initHexagonDemo(
-  ctx: { device: GPUDevice },
-  format: GPUTextureFormat
-): DemoResources {
-  const { device } = ctx;
-
-  const { positions, colors } = createGeometry();
-  const indices = createIndices();
-
-  const positionBuffer = device.createBuffer({
-    size: positions.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(positionBuffer, 0, positions);
-
-  const colorBuffer = device.createBuffer({
-    size: colors.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(colorBuffer, 0, colors);
-
-  const indexBuffer = device.createBuffer({
-    size: indices.byteLength,
-    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(indexBuffer, 0, indices);
-
-  const uniformBuffer = device.createBuffer({
-    size: 32,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        buffer: { type: "uniform" },
-      },
-    ],
-  });
-
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout],
-  });
-
-  const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
-  const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
-
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: {
-      module: vertexModule,
-      entryPoint: "main",
-      buffers: [
-        {
-          arrayStride: 8,
-          attributes: [{ shaderLocation: 0, offset: 0, format: "float32x2" }],
-        },
-        {
-          arrayStride: 12,
-          attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }],
-        },
-      ],
-    },
-    fragment: {
-      module: fragmentModule,
-      entryPoint: "main",
-      targets: [
-        {
-          format,
-          blend: {
-            color: {
-              srcFactor: "src-alpha",
-              dstFactor: "one-minus-src-alpha",
-              operation: "add",
-            },
-            alpha: {
-              srcFactor: "one",
-              dstFactor: "one-minus-src-alpha",
-              operation: "add",
-            },
-          },
-        },
-      ],
-    },
-    primitive: { topology: "triangle-list" },
-  });
-
-  const bindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-  });
-
-  return {
-    pipeline,
-    positionBuffer,
-    colorBuffer,
-    indexBuffer,
-    uniformBuffer,
-    bindGroup,
-    indexCount: indices.length,
-    vertexCount: 0,
-    instanceCount: 1,
-    useInstancing: false,
-  };
-}
+type HexagonResources = {
+  pipeline: GPURenderPipeline;
+  positionBuffer: GPUBuffer;
+  colorBuffer: GPUBuffer;
+  indexBuffer: GPUBuffer;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
+  indexCount: number;
+};
 
 class HexagonHost implements WebGPUHost {
   private renderTexture: RenderTexture;
-  private resources: DemoResources | null = null;
+  private resources: HexagonResources | null = null;
   private ready = false;
 
   constructor(
@@ -277,9 +178,111 @@ class HexagonHost implements WebGPUHost {
   }
 
   private async initAsync(): Promise<void> {
-    this.resources = initHexagonDemo({ device: this.device }, this.format);
+    this.resources = this.initResources();
     await new Promise((resolve) => setTimeout(resolve, 0));
     this.ready = true;
+  }
+
+  private initResources(): HexagonResources {
+    const { device, format } = this;
+
+    const { positions, colors } = createGeometry();
+    const indices = createIndices();
+
+    const positionBuffer = device.createBuffer({
+      size: positions.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(positionBuffer, 0, positions);
+
+    const colorBuffer = device.createBuffer({
+      size: colors.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(colorBuffer, 0, colors);
+
+    const indexBuffer = device.createBuffer({
+      size: indices.byteLength,
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(indexBuffer, 0, indices);
+
+    const uniformBuffer = device.createBuffer({
+      size: 32,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const bindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+      ],
+    });
+
+    const pipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout],
+    });
+
+    const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
+    const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
+
+    const pipeline = device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: {
+        module: vertexModule,
+        entryPoint: "main",
+        buffers: [
+          {
+            arrayStride: 8,
+            attributes: [{ shaderLocation: 0, offset: 0, format: "float32x2" }],
+          },
+          {
+            arrayStride: 12,
+            attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }],
+          },
+        ],
+      },
+      fragment: {
+        module: fragmentModule,
+        entryPoint: "main",
+        targets: [
+          {
+            format,
+            blend: {
+              color: {
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+              alpha: {
+                srcFactor: "one",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+            },
+          },
+        ],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+
+    const bindGroup = device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+    });
+
+    return {
+      pipeline,
+      positionBuffer,
+      colorBuffer,
+      indexBuffer,
+      uniformBuffer,
+      bindGroup,
+      indexCount: indices.length,
+    };
   }
 
   resize(width: number, height: number): void {
@@ -316,7 +319,7 @@ class HexagonHost implements WebGPUHost {
     renderPass.setBindGroup(0, this.resources.bindGroup);
     renderPass.setVertexBuffer(0, this.resources.positionBuffer);
     renderPass.setVertexBuffer(1, this.resources.colorBuffer);
-    renderPass.setIndexBuffer(this.resources.indexBuffer!, "uint16");
+    renderPass.setIndexBuffer(this.resources.indexBuffer, "uint16");
     renderPass.drawIndexed(this.resources.indexCount);
     renderPass.end();
   }
@@ -328,10 +331,10 @@ class HexagonHost implements WebGPUHost {
   destroy(): void {
     this.renderTexture.destroy();
     if (this.resources) {
-      this.resources.positionBuffer?.destroy();
-      this.resources.colorBuffer?.destroy();
-      this.resources.indexBuffer?.destroy();
-      this.resources.uniformBuffer?.destroy();
+      this.resources.positionBuffer.destroy();
+      this.resources.colorBuffer.destroy();
+      this.resources.indexBuffer.destroy();
+      this.resources.uniformBuffer.destroy();
     }
   }
 }

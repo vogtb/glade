@@ -1,7 +1,6 @@
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
 import type { WebGPUHost, WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
 import { createRenderTexture } from "@glade/flash/host.ts";
-import type { DemoResources } from "./common";
 
 const VERTEX_SHADER = `
 struct VertexInput {
@@ -151,111 +150,19 @@ function createQuadGeometry(): { positions: Float32Array; colors: Float32Array }
   return { positions, colors };
 }
 
-export function initParticleDemo(
-  ctx: { device: GPUDevice },
-  format: GPUTextureFormat
-): DemoResources {
-  const { device } = ctx;
-
-  const { positions, colors } = createQuadGeometry();
-  const particleCount = 24;
-
-  const positionBuffer = device.createBuffer({
-    size: positions.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(positionBuffer, 0, positions);
-
-  const colorBuffer = device.createBuffer({
-    size: colors.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(colorBuffer, 0, colors);
-
-  const uniformBuffer = device.createBuffer({
-    size: 32,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        buffer: { type: "uniform" },
-      },
-    ],
-  });
-
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout],
-  });
-
-  const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
-  const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
-
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: {
-      module: vertexModule,
-      entryPoint: "main",
-      buffers: [
-        {
-          arrayStride: 8,
-          attributes: [{ shaderLocation: 0, offset: 0, format: "float32x2" }],
-        },
-        {
-          arrayStride: 12,
-          attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }],
-        },
-      ],
-    },
-    fragment: {
-      module: fragmentModule,
-      entryPoint: "main",
-      targets: [
-        {
-          format,
-          blend: {
-            color: {
-              srcFactor: "src-alpha",
-              dstFactor: "one-minus-src-alpha",
-              operation: "add",
-            },
-            alpha: {
-              srcFactor: "one",
-              dstFactor: "one-minus-src-alpha",
-              operation: "add",
-            },
-          },
-        },
-      ],
-    },
-    primitive: { topology: "triangle-list" },
-  });
-
-  const bindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-  });
-
-  return {
-    pipeline,
-    positionBuffer,
-    colorBuffer,
-    indexBuffer: null,
-    uniformBuffer,
-    bindGroup,
-    indexCount: 0,
-    vertexCount: 6, // 6 vertices per quad
-    instanceCount: particleCount,
-    useInstancing: true,
-  };
-}
+type ParticleResources = {
+  pipeline: GPURenderPipeline;
+  positionBuffer: GPUBuffer;
+  colorBuffer: GPUBuffer;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
+  vertexCount: number;
+  instanceCount: number;
+};
 
 class ParticleHost implements WebGPUHost {
   private renderTexture: RenderTexture;
-  private resources: DemoResources | null = null;
+  private resources: ParticleResources | null = null;
   private ready = false;
 
   constructor(
@@ -269,9 +176,105 @@ class ParticleHost implements WebGPUHost {
   }
 
   private async initAsync(): Promise<void> {
-    this.resources = initParticleDemo({ device: this.device }, this.format);
+    this.resources = this.initResources();
     await new Promise((resolve) => setTimeout(resolve, 0));
     this.ready = true;
+  }
+
+  private initResources(): ParticleResources {
+    const { device, format } = this;
+
+    const { positions, colors } = createQuadGeometry();
+    const particleCount = 24;
+
+    const positionBuffer = device.createBuffer({
+      size: positions.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(positionBuffer, 0, positions);
+
+    const colorBuffer = device.createBuffer({
+      size: colors.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(colorBuffer, 0, colors);
+
+    const uniformBuffer = device.createBuffer({
+      size: 32,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const bindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+      ],
+    });
+
+    const pipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout],
+    });
+
+    const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
+    const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
+
+    const pipeline = device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: {
+        module: vertexModule,
+        entryPoint: "main",
+        buffers: [
+          {
+            arrayStride: 8,
+            attributes: [{ shaderLocation: 0, offset: 0, format: "float32x2" }],
+          },
+          {
+            arrayStride: 12,
+            attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }],
+          },
+        ],
+      },
+      fragment: {
+        module: fragmentModule,
+        entryPoint: "main",
+        targets: [
+          {
+            format,
+            blend: {
+              color: {
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+              alpha: {
+                srcFactor: "one",
+                dstFactor: "one-minus-src-alpha",
+                operation: "add",
+              },
+            },
+          },
+        ],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+
+    const bindGroup = device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+    });
+
+    return {
+      pipeline,
+      positionBuffer,
+      colorBuffer,
+      uniformBuffer,
+      bindGroup,
+      vertexCount: 6,
+      instanceCount: particleCount,
+    };
   }
 
   resize(width: number, height: number): void {
@@ -319,9 +322,9 @@ class ParticleHost implements WebGPUHost {
   destroy(): void {
     this.renderTexture.destroy();
     if (this.resources) {
-      this.resources.positionBuffer?.destroy();
-      this.resources.colorBuffer?.destroy();
-      this.resources.uniformBuffer?.destroy();
+      this.resources.positionBuffer.destroy();
+      this.resources.colorBuffer.destroy();
+      this.resources.uniformBuffer.destroy();
     }
   }
 }

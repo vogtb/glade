@@ -1,7 +1,6 @@
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
 import type { WebGPUHost, WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
 import { createRenderTexture } from "@glade/flash/host.ts";
-import type { DemoResources } from "./common";
 
 const VERTEX_SHADER = `
 struct VertexOutput {
@@ -182,88 +181,15 @@ fn main(@location(0) v_uv: vec2f) -> @location(0) vec4f {
 }
 `;
 
-export function initMetaballDemo(
-  ctx: { device: GPUDevice },
-  format: GPUTextureFormat
-): DemoResources {
-  const { device } = ctx;
-
-  // Metaballs use a full-screen triangle, no vertex buffers needed for geometry
-  // But we still need dummy buffers to satisfy the DemoResources interface
-  const dummyPositions = new Float32Array([0, 0]);
-  const dummyColors = new Float32Array([1, 1, 1]);
-
-  const positionBuffer = device.createBuffer({
-    size: dummyPositions.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(positionBuffer, 0, dummyPositions);
-
-  const colorBuffer = device.createBuffer({
-    size: dummyColors.byteLength,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(colorBuffer, 0, dummyColors);
-
-  const uniformBuffer = device.createBuffer({
-    size: 32,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        buffer: { type: "uniform" },
-      },
-    ],
-  });
-
-  const pipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bindGroupLayout],
-  });
-
-  const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
-  const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
-
-  const pipeline = device.createRenderPipeline({
-    layout: pipelineLayout,
-    vertex: {
-      module: vertexModule,
-      entryPoint: "main",
-      buffers: [], // No vertex buffers - positions generated from vertex index
-    },
-    fragment: {
-      module: fragmentModule,
-      entryPoint: "main",
-      targets: [{ format }],
-    },
-    primitive: { topology: "triangle-list" },
-  });
-
-  const bindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-  });
-
-  return {
-    pipeline,
-    positionBuffer,
-    colorBuffer,
-    indexBuffer: null,
-    uniformBuffer,
-    bindGroup,
-    indexCount: 0,
-    vertexCount: 3, // Single full-screen triangle
-    instanceCount: 1,
-    useInstancing: true, // Use draw() path
-  };
-}
+type MetaballResources = {
+  pipeline: GPURenderPipeline;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
+};
 
 class MetaballHost implements WebGPUHost {
   private renderTexture: RenderTexture;
-  private resources: DemoResources | null = null;
+  private resources: MetaballResources | null = null;
   private ready = false;
 
   constructor(
@@ -277,9 +203,61 @@ class MetaballHost implements WebGPUHost {
   }
 
   private async initAsync(): Promise<void> {
-    this.resources = initMetaballDemo({ device: this.device }, this.format);
+    this.resources = this.initResources();
     await new Promise((resolve) => setTimeout(resolve, 0));
     this.ready = true;
+  }
+
+  private initResources(): MetaballResources {
+    const { device, format } = this;
+
+    const uniformBuffer = device.createBuffer({
+      size: 32,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    const bindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: "uniform" },
+        },
+      ],
+    });
+
+    const pipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout],
+    });
+
+    const vertexModule = device.createShaderModule({ code: VERTEX_SHADER });
+    const fragmentModule = device.createShaderModule({ code: FRAGMENT_SHADER });
+
+    const pipeline = device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: {
+        module: vertexModule,
+        entryPoint: "main",
+        buffers: [],
+      },
+      fragment: {
+        module: fragmentModule,
+        entryPoint: "main",
+        targets: [{ format }],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+
+    const bindGroup = device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+    });
+
+    return {
+      pipeline,
+      uniformBuffer,
+      bindGroup,
+    };
   }
 
   resize(width: number, height: number): void {
@@ -325,9 +303,7 @@ class MetaballHost implements WebGPUHost {
   destroy(): void {
     this.renderTexture.destroy();
     if (this.resources) {
-      this.resources.positionBuffer?.destroy();
-      this.resources.colorBuffer?.destroy();
-      this.resources.uniformBuffer?.destroy();
+      this.resources.uniformBuffer.destroy();
     }
   }
 }

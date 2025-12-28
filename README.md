@@ -1,4 +1,4 @@
-w# glade
+# glade
 
 > GL-assisted Drawing Environment
 

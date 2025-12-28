@@ -1,8 +1,6 @@
-import type { WebGPUContext } from "@glade/core";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
 import type { WebGPUHost, WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
 import { createRenderTexture } from "@glade/flash/host.ts";
-import type { DemoResources } from "./common";
 
 // Galaxy simulation with thousands of stars orbiting a central black hole
 // Features: gravitational physics, bloom/glow effects, dust lanes, spiral arms
@@ -362,16 +360,6 @@ fn main(@location(0) v_uv: vec2f) -> @location(0) vec4f {
 }
 `;
 
-interface GalaxyResources extends DemoResources {
-  computePipeline: GPUComputePipeline;
-  starBuffer: GPUBuffer;
-  computeBindGroup: GPUBindGroup;
-  computeUniformBuffer: GPUBuffer;
-  bgPipeline: GPURenderPipeline;
-  bgBindGroup: GPUBindGroup;
-  numStars: number;
-}
-
 function initStarData(): Float32Array {
   // Star structure: position(2) + velocity(2) + color(3) + size(1) + age(1) + type(1) = 10 floats
   const data = new Float32Array((NUM_STARS + NUM_DUST + 1) * 10);
@@ -478,266 +466,18 @@ function initStarData(): Float32Array {
   return data;
 }
 
-export function initGalaxyDemo(ctx: WebGPUContext, format: GPUTextureFormat): DemoResources {
-  const { device } = ctx;
-
-  const totalParticles = NUM_STARS + NUM_DUST + 1;
-
-  // Initialize star data
-  const starData = initStarData();
-
-  // Create star storage buffer
-  const starBuffer = device.createBuffer({
-    size: starData.byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-  });
-  device.queue.writeBuffer(starBuffer, 0, starData);
-
-  // Uniform buffer for render
-  const uniformBuffer = device.createBuffer({
-    size: 32,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  // Uniform buffer for compute (needs extra fields)
-  const computeUniformBuffer = device.createBuffer({
-    size: 32,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-
-  // Dummy buffers for DemoResources interface
-  const positionBuffer = device.createBuffer({
-    size: 8,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-  const colorBuffer = device.createBuffer({
-    size: 12,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-  });
-
-  // === Background Pipeline ===
-  const bgBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.FRAGMENT,
-        buffer: { type: "uniform" },
-      },
-    ],
-  });
-
-  const bgPipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [bgBindGroupLayout],
-  });
-
-  const bgPipeline = device.createRenderPipeline({
-    layout: bgPipelineLayout,
-    vertex: {
-      module: device.createShaderModule({ code: BG_VERTEX_SHADER }),
-      entryPoint: "main",
-      buffers: [],
-    },
-    fragment: {
-      module: device.createShaderModule({ code: BG_FRAGMENT_SHADER }),
-      entryPoint: "main",
-      targets: [{ format }],
-    },
-    primitive: { topology: "triangle-list" },
-  });
-
-  const bgBindGroup = device.createBindGroup({
-    layout: bgBindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-  });
-
-  // === Render Pipeline ===
-  const renderBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        buffer: { type: "uniform" },
-      },
-      {
-        binding: 1,
-        visibility: GPUShaderStage.VERTEX,
-        buffer: { type: "read-only-storage" },
-      },
-    ],
-  });
-
-  const renderPipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [renderBindGroupLayout],
-  });
-
-  const pipeline = device.createRenderPipeline({
-    layout: renderPipelineLayout,
-    vertex: {
-      module: device.createShaderModule({ code: VERTEX_SHADER }),
-      entryPoint: "main",
-      buffers: [],
-    },
-    fragment: {
-      module: device.createShaderModule({ code: FRAGMENT_SHADER }),
-      entryPoint: "main",
-      targets: [
-        {
-          format,
-          blend: {
-            color: {
-              srcFactor: "src-alpha",
-              dstFactor: "one",
-              operation: "add",
-            },
-            alpha: {
-              srcFactor: "one",
-              dstFactor: "one",
-              operation: "add",
-            },
-          },
-        },
-      ],
-    },
-    primitive: { topology: "triangle-list" },
-  });
-
-  const bindGroup = device.createBindGroup({
-    layout: renderBindGroupLayout,
-    entries: [
-      { binding: 0, resource: { buffer: uniformBuffer } },
-      { binding: 1, resource: { buffer: starBuffer } },
-    ],
-  });
-
-  // === Compute Pipeline ===
-  const computeBindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: { type: "uniform" },
-      },
-      {
-        binding: 1,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: { type: "storage" },
-      },
-    ],
-  });
-
-  const computePipelineLayout = device.createPipelineLayout({
-    bindGroupLayouts: [computeBindGroupLayout],
-  });
-
-  const computePipeline = device.createComputePipeline({
-    layout: computePipelineLayout,
-    compute: {
-      module: device.createShaderModule({ code: COMPUTE_SHADER }),
-      entryPoint: "main",
-    },
-  });
-
-  const computeBindGroup = device.createBindGroup({
-    layout: computeBindGroupLayout,
-    entries: [
-      { binding: 0, resource: { buffer: computeUniformBuffer } },
-      { binding: 1, resource: { buffer: starBuffer } },
-    ],
-  });
-
-  const resources: GalaxyResources = {
-    pipeline,
-    positionBuffer,
-    colorBuffer,
-    indexBuffer: null,
-    uniformBuffer,
-    bindGroup,
-    indexCount: 0,
-    vertexCount: 6,
-    instanceCount: totalParticles,
-    useInstancing: true,
-    computePipeline,
-    starBuffer,
-    computeBindGroup,
-    computeUniformBuffer,
-    bgPipeline,
-    bgBindGroup,
-    numStars: totalParticles,
-  };
-
-  return resources;
-}
-
-// Custom render function for galaxy (needs compute pass)
-export function renderGalaxy(
-  ctx: WebGPUContext,
-  resources: DemoResources,
-  time: number,
-  deltaTime: number,
-  mouseX: number,
-  mouseY: number
-): void {
-  const { device, context } = ctx;
-  const galaxyResources = resources as GalaxyResources;
-
-  // Update uniforms
-  const uniformData = new Float32Array([time, 0, ctx.width, ctx.height, mouseX, mouseY, 0, 0]);
-  device.queue.writeBuffer(galaxyResources.uniformBuffer, 0, uniformData);
-
-  // Compute uniforms (includes deltaTime and mouse active)
-  const computeUniformData = new Float32Array([
-    time,
-    Math.min(deltaTime, 0.1), // Cap delta time
-    ctx.width,
-    ctx.height,
-    mouseX,
-    mouseY,
-    1.0, // Mouse always active for this demo
-    0,
-  ]);
-  device.queue.writeBuffer(galaxyResources.computeUniformBuffer, 0, computeUniformData);
-
-  const commandEncoder = device.createCommandEncoder();
-
-  // Compute pass - update particle positions
-  const computePass = commandEncoder.beginComputePass();
-  computePass.setPipeline(galaxyResources.computePipeline);
-  computePass.setBindGroup(0, galaxyResources.computeBindGroup);
-  computePass.dispatchWorkgroups(Math.ceil(galaxyResources.numStars / 64));
-  computePass.end();
-
-  // Render pass
-  const textureView = context.getCurrentTexture().createView();
-
-  const renderPass = commandEncoder.beginRenderPass({
-    colorAttachments: [
-      {
-        view: textureView,
-        clearValue: { r: 0.01, g: 0.01, b: 0.02, a: 1.0 },
-        loadOp: "clear",
-        storeOp: "store",
-      },
-    ],
-  });
-
-  // Draw background nebula
-  renderPass.setPipeline(galaxyResources.bgPipeline);
-  renderPass.setBindGroup(0, galaxyResources.bgBindGroup);
-  renderPass.draw(3);
-
-  // Draw stars
-  renderPass.setPipeline(galaxyResources.pipeline);
-  renderPass.setBindGroup(0, galaxyResources.bindGroup);
-  renderPass.draw(6, galaxyResources.numStars);
-
-  renderPass.end();
-
-  device.queue.submit([commandEncoder.finish()]);
-
-  if ("present" in context && typeof context.present === "function") {
-    (context as unknown as { present: () => void }).present();
-  }
-}
+type GalaxyResources = {
+  pipeline: GPURenderPipeline;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
+  computePipeline: GPUComputePipeline;
+  starBuffer: GPUBuffer;
+  computeBindGroup: GPUBindGroup;
+  computeUniformBuffer: GPUBuffer;
+  bgPipeline: GPURenderPipeline;
+  bgBindGroup: GPUBindGroup;
+  numStars: number;
+};
 
 class GalaxyHost implements WebGPUHost {
   private renderTexture: RenderTexture;
@@ -779,15 +519,6 @@ class GalaxyHost implements WebGPUHost {
     const computeUniformBuffer = device.createBuffer({
       size: 32,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    const positionBuffer = device.createBuffer({
-      size: 8,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    });
-    const colorBuffer = device.createBuffer({
-      size: 12,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
 
     // Background pipeline
@@ -922,15 +653,8 @@ class GalaxyHost implements WebGPUHost {
 
     return {
       pipeline,
-      positionBuffer,
-      colorBuffer,
-      indexBuffer: null,
       uniformBuffer,
       bindGroup,
-      indexCount: 0,
-      vertexCount: 6,
-      instanceCount: totalParticles,
-      useInstancing: true,
       computePipeline,
       starBuffer,
       computeBindGroup,
@@ -1012,8 +736,6 @@ class GalaxyHost implements WebGPUHost {
       this.resources.starBuffer.destroy();
       this.resources.uniformBuffer.destroy();
       this.resources.computeUniformBuffer.destroy();
-      this.resources.positionBuffer.destroy();
-      this.resources.colorBuffer.destroy();
     }
   }
 }
