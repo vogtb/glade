@@ -13,6 +13,8 @@ import {
   type FlashViewContext,
   div,
   divider,
+  icon,
+  link,
   rgb,
   text,
   path,
@@ -92,6 +94,8 @@ type DemoSection =
   | "underlined-text"
   | "group-styles"
   | "divider"
+  | "icon"
+  | "link"
   | "grid-layout"
   | "canvas"
   | "vector-paths"
@@ -125,6 +129,8 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "underlined-text", label: "Underlined Text" },
   { id: "group-styles", label: "Group Styles" },
   { id: "divider", label: "Divider" },
+  { id: "icon", label: "Icon" },
+  { id: "link", label: "Link" },
   { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
@@ -581,6 +587,10 @@ class DemoRootView implements FlashView {
         return this.renderGroupStylesDemo();
       case "divider":
         return this.renderDividerDemo();
+      case "icon":
+        return this.renderIconDemo();
+      case "link":
+        return this.renderLinkDemo();
       case "grid-layout":
         return this.renderGridLayoutDemo();
       case "canvas":
@@ -1480,6 +1490,320 @@ class DemoRootView implements FlashView {
                   .flex1()
                   .child(divider().color({ r: 0.4, g: 0.9, b: 0.5, a: 1 }).thickness(2))
               )
+          )
+      );
+  }
+
+  private renderIconDemo(): FlashDiv {
+    const iconNames = [
+      "check",
+      "close",
+      "menu",
+      "arrowRight",
+      "arrowLeft",
+      "arrowUp",
+      "arrowDown",
+      "plus",
+      "minus",
+      "search",
+      "settings",
+      "home",
+      "star",
+      "starOutline",
+      "heart",
+      "edit",
+      "trash",
+      "copy",
+      "folder",
+      "file",
+      "refresh",
+      "download",
+      "upload",
+      "info",
+      "warning",
+      "error",
+    ] as const;
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Icon").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Simple icon component wrapping SVG icons")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        divider().color({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Icon grid
+        text("Available Icons").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexWrap()
+          .gap(12)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            ...iconNames.map((name) =>
+              div()
+                .flex()
+                .flexCol()
+                .gap(4)
+                .itemsCenter()
+                .p(8)
+                .w(80)
+                .bg({ r: 0.1, g: 0.1, b: 0.15, a: 1 })
+                .rounded(6)
+                .children_(
+                  icon(name).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+                  text(name).font("Inter").size(10).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+                )
+            )
+          ),
+
+        // Sizes
+        text("Icon Sizes").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(24)
+          .p(16)
+          .itemsEnd()
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                icon("star", 16).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+                text("16px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                icon("star", 24).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+                text("24px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                icon("star", 32).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+                text("32px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexCol()
+              .gap(4)
+              .itemsCenter()
+              .children_(
+                icon("star", 48).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+                text("48px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+              )
+          ),
+
+        // Colors
+        text("Icon Colors").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            icon("heart", 32).color({ r: 0.9, g: 0.3, b: 0.3, a: 1 }),
+            icon("check", 32).color({ r: 0.3, g: 0.9, b: 0.4, a: 1 }),
+            icon("info", 32).color({ r: 0.3, g: 0.6, b: 0.9, a: 1 }),
+            icon("warning", 32).color({ r: 0.9, g: 0.7, b: 0.2, a: 1 }),
+            icon("star", 32).color({ r: 0.9, g: 0.5, b: 0.9, a: 1 }),
+            icon("settings", 32).color({ r: 0.5, g: 0.9, b: 0.9, a: 1 })
+          ),
+
+        // Usage in buttons
+        text("Icons in Buttons").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .px(16)
+              .py(8)
+              .bg({ r: 0.2, g: 0.4, b: 0.8, a: 1 })
+              .rounded(6)
+              .cursorPointer()
+              .children_(
+                icon("download", 18).color({ r: 1, g: 1, b: 1, a: 1 }),
+                text("Download").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .px(16)
+              .py(8)
+              .bg({ r: 0.2, g: 0.6, b: 0.3, a: 1 })
+              .rounded(6)
+              .cursorPointer()
+              .children_(
+                icon("check", 18).color({ r: 1, g: 1, b: 1, a: 1 }),
+                text("Confirm").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .px(16)
+              .py(8)
+              .bg({ r: 0.7, g: 0.2, b: 0.2, a: 1 })
+              .rounded(6)
+              .cursorPointer()
+              .children_(
+                icon("trash", 18).color({ r: 1, g: 1, b: 1, a: 1 }),
+                text("Delete").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })
+              )
+          )
+      );
+  }
+
+  private renderLinkDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Link").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Clickable text links that open URLs in the browser")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        divider().color({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Basic links
+        text("Basic Links").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            link("Visit GitHub", "https://github.com").font("Inter"),
+            link("Anthropic Homepage", "https://anthropic.com").font("Inter"),
+            link("TypeScript Documentation", "https://www.typescriptlang.org/docs/").font("Inter")
+          ),
+
+        // Styled links
+        text("Styled Links").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            link("Large Link (18px)", "https://example.com").font("Inter").size(18),
+            link("Small Link (12px)", "https://example.com").font("Inter").size(12),
+            link("Custom Color", "https://example.com")
+              .font("Inter")
+              .color({ r: 0.9, g: 0.5, b: 0.3, a: 1 })
+              .hoverColor({ r: 1, g: 0.6, b: 0.4, a: 1 }),
+            link("Green Link", "https://example.com")
+              .font("Inter")
+              .color({ r: 0.3, g: 0.8, b: 0.5, a: 1 })
+              .hoverColor({ r: 0.4, g: 0.9, b: 0.6, a: 1 })
+          ),
+
+        // Underline variants
+        text("Underline Variants").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .gap(12)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .children_(
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .children_(
+                text("Default (underline on hover):")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                link("Hover me", "https://example.com").font("Inter")
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .children_(
+                text("Always underlined:")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                link("Always underlined", "https://example.com").font("Inter").underline()
+              ),
+            div()
+              .flex()
+              .flexRow()
+              .gap(8)
+              .itemsCenter()
+              .children_(
+                text("Never underlined:")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                link("No underline", "https://example.com").font("Inter").noUnderline()
+              )
+          ),
+
+        // Inline links
+        text("Inline Links").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .flexWrap()
+          .gap(4)
+          .p(16)
+          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+          .rounded(8)
+          .itemsBaseline()
+          .children_(
+            text("Check out the").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            link("documentation", "https://docs.example.com").font("Inter").size(14),
+            text("for more information, or visit our")
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            link("GitHub repository", "https://github.com").font("Inter").size(14),
+            text("to contribute.").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
           )
       );
   }

@@ -413,6 +413,14 @@ export type { SvgPathCommand, ParsedSvgPath, ParsedSvg, TessellatedMesh } from "
 
 export { SvgElement, svg, parseSvg, SvgIcons, clearSvgCache } from "./svg.ts";
 
+// Icon element
+export type { IconName } from "./icon.ts";
+
+export { FlashIcon, icon } from "./icon.ts";
+
+// Link element
+export { FlashLink, link } from "./link.ts";
+
 // Ideal text editor system
 export type {
   DocumentOffset,

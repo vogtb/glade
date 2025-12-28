@@ -128,6 +128,8 @@ export interface FlashPlatform {
   cancelAnimationFrame(id: number): void;
 
   decodeImage(data: Uint8Array): Promise<DecodedImageData>;
+
+  openUrl(url: string): void;
 }
 
 /**
@@ -383,6 +385,13 @@ export class FlashWindow {
    */
   getClipboard(): Clipboard {
     return this.platform.clipboard;
+  }
+
+  /**
+   * Open a URL in the default browser.
+   */
+  openUrl(url: string): void {
+    this.platform.openUrl(url);
   }
 
   /**

@@ -79,6 +79,10 @@ class DarwinFlashPlatform implements FlashPlatform {
     }
     throw new Error("Unsupported image format");
   }
+
+  openUrl(url: string): void {
+    Bun.spawn(["open", url]);
+  }
 }
 
 function isPNG(data: Uint8Array): boolean {
