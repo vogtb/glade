@@ -75,6 +75,9 @@ import {
 } from "./hitbox.ts";
 import { DragTracker, type ActiveDrag, type DragPayload } from "./drag.ts";
 import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./tooltip.ts";
+import { PopoverManager, type PopoverRegistration } from "./popover.ts";
+import { AnchoredElement } from "./anchored.ts";
+import { DeferredElement } from "./deferred.ts";
 import {
   TabStopRegistry,
   FocusContextManager,
@@ -221,6 +224,9 @@ export class FlashWindow {
 
   // Tooltips
   private tooltipManager = new TooltipManager();
+
+  // Popovers (dropdowns, context menus, etc.)
+  private popoverManager = new PopoverManager();
 
   // Tab stops and focus
   private tabStopRegistry = new TabStopRegistry();
@@ -1017,6 +1023,22 @@ export class FlashWindow {
     });
   }
 
+  // ============ Popovers ============
+
+  /**
+   * Get the popover manager.
+   */
+  getPopoverManager(): PopoverManager {
+    return this.popoverManager;
+  }
+
+  /**
+   * Register a popover for an element.
+   */
+  registerPopover(registration: PopoverRegistration): void {
+    this.popoverManager.register(registration);
+  }
+
   /**
    * Get the current content mask.
    */
@@ -1145,6 +1167,23 @@ export class FlashWindow {
     const paintCx = this.createPaintContext(rootElementId);
     element.paint(paintCx, rootBounds, rootPrepaintState);
 
+    // Update tooltip state before rendering tooltips
+    // This allows tooltips registered in prepaint to be rendered this frame
+    const currentHitTest = performHitTest(
+      this.hitboxFrame,
+      this.mousePosition.x,
+      this.mousePosition.y
+    );
+    const hoveredHitboxId =
+      currentHitTest.hoverHitboxCount > 0 ? (currentHitTest.ids[0] ?? null) : null;
+    this.tooltipManager.update(hoveredHitboxId, this.platform.now(), this.getContext());
+
+    // Render active popover (separate layout/prepaint/paint cycle)
+    const popoverHitTestNode = this.renderActivePopover();
+
+    // Render active tooltip (separate layout/prepaint/paint cycle)
+    const tooltipHitTestNode = this.renderActiveTooltip();
+
     // Paint deferred elements in priority order (higher priority on top)
     this.paintDeferredElements();
 
@@ -1160,6 +1199,16 @@ export class FlashWindow {
       if (entry.hitTestNode) {
         this.hitTestTree.push(entry.hitTestNode);
       }
+    }
+
+    // Add popover hit test node (should be on top)
+    if (popoverHitTestNode) {
+      this.hitTestTree.push(popoverHitTestNode);
+    }
+
+    // Add tooltip hit test node
+    if (tooltipHitTestNode) {
+      this.hitTestTree.push(tooltipHitTestNode);
     }
 
     this.updateFocusContexts();
@@ -1323,6 +1372,8 @@ export class FlashWindow {
     this.dropTargetHitboxes.clear();
     // Clear tooltip registrations from previous frame
     this.tooltipManager.clearRegistrations();
+    // Clear popover registrations from previous frame
+    this.popoverManager.clearRegistrations();
     // Clear tab stops from previous frame
     this.tabStopRegistry.clear();
     // Clear focus contexts from previous frame
@@ -1344,9 +1395,157 @@ export class FlashWindow {
     this.deferredDrawQueue.sort((a, b) => a.priority - b.priority);
 
     for (const entry of this.deferredDrawQueue) {
+      // Use overlay mode to ensure deferred elements render on top of all normal content
+      // Priority determines ordering between overlay types (tooltips: 0, menus: 1, modals: 2)
+      this.scene.beginOverlay(entry.priority);
+
       const paintCx = this.createPaintContext(entry.childElementId);
       entry.child.paint(paintCx, entry.bounds, entry.childPrepaintState);
+
+      this.scene.endOverlay();
     }
+  }
+
+  /**
+   * Render the active popover if one exists.
+   * This runs its own layout/prepaint/paint cycle separate from the main tree.
+   */
+  private renderActivePopover(): HitTestNode | null {
+    const activePopover = this.popoverManager.getActivePopover();
+    if (!activePopover) {
+      return null;
+    }
+
+    // Build the popover element
+    this.popoverManager.buildActivePopover(this.getContext(), {
+      width: this.width,
+      height: this.height,
+    });
+
+    const popoverElement = activePopover.element;
+    if (!popoverElement) {
+      return null;
+    }
+
+    // Create anchored wrapper for positioning
+    const anchoredElement = new AnchoredElement();
+    anchoredElement.anchor(activePopover.anchorCorner);
+    anchoredElement.position(activePopover.anchorPosition);
+    anchoredElement.setWindowSize({ width: this.width, height: this.height });
+    anchoredElement.snapToWindowWithMargin(activePopover.registration.config.windowMargin);
+    anchoredElement.child(popoverElement);
+
+    const deferredWrapper = new DeferredElement(anchoredElement);
+    deferredWrapper.priority(1); // Menus render above tooltips
+
+    // Run layout for popover
+    const popoverElementId = this.allocateElementId();
+    const requestLayoutCx = this.createRequestLayoutContext(popoverElementId);
+    const { layoutId: popoverLayoutId, requestState: popoverRequestState } =
+      deferredWrapper.requestLayout(requestLayoutCx);
+
+    this.layoutEngine.computeLayoutWithMeasure(
+      popoverLayoutId,
+      this.width,
+      this.height,
+      this.measureTextCallback.bind(this)
+    );
+
+    const popoverBounds = this.layoutEngine.layoutBounds(popoverLayoutId);
+    const prepaintCx = this.createPrepaintContext(popoverElementId);
+    const popoverPrepaintState = deferredWrapper.prepaint(
+      prepaintCx,
+      popoverBounds,
+      popoverRequestState
+    );
+
+    // Paint is handled by deferred system (deferredWrapper registers itself)
+    const paintCx = this.createPaintContext(popoverElementId);
+    deferredWrapper.paint(paintCx, popoverBounds, popoverPrepaintState);
+
+    // Return hit test node for the popover
+    return (popoverPrepaintState as { hitTestNode?: HitTestNode })?.hitTestNode ?? null;
+  }
+
+  /**
+   * Render the active tooltip if one exists.
+   * This runs its own layout/prepaint/paint cycle separate from the main tree.
+   */
+  private renderActiveTooltip(): HitTestNode | null {
+    const activeTooltip = this.tooltipManager.getActiveTooltip();
+    if (!activeTooltip || !activeTooltip.element) {
+      return null;
+    }
+
+    const tooltipElement = activeTooltip.element;
+    const targetBounds = activeTooltip.registration.targetBounds;
+    const config = activeTooltip.registration.config;
+
+    // First, do a layout pass just to get the tooltip size
+    // We use a temporary layout that won't be used for rendering
+    const tempElementId = this.allocateElementId();
+    const tempLayoutCx = this.createRequestLayoutContext(tempElementId);
+    const { layoutId: tempLayoutId } = tooltipElement.requestLayout(tempLayoutCx);
+
+    this.layoutEngine.computeLayoutWithMeasure(
+      tempLayoutId,
+      this.width,
+      this.height,
+      this.measureTextCallback.bind(this)
+    );
+
+    const tooltipSize = this.layoutEngine.layoutBounds(tempLayoutId);
+
+    // Compute tooltip position based on target bounds and config
+    const tooltipBounds = this.tooltipManager.computeTooltipBounds(
+      targetBounds,
+      { width: tooltipSize.width, height: tooltipSize.height },
+      { width: this.width, height: this.height },
+      config,
+      this.mousePosition
+    );
+
+    // Recreate the tooltip element for actual rendering
+    // This is needed because elements can only go through layout once
+    const freshTooltipElement = activeTooltip.registration.builder(this.getContext());
+
+    // Create anchored wrapper for positioning
+    const anchoredElement = new AnchoredElement();
+    anchoredElement.anchor("top-left");
+    anchoredElement.position({ x: tooltipBounds.x, y: tooltipBounds.y });
+    anchoredElement.setWindowSize({ width: this.width, height: this.height });
+    anchoredElement.child(freshTooltipElement);
+
+    const deferredWrapper = new DeferredElement(anchoredElement);
+    deferredWrapper.priority(0); // Tooltips render below menus
+
+    // Run layout for deferred wrapper
+    const wrappedElementId = this.allocateElementId();
+    const wrappedRequestLayoutCx = this.createRequestLayoutContext(wrappedElementId);
+    const { layoutId: wrappedLayoutId, requestState: wrappedRequestState } =
+      deferredWrapper.requestLayout(wrappedRequestLayoutCx);
+
+    this.layoutEngine.computeLayoutWithMeasure(
+      wrappedLayoutId,
+      this.width,
+      this.height,
+      this.measureTextCallback.bind(this)
+    );
+
+    const wrappedBounds = this.layoutEngine.layoutBounds(wrappedLayoutId);
+    const prepaintCx = this.createPrepaintContext(wrappedElementId);
+    const wrappedPrepaintState = deferredWrapper.prepaint(
+      prepaintCx,
+      wrappedBounds,
+      wrappedRequestState
+    );
+
+    // Paint is handled by deferred system (deferredWrapper registers itself)
+    const paintCx = this.createPaintContext(wrappedElementId);
+    deferredWrapper.paint(paintCx, wrappedBounds, wrappedPrepaintState);
+
+    // Return hit test node for the tooltip
+    return (wrappedPrepaintState as { hitTestNode?: HitTestNode })?.hitTestNode ?? null;
   }
 
   private endFrame(): void {
@@ -1364,11 +1563,6 @@ export class FlashWindow {
 
     // Update platform cursor based on hovered element
     this.updateCursor();
-
-    // Update tooltip state based on current hover
-    const hoveredHitboxId =
-      this.mouseHitTest.hoverHitboxCount > 0 ? (this.mouseHitTest.ids[0] ?? null) : null;
-    this.tooltipManager.update(hoveredHitboxId, this.platform.now(), this.getContext());
 
     // Compute visual order and validate cross-element selection
     this.crossElementSelection?.endFrame();
@@ -1598,6 +1792,46 @@ export class FlashWindow {
 
     if (target.onMouseDown) {
       const cleanup = target.onMouseDown((x, y, button, mods) => {
+        // Check for popover click-outside dismissal
+        const activePopover = this.popoverManager.getActivePopover();
+        if (activePopover && button === 0) {
+          // Get popover bounds from hit test tree (last entry if popover is active)
+          const popoverHitNode = this.hitTestTree.find((node) => {
+            // Check if this node is from the popover by checking bounds overlap
+            const triggerBounds = activePopover.registration.triggerBounds;
+            const isClickOnTrigger =
+              x >= triggerBounds.x &&
+              x <= triggerBounds.x + triggerBounds.width &&
+              y >= triggerBounds.y &&
+              y <= triggerBounds.y + triggerBounds.height;
+            if (isClickOnTrigger) return false;
+
+            // Check if click is inside this node's bounds
+            return (
+              x >= node.bounds.x &&
+              x <= node.bounds.x + node.bounds.width &&
+              y >= node.bounds.y &&
+              y <= node.bounds.y + node.bounds.height
+            );
+          });
+
+          // If click is not on popover or trigger, dismiss
+          const triggerBounds = activePopover.registration.triggerBounds;
+          const isClickOnTrigger =
+            x >= triggerBounds.x &&
+            x <= triggerBounds.x + triggerBounds.width &&
+            y >= triggerBounds.y &&
+            y <= triggerBounds.y + triggerBounds.height;
+
+          if (!popoverHitNode && !isClickOnTrigger) {
+            const onClose = activePopover.registration.onClose;
+            if (onClose) {
+              onClose();
+              this.getContext().markWindowDirty(this.id);
+            }
+          }
+        }
+
         // Intercept for cross-element selection FIRST
         const manager = this.getCrossElementSelection();
         if (manager.hasSelectableElements() && button === 0) {
@@ -2055,6 +2289,10 @@ export class FlashWindow {
         config: TooltipConfig
       ): void => {
         registerTooltipFn(hitboxId, bounds, builder, config);
+      },
+
+      registerPopover: (registration: PopoverRegistration): void => {
+        this.registerPopover(registration);
       },
 
       updateScrollContentSize: (

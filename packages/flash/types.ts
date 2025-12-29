@@ -1,5 +1,9 @@
 /**
  * Core type definitions for Flash.
+ *
+ * TODO: I'm not sure having a types.ts file is good. I know it's common
+ * practice for ts repos, but it smells too much like a const.ts file, which
+ * is bad. Maybe split these things out and put the types where they live.
  */
 
 // Branded types for type-safe IDs

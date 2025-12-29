@@ -5,6 +5,8 @@
  * All items must have the same height.
  *
  * Inspired by GPUI's uniform_list.
+ *
+ * TODO: absorb into list.ts
  */
 
 import {

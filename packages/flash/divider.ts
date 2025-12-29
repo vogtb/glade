@@ -3,6 +3,8 @@
  *
  * Similar to shadcn's Separator component, provides a thin line
  * that visually or semantically separates content.
+ *
+ * TODO: rename to separator.
  */
 
 import {

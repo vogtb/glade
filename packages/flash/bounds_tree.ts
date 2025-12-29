@@ -8,6 +8,8 @@
  * - Automatic z-ordering based on insertion order and spatial overlap
  * - Non-overlapping bounds can share the same draw order
  * - Overlapping bounds get increasing draw orders to ensure correct stacking
+ *
+ * TODO: rename to bounds.ts
  */
 
 import type { Bounds } from "./types.ts";

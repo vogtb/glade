@@ -50,6 +50,10 @@ import {
   switchToggle,
   tabs,
   tab,
+  dropdown,
+  dropdownItem,
+  dropdownSeparator,
+  dropdownLabel,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
 import { createHexagonHost } from "./hexagon.ts";
@@ -104,6 +108,9 @@ type DemoSection =
   | "link"
   | "controls"
   | "tabs"
+  | "dropdown"
+  | "tooltip"
+  | "popover"
   | "grid-layout"
   | "canvas"
   | "vector-paths"
@@ -142,6 +149,9 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "link", label: "Link" },
   { id: "controls", label: "Controls" },
   { id: "tabs", label: "Tabs" },
+  { id: "dropdown", label: "Dropdown" },
+  { id: "tooltip", label: "Tooltip" },
+  { id: "popover", label: "Popover" },
   { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
@@ -484,6 +494,12 @@ class DemoRootView implements FlashView {
   // Tabs demo state
   private selectedTab = "account";
 
+  // Dropdown demo state
+  private dropdownOpen = false;
+  private dropdown2Open = false;
+  private dropdown3Open = false;
+  private dropdownLastAction = "None";
+
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -621,6 +637,12 @@ class DemoRootView implements FlashView {
         return this.renderControlsDemo(cx);
       case "tabs":
         return this.renderTabsDemo(cx);
+      case "dropdown":
+        return this.renderDropdownDemo(cx);
+      case "tooltip":
+        return this.renderTooltipDemo();
+      case "popover":
+        return this.renderPopoverDemo(cx);
       case "grid-layout":
         return this.renderGridLayoutDemo();
       case "canvas":
@@ -2520,6 +2542,786 @@ class DemoRootView implements FlashView {
               .size(12)
               .color(dimColor),
             text("  .disabled(true)             // Disable this tab")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor)
+          )
+      );
+  }
+
+  private renderDropdownDemo(cx: FlashViewContext<this>): FlashDiv {
+    const labelColor = { r: 0.9, g: 0.9, b: 1, a: 1 };
+    const dimColor = { r: 0.6, g: 0.6, b: 0.7, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        // Header
+        text("Dropdown Menu").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Displays a menu triggered by a button with items, separators, and labels")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+
+        // Status display
+        div()
+          .flex()
+          .flexRow()
+          .gap(8)
+          .itemsCenter()
+          .children_(
+            text("Last Action:").font("Inter").size(14).color(dimColor),
+            text(this.dropdownLastAction).font("Inter").size(14).weight(600).color(labelColor)
+          ),
+
+        // Basic Dropdown Example
+        text("Basic Dropdown").font("Inter").size(20).color(labelColor),
+        text("Click the button to open a simple dropdown menu")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            dropdown()
+              .open(this.dropdownOpen)
+              .onOpenChange((open) => {
+                this.dropdownOpen = open;
+                cx.notify();
+              })
+              .trigger(
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .itemsCenter()
+                  .px(16)
+                  .py(10)
+                  .bg({ r: 0.2, g: 0.4, b: 0.8, a: 1 })
+                  .rounded(6)
+                  .cursorPointer()
+                  .hover((s) => s.bg({ r: 0.25, g: 0.45, b: 0.85, a: 1 }))
+                  .children_(
+                    text("Open Menu").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }),
+                    icon("arrowDown", 14).color({ r: 1, g: 1, b: 1, a: 0.7 })
+                  )
+              )
+              .items(
+                dropdownItem("New File").onSelect(() => {
+                  this.dropdownLastAction = "New File";
+                  cx.notify();
+                }),
+                dropdownItem("Open...").onSelect(() => {
+                  this.dropdownLastAction = "Open...";
+                  cx.notify();
+                }),
+                dropdownItem("Save").onSelect(() => {
+                  this.dropdownLastAction = "Save";
+                  cx.notify();
+                }),
+                dropdownSeparator(),
+                dropdownItem("Exit").onSelect(() => {
+                  this.dropdownLastAction = "Exit";
+                  cx.notify();
+                })
+              )
+          ),
+
+        // Dropdown with Labels Example
+        text("Dropdown with Labels").font("Inter").size(20).color(labelColor),
+        text("Group items with section labels").font("Inter").size(14).color(dimColor),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            dropdown()
+              .open(this.dropdown2Open)
+              .onOpenChange((open) => {
+                this.dropdown2Open = open;
+                cx.notify();
+              })
+              .trigger(
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .itemsCenter()
+                  .px(16)
+                  .py(10)
+                  .bg({ r: 0.15, g: 0.5, b: 0.3, a: 1 })
+                  .rounded(6)
+                  .cursorPointer()
+                  .hover((s) => s.bg({ r: 0.2, g: 0.55, b: 0.35, a: 1 }))
+                  .children_(
+                    text("Actions").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }),
+                    icon("arrowDown", 14).color({ r: 1, g: 1, b: 1, a: 0.7 })
+                  )
+              )
+              .items(
+                dropdownLabel("Edit"),
+                dropdownItem("Cut").onSelect(() => {
+                  this.dropdownLastAction = "Cut";
+                  cx.notify();
+                }),
+                dropdownItem("Copy").onSelect(() => {
+                  this.dropdownLastAction = "Copy";
+                  cx.notify();
+                }),
+                dropdownItem("Paste").onSelect(() => {
+                  this.dropdownLastAction = "Paste";
+                  cx.notify();
+                }),
+                dropdownSeparator(),
+                dropdownLabel("View"),
+                dropdownItem("Zoom In").onSelect(() => {
+                  this.dropdownLastAction = "Zoom In";
+                  cx.notify();
+                }),
+                dropdownItem("Zoom Out").onSelect(() => {
+                  this.dropdownLastAction = "Zoom Out";
+                  cx.notify();
+                }),
+                dropdownItem("Reset Zoom").onSelect(() => {
+                  this.dropdownLastAction = "Reset Zoom";
+                  cx.notify();
+                })
+              )
+          ),
+
+        // Dropdown with Destructive Actions
+        text("Destructive Actions").font("Inter").size(20).color(labelColor),
+        text("Items with destructive styling for dangerous actions")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            dropdown()
+              .open(this.dropdown3Open)
+              .onOpenChange((open) => {
+                this.dropdown3Open = open;
+                cx.notify();
+              })
+              .trigger(
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .itemsCenter()
+                  .px(16)
+                  .py(10)
+                  .bg({ r: 0.25, g: 0.25, b: 0.3, a: 1 })
+                  .rounded(6)
+                  .cursorPointer()
+                  .hover((s) => s.bg({ r: 0.3, g: 0.3, b: 0.35, a: 1 }))
+                  .children_(
+                    icon("settings", 16).color({ r: 1, g: 1, b: 1, a: 0.8 }),
+                    text("Settings").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }),
+                    icon("arrowDown", 14).color({ r: 1, g: 1, b: 1, a: 0.7 })
+                  )
+              )
+              .items(
+                dropdownItem("Profile").onSelect(() => {
+                  this.dropdownLastAction = "Profile";
+                  cx.notify();
+                }),
+                dropdownItem("Preferences").onSelect(() => {
+                  this.dropdownLastAction = "Preferences";
+                  cx.notify();
+                }),
+                dropdownSeparator(),
+                dropdownItem("Log Out").onSelect(() => {
+                  this.dropdownLastAction = "Log Out";
+                  cx.notify();
+                }),
+                dropdownItem("Delete Account")
+                  .destructive(true)
+                  .onSelect(() => {
+                    this.dropdownLastAction = "Delete Account (destructive)";
+                    cx.notify();
+                  })
+              )
+          ),
+
+        // API reference
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .p(16)
+          .bg({ r: 0.1, g: 0.1, b: 0.12, a: 1 })
+          .rounded(8)
+          .children_(
+            text("API Reference").font("Inter").size(16).weight(600).color(labelColor),
+            text("dropdown() - Creates the dropdown container")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .open(boolean) - Controlled open state")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .onOpenChange(handler) - Called when open state changes")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .trigger(element) - The element that opens the menu")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .items(...items) - Menu items, separators, labels")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("dropdownItem(label) - Clickable menu item")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .onSelect(handler) - Called when item is selected")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .destructive(boolean) - Red styling for dangerous actions")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("dropdownSeparator() - Visual divider")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("dropdownLabel(text) - Non-interactive section header")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor)
+          )
+      );
+  }
+
+  private renderTooltipDemo(): FlashDiv {
+    const titleColor = { r: 1, g: 1, b: 1, a: 1 };
+    const labelColor = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
+    const dimColor = { r: 0.6, g: 0.6, b: 0.6, a: 1 };
+    const buttonBg = { r: 0.2, g: 0.2, b: 0.25, a: 1 };
+    const buttonHoverBg = { r: 0.3, g: 0.3, b: 0.35, a: 1 };
+    const tooltipBg = { r: 0.15, g: 0.15, b: 0.18, a: 1 };
+    const tooltipBorder = { r: 0.3, g: 0.3, b: 0.35, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        text("Tooltip Component").font("Inter").size(28).weight(700).color(titleColor),
+        text("Hover over elements to see tooltips with various configurations")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Basic Tooltips").font("Inter").size(18).weight(600).color(labelColor),
+            div()
+              .flex()
+              .flexRow()
+              .gap(16)
+              .children_(
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(() =>
+                    div()
+                      .py(8)
+                      .px(12)
+                      .bg(tooltipBg)
+                      .border(1)
+                      .borderColor(tooltipBorder)
+                      .rounded(6)
+                      .child(text("Default tooltip (top)").font("Inter").size(13).color(labelColor))
+                  )
+                  .child(text("Hover me").font("Inter").size(14).color(labelColor)),
+
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(
+                    () =>
+                      div()
+                        .py(8)
+                        .px(12)
+                        .bg(tooltipBg)
+                        .border(1)
+                        .borderColor(tooltipBorder)
+                        .rounded(6)
+                        .child(text("Bottom tooltip").font("Inter").size(13).color(labelColor)),
+                    (cfg) => cfg.position("bottom")
+                  )
+                  .child(text("Bottom").font("Inter").size(14).color(labelColor)),
+
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(
+                    () =>
+                      div()
+                        .py(8)
+                        .px(12)
+                        .bg(tooltipBg)
+                        .border(1)
+                        .borderColor(tooltipBorder)
+                        .rounded(6)
+                        .child(text("Left tooltip").font("Inter").size(13).color(labelColor)),
+                    (cfg) => cfg.position("left")
+                  )
+                  .child(text("Left").font("Inter").size(14).color(labelColor)),
+
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(
+                    () =>
+                      div()
+                        .py(8)
+                        .px(12)
+                        .bg(tooltipBg)
+                        .border(1)
+                        .borderColor(tooltipBorder)
+                        .rounded(6)
+                        .child(text("Right tooltip").font("Inter").size(13).color(labelColor)),
+                    (cfg) => cfg.position("right")
+                  )
+                  .child(text("Right").font("Inter").size(14).color(labelColor))
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Tooltip Timing").font("Inter").size(18).weight(600).color(labelColor),
+            div()
+              .flex()
+              .flexRow()
+              .gap(16)
+              .children_(
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(
+                    () =>
+                      div()
+                        .py(8)
+                        .px(12)
+                        .bg(tooltipBg)
+                        .border(1)
+                        .borderColor(tooltipBorder)
+                        .rounded(6)
+                        .child(
+                          text("Instant! (0ms delay)").font("Inter").size(13).color(labelColor)
+                        ),
+                    (cfg) => cfg.delay(0)
+                  )
+                  .child(text("Instant").font("Inter").size(14).color(labelColor)),
+
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(
+                    () =>
+                      div()
+                        .py(8)
+                        .px(12)
+                        .bg(tooltipBg)
+                        .border(1)
+                        .borderColor(tooltipBorder)
+                        .rounded(6)
+                        .child(
+                          text("Default delay (500ms)").font("Inter").size(13).color(labelColor)
+                        ),
+                    (cfg) => cfg.delay(500)
+                  )
+                  .child(text("Default (500ms)").font("Inter").size(14).color(labelColor)),
+
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(
+                    () =>
+                      div()
+                        .py(8)
+                        .px(12)
+                        .bg(tooltipBg)
+                        .border(1)
+                        .borderColor(tooltipBorder)
+                        .rounded(6)
+                        .child(
+                          text("Slow tooltip (1000ms)").font("Inter").size(13).color(labelColor)
+                        ),
+                    (cfg) => cfg.delay(1000)
+                  )
+                  .child(text("Slow (1s)").font("Inter").size(14).color(labelColor))
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Rich Tooltip Content").font("Inter").size(18).weight(600).color(labelColor),
+            div()
+              .flex()
+              .flexRow()
+              .gap(16)
+              .children_(
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .tooltip(() =>
+                    div()
+                      .flex()
+                      .flexCol()
+                      .gap(8)
+                      .p(12)
+                      .bg(tooltipBg)
+                      .border(1)
+                      .borderColor(tooltipBorder)
+                      .rounded(8)
+                      .children_(
+                        text("Multi-line Tooltip")
+                          .font("Inter")
+                          .size(14)
+                          .weight(600)
+                          .color(titleColor),
+                        text("Tooltips can contain multiple lines of text and rich content.")
+                          .font("Inter")
+                          .size(12)
+                          .color(dimColor),
+                        div()
+                          .flex()
+                          .flexRow()
+                          .gap(4)
+                          .itemsCenter()
+                          .children_(
+                            text("Shortcut:").font("Inter").size(11).color(dimColor),
+                            div()
+                              .py(2)
+                              .px(6)
+                              .bg({ r: 0.25, g: 0.25, b: 0.3, a: 1 })
+                              .rounded(4)
+                              .child(
+                                text("Ctrl+S").font("JetBrains Mono").size(11).color(labelColor)
+                              )
+                          )
+                      )
+                  )
+                  .child(text("Rich Content").font("Inter").size(14).color(labelColor))
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .children_(
+            text("API Reference").font("Inter").size(16).weight(600).color(labelColor),
+            text(".tooltip(builder, config?) - Add tooltip to any element")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  builder: () => FlashElement - Function returning tooltip content")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  config.position('top'|'bottom'|'left'|'right'|'cursor')")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  config.delay(ms) - Delay before showing (default 500ms)")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  config.offset(px) - Distance from target (default 8px)")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor)
+          )
+      );
+  }
+
+  private popoverOpen = false;
+  private popover2Open = false;
+  private popover3Open = false;
+
+  private renderPopoverDemo(cx: FlashViewContext<this>): FlashDiv {
+    const titleColor = { r: 1, g: 1, b: 1, a: 1 };
+    const labelColor = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
+    const dimColor = { r: 0.6, g: 0.6, b: 0.6, a: 1 };
+    const buttonBg = { r: 0.2, g: 0.2, b: 0.25, a: 1 };
+    const buttonHoverBg = { r: 0.3, g: 0.3, b: 0.35, a: 1 };
+    const accentColor = { r: 0.4, g: 0.6, b: 1, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        text("Popover Component").font("Inter").size(28).weight(700).color(titleColor),
+        text("Click-triggered overlays for interactive content. Click outside to dismiss.")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Basic Popovers").font("Inter").size(18).weight(600).color(labelColor),
+            text("Popovers use the same infrastructure as dropdowns but with custom content")
+              .font("Inter")
+              .size(13)
+              .color(dimColor),
+            div()
+              .flex()
+              .flexRow()
+              .gap(16)
+              .children_(
+                dropdown()
+                  .open(this.popoverOpen)
+                  .onOpenChange((open) => {
+                    this.popoverOpen = open;
+                    cx.notify();
+                  })
+                  .trigger(
+                    div()
+                      .flex()
+                      .justifyCenter()
+                      .itemsCenter()
+                      .py(12)
+                      .px(20)
+                      .bg(buttonBg)
+                      .hover((s) => s.bg(buttonHoverBg))
+                      .rounded(6)
+                      .cursor("pointer")
+                      .child(text("Simple Popover").font("Inter").size(14).color(labelColor))
+                  )
+                  .items(
+                    dropdownLabel("Information"),
+                    dropdownItem("This is a popover!"),
+                    dropdownItem("It can contain any content"),
+                    dropdownSeparator(),
+                    dropdownItem("Click outside to close")
+                  ),
+
+                dropdown()
+                  .open(this.popover2Open)
+                  .onOpenChange((open) => {
+                    this.popover2Open = open;
+                    cx.notify();
+                  })
+                  .side("right")
+                  .trigger(
+                    div()
+                      .flex()
+                      .justifyCenter()
+                      .itemsCenter()
+                      .py(12)
+                      .px(20)
+                      .bg(buttonBg)
+                      .hover((s) => s.bg(buttonHoverBg))
+                      .rounded(6)
+                      .cursor("pointer")
+                      .child(text("Right Side").font("Inter").size(14).color(labelColor))
+                  )
+                  .items(
+                    dropdownLabel("Right-aligned"),
+                    dropdownItem("Opens to the right"),
+                    dropdownItem("Great for sidebars")
+                  ),
+
+                dropdown()
+                  .open(this.popover3Open)
+                  .onOpenChange((open) => {
+                    this.popover3Open = open;
+                    cx.notify();
+                  })
+                  .side("top")
+                  .trigger(
+                    div()
+                      .flex()
+                      .justifyCenter()
+                      .itemsCenter()
+                      .py(12)
+                      .px(20)
+                      .bg(buttonBg)
+                      .hover((s) => s.bg(buttonHoverBg))
+                      .rounded(6)
+                      .cursor("pointer")
+                      .child(text("Top Side").font("Inter").size(14).color(labelColor))
+                  )
+                  .items(
+                    dropdownLabel("Above trigger"),
+                    dropdownItem("Opens above the button"),
+                    dropdownItem("Useful for bottom toolbars")
+                  )
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Popover vs Tooltip vs Dropdown")
+              .font("Inter")
+              .size(18)
+              .weight(600)
+              .color(labelColor),
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .p(16)
+              .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+              .rounded(8)
+              .children_(
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .children_(
+                    text("Tooltip:").font("Inter").size(13).weight(600).color(accentColor),
+                    text("Hover-triggered, informational, auto-dismisses on mouse leave")
+                      .font("Inter")
+                      .size(13)
+                      .color(dimColor)
+                  ),
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .children_(
+                    text("Popover:").font("Inter").size(13).weight(600).color(accentColor),
+                    text("Click-triggered, interactive content, click-outside to dismiss")
+                      .font("Inter")
+                      .size(13)
+                      .color(dimColor)
+                  ),
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .children_(
+                    text("Dropdown:").font("Inter").size(13).weight(600).color(accentColor),
+                    text("Specialized popover with menu items, selection handling, keyboard nav")
+                      .font("Inter")
+                      .size(13)
+                      .color(dimColor)
+                  )
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .children_(
+            text("API Reference").font("Inter").size(16).weight(600).color(labelColor),
+            text("Popovers currently use the dropdown() component with custom items:")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  dropdown().open(boolean).onOpenChange(fn).trigger(element).items(...)")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .side('top'|'bottom'|'left'|'right') - Preferred side")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .align('start'|'center'|'end') - Alignment along side")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .sideOffset(px) - Distance from trigger")
               .font("JetBrains Mono")
               .size(12)
               .color(dimColor)

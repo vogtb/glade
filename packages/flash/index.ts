@@ -331,6 +331,23 @@ export {
   DEFAULT_TOOLTIP_CONFIG,
 } from "./tooltip.ts";
 
+// Popover system
+export type {
+  PopoverSide,
+  PopoverAlign,
+  PopoverConfig,
+  PopoverBuilder,
+  PopoverRegistration,
+  ActivePopover,
+} from "./popover.ts";
+
+export {
+  PopoverManager,
+  PopoverConfigBuilder,
+  popoverConfig,
+  DEFAULT_POPOVER_CONFIG,
+} from "./popover.ts";
+
 // Keyboard utilities
 export type { Keystroke } from "./keyboard.ts";
 
@@ -457,6 +474,24 @@ export { FlashSwitch, switchToggle, toggle } from "./switch.ts";
 // Tabs elements
 export type { TabValueChangeHandler } from "./tabs.ts";
 export { FlashTabs, FlashTab, tabs, tab } from "./tabs.ts";
+
+// Dropdown menu elements
+export type {
+  DropdownOpenChangeHandler,
+  DropdownSelectHandler,
+  DropdownSide,
+  DropdownAlign,
+} from "./dropdown.ts";
+export {
+  FlashDropdown,
+  FlashDropdownItem,
+  FlashDropdownSeparator,
+  FlashDropdownLabel,
+  dropdown,
+  dropdownItem,
+  dropdownSeparator,
+  dropdownLabel,
+} from "./dropdown.ts";
 
 // Ideal text editor system
 export type {

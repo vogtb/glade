@@ -305,7 +305,8 @@ fn vs_main(
     1.0 - (scaled_pos.y / uniforms.viewport_size.y) * 2.0
   );
 
-  let z_depth = 1.0 - (instance.params.w / 10000.0);
+  // Normalize z_index to 0-1 range (max ~2M to handle stacking contexts with zIndex * 10000)
+  let z_depth = 1.0 - (instance.params.w / 2000000.0);
   out.position = vec4<f32>(clip_pos, z_depth, 1.0);
 
   out.uv = instance.atlas_rect.xy + quad_pos * instance.atlas_rect.zw;

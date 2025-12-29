@@ -42,6 +42,7 @@
     "pipefail",
     "vogtb",
     "dylibs",
-    "checkmark"
+    "checkmark",
+    "shadcn's"
   ]
 }

@@ -104,8 +104,8 @@ fn vs_main(
   );
 
   // Use z_index for depth ordering (higher z_index = closer to camera = smaller depth value)
-  // Normalize z_index to 0-1 range (assuming max 10000 instances)
-  let z_depth = 1.0 - (instance.corner_border.z / 10000.0);
+  // Normalize z_index to 0-1 range (max ~2M to handle stacking contexts with zIndex * 10000)
+  let z_depth = 1.0 - (instance.corner_border.z / 2000000.0);
 
   out.position = vec4<f32>(clip_pos, z_depth, 1.0);
 

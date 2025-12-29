@@ -1057,8 +1057,10 @@ fn vs_main(
     1.0 - (scaled_pos.y / uniforms.viewport_size.y) * 2.0
   );
 
-  // Text uses painter's algorithm (CPU sorting + layer order), no depth testing
-  out.position = vec4<f32>(clip_pos, 0.0, 1.0);
+  // Use z_index for depth ordering (higher z_index = closer to camera = smaller depth value)
+  // Normalize z_index to 0-1 range (max ~2M to handle stacking contexts with zIndex * 10000)
+  let z_depth = 1.0 - (instance.params.x / 2000000.0);
+  out.position = vec4<f32>(clip_pos, z_depth, 1.0);
 
   out.uv = instance.atlas_rect.xy + quad_pos * instance.atlas_rect.zw;
   out.color = instance.color;
@@ -1201,8 +1203,8 @@ export class TextPipeline {
       },
       depthStencil: {
         format: "depth24plus",
-        depthWriteEnabled: false,
-        depthCompare: "always",
+        depthWriteEnabled: true,
+        depthCompare: "less",
       },
       multisample: {
         count: this.sampleCount,

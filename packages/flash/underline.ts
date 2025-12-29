@@ -108,8 +108,8 @@ fn vs_main(
   );
 
   // Use a smaller z_depth (closer to camera) than rects to ensure underlines are visible
-  // Rects use z_depth = 1.0 - (z_index / 10000.0), so we use a baseline of 0.4
-  let z_depth = 0.4 - (instance.wave_params.w / 10000.0);
+  // Rects use z_depth = 1.0 - (z_index / 2000000.0), so we use a baseline of 0.4
+  let z_depth = 0.4 - (instance.wave_params.w / 2000000.0);
 
   out.position = vec4<f32>(clip_pos, z_depth, 1.0);
 

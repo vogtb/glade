@@ -247,8 +247,34 @@ export class FlashScene {
   private primitiveBounds: BoundsTree = new BoundsTree();
   private layerStack: StackingContext[] = [];
 
+  /**
+   * Base order added to all primitives when in overlay mode.
+   * This ensures overlays (tooltips, popovers, modals) render on top of all normal content.
+   * Value of 1,500,000 is higher than any normal stacking context (max ~1,000,000).
+   */
+  private overlayBaseOrder = 0;
+
   constructor() {
     this.pushLayer();
+  }
+
+  /**
+   * Begin overlay rendering mode. All subsequent primitives will have a high
+   * base order added, ensuring they render on top of normal content.
+   *
+   * @param priority - Overlay priority (0=tooltips, 1=popovers/menus, 2=modals)
+   */
+  beginOverlay(priority: number): void {
+    // Base of 1,500,000 ensures we're above all normal stacking contexts
+    // Each priority level adds 100,000 to ensure proper ordering between overlay types
+    this.overlayBaseOrder = 1500000 + priority * 100000;
+  }
+
+  /**
+   * End overlay rendering mode. Subsequent primitives will use normal ordering.
+   */
+  endOverlay(): void {
+    this.overlayBaseOrder = 0;
   }
 
   /**
@@ -258,12 +284,15 @@ export class FlashScene {
   private assignDrawOrder(bounds: Bounds): DrawOrder {
     const spatialOrder = this.primitiveBounds.insert(bounds);
 
+    // Add overlay base order if in overlay mode
+    const baseOrder = this.overlayBaseOrder;
+
     if (this.layerStack.length > 0) {
       const ctx = this.layerStack[this.layerStack.length - 1]!;
-      return ctx.baseOrder + ctx.zIndex * 10000 + spatialOrder;
+      return baseOrder + ctx.baseOrder + ctx.zIndex * 10000 + spatialOrder;
     }
 
-    return spatialOrder;
+    return baseOrder + spatialOrder;
   }
 
   private get currentLayer(): SceneLayer {
@@ -622,6 +651,7 @@ export class FlashScene {
     this.transformStack = [];
     this.primitiveBounds.clear();
     this.layerStack = [];
+    this.overlayBaseOrder = 0;
     this.pushLayer();
   }
 
