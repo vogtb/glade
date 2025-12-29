@@ -357,6 +357,7 @@ type DialogHeaderRequestState = {
   layoutId: LayoutId;
   titleSize?: { width: number; height: number };
   descriptionSize?: { width: number; height: number };
+  closeIconSize?: { width: number; height: number };
 };
 
 type DialogHeaderPrepaintState = {
@@ -365,6 +366,7 @@ type DialogHeaderPrepaintState = {
   descriptionBounds?: Bounds;
   closeButtonBounds?: Bounds;
   closeButtonHitbox?: Hitbox;
+  closeIconSize?: { width: number; height: number };
 };
 
 /**
@@ -428,11 +430,22 @@ export class FlashDialogHeader extends FlashElement<
     const descriptionFontSize = DEFAULT_DESCRIPTION_FONT_SIZE;
     const headerGap = DEFAULT_HEADER_GAP;
     const closeButtonSize = 24;
+    const closeIconFontSize = 18;
 
     let totalHeight = 0;
     let maxWidth = 0;
     let titleSize: { width: number; height: number } | undefined;
     let descriptionSize: { width: number; height: number } | undefined;
+    let closeIconSize: { width: number; height: number } | undefined;
+
+    // Measure close icon if shown
+    if (this.showCloseButton) {
+      closeIconSize = cx.measureText("×", {
+        fontSize: closeIconFontSize,
+        fontFamily: "Inter",
+        fontWeight: 400,
+      });
+    }
 
     // Measure title if present
     if (this.titleText) {
@@ -478,6 +491,7 @@ export class FlashDialogHeader extends FlashElement<
         layoutId,
         titleSize,
         descriptionSize,
+        closeIconSize,
       },
     };
   }
@@ -534,6 +548,7 @@ export class FlashDialogHeader extends FlashElement<
       descriptionBounds,
       closeButtonBounds,
       closeButtonHitbox,
+      closeIconSize: requestState.closeIconSize,
     };
   }
 
@@ -542,7 +557,6 @@ export class FlashDialogHeader extends FlashElement<
     const descriptionColor = this.context?.descriptionColor ?? DEFAULT_DESCRIPTION_COLOR;
     const titleFontSize = DEFAULT_TITLE_FONT_SIZE;
     const descriptionFontSize = DEFAULT_DESCRIPTION_FONT_SIZE;
-    const closeButtonSize = 24;
 
     // Paint title
     if (this.titleText && prepaintState.titleBounds) {
@@ -564,10 +578,8 @@ export class FlashDialogHeader extends FlashElement<
     }
 
     // Paint close button
-    if (this.showCloseButton && prepaintState.closeButtonBounds) {
-      const isHovered = prepaintState.closeButtonBounds
-        ? cx.isHovered(prepaintState.closeButtonBounds)
-        : false;
+    if (this.showCloseButton && prepaintState.closeButtonBounds && prepaintState.closeIconSize) {
+      const isHovered = cx.isHovered(prepaintState.closeButtonBounds);
 
       if (isHovered) {
         cx.paintRect(prepaintState.closeButtonBounds, {
@@ -576,18 +588,25 @@ export class FlashDialogHeader extends FlashElement<
         });
       }
 
-      // Draw X icon using text
-      const iconBounds: Bounds = {
-        x: prepaintState.closeButtonBounds.x + closeButtonSize / 2 - 4,
-        y: prepaintState.closeButtonBounds.y + closeButtonSize / 2 - 8,
-        width: 16,
-        height: 16,
-      };
+      // Draw X icon centered in the button
+      const iconFontSize = 18;
+      const iconLineHeight = iconFontSize * 1.2;
       const iconColor = { r: 0.7, g: 0.7, b: 0.7, a: 1 };
+      const iconBounds: Bounds = {
+        x:
+          prepaintState.closeButtonBounds.x +
+          (prepaintState.closeButtonBounds.width - prepaintState.closeIconSize.width) / 2,
+        y:
+          prepaintState.closeButtonBounds.y +
+          (prepaintState.closeButtonBounds.height - iconLineHeight) / 2,
+        width: prepaintState.closeIconSize.width,
+        height: iconLineHeight,
+      };
       cx.paintGlyphs("×", iconBounds, iconColor, {
-        fontSize: 18,
+        fontSize: iconFontSize,
         fontFamily: "Inter",
         fontWeight: 400,
+        lineHeight: iconLineHeight,
       });
     }
   }
@@ -613,6 +632,8 @@ type DialogFooterPrepaintState = {
   confirmBounds?: Bounds;
   cancelHitbox?: Hitbox;
   confirmHitbox?: Hitbox;
+  cancelTextSize?: { width: number; height: number };
+  confirmTextSize?: { width: number; height: number };
 };
 
 /**
@@ -832,13 +853,14 @@ export class FlashDialogFooter extends FlashElement<
       confirmBounds,
       cancelHitbox,
       confirmHitbox,
+      cancelTextSize: requestState.cancelSize,
+      confirmTextSize: requestState.confirmSize,
     };
   }
 
   paint(cx: PaintContext, _bounds: Bounds, prepaintState: DialogFooterPrepaintState): void {
     const fontSize = this.context?.buttonFontSize ?? DEFAULT_BUTTON_FONT_SIZE;
-    const paddingX = this.context?.buttonPaddingX ?? DEFAULT_BUTTON_PADDING_X;
-    const paddingY = this.context?.buttonPaddingY ?? DEFAULT_BUTTON_PADDING_Y;
+    const lineHeight = fontSize * 1.2; // Match the default in paintGlyphs
     const borderRadius = this.context?.buttonBorderRadius ?? DEFAULT_BUTTON_BORDER_RADIUS;
 
     const buttonBg = this.context?.buttonBg ?? DEFAULT_BUTTON_BG;
@@ -855,7 +877,7 @@ export class FlashDialogFooter extends FlashElement<
     const destructiveText = this.context?.destructiveButtonText ?? DEFAULT_DESTRUCTIVE_BUTTON_TEXT;
 
     // Paint cancel button
-    if (this.cancelText && prepaintState.cancelBounds) {
+    if (this.cancelText && prepaintState.cancelBounds && prepaintState.cancelTextSize) {
       const isHovered = cx.isHovered(prepaintState.cancelBounds);
       const bg = isHovered ? buttonHoverBg : buttonBg;
 
@@ -864,21 +886,27 @@ export class FlashDialogFooter extends FlashElement<
         borderRadius,
       });
 
-      const textBounds: Bounds = {
-        x: prepaintState.cancelBounds.x + paddingX,
-        y: prepaintState.cancelBounds.y + paddingY,
-        width: prepaintState.cancelBounds.width - paddingX * 2,
-        height: prepaintState.cancelBounds.height - paddingY * 2,
+      // Center text in button
+      // Horizontal: center based on measured text width
+      // Vertical: center based on line height (text rendering centers within line height)
+      const cancelTextBounds: Bounds = {
+        x:
+          prepaintState.cancelBounds.x +
+          (prepaintState.cancelBounds.width - prepaintState.cancelTextSize.width) / 2,
+        y: prepaintState.cancelBounds.y + (prepaintState.cancelBounds.height - lineHeight) / 2,
+        width: prepaintState.cancelTextSize.width,
+        height: lineHeight,
       };
-      cx.paintGlyphs(this.cancelText, textBounds, buttonText, {
+      cx.paintGlyphs(this.cancelText, cancelTextBounds, buttonText, {
         fontSize,
         fontFamily: "Inter",
         fontWeight: 500,
+        lineHeight,
       });
     }
 
     // Paint confirm button
-    if (this.confirmText && prepaintState.confirmBounds) {
+    if (this.confirmText && prepaintState.confirmBounds && prepaintState.confirmTextSize) {
       const isHovered = cx.isHovered(prepaintState.confirmBounds);
 
       let bg: Color;
@@ -896,16 +924,22 @@ export class FlashDialogFooter extends FlashElement<
         borderRadius,
       });
 
-      const textBounds: Bounds = {
-        x: prepaintState.confirmBounds.x + paddingX,
-        y: prepaintState.confirmBounds.y + paddingY,
-        width: prepaintState.confirmBounds.width - paddingX * 2,
-        height: prepaintState.confirmBounds.height - paddingY * 2,
+      // Center text in button
+      // Horizontal: center based on measured text width
+      // Vertical: center based on line height (text rendering centers within line height)
+      const confirmTextBounds: Bounds = {
+        x:
+          prepaintState.confirmBounds.x +
+          (prepaintState.confirmBounds.width - prepaintState.confirmTextSize.width) / 2,
+        y: prepaintState.confirmBounds.y + (prepaintState.confirmBounds.height - lineHeight) / 2,
+        width: prepaintState.confirmTextSize.width,
+        height: lineHeight,
       };
-      cx.paintGlyphs(this.confirmText, textBounds, textColor, {
+      cx.paintGlyphs(this.confirmText, confirmTextBounds, textColor, {
         fontSize,
         fontFamily: "Inter",
         fontWeight: 500,
+        lineHeight,
       });
     }
   }
