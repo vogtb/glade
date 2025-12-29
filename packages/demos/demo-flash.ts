@@ -59,6 +59,11 @@ import {
   dialogContent,
   dialogHeader,
   dialogFooter,
+  rightClickMenu,
+  rightClickItem,
+  rightClickSeparator,
+  rightClickLabel,
+  rightClickSub,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
 import { createHexagonHost } from "./hexagon.ts";
@@ -114,6 +119,7 @@ type DemoSection =
   | "controls"
   | "tabs"
   | "dropdown"
+  | "right-click"
   | "tooltip"
   | "popover"
   | "dialog"
@@ -156,6 +162,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "controls", label: "Controls" },
   { id: "tabs", label: "Tabs" },
   { id: "dropdown", label: "Dropdown" },
+  { id: "right-click", label: "Right Click" },
   { id: "tooltip", label: "Tooltip" },
   { id: "popover", label: "Popover" },
   { id: "dialog", label: "Dialog" },
@@ -508,6 +515,10 @@ class DemoRootView implements FlashView {
   private dropdown4Open = false; // Nested submenu demo
   private dropdownLastAction = "";
 
+  // Right click menu state
+  private rightClickMenuOpen = false;
+  private rightClickMenuPosition: Point = { x: 0, y: 0 };
+
   // Dialog state
   private dialogOpen = false;
   private dialog2Open = false;
@@ -653,6 +664,8 @@ class DemoRootView implements FlashView {
         return this.renderTabsDemo(cx);
       case "dropdown":
         return this.renderDropdownDemo(cx);
+      case "right-click":
+        return this.renderRightClickDemo(cx);
       case "tooltip":
         return this.renderTooltipDemo();
       case "popover":
@@ -2941,6 +2954,78 @@ class DemoRootView implements FlashView {
               .size(12)
               .color(dimColor)
           )
+      );
+  }
+
+  private renderRightClickDemo(cx: FlashViewContext<this>): FlashDiv {
+    const menu = rightClickMenu()
+      .id("right-click-menu-demo")
+      .open(this.rightClickMenuOpen)
+      .position(this.rightClickMenuPosition)
+      .onOpenChange((open) => {
+        this.rightClickMenuOpen = open;
+        cx.notify();
+      })
+      .items(
+        rightClickLabel("Quick Actions"),
+        rightClickItem("New File"),
+        rightClickItem("Rename"),
+        rightClickSeparator(),
+        rightClickSub("Sort By").items(
+          rightClickItem("Name"),
+          rightClickItem("Date Modified"),
+          rightClickItem("Size"),
+          rightClickSeparator(),
+          rightClickSub("Group By").items(
+            rightClickItem("Type"),
+            rightClickItem("Date Created"),
+            rightClickSub("More...").items(
+              rightClickItem("Owner"),
+              rightClickItem("Tag"),
+              rightClickItem("Custom Field")
+            )
+          )
+        ),
+        rightClickSeparator(),
+        rightClickItem("Delete").destructive(true)
+      );
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        text("Right Click Menu").font("Inter").size(28).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Right-click (or ctrl+click) the panel below to open nested context menus.")
+          .font("Inter")
+          .size(14)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        menu,
+        div()
+          .flex()
+          .flexCol()
+          .p(24)
+          .h(320)
+          .bg({ r: 0.12, g: 0.12, b: 0.16, a: 1 })
+          .rounded(12)
+          .border(1)
+          .borderColor({ r: 0.2, g: 0.24, b: 0.32, a: 1 })
+          .onMouseDown((event, _window, _handlerCx) => {
+            const isContextClick =
+              event.button === 1 ||
+              event.button === 2 ||
+              (event.button === 0 && event.modifiers.ctrl);
+            if (isContextClick) {
+              this.rightClickMenuPosition = { x: event.x, y: event.y };
+              this.rightClickMenuOpen = true;
+              cx.notify();
+              return { preventDefault: true };
+            }
+            if (event.button === 0 && this.rightClickMenuOpen) {
+              this.rightClickMenuOpen = false;
+              cx.notify();
+            }
+          })
       );
   }
 

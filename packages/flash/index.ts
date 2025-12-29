@@ -509,6 +509,11 @@ export type {
   DropdownValueChangeHandler,
   DropdownSide,
   DropdownAlign,
+  DropdownMenuContentPrepaintState,
+  DropdownMenuContentRequestState,
+  DropdownMenuContext,
+  DropdownMenuState,
+  MenuItemElement,
 } from "./dropdown.ts";
 export {
   FlashDropdown,
@@ -529,6 +534,19 @@ export {
   dropdownRadioGroup,
   dropdownSub,
 } from "./dropdown.ts";
+
+// Right click (context) menu elements
+export {
+  FlashRightClickMenu,
+  rightClickMenu,
+  rightClickItem,
+  rightClickSeparator,
+  rightClickLabel,
+  rightClickCheckbox,
+  rightClickRadio,
+  rightClickRadioGroup,
+  rightClickSub,
+} from "./right_click.ts";
 
 // Ideal text editor system
 export type {

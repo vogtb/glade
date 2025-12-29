@@ -98,6 +98,13 @@ import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 import { CrossElementSelectionManager } from "./select.ts";
 
+function normalizeMouseButton(button: number, mods: Modifiers): number {
+  if (button === 0 && mods.ctrl) {
+    return 1; // Treat ctrl+click as right click on macOS-style platforms
+  }
+  return button;
+}
+
 /**
  * Options for creating a window.
  */
@@ -1937,9 +1944,11 @@ export class FlashWindow {
 
     if (target.onMouseDown) {
       const cleanup = target.onMouseDown((x, y, button, mods) => {
+        const normalizedButton = normalizeMouseButton(button, mods);
+
         // Check for popover click-outside dismissal
         const activePopover = this.popoverManager.getActivePopover();
-        if (activePopover && button === 0) {
+        if (activePopover && normalizedButton === 0) {
           // Get popover bounds from hit test tree (last entry if popover is active)
           const popoverHitNode = this.hitTestTree.find((node) => {
             // Check if this node is from the popover by checking bounds overlap
@@ -1979,9 +1988,9 @@ export class FlashWindow {
 
         // Intercept for cross-element selection FIRST
         const manager = this.getCrossElementSelection();
-        if (manager.hasSelectableElements() && button === 0) {
+        if (manager.hasSelectableElements() && normalizedButton === 0) {
           const result = manager.handleMouseDown(
-            { x, y, button, modifiers: mods },
+            { x, y, button: normalizedButton, modifiers: mods },
             this,
             this.getContext()
           );
@@ -1992,13 +2001,13 @@ export class FlashWindow {
         }
 
         this.mouseDown = true;
-        const event: FlashMouseEvent = { x, y, button, modifiers: mods };
+        const event: FlashMouseEvent = { x, y, button: normalizedButton, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
 
         // Check for drag start handlers on hit path
         for (let i = path.length - 1; i >= 0; i--) {
           const node = path[i]!;
-          if (node.handlers.dragStart && button === 0) {
+          if (node.handlers.dragStart && normalizedButton === 0) {
             // Store pending drag - we'll start actual drag when threshold is exceeded
             this.pendingDragStart = {
               hitboxId: 0 as HitboxId,
@@ -2011,7 +2020,7 @@ export class FlashWindow {
           }
         }
 
-        if (button === 0) {
+        if (normalizedButton === 0) {
           this.focusFromPath(path, "mouseDown");
         }
         dispatchMouseEvent("mouseDown", event, path, this, this.getContext());
@@ -2021,11 +2030,13 @@ export class FlashWindow {
 
     if (target.onMouseUp) {
       const cleanup = target.onMouseUp((x, y, button, mods) => {
+        const normalizedButton = normalizeMouseButton(button, mods);
+
         // Intercept for cross-element selection
         const manager = this.getCrossElementSelection();
-        if (manager.hasSelectableElements() && button === 0) {
+        if (manager.hasSelectableElements() && normalizedButton === 0) {
           const result = manager.handleMouseUp(
-            { x, y, button, modifiers: mods },
+            { x, y, button: normalizedButton, modifiers: mods },
             this,
             this.getContext()
           );
@@ -2045,7 +2056,7 @@ export class FlashWindow {
           return;
         }
 
-        const event: FlashMouseEvent = { x, y, button, modifiers: mods };
+        const event: FlashMouseEvent = { x, y, button: normalizedButton, modifiers: mods };
         let path = hitTest(this.hitTestTree, { x, y });
 
         // When mouse was down, also route mouseUp to the focused element

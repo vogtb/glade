@@ -336,16 +336,26 @@ export async function createWebGPUContext(
     },
 
     onMouseButton(callback: MouseButtonCallback): () => void {
+      const mapDomButton = (button: number): MouseButton => {
+        if (button === 2) {
+          return MouseButton.Right;
+        }
+        if (button === 1) {
+          return MouseButton.Middle;
+        }
+        return MouseButton.Left;
+      };
+
       const handleMouseDown = (e: MouseEvent) => {
         callback({
-          button: e.button as MouseButton,
+          button: mapDomButton(e.button),
           action: KeyAction.Press,
           mods: getModifiers(e),
         });
       };
       const handleMouseUp = (e: MouseEvent) => {
         callback({
-          button: e.button as MouseButton,
+          button: mapDomButton(e.button),
           action: KeyAction.Release,
           mods: getModifiers(e),
         });

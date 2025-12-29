@@ -12,7 +12,7 @@ export interface FlashMouseEvent {
   x: number;
   /** Y position relative to window. */
   y: number;
-  /** Mouse button (0=left, 1=middle, 2=right). */
+  /** Mouse button (0=left, 1=right, 2=middle). */
   button: number;
   /** Modifier keys held. */
   modifiers: Modifiers;

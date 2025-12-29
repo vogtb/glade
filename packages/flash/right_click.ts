@@ -4,11 +4,10 @@ import {
   type PrepaintContext,
   type PaintContext,
   type RequestLayoutResult,
-  type GlobalElementId,
 } from "./element.ts";
 import type { Bounds, Color } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
-import type { HitTestNode, ClickHandler } from "./dispatch.ts";
+import type { HitTestNode } from "./dispatch.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { PopoverConfig } from "./popover.ts";
 import type { FlashContext } from "./context.ts";
@@ -51,41 +50,33 @@ import {
   type DropdownMenuContext,
   type DropdownMenuState,
   type DropdownOpenChangeHandler,
-  type DropdownSelectHandler,
-  type DropdownCheckedChangeHandler,
-  type DropdownValueChangeHandler,
   type DropdownSide,
   type DropdownAlign,
   type MenuItemElement,
 } from "./menu.ts";
 
-type DropdownRequestState = {
+type RightClickRequestState = {
   layoutId: LayoutId;
-  triggerLayoutId: LayoutId;
-  triggerElementId: GlobalElementId;
-  triggerRequestState: unknown;
 };
 
-type DropdownPrepaintState = {
-  triggerElementId: GlobalElementId;
-  triggerPrepaintState: unknown;
-  triggerBounds: Bounds;
+type RightClickPrepaintState = {
   hitTestNode: HitTestNode;
 };
 
-let dropdownIdCounter = 0;
+type Position = { x: number; y: number };
 
-export class FlashDropdown extends FlashContainerElement<
-  DropdownRequestState,
-  DropdownPrepaintState
+let rightClickIdCounter = 0;
+
+export class FlashRightClickMenu extends FlashContainerElement<
+  RightClickRequestState,
+  RightClickPrepaintState
 > {
-  private dropdownId: string;
+  private menuId: string;
   private openValue = false;
   private onOpenChangeHandler: DropdownOpenChangeHandler | null = null;
   private disabledValue = false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private triggerElement: FlashContainerElement<any, any> | null = null;
   private menuItems: MenuItemElement[] = [];
+  private positionValue: Position = { x: 0, y: 0 };
 
   private menuState: DropdownMenuState = {
     focusedIndex: -1,
@@ -123,22 +114,22 @@ export class FlashDropdown extends FlashContainerElement<
 
   constructor() {
     super();
-    this.dropdownId = `dropdown-${dropdownIdCounter++}`;
+    this.menuId = `rightclick-${rightClickIdCounter++}`;
   }
 
   id(stableId: string): this {
-    this.dropdownId = stableId;
+    this.menuId = stableId;
     return this;
   }
 
   open(v: boolean): this {
     this.openValue = v;
     if (v) {
-      if (!hasDropdownState(this.dropdownId)) {
-        resetDropdownState(this.dropdownId);
+      if (!hasDropdownState(this.menuId)) {
+        resetDropdownState(this.menuId);
       }
     } else {
-      clearDropdownState(this.dropdownId);
+      clearDropdownState(this.menuId);
     }
     return this;
   }
@@ -153,9 +144,8 @@ export class FlashDropdown extends FlashContainerElement<
     return this;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  trigger(element: FlashContainerElement<any, any>): this {
-    this.triggerElement = element;
+  position(pos: Position): this {
+    this.positionValue = pos;
     return this;
   }
 
@@ -282,7 +272,7 @@ export class FlashDropdown extends FlashContainerElement<
 
   private buildMenuContext(): DropdownMenuContext {
     return buildRootMenuContext(
-      this.dropdownId,
+      this.menuId,
       this.menuItems,
       this.disabledValue,
       this.onOpenChangeHandler,
@@ -321,111 +311,35 @@ export class FlashDropdown extends FlashContainerElement<
     };
   }
 
-  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DropdownRequestState> {
-    if (!this.triggerElement) {
-      const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
-      return {
-        layoutId,
-        requestState: {
-          layoutId,
-          triggerLayoutId: layoutId,
-          triggerElementId: cx.elementId,
-          triggerRequestState: undefined,
-        },
-      };
-    }
-
-    const triggerElementId = cx.allocateChildId();
-    const triggerCx: RequestLayoutContext = { ...cx, elementId: triggerElementId };
-    const triggerResult = this.triggerElement.requestLayout(triggerCx);
-
-    const layoutId = cx.requestLayout(
-      {
-        display: "flex",
-        flexDirection: "column",
-      },
-      [triggerResult.layoutId]
-    );
-
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<RightClickRequestState> {
+    const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
     return {
       layoutId,
-      requestState: {
-        layoutId,
-        triggerLayoutId: triggerResult.layoutId,
-        triggerElementId,
-        triggerRequestState: triggerResult.requestState,
-      },
+      requestState: { layoutId },
     };
   }
 
   prepaint(
     cx: PrepaintContext,
     bounds: Bounds,
-    requestState: DropdownRequestState
-  ): DropdownPrepaintState {
-    const { layoutId, triggerLayoutId, triggerElementId, triggerRequestState } = requestState;
-
-    const originalBounds = cx.getBounds(layoutId);
-    const deltaX = bounds.x - originalBounds.x;
-    const deltaY = bounds.y - originalBounds.y;
-
-    const originalTriggerBounds = cx.getBounds(triggerLayoutId);
+    _requestState: RightClickRequestState
+  ): RightClickPrepaintState {
     const triggerBounds: Bounds = {
-      x: originalTriggerBounds.x + deltaX,
-      y: originalTriggerBounds.y + deltaY,
-      width: originalTriggerBounds.width,
-      height: originalTriggerBounds.height,
-    };
-
-    let triggerPrepaintState: unknown = null;
-    let triggerHitTestNode: HitTestNode | null = null;
-
-    if (this.triggerElement) {
-      const triggerCx = cx.withElementId(triggerElementId);
-      triggerPrepaintState = this.triggerElement.prepaint(
-        triggerCx,
-        triggerBounds,
-        triggerRequestState
-      );
-      triggerHitTestNode =
-        (triggerPrepaintState as { hitTestNode?: HitTestNode } | undefined)?.hitTestNode ?? null;
-    }
-
-    const isDisabled = this.disabledValue;
-    const onOpenChange = this.onOpenChangeHandler;
-    const currentOpen = this.openValue;
-
-    const triggerClickHandler: ClickHandler = (_event, _window, _cx) => {
-      if (isDisabled) return;
-      if (onOpenChange) {
-        onOpenChange(!currentOpen);
-      }
-    };
-
-    const hitbox = cx.insertHitbox(
-      triggerBounds,
-      HitboxBehavior.Normal,
-      isDisabled ? "not-allowed" : "pointer"
-    );
-
-    const wrappedTriggerHitTest: HitTestNode = {
-      bounds: triggerBounds,
-      handlers: {
-        click: triggerClickHandler,
-        ...(triggerHitTestNode?.handlers ?? {}),
-      },
-      focusHandle: triggerHitTestNode?.focusHandle ?? null,
-      scrollHandle: triggerHitTestNode?.scrollHandle ?? null,
-      keyContext: triggerHitTestNode?.keyContext ?? null,
-      children: triggerHitTestNode?.children ?? [],
+      x: this.positionValue.x,
+      y: this.positionValue.y,
+      width: 1,
+      height: 1,
     };
 
     if (this.openValue && this.menuItems.length > 0) {
       const menuItems = [...this.menuItems];
       const menuContext = this.buildMenuContext();
 
+      // We still need a hitbox for PopoverManager to handle outside click.
+      const hitbox = cx.insertHitbox(triggerBounds, HitboxBehavior.Normal, "default");
+
       cx.registerPopover({
-        id: this.dropdownId,
+        id: this.menuId,
         hitboxId: hitbox.id,
         triggerBounds,
         builder: (_flashCx: FlashContext) => {
@@ -436,7 +350,7 @@ export class FlashDropdown extends FlashContainerElement<
         },
         config: this.buildPopoverConfig(),
         open: true,
-        onClose: onOpenChange ? () => onOpenChange(false) : null,
+        onClose: this.onOpenChangeHandler ? () => this.onOpenChangeHandler?.(false) : null,
       });
     }
 
@@ -446,24 +360,14 @@ export class FlashDropdown extends FlashContainerElement<
       focusHandle: null,
       scrollHandle: null,
       keyContext: null,
-      children: [wrappedTriggerHitTest],
+      children: [],
     };
 
-    return {
-      triggerElementId,
-      triggerPrepaintState,
-      triggerBounds,
-      hitTestNode,
-    };
+    return { hitTestNode };
   }
 
-  paint(cx: PaintContext, _bounds: Bounds, prepaintState: DropdownPrepaintState): void {
-    const { triggerElementId, triggerPrepaintState, triggerBounds } = prepaintState;
-
-    if (this.triggerElement) {
-      const triggerCx = cx.withElementId(triggerElementId);
-      this.triggerElement.paint(triggerCx, triggerBounds, triggerPrepaintState);
-    }
+  paint(_cx: PaintContext, _bounds: Bounds, _prepaintState: RightClickPrepaintState): void {
+    // Nothing to paint; popover content handles visuals.
   }
 
   hitTest(bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
@@ -478,48 +382,37 @@ export class FlashDropdown extends FlashContainerElement<
   }
 }
 
-export function dropdown(): FlashDropdown {
-  return new FlashDropdown();
+export function rightClickMenu(): FlashRightClickMenu {
+  return new FlashRightClickMenu();
 }
 
-export function dropdownItem(label: string): FlashDropdownItem {
+export function rightClickItem(label: string): FlashDropdownItem {
   return new FlashDropdownItem(label);
 }
 
-export function dropdownSeparator(): FlashDropdownSeparator {
+export function rightClickSeparator(): FlashDropdownSeparator {
   return new FlashDropdownSeparator();
 }
 
-export function dropdownLabel(label: string): FlashDropdownLabel {
+export function rightClickLabel(label: string): FlashDropdownLabel {
   return new FlashDropdownLabel(label);
 }
 
-export function dropdownCheckbox(label: string): FlashDropdownCheckbox {
+export function rightClickCheckbox(label: string): FlashDropdownCheckbox {
   return new FlashDropdownCheckbox(label);
 }
 
-export function dropdownRadio(label: string, value: string): FlashDropdownRadio {
+export function rightClickRadio(label: string, value: string): FlashDropdownRadio {
   return new FlashDropdownRadio(label, value);
 }
 
-export function dropdownRadioGroup(): FlashDropdownRadioGroup {
+export function rightClickRadioGroup(): FlashDropdownRadioGroup {
   return new FlashDropdownRadioGroup();
 }
 
-export function dropdownSub(label: string): FlashDropdownSub {
+export function rightClickSub(label: string): FlashDropdownSub {
   return new FlashDropdownSub(label);
 }
-
-export {
-  FlashDropdownItem,
-  FlashDropdownSeparator,
-  FlashDropdownLabel,
-  FlashDropdownCheckbox,
-  FlashDropdownRadio,
-  FlashDropdownRadioGroup,
-  FlashDropdownSub,
-  FlashDropdownMenuContent,
-};
 
 export type {
   DropdownMenuContentPrepaintState,
@@ -527,9 +420,6 @@ export type {
   DropdownMenuContext,
   DropdownMenuState,
   DropdownOpenChangeHandler,
-  DropdownSelectHandler,
-  DropdownCheckedChangeHandler,
-  DropdownValueChangeHandler,
   DropdownSide,
   DropdownAlign,
   MenuItemElement,

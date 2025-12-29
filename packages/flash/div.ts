@@ -824,6 +824,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
   // ============ Event Handlers ============
 
+  // TODO: should we differentiate between normal mouse down, and right click?
   onMouseDown(handler: MouseHandler): this {
     this.handlers.mouseDown = handler;
     return this;
