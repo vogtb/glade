@@ -563,6 +563,10 @@ const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
  * Unlike ImagePipeline which uses an atlas, this pipeline renders
  * individual textures from WebGPU hosts. It caches bind groups per
  * unique texture view to avoid recreation each frame.
+ *
+ * Supports interleaved batch rendering where renderBatch() can be called
+ * multiple times per frame. Call beginFrame() at the start of each frame
+ * to reset the instance buffer offset.
  */
 export class HostTexturePipeline {
   private pipeline: GPURenderPipeline;
@@ -572,6 +576,9 @@ export class HostTexturePipeline {
   private bindGroupLayout: GPUBindGroupLayout;
   private sampler: GPUSampler;
   private uniformBuffer: GPUBuffer | null = null;
+
+  /** Current offset in the instance buffer for interleaved rendering. */
+  private currentOffset = 0;
 
   // Cache bind groups per texture view
   private bindGroupCache: Map<GPUTextureView, GPUBindGroup> = new Map();
@@ -715,10 +722,22 @@ export class HostTexturePipeline {
   }
 
   /**
-   * Render host texture primitives.
-   * Groups primitives by texture view for efficient rendering.
+   * Reset the instance buffer offset for a new frame.
+   * Must be called before the first renderBatch() call each frame.
    */
-  render(pass: GPURenderPassEncoder, hostTextures: HostTexturePrimitive[]): void {
+  beginFrame(): void {
+    this.currentOffset = 0;
+  }
+
+  /**
+   * Render a batch of host texture primitives at the current buffer offset.
+   * Can be called multiple times per frame for interleaved rendering.
+   *
+   * Note: Unlike other pipelines, host textures must be grouped by texture view
+   * since each texture requires a different bind group. This method handles
+   * a batch that may contain multiple textures.
+   */
+  renderBatch(pass: GPURenderPassEncoder, hostTextures: HostTexturePrimitive[]): void {
     if (hostTextures.length === 0 || !this.uniformBuffer) {
       return;
     }
@@ -743,11 +762,28 @@ export class HostTexturePipeline {
         continue;
       }
 
-      const count = Math.min(primitives.length, this.maxInstances);
+      // Check available space
+      const available = this.maxInstances - this.currentOffset;
+      const count = Math.min(primitives.length, available);
+
+      if (count <= 0) {
+        console.warn(
+          `HostTexturePipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${primitives.length} host textures`
+        );
+        continue;
+      }
+
+      if (count < primitives.length) {
+        console.warn(
+          `HostTexturePipeline: buffer nearly full, rendering ${count}/${primitives.length} host textures`
+        );
+      }
+
+      const startOffset = this.currentOffset;
 
       for (let i = 0; i < count; i++) {
         const ht = primitives[i]!;
-        const offset = i * FLOATS_PER_INSTANCE;
+        const offset = (startOffset + i) * FLOATS_PER_INSTANCE;
 
         // pos_size
         this.instanceData[offset + 0] = ht.x;
@@ -758,7 +794,7 @@ export class HostTexturePipeline {
         // params
         this.instanceData[offset + 4] = ht.cornerRadius;
         this.instanceData[offset + 5] = ht.opacity;
-        this.instanceData[offset + 6] = ht.order ?? i;
+        this.instanceData[offset + 6] = ht.order ?? startOffset + i;
         this.instanceData[offset + 7] = 0;
 
         // clip_bounds
@@ -788,18 +824,36 @@ export class HostTexturePipeline {
         this.instanceData[offset + 23] = 0;
       }
 
+      // Upload at offset
+      const uploadOffsetBytes = startOffset * BYTES_PER_INSTANCE;
+      const uploadSizeFloats = count * FLOATS_PER_INSTANCE;
+
       this.device.queue.writeBuffer(
         this.instanceBuffer,
-        0,
+        uploadOffsetBytes,
         this.instanceData,
-        0,
-        count * FLOATS_PER_INSTANCE
+        startOffset * FLOATS_PER_INSTANCE,
+        uploadSizeFloats
       );
 
+      // Draw from offset
       pass.setBindGroup(0, bindGroup);
       pass.setVertexBuffer(0, this.instanceBuffer);
-      pass.draw(6, count);
+      pass.draw(6, count, 0, startOffset);
+
+      // Advance offset for next batch
+      this.currentOffset += count;
     }
+  }
+
+  /**
+   * Legacy render method for backwards compatibility.
+   * Renders all host textures in a single call, resetting the buffer first.
+   * Prefer using beginFrame() + renderBatch() for interleaved rendering.
+   */
+  render(pass: GPURenderPassEncoder, hostTextures: HostTexturePrimitive[]): void {
+    this.beginFrame();
+    this.renderBatch(pass, hostTextures);
   }
 
   /**

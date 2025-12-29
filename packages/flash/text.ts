@@ -1110,6 +1110,10 @@ const BYTES_PER_GLYPH = FLOATS_PER_GLYPH * 4;
 
 /**
  * Text rendering pipeline using instanced glyph rendering.
+ *
+ * Supports interleaved batch rendering where renderBatch() can be called
+ * multiple times per frame. Call beginFrame() at the start of each frame
+ * to reset the instance buffer offset.
  */
 export class TextPipeline {
   private pipeline: GPURenderPipeline;
@@ -1119,6 +1123,9 @@ export class TextPipeline {
   private bindGroupLayout: GPUBindGroupLayout;
   private bindGroup: GPUBindGroup | null = null;
   private sampler: GPUSampler;
+
+  /** Current offset in the instance buffer for interleaved rendering. */
+  private currentOffset = 0;
 
   constructor(
     private device: GPUDevice,
@@ -1239,18 +1246,42 @@ export class TextPipeline {
   }
 
   /**
-   * Render glyph instances.
+   * Reset the instance buffer offset for a new frame.
+   * Must be called before the first renderBatch() call each frame.
    */
-  render(pass: GPURenderPassEncoder, glyphs: GlyphInstance[], zIndexStart: number = 0): void {
+  beginFrame(): void {
+    this.currentOffset = 0;
+  }
+
+  /**
+   * Render a batch of glyph instances at the current buffer offset.
+   * Can be called multiple times per frame for interleaved rendering.
+   */
+  renderBatch(pass: GPURenderPassEncoder, glyphs: GlyphInstance[]): void {
     if (glyphs.length === 0 || !this.bindGroup) {
       return;
     }
 
-    const count = Math.min(glyphs.length, this.maxInstances);
+    // Check available space
+    const available = this.maxInstances - this.currentOffset;
+    const count = Math.min(glyphs.length, available);
+
+    if (count <= 0) {
+      console.warn(
+        `TextPipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${glyphs.length} glyphs`
+      );
+      return;
+    }
+
+    if (count < glyphs.length) {
+      console.warn(`TextPipeline: buffer nearly full, rendering ${count}/${glyphs.length} glyphs`);
+    }
+
+    const startOffset = this.currentOffset;
 
     for (let i = 0; i < count; i++) {
       const glyph = glyphs[i]!;
-      const offset = i * FLOATS_PER_GLYPH;
+      const offset = (startOffset + i) * FLOATS_PER_GLYPH;
 
       this.instanceData[offset + 0] = glyph.x;
       this.instanceData[offset + 1] = glyph.y;
@@ -1269,7 +1300,7 @@ export class TextPipeline {
       this.instanceData[offset + 11] = a;
 
       const hasClip = glyph.clipBounds ? 1 : 0;
-      this.instanceData[offset + 12] = glyph.order ?? zIndexStart + i; // z_index from global draw order
+      this.instanceData[offset + 12] = glyph.order ?? startOffset + i; // z_index from global draw order
       this.instanceData[offset + 13] = hasClip;
       this.instanceData[offset + 14] = glyph.isColor ? 1 : 0;
       this.instanceData[offset + 15] = 0;
@@ -1288,18 +1319,36 @@ export class TextPipeline {
       }
     }
 
+    // Upload at offset
+    const uploadOffsetBytes = startOffset * BYTES_PER_GLYPH;
+    const uploadSizeFloats = count * FLOATS_PER_GLYPH;
+
     this.device.queue.writeBuffer(
       this.instanceBuffer,
-      0,
+      uploadOffsetBytes,
       this.instanceData,
-      0,
-      count * FLOATS_PER_GLYPH
+      startOffset * FLOATS_PER_GLYPH,
+      uploadSizeFloats
     );
 
+    // Draw from offset
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
     pass.setVertexBuffer(0, this.instanceBuffer);
-    pass.draw(6, count);
+    pass.draw(6, count, 0, startOffset);
+
+    // Advance offset for next batch
+    this.currentOffset += count;
+  }
+
+  /**
+   * Legacy render method for backwards compatibility.
+   * Renders all glyphs in a single call, resetting the buffer first.
+   * Prefer using beginFrame() + renderBatch() for interleaved rendering.
+   */
+  render(pass: GPURenderPassEncoder, glyphs: GlyphInstance[], _zIndexStart: number = 0): void {
+    this.beginFrame();
+    this.renderBatch(pass, glyphs);
   }
 
   /**

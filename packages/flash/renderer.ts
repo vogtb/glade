@@ -5,7 +5,7 @@
  */
 
 import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
-import type { FlashScene } from "./scene.ts";
+import type { FlashScene, PrimitiveBatch } from "./scene.ts";
 import type { RectPipeline } from "./rect.ts";
 import type { ShadowPipeline } from "./shadow.ts";
 import type { TextPipeline, TextSystem, GlyphInstance } from "./text.ts";
@@ -13,7 +13,6 @@ import type { PathPipeline } from "./path.ts";
 import type { UnderlinePipeline } from "./underline.ts";
 import type { ImagePipeline, ImageInstance } from "./image.ts";
 import type { HostTexturePipeline } from "./host.ts";
-import type { HostTexturePrimitive } from "./scene.ts";
 
 /**
  * Renderer configuration.
@@ -344,69 +343,70 @@ export class FlashRenderer {
     // This ensures we render to the full texture
     pass.setViewport(0, 0, fbWidth, fbHeight, 0, 1);
 
-    // Collect all primitives from all layers first, then render by type.
-    // This is necessary because writeBuffer overwrites the instance buffer,
-    // so we can't call render() multiple times for the same primitive type.
-    const layers = scene.getLayers();
-    const allShadows: (typeof layers)[number]["shadows"] = [];
-    const allRects: (typeof layers)[number]["rects"] = [];
-    const allPaths: (typeof layers)[number]["paths"] = [];
-    const allUnderlines: (typeof layers)[number]["underlines"] = [];
-    const allGlyphs: (typeof layers)[number]["glyphs"] = [];
-    const allImages: (typeof layers)[number]["images"] = [];
-    const allHostTextures: HostTexturePrimitive[] = [];
+    // Reset all pipeline offsets for interleaved rendering
+    this.shadowPipeline?.beginFrame();
+    this.rectPipeline?.beginFrame();
+    this.pathPipeline?.beginFrame();
+    this.underlinePipeline?.beginFrame();
+    this.textPipeline?.beginFrame();
+    this.imagePipeline?.beginFrame();
+    this.hostTexturePipeline?.beginFrame();
 
-    for (const layer of layers) {
-      allShadows.push(...layer.shadows);
-      allRects.push(...layer.rects);
-      allPaths.push(...layer.paths);
-      allUnderlines.push(...layer.underlines);
-      allGlyphs.push(...layer.glyphs);
-      allImages.push(...layer.images);
-      allHostTextures.push(...layer.hostTextures);
-    }
+    // Render primitives in draw order using batch iteration.
+    // This ensures correct layering for overlays: a dialog backdrop (rect)
+    // will render AFTER main UI content if its draw order is higher.
+    const batchIterator = scene.createBatchIterator();
+    let batch: PrimitiveBatch | null;
 
-    // Sort by draw order and render each type once
-    const byOrder = (a: { order?: number }, b: { order?: number }) =>
-      (a.order ?? 0) - (b.order ?? 0);
-
-    if (allShadows.length > 0 && this.shadowPipeline) {
-      const sorted = allShadows.sort(byOrder);
-      this.shadowPipeline.render(pass, sorted, this.uniformBindGroup!);
-    }
-
-    if (allRects.length > 0 && this.rectPipeline) {
-      const sorted = allRects.sort(byOrder);
-      this.rectPipeline.render(pass, sorted, this.uniformBindGroup!);
-    }
-
-    if (allPaths.length > 0 && this.pathPipeline) {
-      const sorted = allPaths.sort(byOrder);
-      this.pathPipeline.render(pass, sorted, this.uniformBindGroup!);
-    }
-
-    if (allUnderlines.length > 0 && this.underlinePipeline) {
-      const sorted = allUnderlines.sort(byOrder);
-      this.underlinePipeline.render(pass, sorted, this.uniformBindGroup!);
-    }
-
-    if (allGlyphs.length > 0 && this.textPipeline) {
-      const sorted = allGlyphs.sort(byOrder);
-      this.textPipeline.render(pass, sorted as GlyphInstance[], 0);
-    }
-
-    if (allImages.length > 0 && this.imagePipeline) {
-      const sorted = allImages.sort(byOrder);
-      this.imagePipeline.render(pass, sorted as ImageInstance[]);
-    }
-
-    if (allHostTextures.length > 0 && this.hostTexturePipeline) {
-      const sorted = allHostTextures.sort(byOrder);
-      this.hostTexturePipeline.render(pass, sorted);
+    while ((batch = batchIterator.next()) !== null) {
+      this.renderBatch(pass, batch);
     }
 
     pass.end();
     this.device.queue.submit([encoder.finish()]);
+  }
+
+  /**
+   * Render a single batch of primitives.
+   */
+  private renderBatch(pass: GPURenderPassEncoder, batch: PrimitiveBatch): void {
+    switch (batch.type) {
+      case "shadows":
+        if (this.shadowPipeline && batch.primitives.length > 0) {
+          this.shadowPipeline.renderBatch(pass, batch.primitives, this.uniformBindGroup!);
+        }
+        break;
+      case "rects":
+        if (this.rectPipeline && batch.primitives.length > 0) {
+          this.rectPipeline.renderBatch(pass, batch.primitives, this.uniformBindGroup!);
+        }
+        break;
+      case "paths":
+        if (this.pathPipeline && batch.primitives.length > 0) {
+          this.pathPipeline.renderBatch(pass, batch.primitives, this.uniformBindGroup!);
+        }
+        break;
+      case "underlines":
+        if (this.underlinePipeline && batch.primitives.length > 0) {
+          this.underlinePipeline.renderBatch(pass, batch.primitives, this.uniformBindGroup!);
+        }
+        break;
+      case "glyphs":
+        if (this.textPipeline && batch.primitives.length > 0) {
+          this.textPipeline.renderBatch(pass, batch.primitives as GlyphInstance[]);
+        }
+        break;
+      case "images":
+        if (this.imagePipeline && batch.primitives.length > 0) {
+          this.imagePipeline.renderBatch(pass, batch.primitives as ImageInstance[]);
+        }
+        break;
+      case "hostTextures":
+        if (this.hostTexturePipeline && batch.primitives.length > 0) {
+          this.hostTexturePipeline.renderBatch(pass, batch.primitives);
+        }
+        break;
+    }
   }
 
   /**

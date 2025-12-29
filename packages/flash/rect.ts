@@ -292,12 +292,19 @@ const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
 
 /**
  * Rectangle rendering pipeline.
+ *
+ * Supports interleaved batch rendering where renderBatch() can be called
+ * multiple times per frame. Call beginFrame() at the start of each frame
+ * to reset the instance buffer offset.
  */
 export class RectPipeline {
   private pipeline: GPURenderPipeline;
   private instanceBuffer: GPUBuffer;
   private instanceData: Float32Array;
   private maxInstances: number;
+
+  /** Current offset in the instance buffer for interleaved rendering. */
+  private currentOffset = 0;
 
   constructor(
     private device: GPUDevice,
@@ -322,38 +329,43 @@ export class RectPipeline {
       bindGroupLayouts: [uniformBindGroupLayout],
     });
 
+    const vertexState: GPUVertexState = {
+      module: shaderModule,
+      entryPoint: "vs_main",
+      buffers: [
+        {
+          arrayStride: BYTES_PER_INSTANCE,
+          stepMode: "instance",
+          attributes: [
+            { shaderLocation: 0, offset: 0, format: "float32x4" }, // pos_size
+            { shaderLocation: 1, offset: 16, format: "float32x4" }, // color
+            { shaderLocation: 2, offset: 32, format: "float32x4" }, // border_color
+            { shaderLocation: 3, offset: 48, format: "float32x4" }, // corner_border
+            { shaderLocation: 4, offset: 64, format: "float32x4" }, // clip_bounds
+            { shaderLocation: 5, offset: 80, format: "float32x4" }, // clip_params
+            { shaderLocation: 6, offset: 96, format: "float32x4" }, // transform_ab
+            { shaderLocation: 7, offset: 112, format: "float32x4" }, // transform_cd
+          ],
+        },
+      ],
+    };
+
+    const fragmentState: GPUFragmentState = {
+      module: shaderModule,
+      entryPoint: "fs_main",
+      targets: [
+        {
+          format,
+          blend: PREMULTIPLIED_ALPHA_BLEND,
+        },
+      ],
+    };
+
+    // Pipeline with depth write (normal rects)
     this.pipeline = device.createRenderPipeline({
       layout: pipelineLayout,
-      vertex: {
-        module: shaderModule,
-        entryPoint: "vs_main",
-        buffers: [
-          {
-            arrayStride: BYTES_PER_INSTANCE,
-            stepMode: "instance",
-            attributes: [
-              { shaderLocation: 0, offset: 0, format: "float32x4" }, // pos_size
-              { shaderLocation: 1, offset: 16, format: "float32x4" }, // color
-              { shaderLocation: 2, offset: 32, format: "float32x4" }, // border_color
-              { shaderLocation: 3, offset: 48, format: "float32x4" }, // corner_border
-              { shaderLocation: 4, offset: 64, format: "float32x4" }, // clip_bounds
-              { shaderLocation: 5, offset: 80, format: "float32x4" }, // clip_params
-              { shaderLocation: 6, offset: 96, format: "float32x4" }, // transform_ab
-              { shaderLocation: 7, offset: 112, format: "float32x4" }, // transform_cd
-            ],
-          },
-        ],
-      },
-      fragment: {
-        module: shaderModule,
-        entryPoint: "fs_main",
-        targets: [
-          {
-            format,
-            blend: PREMULTIPLIED_ALPHA_BLEND,
-          },
-        ],
-      },
+      vertex: vertexState,
+      fragment: fragmentState,
       primitive: {
         topology: "triangle-list",
       },
@@ -369,98 +381,138 @@ export class RectPipeline {
   }
 
   /**
-   * Render rectangles.
+   * Fill instance data for a rect at the given offset.
    */
-  render(pass: GPURenderPassEncoder, rects: RectPrimitive[], uniformBindGroup: GPUBindGroup): void {
+  private fillInstanceData(rect: RectPrimitive, offset: number, index: number): void {
+    // pos_size
+    this.instanceData[offset + 0] = rect.x;
+    this.instanceData[offset + 1] = rect.y;
+    this.instanceData[offset + 2] = rect.width;
+    this.instanceData[offset + 3] = rect.height;
+
+    // color (premultiply alpha)
+    const a = rect.color.a;
+    this.instanceData[offset + 4] = rect.color.r * a;
+    this.instanceData[offset + 5] = rect.color.g * a;
+    this.instanceData[offset + 6] = rect.color.b * a;
+    this.instanceData[offset + 7] = a;
+
+    // border_color (premultiply alpha)
+    const ba = rect.borderColor.a;
+    this.instanceData[offset + 8] = rect.borderColor.r * ba;
+    this.instanceData[offset + 9] = rect.borderColor.g * ba;
+    this.instanceData[offset + 10] = rect.borderColor.b * ba;
+    this.instanceData[offset + 11] = ba;
+
+    // corner_border (corner_radius, border_width, z_index, is_dashed)
+    this.instanceData[offset + 12] = rect.cornerRadius;
+    this.instanceData[offset + 13] = rect.borderWidth;
+    this.instanceData[offset + 14] = rect.order ?? index; // z_index from global draw order
+    this.instanceData[offset + 15] = rect.borderDashed ?? 0;
+
+    // clip_bounds (x, y, width, height)
+    const clip = rect.clipBounds;
+    this.instanceData[offset + 16] = clip?.x ?? 0;
+    this.instanceData[offset + 17] = clip?.y ?? 0;
+    this.instanceData[offset + 18] = clip?.width ?? 0;
+    this.instanceData[offset + 19] = clip?.height ?? 0;
+
+    // clip_params (corner_radius, has_clip, dash_length, gap_length)
+    this.instanceData[offset + 20] = clip?.cornerRadius ?? 0;
+    this.instanceData[offset + 21] = clip ? 1.0 : 0.0;
+    this.instanceData[offset + 22] = rect.borderDashLength ?? 6;
+    this.instanceData[offset + 23] = rect.borderGapLength ?? 4;
+
+    // transform_ab (a, b, tx, has_transform)
+    const transform = rect.transform;
+    this.instanceData[offset + 24] = transform?.a ?? 1;
+    this.instanceData[offset + 25] = transform?.b ?? 0;
+    this.instanceData[offset + 26] = transform?.tx ?? 0;
+    this.instanceData[offset + 27] = transform ? 1.0 : 0.0;
+
+    // transform_cd (c, d, ty, 0)
+    this.instanceData[offset + 28] = transform?.c ?? 0;
+    this.instanceData[offset + 29] = transform?.d ?? 1;
+    this.instanceData[offset + 30] = transform?.ty ?? 0;
+    this.instanceData[offset + 31] = 0;
+  }
+
+  /**
+   * Reset the instance buffer offset for a new frame.
+   * Must be called before the first renderBatch() call each frame.
+   */
+  beginFrame(): void {
+    this.currentOffset = 0;
+  }
+
+  /**
+   * Render a batch of rects at the current buffer offset.
+   * Can be called multiple times per frame for interleaved rendering.
+   * The batch is rendered in order (no internal sorting).
+   */
+  renderBatch(
+    pass: GPURenderPassEncoder,
+    rects: RectPrimitive[],
+    uniformBindGroup: GPUBindGroup
+  ): void {
     if (rects.length === 0) {
       return;
     }
 
-    const count = Math.min(rects.length, this.maxInstances);
+    // Check available space
+    const available = this.maxInstances - this.currentOffset;
+    const count = Math.min(rects.length, available);
 
-    // Fill instance data
-    for (let i = 0; i < count; i++) {
-      const rect = rects[i]!;
-      const offset = i * FLOATS_PER_INSTANCE;
-
-      // Debug: log circles (where cornerRadius is very large)
-      if (rect.cornerRadius > 100 && rect.width === rect.height) {
-        const debugState = this.render as unknown as { loggedCircle?: boolean };
-        if (!debugState.loggedCircle) {
-          debugState.loggedCircle = true;
-          console.log(
-            `RectPipeline circle: ${rect.width}x${rect.height}, cornerRadius=${rect.cornerRadius}`
-          );
-        }
-      }
-
-      // pos_size
-      this.instanceData[offset + 0] = rect.x;
-      this.instanceData[offset + 1] = rect.y;
-      this.instanceData[offset + 2] = rect.width;
-      this.instanceData[offset + 3] = rect.height;
-
-      // color (premultiply alpha)
-      const a = rect.color.a;
-      this.instanceData[offset + 4] = rect.color.r * a;
-      this.instanceData[offset + 5] = rect.color.g * a;
-      this.instanceData[offset + 6] = rect.color.b * a;
-      this.instanceData[offset + 7] = a;
-
-      // border_color (premultiply alpha)
-      const ba = rect.borderColor.a;
-      this.instanceData[offset + 8] = rect.borderColor.r * ba;
-      this.instanceData[offset + 9] = rect.borderColor.g * ba;
-      this.instanceData[offset + 10] = rect.borderColor.b * ba;
-      this.instanceData[offset + 11] = ba;
-
-      // corner_border (corner_radius, border_width, z_index, is_dashed)
-      this.instanceData[offset + 12] = rect.cornerRadius;
-      this.instanceData[offset + 13] = rect.borderWidth;
-      this.instanceData[offset + 14] = rect.order ?? i; // z_index from global draw order
-      this.instanceData[offset + 15] = rect.borderDashed ?? 0;
-
-      // clip_bounds (x, y, width, height)
-      const clip = rect.clipBounds;
-      this.instanceData[offset + 16] = clip?.x ?? 0;
-      this.instanceData[offset + 17] = clip?.y ?? 0;
-      this.instanceData[offset + 18] = clip?.width ?? 0;
-      this.instanceData[offset + 19] = clip?.height ?? 0;
-
-      // clip_params (corner_radius, has_clip, dash_length, gap_length)
-      this.instanceData[offset + 20] = clip?.cornerRadius ?? 0;
-      this.instanceData[offset + 21] = clip ? 1.0 : 0.0;
-      this.instanceData[offset + 22] = rect.borderDashLength ?? 6;
-      this.instanceData[offset + 23] = rect.borderGapLength ?? 4;
-
-      // transform_ab (a, b, tx, has_transform)
-      const transform = rect.transform;
-      this.instanceData[offset + 24] = transform?.a ?? 1;
-      this.instanceData[offset + 25] = transform?.b ?? 0;
-      this.instanceData[offset + 26] = transform?.tx ?? 0;
-      this.instanceData[offset + 27] = transform ? 1.0 : 0.0;
-
-      // transform_cd (c, d, ty, 0)
-      this.instanceData[offset + 28] = transform?.c ?? 0;
-      this.instanceData[offset + 29] = transform?.d ?? 1;
-      this.instanceData[offset + 30] = transform?.ty ?? 0;
-      this.instanceData[offset + 31] = 0;
+    if (count <= 0) {
+      console.warn(
+        `RectPipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${rects.length} rects`
+      );
+      return;
     }
 
-    // Upload instance data
+    if (count < rects.length) {
+      console.warn(`RectPipeline: buffer nearly full, rendering ${count}/${rects.length} rects`);
+    }
+
+    const startOffset = this.currentOffset;
+
+    // Fill instance data at current offset
+    for (let i = 0; i < count; i++) {
+      const rect = rects[i]!;
+      const dataOffset = (startOffset + i) * FLOATS_PER_INSTANCE;
+      this.fillInstanceData(rect, dataOffset, startOffset + i);
+    }
+
+    // Upload instance data at offset
+    const uploadOffsetBytes = startOffset * BYTES_PER_INSTANCE;
+    const uploadSizeFloats = count * FLOATS_PER_INSTANCE;
+
     this.device.queue.writeBuffer(
       this.instanceBuffer,
-      0,
+      uploadOffsetBytes,
       this.instanceData,
-      0,
-      count * FLOATS_PER_INSTANCE
+      startOffset * FLOATS_PER_INSTANCE,
+      uploadSizeFloats
     );
 
-    // Draw
+    // Draw from offset
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, uniformBindGroup);
     pass.setVertexBuffer(0, this.instanceBuffer);
-    pass.draw(6, count); // 6 vertices per quad, `count` instances
+    pass.draw(6, count, 0, startOffset);
+
+    // Advance offset for next batch
+    this.currentOffset += count;
+  }
+
+  /**
+   * Legacy render method for backwards compatibility.
+   * Renders all rects in a single call, resetting the buffer first.
+   * Prefer using beginFrame() + renderBatch() for interleaved rendering.
+   */
+  render(pass: GPURenderPassEncoder, rects: RectPrimitive[], uniformBindGroup: GPUBindGroup): void {
+    this.beginFrame();
+    this.renderBatch(pass, rects, uniformBindGroup);
   }
 
   /**

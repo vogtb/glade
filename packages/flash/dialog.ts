@@ -45,7 +45,7 @@ import type { FlashContext } from "./context.ts";
 // Default Colors and Sizes
 // ============================================================================
 
-const DEFAULT_BACKDROP_COLOR: Color = { r: 0, g: 0, b: 0, a: 0.5 };
+const DEFAULT_BACKDROP_COLOR: Color = { r: 0, g: 0, b: 0, a: 0.74 };
 const DEFAULT_DIALOG_BG: Color = { r: 0.12, g: 0.12, b: 0.14, a: 1 };
 const DEFAULT_DIALOG_BORDER: Color = { r: 0.25, g: 0.25, b: 0.28, a: 1 };
 const DEFAULT_TITLE_COLOR: Color = { r: 1, g: 1, b: 1, a: 1 };
@@ -780,8 +780,54 @@ export class FlashDialogFooter extends FlashElement<
       cancelHitbox = cx.insertHitbox(cancelBounds, HitboxBehavior.Normal, "pointer");
     }
 
+    // Build hit test nodes for buttons
+    const childHitTestNodes: HitTestNode[] = [];
+
+    if (cancelBounds && this.onCancelHandler) {
+      const handler = this.onCancelHandler;
+      childHitTestNodes.push({
+        bounds: cancelBounds,
+        handlers: {
+          click: () => {
+            handler();
+            return { stopPropagation: true };
+          },
+        },
+        focusHandle: null,
+        scrollHandle: null,
+        keyContext: null,
+        children: [],
+      });
+    }
+
+    if (confirmBounds && this.onConfirmHandler) {
+      const handler = this.onConfirmHandler;
+      childHitTestNodes.push({
+        bounds: confirmBounds,
+        handlers: {
+          click: () => {
+            handler();
+            return { stopPropagation: true };
+          },
+        },
+        focusHandle: null,
+        scrollHandle: null,
+        keyContext: null,
+        children: [],
+      });
+    }
+
+    const hitTestNode: HitTestNode = {
+      bounds,
+      handlers: {},
+      focusHandle: null,
+      scrollHandle: null,
+      keyContext: null,
+      children: childHitTestNodes,
+    };
+
     return {
-      hitTestNode: null,
+      hitTestNode,
       cancelBounds,
       confirmBounds,
       cancelHitbox,
@@ -1087,6 +1133,10 @@ export class FlashDialogContent extends FlashElement<
         footerBounds,
         requestState.footerRequestState
       );
+      // Add footer's hit test node for button clicks
+      if (footerPrepaintState?.hitTestNode) {
+        childHitTestNodes.push(footerPrepaintState.hitTestNode);
+      }
     }
 
     // Click handler that stops propagation to prevent backdrop dismiss

@@ -229,12 +229,19 @@ const DEFAULT_AMPLITUDE = 1;
 
 /**
  * Underline rendering pipeline.
+ *
+ * Supports interleaved batch rendering where renderBatch() can be called
+ * multiple times per frame. Call beginFrame() at the start of each frame
+ * to reset the instance buffer offset.
  */
 export class UnderlinePipeline {
   private pipeline: GPURenderPipeline;
   private instanceBuffer: GPUBuffer;
   private instanceData: Float32Array;
   private maxInstances: number;
+
+  /** Current offset in the instance buffer for interleaved rendering. */
+  private currentOffset = 0;
 
   constructor(
     private device: GPUDevice,
@@ -305,9 +312,18 @@ export class UnderlinePipeline {
   }
 
   /**
-   * Render underlines.
+   * Reset the instance buffer offset for a new frame.
+   * Must be called before the first renderBatch() call each frame.
    */
-  render(
+  beginFrame(): void {
+    this.currentOffset = 0;
+  }
+
+  /**
+   * Render a batch of underlines at the current buffer offset.
+   * Can be called multiple times per frame for interleaved rendering.
+   */
+  renderBatch(
     pass: GPURenderPassEncoder,
     underlines: UnderlinePrimitive[],
     uniformBindGroup: GPUBindGroup
@@ -316,11 +332,22 @@ export class UnderlinePipeline {
       return;
     }
 
-    const count = Math.min(underlines.length, this.maxInstances);
+    // Check available space
+    const available = this.maxInstances - this.currentOffset;
+    const count = Math.min(underlines.length, available);
+
+    if (count <= 0) {
+      console.warn(
+        `UnderlinePipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${underlines.length} underlines`
+      );
+      return;
+    }
+
+    const startOffset = this.currentOffset;
 
     for (let i = 0; i < count; i++) {
       const underline = underlines[i]!;
-      const offset = i * FLOATS_PER_INSTANCE;
+      const offset = (startOffset + i) * FLOATS_PER_INSTANCE;
 
       // pos_size
       this.instanceData[offset + 0] = underline.x;
@@ -342,7 +369,7 @@ export class UnderlinePipeline {
       this.instanceData[offset + 8] = wavelength;
       this.instanceData[offset + 9] = amplitude;
       this.instanceData[offset + 10] = isWavy;
-      this.instanceData[offset + 11] = underline.order ?? i; // z_index from global draw order
+      this.instanceData[offset + 11] = underline.order ?? startOffset + i; // z_index from global draw order
 
       // clip_bounds
       const clip = underline.clipBounds;
@@ -371,18 +398,39 @@ export class UnderlinePipeline {
       this.instanceData[offset + 27] = 0;
     }
 
+    // Upload at offset
+    const uploadOffsetBytes = startOffset * BYTES_PER_INSTANCE;
+    const uploadSizeFloats = count * FLOATS_PER_INSTANCE;
+
     this.device.queue.writeBuffer(
       this.instanceBuffer,
-      0,
+      uploadOffsetBytes,
       this.instanceData,
-      0,
-      count * FLOATS_PER_INSTANCE
+      startOffset * FLOATS_PER_INSTANCE,
+      uploadSizeFloats
     );
 
+    // Draw from offset
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, uniformBindGroup);
     pass.setVertexBuffer(0, this.instanceBuffer);
-    pass.draw(6, count);
+    pass.draw(6, count, 0, startOffset);
+
+    // Advance offset for next batch
+    this.currentOffset += count;
+  }
+
+  /**
+   * Legacy render method for backwards compatibility.
+   * Renders all underlines in a single call, resetting the buffer first.
+   */
+  render(
+    pass: GPURenderPassEncoder,
+    underlines: UnderlinePrimitive[],
+    uniformBindGroup: GPUBindGroup
+  ): void {
+    this.beginFrame();
+    this.renderBatch(pass, underlines, uniformBindGroup);
   }
 
   /**

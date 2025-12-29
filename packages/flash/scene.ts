@@ -3,6 +3,11 @@
  *
  * The scene collects all rendering primitives for a frame, organized
  * into layers for proper z-ordering (painter's algorithm).
+ *
+ * Rendering uses interleaved batch iteration: primitives are yielded in
+ * draw order, batched by contiguous runs of the same type. This ensures
+ * correct layering for overlays (dialogs, tooltips, popovers) where
+ * primitives of different types need to interleave correctly.
  */
 
 import type { Color, ContentMask, Bounds, TransformationMatrix } from "./types.ts";
@@ -10,6 +15,145 @@ import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.
 import { BoundsTree, type DrawOrder } from "./bounds_tree.ts";
 
 export type { DrawOrder } from "./bounds_tree.ts";
+
+/**
+ * Primitive types for batch iteration.
+ */
+export type PrimitiveType =
+  | "shadows"
+  | "rects"
+  | "paths"
+  | "underlines"
+  | "glyphs"
+  | "images"
+  | "hostTextures";
+
+/**
+ * A batch of primitives of the same type, yielded in draw order.
+ * Used for interleaved rendering where different primitive types
+ * are rendered in their correct z-order.
+ */
+export type PrimitiveBatch =
+  | { type: "shadows"; primitives: ShadowPrimitive[] }
+  | { type: "rects"; primitives: RectPrimitive[] }
+  | { type: "paths"; primitives: PathPrimitive[] }
+  | { type: "underlines"; primitives: UnderlinePrimitive[] }
+  | { type: "glyphs"; primitives: GlyphPrimitive[] }
+  | { type: "images"; primitives: ImagePrimitive[] }
+  | { type: "hostTextures"; primitives: HostTexturePrimitive[] };
+
+/**
+ * Internal tagged primitive for sorting across types.
+ */
+type TaggedPrimitive = {
+  order: number;
+  type: PrimitiveType;
+  primitive: unknown;
+};
+
+/**
+ * Iterator that yields batches of primitives in draw order.
+ * Groups contiguous runs of the same type to minimize GPU pipeline switches
+ * while maintaining correct z-ordering.
+ *
+ * This enables proper layering for overlays: a dialog backdrop (rect) will
+ * render AFTER main UI text if its draw order is higher, even though rects
+ * and glyphs are different primitive types.
+ */
+export class BatchIterator {
+  private allPrimitives: TaggedPrimitive[] = [];
+  private currentIndex = 0;
+
+  constructor(layers: readonly SceneLayer[]) {
+    // Collect all primitives with their types
+    for (const layer of layers) {
+      for (const shadow of layer.shadows) {
+        this.allPrimitives.push({ order: shadow.order ?? 0, type: "shadows", primitive: shadow });
+      }
+      for (const rect of layer.rects) {
+        this.allPrimitives.push({ order: rect.order ?? 0, type: "rects", primitive: rect });
+      }
+      for (const path of layer.paths) {
+        this.allPrimitives.push({ order: path.order ?? 0, type: "paths", primitive: path });
+      }
+      for (const underline of layer.underlines) {
+        this.allPrimitives.push({
+          order: underline.order ?? 0,
+          type: "underlines",
+          primitive: underline,
+        });
+      }
+      for (const glyph of layer.glyphs) {
+        this.allPrimitives.push({ order: glyph.order ?? 0, type: "glyphs", primitive: glyph });
+      }
+      for (const image of layer.images) {
+        this.allPrimitives.push({ order: image.order ?? 0, type: "images", primitive: image });
+      }
+      for (const hostTexture of layer.hostTextures) {
+        this.allPrimitives.push({
+          order: hostTexture.order ?? 0,
+          type: "hostTextures",
+          primitive: hostTexture,
+        });
+      }
+    }
+
+    // Sort by draw order
+    this.allPrimitives.sort((a, b) => a.order - b.order);
+  }
+
+  /**
+   * Get the next batch of contiguous primitives of the same type.
+   * Returns null when no more batches remain.
+   */
+  next(): PrimitiveBatch | null {
+    if (this.currentIndex >= this.allPrimitives.length) {
+      return null;
+    }
+
+    const firstItem = this.allPrimitives[this.currentIndex]!;
+    const batchType = firstItem.type;
+    const primitives: unknown[] = [firstItem.primitive];
+    this.currentIndex++;
+
+    // Collect contiguous primitives of the same type
+    while (this.currentIndex < this.allPrimitives.length) {
+      const item = this.allPrimitives[this.currentIndex]!;
+      if (item.type !== batchType) {
+        break;
+      }
+      primitives.push(item.primitive);
+      this.currentIndex++;
+    }
+
+    // Return typed batch
+    switch (batchType) {
+      case "shadows":
+        return { type: "shadows", primitives: primitives as ShadowPrimitive[] };
+      case "rects":
+        return { type: "rects", primitives: primitives as RectPrimitive[] };
+      case "paths":
+        return { type: "paths", primitives: primitives as PathPrimitive[] };
+      case "underlines":
+        return { type: "underlines", primitives: primitives as UnderlinePrimitive[] };
+      case "glyphs":
+        return { type: "glyphs", primitives: primitives as GlyphPrimitive[] };
+      case "images":
+        return { type: "images", primitives: primitives as ImagePrimitive[] };
+      case "hostTextures":
+        return { type: "hostTextures", primitives: primitives as HostTexturePrimitive[] };
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Reset the iterator to the beginning.
+   */
+  reset(): void {
+    this.currentIndex = 0;
+  }
+}
 
 /**
  * Clip bounds for shader-based clipping.
@@ -701,5 +845,14 @@ export class FlashScene {
       hostTextures,
       layers: this.layers.length,
     };
+  }
+
+  /**
+   * Create a batch iterator for rendering primitives in draw order.
+   * The iterator yields batches of contiguous same-type primitives,
+   * enabling correct z-ordering for overlays while minimizing pipeline switches.
+   */
+  createBatchIterator(): BatchIterator {
+    return new BatchIterator(this.layers);
   }
 }

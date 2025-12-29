@@ -216,12 +216,19 @@ const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
 
 /**
  * Shadow rendering pipeline.
+ *
+ * Supports interleaved batch rendering where renderBatch() can be called
+ * multiple times per frame. Call beginFrame() at the start of each frame
+ * to reset the instance buffer offset.
  */
 export class ShadowPipeline {
   private pipeline: GPURenderPipeline;
   private instanceBuffer: GPUBuffer;
   private instanceData: Float32Array;
   private maxInstances: number;
+
+  /** Current offset in the instance buffer for interleaved rendering. */
+  private currentOffset = 0;
 
   constructor(
     private device: GPUDevice,
@@ -292,9 +299,18 @@ export class ShadowPipeline {
   }
 
   /**
-   * Render shadows.
+   * Reset the instance buffer offset for a new frame.
+   * Must be called before the first renderBatch() call each frame.
    */
-  render(
+  beginFrame(): void {
+    this.currentOffset = 0;
+  }
+
+  /**
+   * Render a batch of shadows at the current buffer offset.
+   * Can be called multiple times per frame for interleaved rendering.
+   */
+  renderBatch(
     pass: GPURenderPassEncoder,
     shadows: ShadowPrimitive[],
     uniformBindGroup: GPUBindGroup
@@ -303,12 +319,23 @@ export class ShadowPipeline {
       return;
     }
 
-    const count = Math.min(shadows.length, this.maxInstances);
+    // Check available space
+    const available = this.maxInstances - this.currentOffset;
+    const count = Math.min(shadows.length, available);
 
-    // Fill instance data
+    if (count <= 0) {
+      console.warn(
+        `ShadowPipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${shadows.length} shadows`
+      );
+      return;
+    }
+
+    const startOffset = this.currentOffset;
+
+    // Fill instance data at current offset
     for (let i = 0; i < count; i++) {
       const shadow = shadows[i]!;
-      const offset = i * FLOATS_PER_INSTANCE;
+      const offset = (startOffset + i) * FLOATS_PER_INSTANCE;
 
       // pos_size (apply shadow offset)
       this.instanceData[offset + 0] = shadow.x + shadow.offsetX;
@@ -326,7 +353,7 @@ export class ShadowPipeline {
       // params (corner_radius, blur, z_index, 0)
       this.instanceData[offset + 8] = shadow.cornerRadius;
       this.instanceData[offset + 9] = shadow.blur;
-      this.instanceData[offset + 10] = shadow.order ?? i; // z_index from global draw order
+      this.instanceData[offset + 10] = shadow.order ?? startOffset + i; // z_index from global draw order
       this.instanceData[offset + 11] = 0;
 
       // clip_bounds (x, y, width, height)
@@ -356,20 +383,39 @@ export class ShadowPipeline {
       this.instanceData[offset + 27] = 0;
     }
 
-    // Upload instance data
+    // Upload at offset
+    const uploadOffsetBytes = startOffset * BYTES_PER_INSTANCE;
+    const uploadSizeFloats = count * FLOATS_PER_INSTANCE;
+
     this.device.queue.writeBuffer(
       this.instanceBuffer,
-      0,
+      uploadOffsetBytes,
       this.instanceData,
-      0,
-      count * FLOATS_PER_INSTANCE
+      startOffset * FLOATS_PER_INSTANCE,
+      uploadSizeFloats
     );
 
-    // Draw
+    // Draw from offset
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, uniformBindGroup);
     pass.setVertexBuffer(0, this.instanceBuffer);
-    pass.draw(6, count); // 6 vertices per quad, `count` instances
+    pass.draw(6, count, 0, startOffset);
+
+    // Advance offset for next batch
+    this.currentOffset += count;
+  }
+
+  /**
+   * Legacy render method for backwards compatibility.
+   * Renders all shadows in a single call, resetting the buffer first.
+   */
+  render(
+    pass: GPURenderPassEncoder,
+    shadows: ShadowPrimitive[],
+    uniformBindGroup: GPUBindGroup
+  ): void {
+    this.beginFrame();
+    this.renderBatch(pass, shadows, uniformBindGroup);
   }
 
   /**

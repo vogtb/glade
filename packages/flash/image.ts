@@ -408,6 +408,10 @@ const BYTES_PER_IMAGE = FLOATS_PER_IMAGE * 4;
 
 /**
  * Image rendering pipeline using instanced rendering.
+ *
+ * Supports interleaved batch rendering where renderBatch() can be called
+ * multiple times per frame. Call beginFrame() at the start of each frame
+ * to reset the instance buffer offset.
  */
 export class ImagePipeline {
   private pipeline: GPURenderPipeline;
@@ -417,6 +421,9 @@ export class ImagePipeline {
   private bindGroupLayout: GPUBindGroupLayout;
   private bindGroup: GPUBindGroup | null = null;
   private sampler: GPUSampler;
+
+  /** Current offset in the instance buffer for interleaved rendering. */
+  private currentOffset = 0;
 
   constructor(
     private device: GPUDevice,
@@ -526,18 +533,38 @@ export class ImagePipeline {
   }
 
   /**
-   * Render image instances.
+   * Reset the instance buffer offset for a new frame.
+   * Must be called before the first renderBatch() call each frame.
    */
-  render(pass: GPURenderPassEncoder, images: ImageInstance[]): void {
+  beginFrame(): void {
+    this.currentOffset = 0;
+  }
+
+  /**
+   * Render a batch of image instances at the current buffer offset.
+   * Can be called multiple times per frame for interleaved rendering.
+   */
+  renderBatch(pass: GPURenderPassEncoder, images: ImageInstance[]): void {
     if (images.length === 0 || !this.bindGroup) {
       return;
     }
 
-    const count = Math.min(images.length, this.maxInstances);
+    // Check available space
+    const available = this.maxInstances - this.currentOffset;
+    const count = Math.min(images.length, available);
+
+    if (count <= 0) {
+      console.warn(
+        `ImagePipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${images.length} images`
+      );
+      return;
+    }
+
+    const startOffset = this.currentOffset;
 
     for (let i = 0; i < count; i++) {
       const img = images[i]!;
-      const offset = i * FLOATS_PER_IMAGE;
+      const offset = (startOffset + i) * FLOATS_PER_IMAGE;
 
       // pos_size
       this.instanceData[offset + 0] = img.x;
@@ -555,7 +582,7 @@ export class ImagePipeline {
       this.instanceData[offset + 8] = img.cornerRadius;
       this.instanceData[offset + 9] = img.opacity;
       this.instanceData[offset + 10] = img.grayscale;
-      this.instanceData[offset + 11] = img.order ?? i;
+      this.instanceData[offset + 11] = img.order ?? startOffset + i;
 
       // clip_bounds
       const clip = img.clipBounds;
@@ -584,18 +611,35 @@ export class ImagePipeline {
       this.instanceData[offset + 27] = 0;
     }
 
+    // Upload at offset
+    const uploadOffsetBytes = startOffset * BYTES_PER_IMAGE;
+    const uploadSizeFloats = count * FLOATS_PER_IMAGE;
+
     this.device.queue.writeBuffer(
       this.instanceBuffer,
-      0,
+      uploadOffsetBytes,
       this.instanceData,
-      0,
-      count * FLOATS_PER_IMAGE
+      startOffset * FLOATS_PER_IMAGE,
+      uploadSizeFloats
     );
 
+    // Draw from offset
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
     pass.setVertexBuffer(0, this.instanceBuffer);
-    pass.draw(6, count);
+    pass.draw(6, count, 0, startOffset);
+
+    // Advance offset for next batch
+    this.currentOffset += count;
+  }
+
+  /**
+   * Legacy render method for backwards compatibility.
+   * Renders all images in a single call, resetting the buffer first.
+   */
+  render(pass: GPURenderPassEncoder, images: ImageInstance[]): void {
+    this.beginFrame();
+    this.renderBatch(pass, images);
   }
 
   /**

@@ -1037,6 +1037,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
+  /**
    * Set this element to block hover but allow scroll events.
    * Use for overlays that should allow scrolling underlying content.
    */

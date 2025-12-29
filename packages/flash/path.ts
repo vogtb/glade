@@ -812,6 +812,10 @@ const BYTES_PER_VERTEX = FLOATS_PER_VERTEX * 4;
 
 /**
  * Path rendering pipeline.
+ *
+ * Supports interleaved batch rendering where renderBatch() can be called
+ * multiple times per frame. Call beginFrame() at the start of each frame
+ * to reset the buffer offsets.
  */
 export class PathPipeline {
   private pipeline: GPURenderPipeline;
@@ -821,6 +825,11 @@ export class PathPipeline {
   private indexData: Uint32Array;
   private maxVertices: number;
   private maxIndices: number;
+
+  /** Current offsets for interleaved rendering. */
+  private currentVertexOffset = 0;
+  private currentIndexOffset = 0;
+  private currentBaseVertex = 0;
 
   constructor(
     private device: GPUDevice,
@@ -899,16 +908,32 @@ export class PathPipeline {
   }
 
   /**
-   * Render paths.
+   * Reset the buffer offsets for a new frame.
+   * Must be called before the first renderBatch() call each frame.
    */
-  render(pass: GPURenderPassEncoder, paths: PathPrimitive[], uniformBindGroup: GPUBindGroup): void {
+  beginFrame(): void {
+    this.currentVertexOffset = 0;
+    this.currentIndexOffset = 0;
+    this.currentBaseVertex = 0;
+  }
+
+  /**
+   * Render a batch of paths at the current buffer offset.
+   * Can be called multiple times per frame for interleaved rendering.
+   */
+  renderBatch(
+    pass: GPURenderPassEncoder,
+    paths: PathPrimitive[],
+    uniformBindGroup: GPUBindGroup
+  ): void {
     if (paths.length === 0) {
       return;
     }
 
-    let vertexOffset = 0;
-    let indexOffset = 0;
-    let baseVertex = 0;
+    const startVertexOffset = this.currentVertexOffset;
+    const startIndexOffset = this.currentIndexOffset;
+    let vertexCount = 0;
+    let indexCount = 0;
 
     for (const path of paths) {
       if (path.vertices.length === 0 || path.indices.length === 0) continue;
@@ -916,8 +941,18 @@ export class PathPipeline {
       const numVertices = path.vertices.length;
       const numIndices = path.indices.length;
 
-      if (vertexOffset + numVertices > this.maxVertices) break;
-      if (indexOffset + numIndices > this.maxIndices) break;
+      if (this.currentVertexOffset + numVertices > this.maxVertices) {
+        console.warn(
+          `PathPipeline: vertex buffer full (${this.currentVertexOffset}/${this.maxVertices})`
+        );
+        break;
+      }
+      if (this.currentIndexOffset + numIndices > this.maxIndices) {
+        console.warn(
+          `PathPipeline: index buffer full (${this.currentIndexOffset}/${this.maxIndices})`
+        );
+        break;
+      }
 
       // Premultiply alpha
       const a = path.color.a;
@@ -930,7 +965,7 @@ export class PathPipeline {
 
       for (let i = 0; i < numVertices; i++) {
         const v = path.vertices[i]!;
-        const offset = (vertexOffset + i) * FLOATS_PER_VERTEX;
+        const offset = (this.currentVertexOffset + i) * FLOATS_PER_VERTEX;
 
         // position
         this.vertexData[offset + 0] = v.x;
@@ -972,32 +1007,51 @@ export class PathPipeline {
       }
 
       for (let i = 0; i < numIndices; i++) {
-        this.indexData[indexOffset + i] = baseVertex + path.indices[i]!;
+        this.indexData[this.currentIndexOffset + i] = this.currentBaseVertex + path.indices[i]!;
       }
 
-      vertexOffset += numVertices;
-      indexOffset += numIndices;
-      baseVertex += numVertices;
+      this.currentVertexOffset += numVertices;
+      this.currentIndexOffset += numIndices;
+      this.currentBaseVertex += numVertices;
+      vertexCount += numVertices;
+      indexCount += numIndices;
     }
 
-    if (indexOffset === 0) {
+    if (indexCount === 0) {
       return;
     }
 
+    // Upload at offset
     this.device.queue.writeBuffer(
       this.vertexBuffer,
-      0,
+      startVertexOffset * BYTES_PER_VERTEX,
       this.vertexData,
-      0,
-      vertexOffset * FLOATS_PER_VERTEX
+      startVertexOffset * FLOATS_PER_VERTEX,
+      vertexCount * FLOATS_PER_VERTEX
     );
-    this.device.queue.writeBuffer(this.indexBuffer, 0, this.indexData, 0, indexOffset);
+    this.device.queue.writeBuffer(
+      this.indexBuffer,
+      startIndexOffset * 4, // Uint32 = 4 bytes
+      this.indexData,
+      startIndexOffset,
+      indexCount
+    );
 
+    // Draw this batch
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, uniformBindGroup);
     pass.setVertexBuffer(0, this.vertexBuffer);
     pass.setIndexBuffer(this.indexBuffer, "uint32");
-    pass.drawIndexed(indexOffset);
+    pass.drawIndexed(indexCount, 1, startIndexOffset);
+  }
+
+  /**
+   * Legacy render method for backwards compatibility.
+   * Renders all paths in a single call, resetting the buffer first.
+   */
+  render(pass: GPURenderPassEncoder, paths: PathPrimitive[], uniformBindGroup: GPUBindGroup): void {
+    this.beginFrame();
+    this.renderBatch(pass, paths, uniformBindGroup);
   }
 
   /**
