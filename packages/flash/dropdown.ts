@@ -682,6 +682,7 @@ export class FlashDropdownItem
   }
 
   private isCurrentlyFocused(): boolean {
+    // Focus is scoped to this menu level
     return this.context?.state.focusedIndex === this.itemIndex;
   }
 
@@ -1500,7 +1501,7 @@ export class FlashDropdownSub
       const submenuPath = this.getSubmenuPath();
       const dropdownId = parentContext.dropdownId;
       const submenuState: DropdownMenuState = {
-        focusedIndex: 0,
+        focusedIndex: -1,
         openSubmenuId: null,
         typeaheadBuffer: "",
         typeaheadTimestamp: 0,
@@ -1719,7 +1720,7 @@ export class FlashDropdownSub
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownSubPrepaintState): void {
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.isCurrentlyFocused();
-    const isHighlighted = isHovered || isFocused || this.isSubmenuOpen();
+    const isHighlighted = isHovered || isFocused;
     const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
 
     const itemBg = this.context?.itemBg ?? DEFAULT_ITEM_BG;
@@ -2275,6 +2276,13 @@ export class FlashDropdownMenuContent extends FlashContainerElement<
         // We're in a submenu - cancel any pending close for this submenu's path
         const dropdownId = context.dropdownId;
         cancelSubmenuClose(dropdownId, context.currentPath);
+      }
+
+      // When entering this menu's content, clear focus on the parent level
+      // so only the active submenu trigger (which stays highlighted via isSubmenuOpen)
+      // remains visually active.
+      if (context?.parentContext) {
+        context.parentContext.setFocusedIndex(-1);
       }
     };
 
