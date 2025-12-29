@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "wrangler pages deploy dist --project-name=glade --commit-dirty=true",
+    "deploy": "wrangler pages publish dist --project-name=glade --commit-dirty=true",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
