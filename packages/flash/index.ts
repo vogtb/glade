@@ -157,6 +157,10 @@ export { FlashDiv, div } from "./div.ts";
 // Divider element
 export { FlashDivider, divider } from "./divider.ts";
 
+// Monospace text helpers
+export type { MonoOptions, MonoVariant } from "./mono.ts";
+export { mono, monoCode, monoPre } from "./mono.ts";
+
 // Text input element
 export {
   FlashTextInput,

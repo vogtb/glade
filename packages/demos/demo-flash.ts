@@ -64,6 +64,9 @@ import {
   rightClickSeparator,
   rightClickLabel,
   rightClickSub,
+  mono,
+  monoCode,
+  monoPre,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
 import { createHexagonHost } from "./hexagon.ts";
@@ -1236,46 +1239,81 @@ class DemoRootView implements FlashView {
   }
 
   private renderMonoTextDemo(): FlashDiv {
+    const inlineSample =
+      'const value    = input ?? defaultUser;\n\treturn value?.profile?.email ?? "missing";';
+    const preSample = [
+      "function renderRows(items: Array<{ name: string; value?: number }>) {",
+      "\tconst rows = items.map((item, index) => ({",
+      '\t\tlabel: `${index}: ${item.name}`.padEnd(18, " "),',
+      '\t\tvalue: item.value ?? "n/a",',
+      "\t}));",
+      "\treturn rows;",
+      "}",
+      "",
+      "// Tabs expand to 8-column stops; newlines are preserved.",
+    ].join("\n");
+    const wrappedPreSample =
+      "GET /api/search?q=monospace%20demo&limit=25&cursor=eyJvZmZzZXQiOjE0NH0=&user-agent=glade-demo/1.0";
+    const titleColor = { r: 1, g: 1, b: 1, a: 1 };
+    const labelColor = { r: 0.7, g: 0.7, b: 0.8, a: 1 };
+    const codeBg = { r: 0.12, g: 0.14, b: 0.18, a: 1 };
+
     return div()
       .flex()
       .flexCol()
-      .gap(16)
+      .gap(14)
       .children_(
-        text("JetBrains Mono Regular")
-          .font("JetBrains Mono")
-          .size(32)
-          .color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Monospaced font for code editing")
+        text("Monospace helpers (code + pre)").font("Inter").size(24).color(titleColor),
+        text("Inline code collapses whitespace; preformatted blocks preserve whitespace and tabs.")
           .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
-        text("const greeting = 'Hello, World!';")
-          .font("JetBrains Mono")
-          .size(14)
-          .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 }),
-        text("function fibonacci(n: number): number {")
-          .font("JetBrains Mono")
-          .size(14)
-          .color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
-        text("  return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2);")
-          .font("JetBrains Mono")
-          .size(14)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-        text("}").font("JetBrains Mono").size(14).color({ r: 0.9, g: 0.7, b: 0.5, a: 1 }),
+          .size(15)
+          .color(labelColor),
+        div()
+          .flex()
+          .flexWrap()
+          .itemsCenter()
+          .gap(10)
+          .children_(
+            text("Inline sample:").font("Inter").size(14).color(labelColor),
+            monoCode(inlineSample, { fontSize: 14 }),
+            text("→ whitespace collapses and wraps").font("Inter").size(13).color(labelColor)
+          ),
         div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-        text("Character Disambiguation")
+        text("Preformatted block (no wrap, scrollable)").font("Inter").size(16).color(titleColor),
+        monoPre(preSample, {
+          padding: 12,
+          background: codeBg,
+          borderRadius: 8,
+          wrap: false,
+          scrollable: true,
+        }),
+        text("Wrapped preformatted text (tabSize: 4)").font("Inter").size(16).color(titleColor),
+        mono(wrappedPreSample, {
+          variant: "pre",
+          wrap: true,
+          tabSize: 4,
+          padding: 12,
+          background: codeBg,
+          borderRadius: 8,
+        }),
+        text("Custom font override (JetBrains Mono SemiBold)")
           .font("Inter")
-          .size(18)
-          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-        text("0O 1lI |! {} [] () <> => != === // /* */")
-          .font("JetBrains Mono")
           .size(16)
-          .color({ r: 0.5, g: 0.8, b: 1, a: 1 }),
-        text("ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789")
-          .font("JetBrains Mono")
-          .size(14)
-          .color({ r: 0.8, g: 0.6, b: 0.9, a: 1 })
+          .color(titleColor),
+        div()
+          .flex()
+          .flexCol()
+          .gap(6)
+          .children_(
+            mono("const ready = true;", {
+              fontFamily: "JetBrains Mono SemiBold",
+              fontSize: 14,
+            }),
+            mono("export type FlashTask = () => void;", {
+              fontFamily: "JetBrains Mono SemiBold",
+              fontSize: 14,
+            })
+          )
       );
   }
 
