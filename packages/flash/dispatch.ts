@@ -200,6 +200,8 @@ export interface HitTestNode {
   scrollHandle: ScrollHandle | null;
   keyContext: string | null;
   children: HitTestNode[];
+  /** Allow children to be hit even if they extend outside this node's bounds. */
+  allowChildOutsideBounds?: boolean;
   /** If true, this node blocks pointer events from reaching nodes behind it. */
   blocksPointerEvents?: boolean;
 }
@@ -212,9 +214,7 @@ export interface HitTestNode {
  * If a blocking root contains the point, we only return its path.
  */
 export function hitTest(roots: HitTestNode[], point: Point): HitTestNode[] {
-  const path: HitTestNode[] = [];
-
-  function walk(node: HitTestNode): boolean {
+  function walk(node: HitTestNode): HitTestNode[] {
     const { bounds } = node;
     const inside =
       point.x >= bounds.x &&
@@ -222,43 +222,48 @@ export function hitTest(roots: HitTestNode[], point: Point): HitTestNode[] {
       point.y >= bounds.y &&
       point.y < bounds.y + bounds.height;
 
-    if (!inside) {
-      return false;
-    }
-
-    path.push(node);
-
     // Check children in reverse order (top-most first)
     for (let i = node.children.length - 1; i >= 0; i--) {
       const child = node.children[i];
-      if (child && walk(child)) {
-        return true;
+      if (!child) {
+        continue;
+      }
+      const childPath = walk(child);
+      if (childPath.length > 0) {
+        // If the parent allows out-of-bounds children, keep the parent in the path
+        if (inside || node.allowChildOutsideBounds === true) {
+          return [node, ...childPath];
+        }
+        return childPath;
       }
     }
 
-    return true;
+    if (!inside && node.allowChildOutsideBounds !== true) {
+      return [];
+    }
+
+    if (inside) {
+      return [node];
+    }
+
+    return [];
   }
 
   // Check roots in reverse order (front-to-back, since overlays are added last)
   // If a blocking root contains the point, only use its path
   for (let i = roots.length - 1; i >= 0; i--) {
     const root = roots[i]!;
-    const inside =
-      point.x >= root.bounds.x &&
-      point.x < root.bounds.x + root.bounds.width &&
-      point.y >= root.bounds.y &&
-      point.y < root.bounds.y + root.bounds.height;
-
-    if (inside && root.blocksPointerEvents) {
-      // This blocking root contains the point - only walk this root
-      walk(root);
+    const path = walk(root);
+    if (root.blocksPointerEvents && path.length > 0) {
       return path;
     }
   }
 
   // No blocking root contains the point, walk all roots
+  const path: HitTestNode[] = [];
   for (const root of roots) {
-    walk(root);
+    const rootPath = walk(root);
+    path.push(...rootPath);
   }
 
   return path;

@@ -384,6 +384,7 @@ export class AnchoredElement extends FlashContainerElement<
       scrollHandle: null,
       keyContext: null,
       children: childHitTestNodes,
+      allowChildOutsideBounds: true,
     };
 
     return {

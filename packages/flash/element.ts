@@ -271,6 +271,17 @@ export interface PrepaintContext {
    * This ensures prepaint uses the exact same wrap constraint as measurement.
    */
   getComputedWrapWidth?(measureId: number): number | undefined;
+
+  /**
+   * Compute layout for a floating element (like a submenu) that is not part of the main layout tree.
+   * This runs a separate layout computation for the given layout ID.
+   * Returns the computed bounds.
+   */
+  computeFloatingLayout?(
+    layoutId: LayoutId,
+    availableWidth: number,
+    availableHeight: number
+  ): Bounds;
 }
 
 /**

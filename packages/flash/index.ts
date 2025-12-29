@@ -505,6 +505,8 @@ export { FlashTabs, FlashTab, tabs, tab } from "./tabs.ts";
 export type {
   DropdownOpenChangeHandler,
   DropdownSelectHandler,
+  DropdownCheckedChangeHandler,
+  DropdownValueChangeHandler,
   DropdownSide,
   DropdownAlign,
 } from "./dropdown.ts";
@@ -513,10 +515,19 @@ export {
   FlashDropdownItem,
   FlashDropdownSeparator,
   FlashDropdownLabel,
+  FlashDropdownCheckbox,
+  FlashDropdownRadio,
+  FlashDropdownRadioGroup,
+  FlashDropdownSub,
+  FlashDropdownMenuContent,
   dropdown,
   dropdownItem,
   dropdownSeparator,
   dropdownLabel,
+  dropdownCheckbox,
+  dropdownRadio,
+  dropdownRadioGroup,
+  dropdownSub,
 } from "./dropdown.ts";
 
 // Ideal text editor system

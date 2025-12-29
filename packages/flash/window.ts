@@ -195,6 +195,7 @@ export class FlashWindow {
   private focusStack: FocusId[] = [];
   private mousePosition: Point = { x: 0, y: 0 };
   private mouseDown = false;
+  private lastHoverPath: HitTestNode[] = []; // Track previous hover path for enter/leave events
   private windowFocused = true;
   private cursorInside = true;
   private closed = false;
@@ -1904,6 +1905,31 @@ export class FlashWindow {
             }
           }
         }
+
+        // Dispatch mouseEnter/mouseLeave events based on path changes
+        const lastPath = this.lastHoverPath;
+        const currentPathSet = new Set(path);
+        const lastPathSet = new Set(lastPath);
+
+        // Dispatch mouseLeave for nodes that left the path (in reverse order, deepest first)
+        for (let i = lastPath.length - 1; i >= 0; i--) {
+          const node = lastPath[i]!;
+          if (!currentPathSet.has(node) && node.handlers.mouseLeave) {
+            node.handlers.mouseLeave(event, this, this.getContext());
+          }
+        }
+
+        // Dispatch mouseEnter for nodes that entered the path (in order, root first)
+        for (let i = 0; i < path.length; i++) {
+          const node = path[i]!;
+          if (!lastPathSet.has(node) && node.handlers.mouseEnter) {
+            node.handlers.mouseEnter(event, this, this.getContext());
+          }
+        }
+
+        // Update last hover path
+        this.lastHoverPath = path;
+
         dispatchMouseEvent("mouseMove", event, path, this, this.getContext());
       });
       this.eventCleanups.push(cleanup);
@@ -2084,6 +2110,11 @@ export class FlashWindow {
 
     if (target.onScroll) {
       const cleanup = target.onScroll((x, y, deltaX, deltaY, mods) => {
+        // Close any open popovers when scrolling occurs
+        if (this.popoverManager.isActive()) {
+          this.popoverManager.hide();
+        }
+
         const event: FlashScrollEvent = { x, y, deltaX, deltaY, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
         dispatchScrollEvent(event, path, this, this.getContext());
@@ -2445,6 +2476,20 @@ export class FlashWindow {
 
       getComputedWrapWidth: (measureId: number): number | undefined => {
         return this.getComputedWrapWidth(measureId);
+      },
+
+      computeFloatingLayout: (
+        floatingLayoutId: LayoutId,
+        availableWidth: number,
+        availableHeight: number
+      ): Bounds => {
+        layoutEngine.computeLayoutWithMeasure(
+          floatingLayoutId,
+          availableWidth,
+          availableHeight,
+          this.measureTextCallback.bind(this)
+        );
+        return layoutEngine.layoutBounds(floatingLayoutId);
       },
     };
   }

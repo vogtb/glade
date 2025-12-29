@@ -358,9 +358,10 @@ export class GlyphAtlas {
     }
 
     if (!glyphData || glyphData.width === 0 || glyphData.height === 0) {
-      console.warn(
-        `Glyph rasterizer returned no data: char="${glyphChar}" glyphId=${key.glyphId} fontFamily="${fontFamily}" fontSize=${key.fontSize} cosmicFontId=${cosmicFontId ?? -1}`
-      );
+      // TODO: seeing this a lot in logs. fix.
+      // console.warn(
+      //   `Glyph rasterizer returned no data: char="${glyphChar}" glyphId=${key.glyphId} fontFamily="${fontFamily}" fontSize=${key.fontSize} cosmicFontId=${cosmicFontId ?? -1}`
+      // );
       return null;
     }
 

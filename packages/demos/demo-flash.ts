@@ -54,6 +54,7 @@ import {
   dropdownItem,
   dropdownSeparator,
   dropdownLabel,
+  dropdownSub,
   dialog,
   dialogContent,
   dialogHeader,
@@ -504,6 +505,7 @@ class DemoRootView implements FlashView {
   private dropdownOpen = false;
   private dropdown2Open = false;
   private dropdown3Open = false;
+  private dropdown4Open = false; // Nested submenu demo
   private dropdownLastAction = "";
 
   // Dialog state
@@ -2775,6 +2777,111 @@ class DemoRootView implements FlashView {
               )
           ),
 
+        // Nested Submenus Example
+        text("Nested Submenus").font("Inter").size(20).color(labelColor),
+        text("Hover over submenu items to reveal nested menus. Supports diagonal mouse movement.")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .p(16)
+          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+          .rounded(8)
+          .children_(
+            dropdown()
+              .id("file-menu-dropdown")
+              .open(this.dropdown4Open)
+              .onOpenChange((open) => {
+                this.dropdown4Open = open;
+                cx.notify();
+              })
+              .trigger(
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .itemsCenter()
+                  .px(16)
+                  .py(10)
+                  .bg({ r: 0.6, g: 0.3, b: 0.7, a: 1 })
+                  .rounded(6)
+                  .cursorPointer()
+                  .hover((s) => s.bg({ r: 0.65, g: 0.35, b: 0.75, a: 1 }))
+                  .children_(
+                    text("File Menu").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 }),
+                    icon("arrowDown", 14).color({ r: 1, g: 1, b: 1, a: 0.7 })
+                  )
+              )
+              .items(
+                dropdownItem("New").onSelect(() => {
+                  this.dropdownLastAction = "New";
+                  cx.notify();
+                }),
+                dropdownSub("Open Recent").items(
+                  dropdownItem("project-alpha.ts").onSelect(() => {
+                    this.dropdownLastAction = "Open: project-alpha.ts";
+                    cx.notify();
+                  }),
+                  dropdownItem("config.json").onSelect(() => {
+                    this.dropdownLastAction = "Open: config.json";
+                    cx.notify();
+                  }),
+                  dropdownItem("README.md").onSelect(() => {
+                    this.dropdownLastAction = "Open: README.md";
+                    cx.notify();
+                  }),
+                  dropdownSeparator(),
+                  dropdownSub("More Files").items(
+                    dropdownItem("old-backup.zip").onSelect(() => {
+                      this.dropdownLastAction = "Open: old-backup.zip";
+                      cx.notify();
+                    }),
+                    dropdownItem("notes.txt").onSelect(() => {
+                      this.dropdownLastAction = "Open: notes.txt";
+                      cx.notify();
+                    })
+                  )
+                ),
+                dropdownSeparator(),
+                dropdownSub("Export As").items(
+                  dropdownItem("PDF").onSelect(() => {
+                    this.dropdownLastAction = "Export as PDF";
+                    cx.notify();
+                  }),
+                  dropdownItem("HTML").onSelect(() => {
+                    this.dropdownLastAction = "Export as HTML";
+                    cx.notify();
+                  }),
+                  dropdownSub("Image").items(
+                    dropdownItem("PNG").onSelect(() => {
+                      this.dropdownLastAction = "Export as PNG";
+                      cx.notify();
+                    }),
+                    dropdownItem("JPEG").onSelect(() => {
+                      this.dropdownLastAction = "Export as JPEG";
+                      cx.notify();
+                    }),
+                    dropdownItem("WebP").onSelect(() => {
+                      this.dropdownLastAction = "Export as WebP";
+                      cx.notify();
+                    })
+                  )
+                ),
+                dropdownSeparator(),
+                dropdownItem("Save").onSelect(() => {
+                  this.dropdownLastAction = "Save";
+                  cx.notify();
+                }),
+                dropdownItem("Close").onSelect(() => {
+                  this.dropdownLastAction = "Close";
+                  cx.notify();
+                })
+              )
+          ),
+
         // API reference
         div()
           .flex()
@@ -2822,6 +2929,14 @@ class DemoRootView implements FlashView {
               .size(12)
               .color(dimColor),
             text("dropdownLabel(text) - Non-interactive section header")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("dropdownSub(label) - Nested submenu trigger")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("  .items(...items) - Items in the submenu (can include more dropdownSub)")
               .font("JetBrains Mono")
               .size(12)
               .color(dimColor)
