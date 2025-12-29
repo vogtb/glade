@@ -54,6 +54,10 @@ import {
   dropdownItem,
   dropdownSeparator,
   dropdownLabel,
+  dialog,
+  dialogContent,
+  dialogHeader,
+  dialogFooter,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
 import { createHexagonHost } from "./hexagon.ts";
@@ -111,6 +115,7 @@ type DemoSection =
   | "dropdown"
   | "tooltip"
   | "popover"
+  | "dialog"
   | "grid-layout"
   | "canvas"
   | "vector-paths"
@@ -152,6 +157,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "dropdown", label: "Dropdown" },
   { id: "tooltip", label: "Tooltip" },
   { id: "popover", label: "Popover" },
+  { id: "dialog", label: "Dialog" },
   { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
@@ -498,7 +504,13 @@ class DemoRootView implements FlashView {
   private dropdownOpen = false;
   private dropdown2Open = false;
   private dropdown3Open = false;
-  private dropdownLastAction = "None";
+  private dropdownLastAction = "";
+
+  // Dialog state
+  private dialogOpen = false;
+  private dialog2Open = false;
+  private dialog3Open = false;
+  private dialogLastAction = "";
 
   render(cx: FlashViewContext<this>): FlashDiv {
     if (!this.rightScrollHandle) {
@@ -643,6 +655,8 @@ class DemoRootView implements FlashView {
         return this.renderTooltipDemo();
       case "popover":
         return this.renderPopoverDemo(cx);
+      case "dialog":
+        return this.renderDialogDemo(cx);
       case "grid-layout":
         return this.renderGridLayoutDemo();
       case "canvas":
@@ -3129,6 +3143,325 @@ class DemoRootView implements FlashView {
   private popoverOpen = false;
   private popover2Open = false;
   private popover3Open = false;
+
+  private renderDialogDemo(cx: FlashViewContext<this>): FlashDiv {
+    const titleColor = { r: 1, g: 1, b: 1, a: 1 };
+    const labelColor = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
+    const dimColor = { r: 0.6, g: 0.6, b: 0.6, a: 1 };
+    const buttonBg = { r: 0.2, g: 0.2, b: 0.25, a: 1 };
+    const buttonHoverBg = { r: 0.3, g: 0.3, b: 0.35, a: 1 };
+    const accentColor = { r: 0.4, g: 0.6, b: 1, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(24)
+      .children_(
+        text("Dialog Component").font("Inter").size(28).weight(700).color(titleColor),
+        text("Modal windows with backdrop overlay. Click outside or press Escape to dismiss.")
+          .font("Inter")
+          .size(14)
+          .color(dimColor),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Basic Dialog").font("Inter").size(18).weight(600).color(labelColor),
+            text("A simple dialog with title, description, and action buttons")
+              .font("Inter")
+              .size(13)
+              .color(dimColor),
+            div()
+              .flex()
+              .flexRow()
+              .gap(16)
+              .children_(
+                dialog()
+                  .open(this.dialogOpen)
+                  .onOpenChange((open) => {
+                    this.dialogOpen = open;
+                    cx.notify();
+                  })
+                  .trigger(
+                    div()
+                      .flex()
+                      .justifyCenter()
+                      .itemsCenter()
+                      .py(12)
+                      .px(20)
+                      .bg(buttonBg)
+                      .hover((s) => s.bg(buttonHoverBg))
+                      .rounded(6)
+                      .cursor("pointer")
+                      .child(text("Open Dialog").font("Inter").size(14).color(labelColor))
+                  )
+                  .content(
+                    dialogContent()
+                      .header(
+                        dialogHeader()
+                          .title("Are you sure?")
+                          .description(
+                            "This action cannot be undone. This will permanently delete your account and remove your data from our servers."
+                          )
+                      )
+                      .footer(
+                        dialogFooter()
+                          .cancel("Cancel")
+                          .confirm("Continue")
+                          .onCancel(() => {
+                            this.dialogOpen = false;
+                            this.dialogLastAction = "Cancelled";
+                            cx.notify();
+                          })
+                          .onConfirm(() => {
+                            this.dialogOpen = false;
+                            this.dialogLastAction = "Confirmed";
+                            cx.notify();
+                          })
+                      )
+                  )
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Destructive Dialog").font("Inter").size(18).weight(600).color(labelColor),
+            text("Dialog with a destructive (red) confirm button for dangerous actions")
+              .font("Inter")
+              .size(13)
+              .color(dimColor),
+            dialog()
+              .open(this.dialog2Open)
+              .onOpenChange((open) => {
+                this.dialog2Open = open;
+                cx.notify();
+              })
+              .trigger(
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg({ r: 0.6, g: 0.15, b: 0.15, a: 1 })
+                  .hover((s) => s.bg({ r: 0.7, g: 0.2, b: 0.2, a: 1 }))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .child(
+                    text("Delete Account").font("Inter").size(14).color({ r: 1, g: 1, b: 1, a: 1 })
+                  )
+              )
+              .content(
+                dialogContent()
+                  .header(
+                    dialogHeader()
+                      .title("Delete Account")
+                      .description(
+                        "Are you absolutely sure? This will permanently delete your account and all associated data."
+                      )
+                  )
+                  .footer(
+                    dialogFooter()
+                      .cancel("Cancel")
+                      .confirm("Delete")
+                      .isDestructive(true)
+                      .onCancel(() => {
+                        this.dialog2Open = false;
+                        cx.notify();
+                      })
+                      .onConfirm(() => {
+                        this.dialog2Open = false;
+                        this.dialogLastAction = "Account deleted!";
+                        cx.notify();
+                      })
+                  )
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Dialog with Custom Content").font("Inter").size(18).weight(600).color(labelColor),
+            text("Dialogs can contain any custom content in the body")
+              .font("Inter")
+              .size(13)
+              .color(dimColor),
+            dialog()
+              .open(this.dialog3Open)
+              .onOpenChange((open) => {
+                this.dialog3Open = open;
+                cx.notify();
+              })
+              .trigger(
+                div()
+                  .flex()
+                  .justifyCenter()
+                  .itemsCenter()
+                  .py(12)
+                  .px(20)
+                  .bg(buttonBg)
+                  .hover((s) => s.bg(buttonHoverBg))
+                  .rounded(6)
+                  .cursor("pointer")
+                  .child(text("Edit Profile").font("Inter").size(14).color(labelColor))
+              )
+              .content(
+                dialogContent()
+                  .header(
+                    dialogHeader()
+                      .title("Edit Profile")
+                      .description("Make changes to your profile here.")
+                  )
+                  .body(
+                    div()
+                      .flex()
+                      .flexCol()
+                      .gap(12)
+                      .children_(
+                        div()
+                          .flex()
+                          .flexCol()
+                          .gap(4)
+                          .children_(
+                            text("Name").font("Inter").size(13).weight(500).color(labelColor),
+                            div()
+                              .p(10)
+                              .bg({ r: 0.15, g: 0.15, b: 0.18, a: 1 })
+                              .rounded(4)
+                              .border(1)
+                              .borderColor({ r: 0.25, g: 0.25, b: 0.28, a: 1 })
+                              .child(text("John Doe").font("Inter").size(14).color(dimColor))
+                          ),
+                        div()
+                          .flex()
+                          .flexCol()
+                          .gap(4)
+                          .children_(
+                            text("Email").font("Inter").size(13).weight(500).color(labelColor),
+                            div()
+                              .p(10)
+                              .bg({ r: 0.15, g: 0.15, b: 0.18, a: 1 })
+                              .rounded(4)
+                              .border(1)
+                              .borderColor({ r: 0.25, g: 0.25, b: 0.28, a: 1 })
+                              .child(
+                                text("john@example.com").font("Inter").size(14).color(dimColor)
+                              )
+                          )
+                      )
+                  )
+                  .footer(
+                    dialogFooter()
+                      .cancel("Cancel")
+                      .confirm("Save Changes")
+                      .onCancel(() => {
+                        this.dialog3Open = false;
+                        cx.notify();
+                      })
+                      .onConfirm(() => {
+                        this.dialog3Open = false;
+                        this.dialogLastAction = "Profile saved!";
+                        cx.notify();
+                      })
+                  )
+              )
+          ),
+
+        this.dialogLastAction
+          ? div()
+              .p(12)
+              .bg({ r: 0.15, g: 0.25, b: 0.15, a: 1 })
+              .rounded(6)
+              .child(
+                text(`Last action: ${this.dialogLastAction}`)
+                  .font("Inter")
+                  .size(14)
+                  .color({ r: 0.6, g: 0.9, b: 0.6, a: 1 })
+              )
+          : div(),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(16)
+          .children_(
+            text("Dialog vs Popover vs Modal").font("Inter").size(18).weight(600).color(labelColor),
+            div()
+              .flex()
+              .flexCol()
+              .gap(8)
+              .p(16)
+              .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+              .rounded(8)
+              .children_(
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .children_(
+                    text("Popover:").font("Inter").size(13).weight(600).color(accentColor),
+                    text("Positioned relative to trigger, click-outside dismisses")
+                      .font("Inter")
+                      .size(13)
+                      .color(dimColor)
+                  ),
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .children_(
+                    text("Dialog:").font("Inter").size(13).weight(600).color(accentColor),
+                    text("Centered modal with backdrop, blocks background interaction")
+                      .font("Inter")
+                      .size(13)
+                      .color(dimColor)
+                  ),
+                div()
+                  .flex()
+                  .flexRow()
+                  .gap(8)
+                  .children_(
+                    text("Alert Dialog:").font("Inter").size(13).weight(600).color(accentColor),
+                    text("Dialog that requires explicit action (no backdrop dismiss)")
+                      .font("Inter")
+                      .size(13)
+                      .color(dimColor)
+                  )
+              )
+          ),
+
+        div()
+          .flex()
+          .flexCol()
+          .gap(8)
+          .children_(
+            text("API Reference").font("Inter").size(16).weight(600).color(labelColor),
+            text("dialog().open(boolean).onOpenChange(fn).trigger(element).content(dialogContent)")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("dialogContent().header(dialogHeader).body(element).footer(dialogFooter)")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("dialogHeader().title(string).description(string).showClose(boolean)")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor),
+            text("dialogFooter().cancel(string).confirm(string).isDestructive(boolean)")
+              .font("JetBrains Mono")
+              .size(12)
+              .color(dimColor)
+          )
+      );
+  }
 
   private renderPopoverDemo(cx: FlashViewContext<this>): FlashDiv {
     const titleColor = { r: 1, g: 1, b: 1, a: 1 };

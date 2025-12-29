@@ -200,10 +200,16 @@ export interface HitTestNode {
   scrollHandle: ScrollHandle | null;
   keyContext: string | null;
   children: HitTestNode[];
+  /** If true, this node blocks pointer events from reaching nodes behind it. */
+  blocksPointerEvents?: boolean;
 }
 
 /**
  * Hit test a point against the tree, returning the path from root to leaf.
+ *
+ * Roots are expected to be in back-to-front order (main UI first, overlays last).
+ * We iterate in reverse (front-to-back) to find the topmost blocking root first.
+ * If a blocking root contains the point, we only return its path.
  */
 export function hitTest(roots: HitTestNode[], point: Point): HitTestNode[] {
   const path: HitTestNode[] = [];
@@ -233,6 +239,24 @@ export function hitTest(roots: HitTestNode[], point: Point): HitTestNode[] {
     return true;
   }
 
+  // Check roots in reverse order (front-to-back, since overlays are added last)
+  // If a blocking root contains the point, only use its path
+  for (let i = roots.length - 1; i >= 0; i--) {
+    const root = roots[i]!;
+    const inside =
+      point.x >= root.bounds.x &&
+      point.x < root.bounds.x + root.bounds.width &&
+      point.y >= root.bounds.y &&
+      point.y < root.bounds.y + root.bounds.height;
+
+    if (inside && root.blocksPointerEvents) {
+      // This blocking root contains the point - only walk this root
+      walk(root);
+      return path;
+    }
+  }
+
+  // No blocking root contains the point, walk all roots
   for (const root of roots) {
     walk(root);
   }

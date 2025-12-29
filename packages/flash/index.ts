@@ -348,6 +348,32 @@ export {
   DEFAULT_POPOVER_CONFIG,
 } from "./popover.ts";
 
+// Dialog system
+export type {
+  DialogOpenChangeHandler,
+  DialogActionHandler,
+  DialogConfig,
+  DialogBuilder,
+  DialogRegistration,
+  ActiveDialog,
+  DialogContentContext,
+} from "./dialog.ts";
+
+export {
+  DialogManager,
+  DialogConfigBuilder,
+  dialogConfig,
+  DEFAULT_DIALOG_CONFIG,
+  FlashDialogHeader,
+  FlashDialogFooter,
+  FlashDialogContent,
+  FlashDialog,
+  dialog,
+  dialogContent,
+  dialogHeader,
+  dialogFooter,
+} from "./dialog.ts";
+
 // Keyboard utilities
 export type { Keystroke } from "./keyboard.ts";
 

@@ -76,6 +76,8 @@ import {
 import { DragTracker, type ActiveDrag, type DragPayload } from "./drag.ts";
 import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./tooltip.ts";
 import { PopoverManager, type PopoverRegistration } from "./popover.ts";
+import { DialogManager, type DialogRegistration } from "./dialog.ts";
+import { FlashDiv } from "./div.ts";
 import { AnchoredElement } from "./anchored.ts";
 import { DeferredElement } from "./deferred.ts";
 import {
@@ -227,6 +229,9 @@ export class FlashWindow {
 
   // Popovers (dropdowns, context menus, etc.)
   private popoverManager = new PopoverManager();
+
+  // Dialogs (modal windows)
+  private dialogManager = new DialogManager();
 
   // Tab stops and focus
   private tabStopRegistry = new TabStopRegistry();
@@ -1039,6 +1044,22 @@ export class FlashWindow {
     this.popoverManager.register(registration);
   }
 
+  // ============ Dialogs ============
+
+  /**
+   * Get the dialog manager.
+   */
+  getDialogManager(): DialogManager {
+    return this.dialogManager;
+  }
+
+  /**
+   * Register a dialog for an element.
+   */
+  registerDialog(registration: DialogRegistration): void {
+    this.dialogManager.register(registration);
+  }
+
   /**
    * Get the current content mask.
    */
@@ -1178,6 +1199,9 @@ export class FlashWindow {
       currentHitTest.hoverHitboxCount > 0 ? (currentHitTest.ids[0] ?? null) : null;
     this.tooltipManager.update(hoveredHitboxId, this.platform.now(), this.getContext());
 
+    // Render active dialog (separate layout/prepaint/paint cycle)
+    const dialogHitTestNode = this.renderActiveDialog();
+
     // Render active popover (separate layout/prepaint/paint cycle)
     const popoverHitTestNode = this.renderActivePopover();
 
@@ -1199,6 +1223,11 @@ export class FlashWindow {
       if (entry.hitTestNode) {
         this.hitTestTree.push(entry.hitTestNode);
       }
+    }
+
+    // Add dialog hit test node (modal, should be on top of most things)
+    if (dialogHitTestNode) {
+      this.hitTestTree.push(dialogHitTestNode);
     }
 
     // Add popover hit test node (should be on top)
@@ -1374,6 +1403,8 @@ export class FlashWindow {
     this.tooltipManager.clearRegistrations();
     // Clear popover registrations from previous frame
     this.popoverManager.clearRegistrations();
+    // Clear dialog registrations from previous frame
+    this.dialogManager.clearRegistrations();
     // Clear tab stops from previous frame
     this.tabStopRegistry.clear();
     // Clear focus contexts from previous frame
@@ -1465,6 +1496,94 @@ export class FlashWindow {
 
     // Return hit test node for the popover
     return (popoverPrepaintState as { hitTestNode?: HitTestNode })?.hitTestNode ?? null;
+  }
+
+  /**
+   * Render the active dialog if one exists.
+   * This runs its own layout/prepaint/paint cycle separate from the main tree.
+   * Dialogs are modal and render with a backdrop overlay.
+   * Uses the deferred rendering system for proper z-ordering.
+   */
+  private renderActiveDialog(): HitTestNode | null {
+    const activeDialog = this.dialogManager.getActiveDialog();
+    if (!activeDialog) {
+      return null;
+    }
+
+    // Build the dialog element
+    this.dialogManager.buildActiveDialog(this.getContext(), {
+      width: this.width,
+      height: this.height,
+    });
+
+    const dialogElement = activeDialog.element;
+    if (!dialogElement) {
+      return null;
+    }
+
+    const backdropColor = activeDialog.registration.config.backdropColor;
+    const onOpenChange = activeDialog.registration.onClose;
+    const closeOnBackdrop = activeDialog.registration.config.closeOnBackdropClick;
+
+    // Create a backdrop div that covers the full window and centers the dialog
+    const backdropDiv = new FlashDiv();
+    backdropDiv
+      .w(this.width)
+      .h(this.height)
+      .bg(backdropColor)
+      .flex()
+      .itemsCenter()
+      .justifyCenter()
+      .occludeMouse() // Block hover/click events from reaching elements behind
+      .child(dialogElement);
+
+    // Add click handler to backdrop for dismissal
+    if (closeOnBackdrop && onOpenChange) {
+      backdropDiv.onClick(() => {
+        onOpenChange();
+      });
+    }
+
+    // Wrap in DeferredElement for proper z-ordering (priority 2 = above popovers)
+    const deferredWrapper = new DeferredElement(backdropDiv);
+    deferredWrapper.priority(2);
+
+    // Run layout for the wrapper
+    const dialogElementId = this.allocateElementId();
+    const requestLayoutCx = this.createRequestLayoutContext(dialogElementId);
+    const { layoutId: dialogLayoutId, requestState: dialogRequestState } =
+      deferredWrapper.requestLayout(requestLayoutCx);
+
+    this.layoutEngine.computeLayoutWithMeasure(
+      dialogLayoutId,
+      this.width,
+      this.height,
+      this.measureTextCallback.bind(this)
+    );
+
+    const dialogBounds = this.layoutEngine.layoutBounds(dialogLayoutId);
+
+    // Store bounds for reference
+    activeDialog.bounds = dialogBounds;
+
+    // Prepaint - this registers with deferred draw system
+    const prepaintCx = this.createPrepaintContext(dialogElementId);
+    const dialogPrepaintState = deferredWrapper.prepaint(
+      prepaintCx,
+      dialogBounds,
+      dialogRequestState
+    );
+
+    // Paint is handled by deferred system (deferredWrapper registers itself)
+    const paintCx = this.createPaintContext(dialogElementId);
+    deferredWrapper.paint(paintCx, dialogBounds, dialogPrepaintState);
+
+    // Return hit test node for the dialog, marked as blocking pointer events
+    const hitTestNode = (dialogPrepaintState as { hitTestNode?: HitTestNode })?.hitTestNode ?? null;
+    if (hitTestNode) {
+      hitTestNode.blocksPointerEvents = true;
+    }
+    return hitTestNode;
   }
 
   /**
@@ -2293,6 +2412,10 @@ export class FlashWindow {
 
       registerPopover: (registration: PopoverRegistration): void => {
         this.registerPopover(registration);
+      },
+
+      registerDialog: (registration: DialogRegistration): void => {
+        this.registerDialog(registration);
       },
 
       updateScrollContentSize: (

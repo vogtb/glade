@@ -225,6 +225,11 @@ export interface PrepaintContext {
   registerPopover(registration: import("./popover.ts").PopoverRegistration): void;
 
   /**
+   * Register a dialog for an element.
+   */
+  registerDialog(registration: import("./dialog.ts").DialogRegistration): void;
+
+  /**
    * Update the content and viewport size for a scroll handle.
    * This allows proper scroll offset clamping.
    */
