@@ -1720,7 +1720,7 @@ export class FlashDropdownSub
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownSubPrepaintState): void {
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.isCurrentlyFocused();
-    const isHighlighted = isHovered || isFocused;
+    const isHighlighted = this.isSubmenuOpen() ? true : isHovered || isFocused;
     const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
 
     const itemBg = this.context?.itemBg ?? DEFAULT_ITEM_BG;
