@@ -3,7 +3,7 @@
 set -x
 
 echo "Installing dependencies for JS/TS..."
-pnpm install
+bun install
 echo "Done installing dependencies for JS/TS"
 
 echo "Installing dependencies for rust..."

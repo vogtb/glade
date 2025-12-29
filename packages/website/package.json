@@ -1,0 +1,17 @@
+{
+  "name": "@glade/website",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "website.ts",
+  "types": "website.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules"
+  }
+}
