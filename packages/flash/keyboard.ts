@@ -10,6 +10,7 @@ import type { Modifiers } from "./dispatch.ts";
 /**
  * Convert core key mods to Flash modifiers.
  */
+// TODO: Share modifier decoding across input helpers to avoid duplicate logic.
 export function coreModsToFlashMods(mods: number): Modifiers {
   return {
     shift: (mods & 0x01) !== 0,

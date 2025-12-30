@@ -15,6 +15,7 @@
     "@glade/core": "workspace:*",
     "@glade/layout": "workspace:*",
     "@glade/shaper": "workspace:*",
-    "@glade/svg": "workspace:*"
+    "@glade/svg": "workspace:*",
+    "@glade/utils": "workspace:*"
   }
 }

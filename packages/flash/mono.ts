@@ -9,9 +9,19 @@
  * and CRLF/CR newlines are normalized to LF to mirror the DOM's line break handling.
  */
 
-import { text, type FlashTextElement } from "./element.ts";
+import {
+  FlashElement,
+  text,
+  type FlashTextElement,
+  type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
+} from "./element.ts";
 import { div, type FlashDiv } from "./div.ts";
-import type { Color } from "./types.ts";
+import type { HitTestNode } from "./dispatch.ts";
+import type { Bounds, Color } from "./types.ts";
 
 const DEFAULT_MONO_FONT_FAMILY =
   'JetBrains Mono, ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
@@ -40,33 +50,18 @@ function pickFontFamily(fontFamily: string): string {
 
 export type MonoVariant = "code" | "pre";
 
-export type MonoOptions = {
-  /** Choose inline code-like rendering or block preformatted rendering. Defaults to "code". */
-  variant?: MonoVariant;
-  /** Allow soft-wrapping. Defaults to true for inline code, false for block pre. */
+type MonoConfig = {
+  variant: MonoVariant;
   wrap?: boolean;
-  /** Tab width in spaces for block/pre text. Defaults to 8 to match CSS tab-size. */
   tabSize?: number;
-  /** Override the monospace font stack. */
   fontFamily?: string;
-  /** Optional font size override. */
   fontSize?: number;
-  /** Optional line height override. */
   lineHeight?: number;
-  /** Maximum width for wrapping calculations. */
   maxWidth?: number;
-  /** Whether the text can be selected. Defaults to true to match the DOM. */
   selectable?: boolean;
-  /** Optional padding for block/pre containers. */
   padding?: number;
-  /** Optional background color for block/pre containers. */
   background?: Color;
-  /** Optional border radius for block/pre containers. */
   borderRadius?: number;
-  /**
-   * Enable scrolling when wrapping is disabled.
-   * Defaults to true for block/pre when wrap is false to prevent layout blowout.
-   */
   scrollable?: boolean;
 };
 
@@ -85,25 +80,24 @@ type NormalizedMonoOptions = {
   scrollable: boolean;
 };
 
-function normalizeMonoOptions(options?: MonoOptions): NormalizedMonoOptions {
-  const variant = options?.variant ?? "code";
-  const wrap = options?.wrap ?? variant === "code";
-  const tabSize = options?.tabSize ?? 8;
-  const selectable = options?.selectable ?? true;
-  const scrollable = options?.scrollable ?? (variant === "pre" && !wrap);
+function normalizeMonoOptions(options: MonoConfig): NormalizedMonoOptions {
+  const wrap = options.wrap ?? options.variant === "code";
+  const tabSize = options.tabSize ?? 8;
+  const selectable = options.selectable ?? true;
+  const scrollable = options.scrollable ?? (options.variant === "pre" && !wrap);
 
   return {
-    variant,
+    variant: options.variant,
     wrap,
     tabSize: tabSize > 0 ? tabSize : 1,
-    fontFamily: options?.fontFamily ?? DEFAULT_MONO_FONT_FAMILY,
-    fontSize: options?.fontSize,
-    lineHeight: options?.lineHeight,
-    maxWidth: options?.maxWidth,
+    fontFamily: options.fontFamily ?? DEFAULT_MONO_FONT_FAMILY,
+    fontSize: options.fontSize,
+    lineHeight: options.lineHeight,
+    maxWidth: options.maxWidth,
     selectable,
-    padding: options?.padding,
-    background: options?.background,
-    borderRadius: options?.borderRadius,
+    padding: options.padding,
+    background: options.background,
+    borderRadius: options.borderRadius,
     scrollable,
   };
 }
@@ -199,7 +193,6 @@ function createPreLines(normalizedContent: string, options: NormalizedMonoOption
     if (options.lineHeight !== undefined) {
       lineEl.lineHeight(options.lineHeight);
     }
-    // No maxWidth so lines stay on one row.
     container.child(lineEl);
   }
 
@@ -229,52 +222,219 @@ function wrapPreBlock(
   return container;
 }
 
+type MonoRequestLayoutState = {
+  childElementId: GlobalElementId;
+  childRequestState: unknown;
+};
+
+type MonoPrepaintState = {
+  childElementId: GlobalElementId;
+  childPrepaintState: unknown;
+  hitTestNode: HitTestNode | null;
+};
+
+function hasHitTestNode(value: unknown): value is { hitTestNode?: HitTestNode | null } {
+  return typeof value === "object" && value !== null && "hitTestNode" in value;
+}
+
+export class MonoElement extends FlashElement<MonoRequestLayoutState, MonoPrepaintState> {
+  private wrapValue: boolean | undefined;
+  private tabSizeValue = 8;
+  private fontFamilyValue = DEFAULT_MONO_FONT_FAMILY;
+  private fontSizeValue: number | undefined;
+  private lineHeightValue: number | undefined;
+  private maxWidthValue: number | undefined;
+  private selectableValue = true;
+  private paddingValue: number | undefined;
+  private backgroundValue: Color | undefined;
+  private borderRadiusValue: number | undefined;
+  private scrollableValue: boolean | undefined;
+  private childElement: FlashElement<unknown, unknown> | null = null;
+  private hitTestNodeValue: HitTestNode | null = null;
+
+  constructor(
+    private readonly content: string,
+    private variantValue: MonoVariant
+  ) {
+    super();
+  }
+
+  variant(value: MonoVariant): this {
+    this.variantValue = value;
+    return this;
+  }
+
+  wrap(enabled = true): this {
+    this.wrapValue = enabled;
+    return this;
+  }
+
+  noWrap(): this {
+    this.wrapValue = false;
+    return this;
+  }
+
+  tabSize(size: number): this {
+    this.tabSizeValue = size;
+    return this;
+  }
+
+  font(family: string): this {
+    this.fontFamilyValue = family;
+    return this;
+  }
+
+  size(value: number): this {
+    this.fontSizeValue = value;
+    return this;
+  }
+
+  lineHeight(value: number): this {
+    this.lineHeightValue = value;
+    return this;
+  }
+
+  maxWidth(value: number): this {
+    this.maxWidthValue = value;
+    return this;
+  }
+
+  selectable(enabled = true): this {
+    this.selectableValue = enabled;
+    return this;
+  }
+
+  padding(value: number): this {
+    this.paddingValue = value;
+    return this;
+  }
+
+  bg(value: Color): this {
+    this.backgroundValue = value;
+    return this;
+  }
+
+  rounded(value: number): this {
+    this.borderRadiusValue = value;
+    return this;
+  }
+
+  scrollable(enabled = true): this {
+    this.scrollableValue = enabled;
+    return this;
+  }
+
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<MonoRequestLayoutState> {
+    const child = this.buildChild();
+    const childElementId = cx.allocateChildId();
+    const childCx: RequestLayoutContext = { ...cx, elementId: childElementId };
+    const { layoutId, requestState } = child.requestLayout(childCx);
+
+    return {
+      layoutId,
+      requestState: {
+        childElementId,
+        childRequestState: requestState,
+      },
+    };
+  }
+
+  prepaint(
+    cx: PrepaintContext,
+    bounds: Bounds,
+    requestState: MonoRequestLayoutState
+  ): MonoPrepaintState {
+    const child = this.getChildOrThrow();
+    const childCx = cx.withElementId(requestState.childElementId);
+    const childPrepaintState = child.prepaint(childCx, bounds, requestState.childRequestState);
+    const hitTestNode = hasHitTestNode(childPrepaintState)
+      ? (childPrepaintState.hitTestNode ?? null)
+      : null;
+
+    this.hitTestNodeValue = hitTestNode;
+
+    return {
+      childElementId: requestState.childElementId,
+      childPrepaintState,
+      hitTestNode,
+    };
+  }
+
+  paint(cx: PaintContext, bounds: Bounds, prepaintState: MonoPrepaintState): void {
+    const child = this.getChildOrThrow();
+    child.paint(cx, bounds, prepaintState.childPrepaintState);
+  }
+
+  hitTest(_bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {
+    return this.hitTestNodeValue;
+  }
+
+  private getNormalizedOptions(): NormalizedMonoOptions {
+    return normalizeMonoOptions({
+      variant: this.variantValue,
+      wrap: this.wrapValue,
+      tabSize: this.tabSizeValue,
+      fontFamily: this.fontFamilyValue,
+      fontSize: this.fontSizeValue,
+      lineHeight: this.lineHeightValue,
+      maxWidth: this.maxWidthValue,
+      selectable: this.selectableValue,
+      padding: this.paddingValue,
+      background: this.backgroundValue,
+      borderRadius: this.borderRadiusValue,
+      scrollable: this.scrollableValue,
+    });
+  }
+
+  private buildChild(): FlashElement<unknown, unknown> {
+    const normalizedOptions = this.getNormalizedOptions();
+    const normalizedContent = normalizeContentForVariant(this.content, normalizedOptions);
+
+    if (normalizedOptions.variant === "pre" && !normalizedOptions.wrap) {
+      const preLines = createPreLines(normalizedContent, normalizedOptions);
+      const wrapped = wrapPreBlock(preLines, normalizedOptions);
+      this.childElement = wrapped;
+      return wrapped;
+    }
+
+    const whitespaceMode = normalizedOptions.wrap ? "pre-wrap" : "pre";
+    const textElement = createMonoTextElement(normalizedContent, normalizedOptions, whitespaceMode);
+
+    if (normalizedOptions.variant === "pre") {
+      const wrapped = wrapPreBlock(textElement, normalizedOptions);
+      this.childElement = wrapped;
+      return wrapped;
+    }
+
+    this.childElement = textElement;
+    return textElement;
+  }
+
+  private getChildOrThrow(): FlashElement<unknown, unknown> {
+    if (this.childElement === null) {
+      throw new Error("MonoElement child is missing before rendering");
+    }
+    return this.childElement;
+  }
+}
+
 /**
- * High-level monospace helper. Defaults to inline code semantics.
+ * General monospace helper. Defaults to inline code semantics.
  */
-export function mono(content: string, options?: MonoOptions): FlashTextElement | FlashDiv {
-  const normalizedOptions = normalizeMonoOptions(options);
-  const normalizedContent = normalizeContentForVariant(content, normalizedOptions);
-
-  if (normalizedOptions.variant === "pre" && !normalizedOptions.wrap) {
-    const preLines = createPreLines(normalizedContent, normalizedOptions);
-    return wrapPreBlock(preLines, normalizedOptions);
-  }
-
-  const whitespaceMode = normalizedOptions.wrap ? "pre-wrap" : "pre";
-  const textElement = createMonoTextElement(normalizedContent, normalizedOptions, whitespaceMode);
-
-  if (normalizedOptions.variant === "pre") {
-    return wrapPreBlock(textElement, normalizedOptions);
-  }
-
-  return textElement;
+export function mono(content: string): MonoElement {
+  return new MonoElement(content, "code");
 }
 
 /**
  * Inline monospace text, equivalent to HTML <code>.
  */
-export function monoCode(
-  content: string,
-  options?: Omit<MonoOptions, "variant">
-): FlashTextElement {
-  const normalizedOptions = normalizeMonoOptions({ ...options, variant: "code" });
-  const normalizedContent = normalizeContentForVariant(content, normalizedOptions);
-  return createMonoTextElement(normalizedContent, normalizedOptions, "pre-wrap");
+export function code(content: string): MonoElement {
+  return new MonoElement(content, "code");
 }
 
 /**
  * Block monospace text, equivalent to HTML <pre>.
  */
-export function monoPre(content: string, options?: Omit<MonoOptions, "variant">): FlashDiv {
-  const normalizedOptions = normalizeMonoOptions({ ...options, variant: "pre" });
-  const normalizedContent = normalizeContentForVariant(content, normalizedOptions);
-
-  if (!normalizedOptions.wrap) {
-    const preLines = createPreLines(normalizedContent, normalizedOptions);
-    return wrapPreBlock(preLines, normalizedOptions);
-  }
-
-  const textElement = createMonoTextElement(normalizedContent, normalizedOptions, "pre-wrap");
-  return wrapPreBlock(textElement, normalizedOptions);
+export function pre(content: string): MonoElement {
+  return new MonoElement(content, "pre");
 }

@@ -10,6 +10,8 @@
  * Rust compiled to WASM.
  */
 
+import { clamp } from "@glade/utils";
+
 /**
  * Decoded image data ready for GPU upload.
  */
@@ -959,10 +961,6 @@ function decodeHuffmanJPEG(reader: JPEGBitReader, table: HuffmanTable): number {
 function extend(value: number, bits: number): number {
   const vt = 1 << (bits - 1);
   return value < vt ? value - (1 << bits) + 1 : value;
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
 }
 
 class JPEGBitReader {

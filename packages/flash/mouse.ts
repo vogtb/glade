@@ -13,6 +13,7 @@ export { MouseButton } from "@glade/core";
 /**
  * Convert core MouseButtonEvent to Flash modifiers.
  */
+// TODO: Share modifier decoding across input helpers to avoid duplicate logic.
 export function coreModsToFlashMods(mods: number): Modifiers {
   return {
     shift: (mods & 0x01) !== 0,
@@ -109,6 +110,7 @@ export class MouseState {
   /**
    * Check if a point is inside bounds.
    */
+  // TODO: Reuse boundsContains to avoid duplicating bounds containment logic.
   isInsideBounds(bounds: Bounds): boolean {
     return (
       this.position.x >= bounds.x &&

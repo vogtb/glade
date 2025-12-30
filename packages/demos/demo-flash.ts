@@ -70,9 +70,8 @@ import {
   rightClickSeparator,
   rightClickLabel,
   rightClickSub,
-  mono,
-  monoCode,
-  monoPre,
+  code,
+  pre,
   table,
   thead,
   tbody,
@@ -1042,41 +1041,22 @@ class DemoRootView implements FlashView {
           .gap(10)
           .children_(
             text("Inline sample:").font("Inter").size(14),
-            monoCode(inlineSample, { fontSize: 14 }),
+            code(inlineSample).size(14),
             text("→ whitespace collapses and wraps").font("Inter").size(13)
           ),
         div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
         text("Preformatted block (no wrap, scrollable)").font("Inter").size(16),
-        monoPre(preSample, {
-          padding: 12,
-          background: codeBg,
-          borderRadius: 8,
-          wrap: false,
-          scrollable: true,
-        }),
+        pre(preSample).padding(12).bg(codeBg).rounded(8).wrap(false).scrollable(true),
         text("Wrapped preformatted text (tabSize: 4)").font("Inter").size(16),
-        mono(wrappedPreSample, {
-          variant: "pre",
-          wrap: true,
-          tabSize: 4,
-          padding: 12,
-          background: codeBg,
-          borderRadius: 8,
-        }),
+        pre(wrappedPreSample).wrap(true).tabSize(4).padding(12).bg(codeBg).rounded(8),
         text("Custom font override (JetBrains Mono SemiBold)").font("Inter").size(16),
         div()
           .flex()
           .flexCol()
           .gap(6)
           .children_(
-            mono("const ready = true;", {
-              fontFamily: "JetBrains Mono SemiBold",
-              fontSize: 14,
-            }),
-            mono("export type FlashTask = () => void;", {
-              fontFamily: "JetBrains Mono SemiBold",
-              fontSize: 14,
-            })
+            code("const ready = true;").font("JetBrains Mono SemiBold").size(14),
+            code("export type FlashTask = () => void;").font("JetBrains Mono SemiBold").size(14)
           )
       );
   }

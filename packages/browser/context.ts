@@ -17,6 +17,7 @@ import {
   type CompositionCallback,
   type TextInputCallback,
 } from "@glade/core/events";
+import { hashCode } from "@glade/utils";
 import { createClipboard } from "./clipboard.ts";
 
 export interface BrowserContextOptions extends ContextOptions {
@@ -136,15 +137,6 @@ export async function createWebGPUContext(
     if (e.altKey) mods |= ModifierKey.Alt;
     if (e.metaKey) mods |= ModifierKey.Super;
     return mods;
-  }
-
-  // Simple hash function to convert e.code string to a stable numeric scancode
-  function hashCode(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash * 31 + str.charCodeAt(i)) | 0;
-    }
-    return hash;
   }
 
   // Map browser key names to GLFW key codes for compatibility

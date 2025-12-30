@@ -21,12 +21,6 @@ import { linkColors } from "./theme.ts";
 /**
  * Default link color (blue).
  */
-const DEFAULT_LINK_COLOR: Color = { r: 0.4, g: 0.6, b: 1, a: 1 };
-
-/**
- * Default hover color (lighter blue).
- */
-const DEFAULT_HOVER_COLOR: Color = { r: 0.5, g: 0.7, b: 1, a: 1 };
 
 /**
  * Request layout state for link element.

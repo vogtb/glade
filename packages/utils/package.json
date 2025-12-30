@@ -1,19 +1,14 @@
 {
-  "name": "@glade/browser",
+  "name": "@glade/utils",
   "version": "0.0.1",
   "type": "module",
-  "main": "browser.ts",
-  "types": "browser.ts",
+  "main": "utils.ts",
+  "types": "utils.ts",
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "nuke": "rm -rf node_modules"
-  },
-  "dependencies": {
-    "@glade/core": "workspace:*",
-    "@glade/flash": "workspace:*",
-    "@glade/utils": "workspace:*"
   }
 }

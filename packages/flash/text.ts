@@ -38,6 +38,7 @@
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
+import { clamp } from "@glade/utils";
 import {
   createTextShaper,
   type TextShaper,
@@ -73,39 +74,8 @@ export function setSharedTextShaper(shaper: TextShaper): void {
   sharedTextShaper = shaper;
 }
 
-import type { WhitespaceMode } from "./styles.ts";
-
-/**
- * Normalize whitespace in text according to CSS white-space rules.
- * - "normal" / "nowrap": Collapse all whitespace (including newlines) to single spaces
- * - "pre" / "pre-wrap": Preserve all whitespace as-is
- * - "pre-line": Preserve newlines, collapse other whitespace
- */
-export function normalizeWhitespace(text: string, mode: WhitespaceMode): string {
-  switch (mode) {
-    case "pre":
-    case "pre-wrap":
-      // Preserve all whitespace as-is
-      return text;
-
-    case "pre-line":
-      // Preserve newlines, collapse other whitespace (spaces/tabs) to single space
-      // Handle \r\n as single newline, \r alone as newline
-      return text
-        .replace(/\r\n/g, "\n")
-        .replace(/\r/g, "\n")
-        .split("\n")
-        .map((line) => line.replace(/[ \t]+/g, " ").trim())
-        .join("\n");
-
-    case "normal":
-    case "nowrap":
-    default:
-      // Collapse all whitespace (including newlines) to single spaces
-      // Handle \r\n as single newline, \r alone as newline first
-      return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\s+/g, " ").trim();
-  }
-}
+export { clamp };
+export { normalizeWhitespace } from "@glade/utils";
 
 /**
  * Rasterized glyph data for atlas upload.
@@ -1645,16 +1615,6 @@ export function normalizeSelection(range: SelectionRange, textLength: number): S
     return { start: end, end: start };
   }
   return { start, end };
-}
-
-export function clamp(value: number, min: number, max: number): number {
-  if (value < min) {
-    return min;
-  }
-  if (value > max) {
-    return max;
-  }
-  return value;
 }
 
 function buildByteToUtf16Index(text: string): Map<number, number> {

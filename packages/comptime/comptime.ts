@@ -31,8 +31,7 @@ const BUILD_TIME: { value: null | string } = {
  * Bun macro to embed the current build time as an ISO string.
  */
 async function embedBuildTime(): Promise<string> {
-  const now = new Date().toISOString();
-  BUILD_TIME.value = BUILD_TIME.value ?? now;
+  BUILD_TIME.value = BUILD_TIME.value ?? new Date().toISOString();
   return BUILD_TIME.value!;
 }
 
