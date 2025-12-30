@@ -92,7 +92,10 @@ interface DivPrepaintState {
  * The primary container element.
  */
 export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPrepaintState> {
-  private styles: Partial<Styles> = {};
+  private styles: Partial<Styles> = {
+    display: "flex",
+    flexDirection: "column",
+  };
   private hoverStyles: Partial<Styles> | null = null;
   private activeStyles: Partial<Styles> | null = null;
   private focusedStyles: Partial<Styles> | null = null;

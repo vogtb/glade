@@ -662,6 +662,7 @@ class DemoRootView implements FlashView {
 
     return div()
       .h(22)
+      .wFull()
       .flexShrink0()
       .bg(rgb(isSelected ? 0x2563eb : 0x4a4a55))
       .rounded(4)
@@ -671,7 +672,9 @@ class DemoRootView implements FlashView {
       .hover((s) => s.bg(rgb(isSelected ? 0x2563eb : 0x5a5a65)).shadow("md"))
       .active((s) => s.bg(rgb(isSelected ? 0x2563eb : 0x5a5a65)))
       .flex()
+      .flexRow()
       .itemsCenter()
+      .justifyStart()
       .px(10)
       .onClick(
         cx.listener((view, _event, _window, ecx) => {

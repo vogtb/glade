@@ -726,6 +726,17 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
   }
 
   /**
+   * Expand to fill the parent's available width (flex-grow 1 with auto basis).
+   */
+  block(): this {
+    // Using flexGrow/basis lets this participate in flex layouts without forcing flexDirection.
+    // This mirrors a block-level feel in row contexts.
+    // We avoid flexShrink override to keep default shrink behavior.
+    this.maxWidthValue = this.maxWidthValue ?? 1_000_000;
+    return this;
+  }
+
+  /**
    * Preserve all whitespace, no wrapping (like HTML <pre>).
    */
   pre(): this {
