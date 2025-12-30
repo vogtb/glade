@@ -11,7 +11,7 @@ import {
   type PaintContext,
   type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import { toColorObject, type Bounds, type Color, type ColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
@@ -40,8 +40,8 @@ type LinkPrepaintState = {
   textWidth: number;
   hitTestNode: HitTestNode;
   colors: {
-    default: Color;
-    hover: Color;
+    default: ColorObject;
+    hover: ColorObject;
   };
 };
 
@@ -54,8 +54,8 @@ type LinkPrepaintState = {
 export class FlashLink extends FlashElement<LinkRequestState, LinkPrepaintState> {
   private textContent: string;
   private href: string;
-  private colorValue: Color | null = null;
-  private hoverColorValue: Color | null = null;
+  private colorValue: ColorObject | null = null;
+  private hoverColorValue: ColorObject | null = null;
   private fontSizeValue = 14;
   private fontFamilyValue = "system-ui";
   private fontWeightValue = 400;
@@ -72,7 +72,7 @@ export class FlashLink extends FlashElement<LinkRequestState, LinkPrepaintState>
    * Set the link color.
    */
   color(c: Color): this {
-    this.colorValue = c;
+    this.colorValue = toColorObject(c);
     return this;
   }
 
@@ -80,7 +80,7 @@ export class FlashLink extends FlashElement<LinkRequestState, LinkPrepaintState>
    * Set the hover color.
    */
   hoverColor(c: Color): this {
-    this.hoverColorValue = c;
+    this.hoverColorValue = toColorObject(c);
     return this;
   }
 

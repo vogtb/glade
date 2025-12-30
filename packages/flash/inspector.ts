@@ -8,7 +8,7 @@
  * - Element tree navigation
  */
 
-import type { Bounds, Color, Point } from "./types.ts";
+import type { Bounds, ColorObject, Point } from "./types.ts";
 import type { Styles } from "./styles.ts";
 import type { GlobalElementId } from "./element.ts";
 import type { FlashScene } from "./scene.ts";
@@ -60,18 +60,29 @@ export interface InspectorState {
 /**
  * Colors used for inspector visualization.
  */
-export const INSPECTOR_COLORS = {
-  bounds: { r: 0.2, g: 0.6, b: 1.0, a: 0.8 } as Color,
-  boundsHover: { r: 1.0, g: 0.4, b: 0.2, a: 0.9 } as Color,
-  boundsSelected: { r: 0.2, g: 1.0, b: 0.4, a: 1.0 } as Color,
-  padding: { r: 0.2, g: 0.8, b: 0.4, a: 0.3 } as Color,
-  margin: { r: 1.0, g: 0.6, b: 0.2, a: 0.3 } as Color,
-  content: { r: 0.6, g: 0.8, b: 1.0, a: 0.2 } as Color,
-  text: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 } as Color,
-  textShadow: { r: 0.0, g: 0.0, b: 0.0, a: 0.8 } as Color,
-  panelBg: { r: 0.1, g: 0.1, b: 0.15, a: 0.95 } as Color,
-  panelBorder: { r: 0.3, g: 0.3, b: 0.4, a: 1.0 } as Color,
-} as const;
+export const INSPECTOR_COLORS: {
+  bounds: ColorObject;
+  boundsHover: ColorObject;
+  boundsSelected: ColorObject;
+  padding: ColorObject;
+  margin: ColorObject;
+  content: ColorObject;
+  text: ColorObject;
+  textShadow: ColorObject;
+  panelBg: ColorObject;
+  panelBorder: ColorObject;
+} = {
+  bounds: { r: 0.2, g: 0.6, b: 1.0, a: 0.8 },
+  boundsHover: { r: 1.0, g: 0.4, b: 0.2, a: 0.9 },
+  boundsSelected: { r: 0.2, g: 1.0, b: 0.4, a: 1.0 },
+  padding: { r: 0.2, g: 0.8, b: 0.4, a: 0.3 },
+  margin: { r: 1.0, g: 0.6, b: 0.2, a: 0.3 },
+  content: { r: 0.6, g: 0.8, b: 1.0, a: 0.2 },
+  text: { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
+  textShadow: { r: 0.0, g: 0.0, b: 0.0, a: 0.8 },
+  panelBg: { r: 0.1, g: 0.1, b: 0.15, a: 0.95 },
+  panelBorder: { r: 0.3, g: 0.3, b: 0.4, a: 1.0 },
+};
 
 /**
  * Default inspector state.

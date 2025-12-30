@@ -1,29 +1,31 @@
 import type { ColorScheme } from "@glade/core";
-import type { Color } from "./types.ts";
-import { rgb } from "./types.ts";
+import type { Color, ColorObject } from "./types.ts";
+import { rgb, toColorObject } from "./types.ts";
 
 export interface Theme {
   scheme: ColorScheme;
-  background: Color;
-  surface: Color;
-  surfaceMuted: Color;
-  border: Color;
-  text: Color;
-  textMuted: Color;
-  primary: Color;
-  primaryForeground: Color;
-  selectionBackground: Color;
-  selectionForeground: Color;
-  caret: Color;
-  focusRing: Color;
-  overlayBackground: Color;
-  overlayBorder: Color;
-  danger: Color;
-  warning: Color;
-  success: Color;
+  background: ColorObject;
+  surface: ColorObject;
+  surfaceMuted: ColorObject;
+  border: ColorObject;
+  text: ColorObject;
+  textMuted: ColorObject;
+  primary: ColorObject;
+  primaryForeground: ColorObject;
+  selectionBackground: ColorObject;
+  selectionForeground: ColorObject;
+  caret: ColorObject;
+  focusRing: ColorObject;
+  overlayBackground: ColorObject;
+  overlayBorder: ColorObject;
+  danger: ColorObject;
+  warning: ColorObject;
+  success: ColorObject;
 }
 
-export type ThemeOverrides = Partial<Omit<Theme, "scheme">>;
+type ThemeColorKey = Exclude<keyof Theme, "scheme">;
+
+export type ThemeOverrides = Partial<Record<ThemeColorKey, Color>>;
 
 export interface ThemeConfig {
   /**
@@ -79,15 +81,50 @@ const LIGHT_THEME: Theme = {
   success: rgb(0x16a34a),
 };
 
+const THEME_COLOR_KEYS: ThemeColorKey[] = [
+  "background",
+  "surface",
+  "surfaceMuted",
+  "border",
+  "text",
+  "textMuted",
+  "primary",
+  "primaryForeground",
+  "selectionBackground",
+  "selectionForeground",
+  "caret",
+  "focusRing",
+  "overlayBackground",
+  "overlayBorder",
+  "danger",
+  "warning",
+  "success",
+];
+
+function normalizeThemeColors(theme: Theme): Theme {
+  const normalized: Theme = { ...theme };
+  for (const key of THEME_COLOR_KEYS) {
+    normalized[key] = toColorObject(theme[key]);
+  }
+  return normalized;
+}
+
 function isTheme(value: Theme | ThemeConfig | undefined): value is Theme {
-  return Boolean(value && "background" in value);
+  return Boolean(value && "scheme" in value && "background" in value);
 }
 
 function applyOverrides(base: Theme, overrides?: ThemeOverrides): Theme {
   if (!overrides) {
     return base;
   }
-  return { ...base, ...overrides };
+  const next: Theme = { ...base };
+  for (const key of THEME_COLOR_KEYS) {
+    const override = overrides[key];
+    if (override !== undefined) {
+      next[key] = toColorObject(override);
+    }
+  }
+  return next;
 }
 
 export function resolveTheme(
@@ -95,16 +132,17 @@ export function resolveTheme(
   systemScheme: ColorScheme
 ): Theme {
   if (isTheme(config)) {
-    return config;
+    return normalizeThemeColors(config);
   }
 
   const schemeOverride = config?.scheme ?? "system";
   const targetScheme = schemeOverride === "system" ? systemScheme : schemeOverride;
   const base = targetScheme === "dark" ? DARK_THEME : LIGHT_THEME;
-  return applyOverrides(base, config?.overrides);
+  const normalizedBase = normalizeThemeColors({ ...base });
+  return applyOverrides(normalizedBase, config?.overrides);
 }
 
-function colorsEqual(a: Color, b: Color): boolean {
+function colorsEqual(a: ColorObject, b: ColorObject): boolean {
   return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
 }
 
@@ -218,19 +256,19 @@ export class ThemeManager {
  * Component-friendly defaults derived from the active theme.
  */
 export function menuColors(theme: Theme): {
-  menuBg: Color;
-  menuBorder: Color;
-  itemBg: Color;
-  itemHoverBg: Color;
-  itemText: Color;
-  itemHoverText: Color;
-  itemDisabledText: Color;
-  labelText: Color;
-  separatorColor: Color;
-  destructiveText: Color;
-  destructiveHoverBg: Color;
-  shortcutText: Color;
-  checkColor: Color;
+  menuBg: ColorObject;
+  menuBorder: ColorObject;
+  itemBg: ColorObject;
+  itemHoverBg: ColorObject;
+  itemText: ColorObject;
+  itemHoverText: ColorObject;
+  itemDisabledText: ColorObject;
+  labelText: ColorObject;
+  separatorColor: ColorObject;
+  destructiveText: ColorObject;
+  destructiveHoverBg: ColorObject;
+  shortcutText: ColorObject;
+  checkColor: ColorObject;
 } {
   const hoverBg = {
     r: theme.primary.r,
@@ -262,11 +300,11 @@ export function menuColors(theme: Theme): {
 }
 
 export function inputColors(theme: Theme): {
-  text: Color;
-  placeholder: Color;
-  selection: Color;
-  caret: Color;
-  composition: Color;
+  text: ColorObject;
+  placeholder: ColorObject;
+  selection: ColorObject;
+  caret: ColorObject;
+  composition: ColorObject;
 } {
   return {
     text: theme.text,
@@ -278,10 +316,10 @@ export function inputColors(theme: Theme): {
 }
 
 export function checkboxColors(theme: Theme): {
-  uncheckedBg: Color;
-  checkedBg: Color;
-  border: Color;
-  check: Color;
+  uncheckedBg: ColorObject;
+  checkedBg: ColorObject;
+  border: ColorObject;
+  check: ColorObject;
 } {
   return {
     uncheckedBg: theme.surfaceMuted,
@@ -292,10 +330,10 @@ export function checkboxColors(theme: Theme): {
 }
 
 export function radioColors(theme: Theme): {
-  uncheckedBg: Color;
-  checkedBg: Color;
-  border: Color;
-  indicator: Color;
+  uncheckedBg: ColorObject;
+  checkedBg: ColorObject;
+  border: ColorObject;
+  indicator: ColorObject;
 } {
   return {
     uncheckedBg: theme.surfaceMuted,
@@ -306,9 +344,9 @@ export function radioColors(theme: Theme): {
 }
 
 export function switchColors(theme: Theme): {
-  trackOff: Color;
-  trackOn: Color;
-  thumb: Color;
+  trackOff: ColorObject;
+  trackOn: ColorObject;
+  thumb: ColorObject;
 } {
   return {
     trackOff: theme.surfaceMuted,
@@ -317,7 +355,7 @@ export function switchColors(theme: Theme): {
   };
 }
 
-export function linkColors(theme: Theme): { default: Color; hover: Color } {
+export function linkColors(theme: Theme): { default: ColorObject; hover: ColorObject } {
   const hover = {
     r: Math.min(1, theme.primary.r + 0.1),
     g: Math.min(1, theme.primary.g + 0.1),
@@ -330,7 +368,7 @@ export function linkColors(theme: Theme): { default: Color; hover: Color } {
   };
 }
 
-export function tabColors(theme: Theme): { indicator: Color; border: Color } {
+export function tabColors(theme: Theme): { indicator: ColorObject; border: ColorObject } {
   return {
     indicator: theme.primary,
     border: theme.border,

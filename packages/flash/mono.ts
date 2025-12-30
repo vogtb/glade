@@ -21,7 +21,8 @@ import {
 } from "./element.ts";
 import { div, type FlashDiv } from "./div.ts";
 import type { HitTestNode } from "./dispatch.ts";
-import type { Bounds, Color } from "./types.ts";
+import type { Bounds, Color, ColorObject } from "./types.ts";
+import { toColorObject } from "./types.ts";
 
 const DEFAULT_MONO_FONT_FAMILY =
   'JetBrains Mono, ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
@@ -75,7 +76,7 @@ type NormalizedMonoOptions = {
   maxWidth?: number;
   selectable: boolean;
   padding?: number;
-  background?: Color;
+  background?: ColorObject;
   borderRadius?: number;
   scrollable: boolean;
 };
@@ -96,7 +97,7 @@ function normalizeMonoOptions(options: MonoConfig): NormalizedMonoOptions {
     maxWidth: options.maxWidth,
     selectable,
     padding: options.padding,
-    background: options.background,
+    background: options.background ? toColorObject(options.background) : undefined,
     borderRadius: options.borderRadius,
     scrollable,
   };
@@ -246,7 +247,7 @@ export class MonoElement extends FlashElement<MonoRequestLayoutState, MonoPrepai
   private maxWidthValue: number | undefined;
   private selectableValue = true;
   private paddingValue: number | undefined;
-  private backgroundValue: Color | undefined;
+  private backgroundValue: ColorObject | undefined;
   private borderRadiusValue: number | undefined;
   private scrollableValue: boolean | undefined;
   private childElement: FlashElement<unknown, unknown> | null = null;
@@ -310,7 +311,7 @@ export class MonoElement extends FlashElement<MonoRequestLayoutState, MonoPrepai
   }
 
   bg(value: Color): this {
-    this.backgroundValue = value;
+    this.backgroundValue = toColorObject(value);
     return this;
   }
 

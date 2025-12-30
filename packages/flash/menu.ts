@@ -14,7 +14,14 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color, Size, WindowId } from "./types.ts";
+import {
+  toColorObject,
+  type Bounds,
+  type Color,
+  type ColorObject,
+  type Size,
+  type WindowId,
+} from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler, KeyHandler, MouseHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
@@ -24,19 +31,19 @@ import { HitboxBehavior } from "./hitbox.ts";
 // Defaults                                                                     //
 // ============================================================================ //
 
-export const DEFAULT_MENU_BG: Color = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
-export const DEFAULT_MENU_BORDER: Color = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
-export const DEFAULT_ITEM_BG: Color = { r: 0, g: 0, b: 0, a: 0 };
-export const DEFAULT_ITEM_HOVER_BG: Color = { r: 0.2, g: 0.4, b: 0.8, a: 1 };
-export const DEFAULT_ITEM_TEXT: Color = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
-export const DEFAULT_ITEM_HOVER_TEXT: Color = { r: 1, g: 1, b: 1, a: 1 };
-export const DEFAULT_ITEM_DISABLED_TEXT: Color = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
-export const DEFAULT_LABEL_TEXT: Color = { r: 0.6, g: 0.6, b: 0.6, a: 1 };
-export const DEFAULT_SEPARATOR_COLOR: Color = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
-export const DEFAULT_DESTRUCTIVE_TEXT: Color = { r: 0.9, g: 0.3, b: 0.3, a: 1 };
-export const DEFAULT_DESTRUCTIVE_HOVER_BG: Color = { r: 0.8, g: 0.2, b: 0.2, a: 1 };
-export const DEFAULT_SHORTCUT_TEXT: Color = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
-export const DEFAULT_CHECK_COLOR: Color = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
+export const DEFAULT_MENU_BG: ColorObject = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
+export const DEFAULT_MENU_BORDER: ColorObject = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
+export const DEFAULT_ITEM_BG: ColorObject = { r: 0, g: 0, b: 0, a: 0 };
+export const DEFAULT_ITEM_HOVER_BG: ColorObject = { r: 0.2, g: 0.4, b: 0.8, a: 1 };
+export const DEFAULT_ITEM_TEXT: ColorObject = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
+export const DEFAULT_ITEM_HOVER_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
+export const DEFAULT_ITEM_DISABLED_TEXT: ColorObject = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
+export const DEFAULT_LABEL_TEXT: ColorObject = { r: 0.6, g: 0.6, b: 0.6, a: 1 };
+export const DEFAULT_SEPARATOR_COLOR: ColorObject = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
+export const DEFAULT_DESTRUCTIVE_TEXT: ColorObject = { r: 0.9, g: 0.3, b: 0.3, a: 1 };
+export const DEFAULT_DESTRUCTIVE_HOVER_BG: ColorObject = { r: 0.8, g: 0.2, b: 0.2, a: 1 };
+export const DEFAULT_SHORTCUT_TEXT: ColorObject = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
+export const DEFAULT_CHECK_COLOR: ColorObject = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
 
 export const DEFAULT_FONT_SIZE = 14;
 export const DEFAULT_LABEL_FONT_SIZE = 12;
@@ -412,21 +419,21 @@ export type DropdownMenuContext = {
   parentContext: DropdownMenuContext | null;
   radioValue?: string;
   onRadioChange?: DropdownValueChangeHandler;
-  menuBg: Color;
-  menuBorder: Color;
+  menuBg: ColorObject;
+  menuBorder: ColorObject;
   menuBorderRadius: number;
   menuPadding: number;
-  itemBg: Color;
-  itemHoverBg: Color;
-  itemText: Color;
-  itemHoverText: Color;
-  itemDisabledText: Color;
-  labelText: Color;
-  separatorColor: Color;
-  destructiveText: Color;
-  destructiveHoverBg: Color;
-  shortcutText: Color;
-  checkColor: Color;
+  itemBg: ColorObject;
+  itemHoverBg: ColorObject;
+  itemText: ColorObject;
+  itemHoverText: ColorObject;
+  itemDisabledText: ColorObject;
+  labelText: ColorObject;
+  separatorColor: ColorObject;
+  destructiveText: ColorObject;
+  destructiveHoverBg: ColorObject;
+  shortcutText: ColorObject;
+  checkColor: ColorObject;
   fontSize: number;
   labelFontSize: number;
   shortcutFontSize: number;
@@ -2313,6 +2320,26 @@ export function buildRootMenuContext(
     parentContext: null,
     radioValue: undefined,
     onRadioChange: undefined,
-    ...style,
+    menuBg: toColorObject(style.menuBg),
+    menuBorder: toColorObject(style.menuBorder),
+    menuBorderRadius: style.menuBorderRadius,
+    menuPadding: style.menuPadding,
+    itemBg: toColorObject(style.itemBg),
+    itemHoverBg: toColorObject(style.itemHoverBg),
+    itemText: toColorObject(style.itemText),
+    itemHoverText: toColorObject(style.itemHoverText),
+    itemDisabledText: toColorObject(style.itemDisabledText),
+    labelText: toColorObject(style.labelText),
+    separatorColor: toColorObject(style.separatorColor),
+    destructiveText: toColorObject(style.destructiveText),
+    destructiveHoverBg: toColorObject(style.destructiveHoverBg),
+    shortcutText: toColorObject(style.shortcutText),
+    checkColor: toColorObject(style.checkColor),
+    fontSize: style.fontSize,
+    labelFontSize: style.labelFontSize,
+    shortcutFontSize: style.shortcutFontSize,
+    itemPaddingX: style.itemPaddingX,
+    itemPaddingY: style.itemPaddingY,
+    indicatorWidth: style.indicatorWidth,
   };
 }

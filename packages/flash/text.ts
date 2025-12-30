@@ -48,7 +48,7 @@ import {
   type LayoutResult,
   type FontStyle,
 } from "@glade/shaper";
-import type { Color } from "./types.ts";
+import { toColorObject, type Color, type ColorObject } from "./types.ts";
 import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 
@@ -137,7 +137,7 @@ export interface TextRun {
   fontId: FontId;
   fontSize: number;
   lineHeight: number;
-  color: Color;
+  color: ColorObject;
   fontStyle?: FontStyle;
 }
 
@@ -147,7 +147,7 @@ export interface TextRun {
 export interface ShapedText {
   runs: Array<{
     glyphs: ShapedGlyph[];
-    color: Color;
+    color: ColorObject;
     fontSize: number;
   }>;
   width: number;
@@ -177,7 +177,7 @@ export interface GlyphInstance {
   atlasY: number;
   atlasWidth: number;
   atlasHeight: number;
-  color: Color;
+  color: ColorObject;
   isColor?: boolean;
   clipBounds?: GlyphClipBounds;
   order?: number;
@@ -767,6 +767,7 @@ export class TextSystem {
     style?: FontStyle,
     maxWidth?: number
   ): GlyphInstance[] {
+    const resolvedColor = toColorObject(color);
     // Merge fontFamily into style to ensure shaper uses the correct font
     const safeFontSize = fontSize > 0 ? fontSize : 1;
     const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
@@ -942,7 +943,7 @@ export class TextSystem {
           atlasY: cached.atlasY / atlasSize.height,
           atlasWidth: cached.width / atlasSize.width,
           atlasHeight: cached.height / atlasSize.height,
-          color,
+          color: resolvedColor,
           isColor: cached.isColor,
         });
       }
@@ -2835,6 +2836,7 @@ export function caretPrimitive(
   if (!caretRect) {
     return null;
   }
+  const resolvedColor = toColorObject(color);
   const blinkInterval = opts?.blinkInterval ?? 0.8;
   if (opts?.time !== undefined) {
     const phase = Math.floor((opts.time / blinkInterval) % 2);
@@ -2850,10 +2852,10 @@ export function caretPrimitive(
     y: caretY,
     width: thickness,
     height: caretRect.height,
-    color,
+    color: resolvedColor,
     cornerRadius: 0,
     borderWidth: 0,
-    borderColor: color,
+    borderColor: resolvedColor,
   };
 }
 
@@ -2876,16 +2878,17 @@ export function selectionPrimitives(
   if (rects.length === 0) {
     return [];
   }
+  const resolvedColor = toColorObject(color);
   const cornerRadius = opts?.cornerRadius ?? 2;
   return rects.map((rect) => ({
     x: rect.x,
     y: rect.y,
     width: rect.width,
     height: rect.height,
-    color,
+    color: resolvedColor,
     cornerRadius,
     borderWidth: 0,
-    borderColor: color,
+    borderColor: resolvedColor,
   }));
 }
 
@@ -2917,16 +2920,17 @@ export function selectionPrimitivesWithLayout(
   if (rects.length === 0) {
     return [];
   }
+  const resolvedColor = toColorObject(color);
   const cornerRadius = opts?.cornerRadius ?? 2;
   return rects.map((rect) => ({
     x: rect.x,
     y: rect.y,
     width: rect.width,
     height: rect.height,
-    color,
+    color: resolvedColor,
     cornerRadius,
     borderWidth: 0,
-    borderColor: color,
+    borderColor: resolvedColor,
   }));
 }
 
@@ -2970,6 +2974,7 @@ export function compositionUnderlinesWithLayout(
   if (rects.length === 0) {
     return [];
   }
+  const resolvedColor = toColorObject(color);
   const thickness = opts?.thickness ?? Math.max(1, fontSize * 0.08);
   const wavelength = opts?.wavelength ?? 6;
   const amplitude = opts?.amplitude ?? 2;
@@ -2978,7 +2983,7 @@ export function compositionUnderlinesWithLayout(
     y: rect.y + rect.height - thickness,
     width: rect.width,
     thickness,
-    color,
+    color: resolvedColor,
     style: "wavy",
     wavelength,
     amplitude,
@@ -3027,16 +3032,17 @@ export function caretPrimitiveWithLayout(
       return null;
     }
   }
+  const resolvedColor = toColorObject(color);
   const thickness = Math.max(1, opts?.thickness ?? 1);
   return {
     x: caretRect.x,
     y: caretRect.y,
     width: thickness,
     height: caretRect.height,
-    color,
+    color: resolvedColor,
     cornerRadius: 0,
     borderWidth: 0,
-    borderColor: color,
+    borderColor: resolvedColor,
   };
 }
 
@@ -3065,6 +3071,7 @@ export function compositionUnderlines(
   if (rects.length === 0) {
     return [];
   }
+  const resolvedColor = toColorObject(color);
   const thickness = opts?.thickness ?? Math.max(1, fontSize * 0.08);
   const wavelength = opts?.wavelength ?? 6;
   const amplitude = opts?.amplitude ?? 2;
@@ -3073,7 +3080,7 @@ export function compositionUnderlines(
     y: rect.y + rect.height - thickness,
     width: rect.width,
     thickness,
-    color,
+    color: resolvedColor,
     style: "wavy",
     wavelength,
     amplitude,

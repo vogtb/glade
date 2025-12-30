@@ -16,7 +16,8 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import type { Bounds, Color, ColorObject } from "./types.ts";
+import { toColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
@@ -29,10 +30,10 @@ import { radioColors } from "./theme.ts";
 /**
  * Default colors for radio states.
  */
-const DEFAULT_UNCHECKED_BG: Color = { r: 0.15, g: 0.15, b: 0.15, a: 1 };
-const DEFAULT_CHECKED_BG: Color = { r: 0.4, g: 0.6, b: 1, a: 1 };
-const DEFAULT_BORDER_COLOR: Color = { r: 0.3, g: 0.3, b: 0.3, a: 1 };
-const DEFAULT_INDICATOR_COLOR: Color = { r: 1, g: 1, b: 1, a: 1 };
+const DEFAULT_UNCHECKED_BG: ColorObject = { r: 0.15, g: 0.15, b: 0.15, a: 1 };
+const DEFAULT_CHECKED_BG: ColorObject = { r: 0.4, g: 0.6, b: 1, a: 1 };
+const DEFAULT_BORDER_COLOR: ColorObject = { r: 0.3, g: 0.3, b: 0.3, a: 1 };
+const DEFAULT_INDICATOR_COLOR: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
 const DEFAULT_DISABLED_OPACITY = 0.5;
 const DEFAULT_SIZE = 18;
 
@@ -50,10 +51,10 @@ type RadioGroupContext = {
   onValueChange: RadioValueChangeHandler | null;
   disabled: boolean;
   size: number;
-  uncheckedBg: Color;
-  checkedBg: Color;
-  borderColor: Color;
-  indicatorColor: Color;
+  uncheckedBg: ColorObject;
+  checkedBg: ColorObject;
+  borderColor: ColorObject;
+  indicatorColor: ColorObject;
 };
 
 // ============================================================================
@@ -328,10 +329,10 @@ export class FlashRadioGroup extends FlashContainerElement<
 
   // Styling for child radio items
   private itemSizeValue: number = DEFAULT_SIZE;
-  private uncheckedBgColor: Color | null = null;
-  private checkedBgColor: Color | null = null;
-  private borderColorValue: Color | null = null;
-  private indicatorColorValue: Color | null = null;
+  private uncheckedBgColor: ColorObject | null = null;
+  private checkedBgColor: ColorObject | null = null;
+  private borderColorValue: ColorObject | null = null;
+  private indicatorColorValue: ColorObject | null = null;
 
   // ============ Layout Styles ============
 
@@ -416,7 +417,7 @@ export class FlashRadioGroup extends FlashContainerElement<
    * Set the background color for unchecked items.
    */
   uncheckedBg(c: Color): this {
-    this.uncheckedBgColor = c;
+    this.uncheckedBgColor = toColorObject(c);
     return this;
   }
 
@@ -424,7 +425,7 @@ export class FlashRadioGroup extends FlashContainerElement<
    * Set the background color for checked items.
    */
   checkedBg(c: Color): this {
-    this.checkedBgColor = c;
+    this.checkedBgColor = toColorObject(c);
     return this;
   }
 
@@ -432,7 +433,7 @@ export class FlashRadioGroup extends FlashContainerElement<
    * Set the border color for items.
    */
   borderColor(c: Color): this {
-    this.borderColorValue = c;
+    this.borderColorValue = toColorObject(c);
     return this;
   }
 
@@ -440,7 +441,7 @@ export class FlashRadioGroup extends FlashContainerElement<
    * Set the indicator (inner circle) color.
    */
   indicatorColor(c: Color): this {
-    this.indicatorColorValue = c;
+    this.indicatorColorValue = toColorObject(c);
     return this;
   }
 

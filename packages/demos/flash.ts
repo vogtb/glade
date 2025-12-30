@@ -28,6 +28,7 @@ import {
   multiplyTransform,
   type TransformationMatrix,
 } from "@glade/flash";
+import { toColorObject } from "@glade/flash/types.ts";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed font as base64 at build time via Bun macro
@@ -159,10 +160,12 @@ function renderDiv(
       y: bounds.y,
       width: bounds.width,
       height: bounds.height,
-      color: bgColor,
+      color: toColorObject(bgColor),
       cornerRadius: (effectiveStyles.borderRadius as number) ?? 0,
       borderWidth: (effectiveStyles.borderWidth as number) ?? 0,
-      borderColor: (effectiveStyles.borderColor as Color) ?? { r: 0, g: 0, b: 0, a: 0 },
+      borderColor: toColorObject(
+        (effectiveStyles.borderColor as Color) ?? { r: 0, g: 0, b: 0, a: 0 }
+      ),
       transform: effectiveTransform,
     });
   }
@@ -179,7 +182,7 @@ function renderDiv(
       color: { r: 0, g: 0, b: 0, a: 0 },
       cornerRadius: (effectiveStyles.borderRadius as number) ?? 0,
       borderWidth,
-      borderColor,
+      borderColor: toColorObject(borderColor),
       transform: effectiveTransform,
     });
   }

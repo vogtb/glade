@@ -5,7 +5,13 @@
  * and rendering utilities for scroll containers.
  */
 
-import type { Color, Bounds, ScrollHandleId } from "./types.ts";
+import {
+  toColorObject,
+  type Color,
+  type ColorObject,
+  type Bounds,
+  type ScrollHandleId,
+} from "./types.ts";
 
 /**
  * When to show scrollbars.
@@ -50,6 +56,29 @@ export const DEFAULT_SCROLLBAR_CONFIG: ScrollbarConfig = {
   margin: 2,
   visibility: "hover",
 };
+
+export type ResolvedScrollbarConfig = Omit<
+  ScrollbarConfig,
+  "trackColor" | "thumbColor" | "thumbHoverColor" | "thumbActiveColor"
+> & {
+  trackColor: ColorObject;
+  thumbColor: ColorObject;
+  thumbHoverColor: ColorObject;
+  thumbActiveColor: ColorObject;
+};
+
+export function resolveScrollbarConfig(
+  overrides?: Partial<ScrollbarConfig>
+): ResolvedScrollbarConfig {
+  const merged: ScrollbarConfig = { ...DEFAULT_SCROLLBAR_CONFIG, ...overrides };
+  return {
+    ...merged,
+    trackColor: toColorObject(merged.trackColor),
+    thumbColor: toColorObject(merged.thumbColor),
+    thumbHoverColor: toColorObject(merged.thumbHoverColor),
+    thumbActiveColor: toColorObject(merged.thumbActiveColor),
+  };
+}
 
 /**
  * State for tracking an active scrollbar thumb drag operation.
@@ -305,10 +334,10 @@ export function isPointInThumb(point: { x: number; y: number }, thumbBounds: Bou
  * @returns Thumb color
  */
 export function getThumbColor(
-  config: ScrollbarConfig,
+  config: ResolvedScrollbarConfig,
   isHovered: boolean,
   isDragging: boolean
-): Color {
+): ColorObject {
   if (isDragging) return config.thumbActiveColor;
   if (isHovered) return config.thumbHoverColor;
   return config.thumbColor;

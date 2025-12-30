@@ -14,7 +14,8 @@ import {
   type PaintContext,
   type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import type { Bounds, Color, ColorObject } from "./types.ts";
+import { toColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
@@ -45,9 +46,9 @@ type SwitchPrepaintState = {
   hitbox: Hitbox;
   hitTestNode: HitTestNode;
   colors: {
-    uncheckedTrack: Color;
-    checkedTrack: Color;
-    thumb: Color;
+    uncheckedTrack: ColorObject;
+    checkedTrack: ColorObject;
+    thumb: ColorObject;
   };
 };
 
@@ -70,9 +71,9 @@ export class FlashSwitch extends FlashElement<SwitchRequestState, SwitchPrepaint
   private onCheckedChangeHandler: SwitchChangeHandler | null = null;
 
   // Styling
-  private uncheckedTrackColor: Color | null = null;
-  private checkedTrackColor: Color | null = null;
-  private thumbColorValue: Color | null = null;
+  private uncheckedTrackColor: ColorObject | null = null;
+  private checkedTrackColor: ColorObject | null = null;
+  private thumbColorValue: ColorObject | null = null;
   private thumbPaddingValue: number = DEFAULT_THUMB_PADDING;
 
   // State-based styles
@@ -135,7 +136,7 @@ export class FlashSwitch extends FlashElement<SwitchRequestState, SwitchPrepaint
    * Set the track color when unchecked (off).
    */
   uncheckedTrack(c: Color): this {
-    this.uncheckedTrackColor = c;
+    this.uncheckedTrackColor = toColorObject(c);
     return this;
   }
 
@@ -143,7 +144,7 @@ export class FlashSwitch extends FlashElement<SwitchRequestState, SwitchPrepaint
    * Set the track color when checked (on).
    */
   checkedTrack(c: Color): this {
-    this.checkedTrackColor = c;
+    this.checkedTrackColor = toColorObject(c);
     return this;
   }
 
@@ -151,7 +152,7 @@ export class FlashSwitch extends FlashElement<SwitchRequestState, SwitchPrepaint
    * Set the thumb color.
    */
   thumbColor(c: Color): this {
-    this.thumbColorValue = c;
+    this.thumbColorValue = toColorObject(c);
     return this;
   }
 

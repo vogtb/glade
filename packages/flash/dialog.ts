@@ -34,7 +34,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color, Size } from "./types.ts";
+import { toColorObject, type Bounds, type Color, type ColorObject, type Size } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
@@ -45,21 +45,21 @@ import type { FlashContext } from "./context.ts";
 // Default Colors and Sizes
 // ============================================================================
 
-const DEFAULT_BACKDROP_COLOR: Color = { r: 0, g: 0, b: 0, a: 0.74 };
-const DEFAULT_DIALOG_BG: Color = { r: 0.12, g: 0.12, b: 0.14, a: 1 };
-const DEFAULT_DIALOG_BORDER: Color = { r: 0.25, g: 0.25, b: 0.28, a: 1 };
-const DEFAULT_TITLE_COLOR: Color = { r: 1, g: 1, b: 1, a: 1 };
-const DEFAULT_DESCRIPTION_COLOR: Color = { r: 0.6, g: 0.6, b: 0.65, a: 1 };
-const DEFAULT_SEPARATOR_COLOR: Color = { r: 0.2, g: 0.2, b: 0.22, a: 1 };
-const DEFAULT_BUTTON_BG: Color = { r: 0.2, g: 0.2, b: 0.22, a: 1 };
-const DEFAULT_BUTTON_HOVER_BG: Color = { r: 0.28, g: 0.28, b: 0.3, a: 1 };
-const DEFAULT_BUTTON_TEXT: Color = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
-const DEFAULT_PRIMARY_BUTTON_BG: Color = { r: 0.2, g: 0.4, b: 0.8, a: 1 };
-const DEFAULT_PRIMARY_BUTTON_HOVER_BG: Color = { r: 0.25, g: 0.5, b: 0.9, a: 1 };
-const DEFAULT_PRIMARY_BUTTON_TEXT: Color = { r: 1, g: 1, b: 1, a: 1 };
-const DEFAULT_DESTRUCTIVE_BUTTON_BG: Color = { r: 0.7, g: 0.2, b: 0.2, a: 1 };
-const DEFAULT_DESTRUCTIVE_BUTTON_HOVER_BG: Color = { r: 0.8, g: 0.25, b: 0.25, a: 1 };
-const DEFAULT_DESTRUCTIVE_BUTTON_TEXT: Color = { r: 1, g: 1, b: 1, a: 1 };
+const DEFAULT_BACKDROP_COLOR: ColorObject = { r: 0, g: 0, b: 0, a: 0.74 };
+const DEFAULT_DIALOG_BG: ColorObject = { r: 0.12, g: 0.12, b: 0.14, a: 1 };
+const DEFAULT_DIALOG_BORDER: ColorObject = { r: 0.25, g: 0.25, b: 0.28, a: 1 };
+const DEFAULT_TITLE_COLOR: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
+const DEFAULT_DESCRIPTION_COLOR: ColorObject = { r: 0.6, g: 0.6, b: 0.65, a: 1 };
+const DEFAULT_SEPARATOR_COLOR: ColorObject = { r: 0.2, g: 0.2, b: 0.22, a: 1 };
+const DEFAULT_BUTTON_BG: ColorObject = { r: 0.2, g: 0.2, b: 0.22, a: 1 };
+const DEFAULT_BUTTON_HOVER_BG: ColorObject = { r: 0.28, g: 0.28, b: 0.3, a: 1 };
+const DEFAULT_BUTTON_TEXT: ColorObject = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
+const DEFAULT_PRIMARY_BUTTON_BG: ColorObject = { r: 0.2, g: 0.4, b: 0.8, a: 1 };
+const DEFAULT_PRIMARY_BUTTON_HOVER_BG: ColorObject = { r: 0.25, g: 0.5, b: 0.9, a: 1 };
+const DEFAULT_PRIMARY_BUTTON_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
+const DEFAULT_DESTRUCTIVE_BUTTON_BG: ColorObject = { r: 0.7, g: 0.2, b: 0.2, a: 1 };
+const DEFAULT_DESTRUCTIVE_BUTTON_HOVER_BG: ColorObject = { r: 0.8, g: 0.25, b: 0.25, a: 1 };
+const DEFAULT_DESTRUCTIVE_BUTTON_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
 
 const DEFAULT_DIALOG_PADDING = 24;
 const DEFAULT_DIALOG_BORDER_RADIUS = 8;
@@ -99,7 +99,7 @@ export interface DialogConfig {
   /** Whether pressing Escape closes the dialog. */
   closeOnEscape: boolean;
   /** Backdrop color (semi-transparent overlay). */
-  backdropColor: Color;
+  backdropColor: ColorObject;
   /** Window margin to prevent dialog from touching edges. */
   windowMargin: number;
 }
@@ -157,22 +157,22 @@ export interface ActiveDialog {
 export type DialogContentContext = {
   onOpenChange: DialogOpenChangeHandler | null;
   // Styling
-  dialogBg: Color;
-  dialogBorder: Color;
+  dialogBg: ColorObject;
+  dialogBorder: ColorObject;
   dialogBorderRadius: number;
   dialogPadding: number;
-  titleColor: Color;
-  descriptionColor: Color;
-  separatorColor: Color;
-  buttonBg: Color;
-  buttonHoverBg: Color;
-  buttonText: Color;
-  primaryButtonBg: Color;
-  primaryButtonHoverBg: Color;
-  primaryButtonText: Color;
-  destructiveButtonBg: Color;
-  destructiveButtonHoverBg: Color;
-  destructiveButtonText: Color;
+  titleColor: ColorObject;
+  descriptionColor: ColorObject;
+  separatorColor: ColorObject;
+  buttonBg: ColorObject;
+  buttonHoverBg: ColorObject;
+  buttonText: ColorObject;
+  primaryButtonBg: ColorObject;
+  primaryButtonHoverBg: ColorObject;
+  primaryButtonText: ColorObject;
+  destructiveButtonBg: ColorObject;
+  destructiveButtonHoverBg: ColorObject;
+  destructiveButtonText: ColorObject;
   buttonFontSize: number;
   buttonPaddingX: number;
   buttonPaddingY: number;
@@ -322,7 +322,7 @@ export class DialogConfigBuilder {
    * Set backdrop color.
    */
   backdropColor(color: Color): this {
-    this.config.backdropColor = color;
+    this.config.backdropColor = toColorObject(color);
     return this;
   }
 
@@ -909,8 +909,8 @@ export class FlashDialogFooter extends FlashElement<
     if (this.confirmText && prepaintState.confirmBounds && prepaintState.confirmTextSize) {
       const isHovered = cx.isHovered(prepaintState.confirmBounds);
 
-      let bg: Color;
-      let textColor: Color;
+      let bg: ColorObject;
+      let textColor: ColorObject;
       if (this.destructive) {
         bg = isHovered ? destructiveHoverBg : destructiveBg;
         textColor = destructiveText;
@@ -1346,7 +1346,7 @@ export class FlashDialog extends FlashContainerElement<DialogRequestState, Dialo
    * Set backdrop color.
    */
   backdropColor(color: Color): this {
-    this.backdropColorValue = color;
+    this.backdropColorValue = toColorObject(color);
     return this;
   }
 
@@ -1354,7 +1354,7 @@ export class FlashDialog extends FlashContainerElement<DialogRequestState, Dialo
    * Set dialog background color.
    */
   dialogBg(color: Color): this {
-    this.dialogBgColor = color;
+    this.dialogBgColor = toColorObject(color);
     return this;
   }
 
@@ -1362,7 +1362,7 @@ export class FlashDialog extends FlashContainerElement<DialogRequestState, Dialo
    * Set dialog border color.
    */
   dialogBorder(color: Color): this {
-    this.dialogBorderColor = color;
+    this.dialogBorderColor = toColorObject(color);
     return this;
   }
 

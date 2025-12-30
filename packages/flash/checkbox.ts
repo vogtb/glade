@@ -12,7 +12,8 @@ import {
   type PaintContext,
   type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import type { Bounds, Color, ColorObject } from "./types.ts";
+import { toColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
@@ -40,10 +41,10 @@ type CheckboxPrepaintState = {
   hitbox: Hitbox;
   hitTestNode: HitTestNode;
   colors: {
-    checkedBg: Color;
-    uncheckedBg: Color;
-    border: Color;
-    check: Color;
+    checkedBg: ColorObject;
+    uncheckedBg: ColorObject;
+    border: ColorObject;
+    check: ColorObject;
   };
 };
 
@@ -71,10 +72,10 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
   private onCheckedChangeHandler: CheckedChangeHandler | null = null;
 
   // Styling
-  private uncheckedBgColor: Color | null = null;
-  private checkedBgColor: Color | null = null;
-  private borderColorValue: Color | null = null;
-  private checkColorValue: Color | null = null;
+  private uncheckedBgColor: ColorObject | null = null;
+  private checkedBgColor: ColorObject | null = null;
+  private borderColorValue: ColorObject | null = null;
+  private checkColorValue: ColorObject | null = null;
   private borderRadiusValue: number = DEFAULT_BORDER_RADIUS;
   private borderWidthValue: number = 1;
 
@@ -130,7 +131,7 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
    * Set the background color when unchecked.
    */
   uncheckedBg(c: Color): this {
-    this.uncheckedBgColor = c;
+    this.uncheckedBgColor = toColorObject(c);
     return this;
   }
 
@@ -138,7 +139,7 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
    * Set the background color when checked.
    */
   checkedBg(c: Color): this {
-    this.checkedBgColor = c;
+    this.checkedBgColor = toColorObject(c);
     return this;
   }
 
@@ -146,7 +147,7 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
    * Set the border color.
    */
   borderColor(c: Color): this {
-    this.borderColorValue = c;
+    this.borderColorValue = toColorObject(c);
     return this;
   }
 
@@ -154,7 +155,7 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
    * Set the check mark color.
    */
   checkColor(c: Color): this {
-    this.checkColorValue = c;
+    this.checkColorValue = toColorObject(c);
     return this;
   }
 
@@ -319,7 +320,7 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
     cx: PaintContext,
     bounds: Bounds,
     _opacity: number,
-    checkColor: Color
+    checkColor: ColorObject
   ): void {
     // Use a font size that fits well within the checkbox
     const fontSize = this.sizeValue * 0.7;
@@ -349,7 +350,7 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
     cx: PaintContext,
     bounds: Bounds,
     _opacity: number,
-    checkColor: Color
+    checkColor: ColorObject
   ): void {
     const padding = this.sizeValue * 0.25;
     const strokeWidth = Math.max(2, this.sizeValue * 0.15);

@@ -15,7 +15,7 @@ import {
   type GlobalElementId,
 } from "./element.ts";
 import type { Bounds, Color, TransformationMatrix } from "./types.ts";
-import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
+import { rotateTransform, scaleTransform, translateTransform, toColorObject } from "./types.ts";
 import { overflowClipsContent } from "./styles.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles, Cursor } from "./styles.ts";
@@ -37,9 +37,8 @@ import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { TabStopConfig } from "./tab.ts";
-import type { ScrollbarConfig, ScrollbarDragState } from "./scrollbar.ts";
+import type { ScrollbarConfig, ScrollbarDragState, ResolvedScrollbarConfig } from "./scrollbar.ts";
 import {
-  DEFAULT_SCROLLBAR_CONFIG,
   calculateThumbMetrics,
   calculateVerticalTrackBounds,
   calculateHorizontalTrackBounds,
@@ -47,6 +46,7 @@ import {
   getThumbColor,
   isPointInThumb,
   trackClickToScrollOffset,
+  resolveScrollbarConfig,
 } from "./scrollbar.ts";
 
 /**
@@ -641,7 +641,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
   // Background
   bg(color: Color): this {
-    this.styles.backgroundColor = color;
+    this.styles.backgroundColor = toColorObject(color);
     return this;
   }
 
@@ -672,7 +672,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
   borderColor(color: Color): this {
-    this.styles.borderColor = color;
+    this.styles.borderColor = toColorObject(color);
     return this;
   }
   borderSolid(): this {
@@ -729,7 +729,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   // ============ Text Styles ============
 
   textColor(color: Color): this {
-    this.styles.color = color;
+    this.styles.color = toColorObject(color);
     return this;
   }
   textSize(v: number): this {
@@ -1243,7 +1243,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     if (this.scrollHandleRef) {
       const scrollState = cx.getWindow().getScrollState(this.scrollHandleRef.id);
       if (scrollState) {
-        const config = { ...DEFAULT_SCROLLBAR_CONFIG, ...this.scrollbarConfigValue };
+        const config = resolveScrollbarConfig(this.scrollbarConfigValue ?? undefined);
 
         // Check if scrollbars should be visible
         const showScrollbars = config.visibility !== "never";
@@ -1546,7 +1546,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
    */
   private paintScrollbars(cx: PaintContext, prepaintState: DivPrepaintState): void {
     const { verticalScrollbar, horizontalScrollbar } = prepaintState;
-    const config = { ...DEFAULT_SCROLLBAR_CONFIG, ...this.scrollbarConfigValue };
+    const config = resolveScrollbarConfig(this.scrollbarConfigValue ?? undefined);
 
     // Check visibility based on configuration
     const shouldShow = this.shouldShowScrollbars(cx, prepaintState, config);
@@ -1597,7 +1597,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   private shouldShowScrollbars(
     cx: PaintContext,
     prepaintState: DivPrepaintState,
-    config: ScrollbarConfig
+    config: ResolvedScrollbarConfig
   ): boolean {
     if (config.visibility === "never") return false;
     if (config.visibility === "always") return true;

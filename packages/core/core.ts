@@ -1,8 +1,8 @@
 // Re-export all event types
 export * from "./events.ts";
 export type { Clipboard } from "./clipboard.ts";
-export type { ColorScheme, ColorSchemeProvider } from "./color_scheme.ts";
-export { createStaticColorSchemeProvider } from "./color_scheme.ts";
+export type { ColorScheme, ColorSchemeProvider } from "./theme.ts";
+export { createStaticColorSchemeProvider } from "./theme.ts";
 
 import type { EventTarget } from "./events";
 import type { Clipboard } from "./clipboard";

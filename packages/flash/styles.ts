@@ -4,8 +4,8 @@
  * Provides a Tailwind-like styling API for layout and visual properties.
  */
 
-import type { Color, TransformationMatrix } from "./types.ts";
-import { scaleTransform, rotateTransform, translateTransform } from "./types.ts";
+import type { Color, ColorObject, TransformationMatrix } from "./types.ts";
+import { scaleTransform, rotateTransform, translateTransform, toColorObject } from "./types.ts";
 import { CursorStyle } from "@glade/core/events.ts";
 
 /**
@@ -197,10 +197,10 @@ export interface Styles {
   overflowY?: Overflow;
 
   // Visual
-  backgroundColor?: Color;
+  backgroundColor?: ColorObject;
   borderRadius?: number;
   borderWidth?: number;
-  borderColor?: Color;
+  borderColor?: ColorObject;
   borderStyle?: BorderStyle;
   /** Dash length for dashed borders. Default is 6. */
   borderDashLength?: number;
@@ -213,7 +213,7 @@ export interface Styles {
   transform?: TransformationMatrix;
 
   // Text
-  color?: Color;
+  color?: ColorObject;
   fontSize?: number;
   fontWeight?: number | string;
   fontFamily?: string;
@@ -235,17 +235,17 @@ export class StyleBuilder {
   private styles: Partial<Styles> = {};
 
   bg(color: Color): this {
-    this.styles.backgroundColor = color;
+    this.styles.backgroundColor = toColorObject(color);
     return this;
   }
 
   borderColor(color: Color): this {
-    this.styles.borderColor = color;
+    this.styles.borderColor = toColorObject(color);
     return this;
   }
 
   textColor(color: Color): this {
-    this.styles.color = color;
+    this.styles.color = toColorObject(color);
     return this;
   }
 

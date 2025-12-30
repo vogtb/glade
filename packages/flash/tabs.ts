@@ -17,7 +17,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import { toColorObject, type Bounds, type Color, type ColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
@@ -30,13 +30,13 @@ import { tabColors } from "./theme.ts";
 /**
  * Default colors for tabs.
  */
-const DEFAULT_TRIGGER_BG: Color = { r: 0.1, g: 0.1, b: 0.1, a: 1 };
-const DEFAULT_TRIGGER_ACTIVE_BG: Color = { r: 0.2, g: 0.2, b: 0.2, a: 1 };
-const DEFAULT_TRIGGER_TEXT: Color = { r: 0.7, g: 0.7, b: 0.7, a: 1 };
-const DEFAULT_TRIGGER_ACTIVE_TEXT: Color = { r: 1, g: 1, b: 1, a: 1 };
-const DEFAULT_INDICATOR_COLOR: Color = { r: 0.4, g: 0.6, b: 1, a: 1 };
-const DEFAULT_BORDER_COLOR: Color = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
-const DEFAULT_CONTENT_BG: Color = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
+const DEFAULT_TRIGGER_BG: ColorObject = { r: 0.1, g: 0.1, b: 0.1, a: 1 };
+const DEFAULT_TRIGGER_ACTIVE_BG: ColorObject = { r: 0.2, g: 0.2, b: 0.2, a: 1 };
+const DEFAULT_TRIGGER_TEXT: ColorObject = { r: 0.7, g: 0.7, b: 0.7, a: 1 };
+const DEFAULT_TRIGGER_ACTIVE_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
+const DEFAULT_INDICATOR_COLOR: ColorObject = { r: 0.4, g: 0.6, b: 1, a: 1 };
+const DEFAULT_BORDER_COLOR: ColorObject = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
+const DEFAULT_CONTENT_BG: ColorObject = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
 const DEFAULT_DISABLED_OPACITY = 0.5;
 
 const DEFAULT_TRIGGER_FONT_SIZE = 14;
@@ -57,11 +57,11 @@ type TabsContext = {
   value: string | null;
   onValueChange: TabValueChangeHandler | null;
   disabled: boolean;
-  triggerBg: Color;
-  triggerActiveBg: Color;
-  triggerText: Color;
-  triggerActiveText: Color;
-  indicatorColor: Color;
+  triggerBg: ColorObject;
+  triggerActiveBg: ColorObject;
+  triggerText: ColorObject;
+  triggerActiveText: ColorObject;
+  indicatorColor: ColorObject;
   triggerFontSize: number;
   triggerPaddingX: number;
   triggerPaddingY: number;
@@ -419,13 +419,13 @@ type TabsPrepaintState = {
 };
 
 type ResolvedTabsColors = {
-  triggerBg: Color;
-  triggerActiveBg: Color;
-  triggerText: Color;
-  triggerActiveText: Color;
-  indicator: Color;
-  border: Color;
-  contentBg: Color;
+  triggerBg: ColorObject;
+  triggerActiveBg: ColorObject;
+  triggerText: ColorObject;
+  triggerActiveText: ColorObject;
+  indicator: ColorObject;
+  border: ColorObject;
+  contentBg: ColorObject;
 };
 
 /**
@@ -445,13 +445,13 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
   private triggerElements: FlashTabTrigger[] = [];
 
   // Styling configuration
-  private triggerBgColor: Color | null = null;
-  private triggerActiveBgColor: Color | null = null;
-  private triggerTextColor: Color | null = null;
-  private triggerActiveTextColor: Color | null = null;
-  private indicatorColorValue: Color | null = null;
-  private borderColorValue: Color | null = null;
-  private contentBgColor: Color | null = null;
+  private triggerBgColor: ColorObject | null = null;
+  private triggerActiveBgColor: ColorObject | null = null;
+  private triggerTextColor: ColorObject | null = null;
+  private triggerActiveTextColor: ColorObject | null = null;
+  private indicatorColorValue: ColorObject | null = null;
+  private borderColorValue: ColorObject | null = null;
+  private contentBgColor: ColorObject | null = null;
 
   private triggerFontSizeValue: number = DEFAULT_TRIGGER_FONT_SIZE;
   private triggerPaddingXValue: number = DEFAULT_TRIGGER_PADDING_X;
@@ -544,7 +544,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
    * Set the background color for inactive triggers.
    */
   triggerBg(c: Color): this {
-    this.triggerBgColor = c;
+    this.triggerBgColor = toColorObject(c);
     return this;
   }
 
@@ -552,7 +552,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
    * Set the background color for active trigger.
    */
   triggerActiveBg(c: Color): this {
-    this.triggerActiveBgColor = c;
+    this.triggerActiveBgColor = toColorObject(c);
     return this;
   }
 
@@ -560,7 +560,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
    * Set the text color for inactive triggers.
    */
   triggerText(c: Color): this {
-    this.triggerTextColor = c;
+    this.triggerTextColor = toColorObject(c);
     return this;
   }
 
@@ -568,7 +568,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
    * Set the text color for active trigger.
    */
   triggerActiveText(c: Color): this {
-    this.triggerActiveTextColor = c;
+    this.triggerActiveTextColor = toColorObject(c);
     return this;
   }
 
@@ -576,7 +576,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
    * Set the indicator color (active tab underline).
    */
   indicatorColor(c: Color): this {
-    this.indicatorColorValue = c;
+    this.indicatorColorValue = toColorObject(c);
     return this;
   }
 
@@ -618,7 +618,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
    * Set the border color.
    */
   borderColor(c: Color): this {
-    this.borderColorValue = c;
+    this.borderColorValue = toColorObject(c);
     return this;
   }
 
@@ -626,7 +626,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
    * Set the content area background color.
    */
   contentBg(c: Color): this {
-    this.contentBgColor = c;
+    this.contentBgColor = toColorObject(c);
     return this;
   }
 

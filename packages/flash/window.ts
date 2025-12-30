@@ -21,7 +21,7 @@ import type {
   ScrollOffset,
   ScrollState,
 } from "./types.ts";
-import { createScrollState, clampScrollOffset } from "./types.ts";
+import { createScrollState, clampScrollOffset, toColorObject } from "./types.ts";
 import type { ScrollbarDragState } from "./scrollbar.ts";
 import { calculateDragScrollOffset } from "./scrollbar.ts";
 import { CursorStyle } from "@glade/core/events.ts";
@@ -2673,7 +2673,7 @@ export class FlashWindow {
           vertices,
           indices,
           bounds,
-          color,
+          color: toColorObject(color),
         });
       },
 
@@ -2691,7 +2691,7 @@ export class FlashWindow {
           y,
           width,
           thickness,
-          color,
+          color: toColorObject(color),
           style,
           wavelength: options?.wavelength,
           amplitude: options?.amplitude,

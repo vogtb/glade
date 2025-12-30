@@ -6,7 +6,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import { toColorObject, type Bounds, type Color, type ColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import { HitboxBehavior } from "./hitbox.ts";
@@ -87,21 +87,21 @@ export class FlashDropdown extends FlashContainerElement<
   private sideOffsetValue = 4;
   private windowMarginValue = 8;
 
-  private menuBgColor: Color | null = null;
-  private menuBorderColor: Color | null = null;
+  private menuBgColor: ColorObject | null = null;
+  private menuBorderColor: ColorObject | null = null;
   private menuBorderRadiusValue = DEFAULT_MENU_BORDER_RADIUS;
   private menuPaddingValue = DEFAULT_MENU_PADDING;
-  private itemBgColor: Color | null = null;
-  private itemHoverBgColor: Color | null = null;
-  private itemTextColor: Color | null = null;
-  private itemHoverTextColor: Color | null = null;
-  private itemDisabledTextColor: Color | null = null;
-  private labelTextColor: Color | null = null;
-  private separatorColorValue: Color | null = null;
-  private destructiveTextColor: Color | null = null;
-  private destructiveHoverBgColor: Color | null = null;
-  private shortcutTextColor: Color | null = null;
-  private checkColorValue: Color | null = null;
+  private itemBgColor: ColorObject | null = null;
+  private itemHoverBgColor: ColorObject | null = null;
+  private itemTextColor: ColorObject | null = null;
+  private itemHoverTextColor: ColorObject | null = null;
+  private itemDisabledTextColor: ColorObject | null = null;
+  private labelTextColor: ColorObject | null = null;
+  private separatorColorValue: ColorObject | null = null;
+  private destructiveTextColor: ColorObject | null = null;
+  private destructiveHoverBgColor: ColorObject | null = null;
+  private shortcutTextColor: ColorObject | null = null;
+  private checkColorValue: ColorObject | null = null;
   private fontSizeValue = DEFAULT_FONT_SIZE;
   private labelFontSizeValue = DEFAULT_LABEL_FONT_SIZE;
   private shortcutFontSizeValue = DEFAULT_SHORTCUT_FONT_SIZE;
@@ -179,12 +179,12 @@ export class FlashDropdown extends FlashContainerElement<
   }
 
   menuBg(c: Color): this {
-    this.menuBgColor = c;
+    this.menuBgColor = toColorObject(c);
     return this;
   }
 
   menuBorder(c: Color): this {
-    this.menuBorderColor = c;
+    this.menuBorderColor = toColorObject(c);
     return this;
   }
 
@@ -199,47 +199,47 @@ export class FlashDropdown extends FlashContainerElement<
   }
 
   itemBg(c: Color): this {
-    this.itemBgColor = c;
+    this.itemBgColor = toColorObject(c);
     return this;
   }
 
   itemHoverBg(c: Color): this {
-    this.itemHoverBgColor = c;
+    this.itemHoverBgColor = toColorObject(c);
     return this;
   }
 
   itemText(c: Color): this {
-    this.itemTextColor = c;
+    this.itemTextColor = toColorObject(c);
     return this;
   }
 
   itemHoverText(c: Color): this {
-    this.itemHoverTextColor = c;
+    this.itemHoverTextColor = toColorObject(c);
     return this;
   }
 
   itemDisabledText(c: Color): this {
-    this.itemDisabledTextColor = c;
+    this.itemDisabledTextColor = toColorObject(c);
     return this;
   }
 
   labelText(c: Color): this {
-    this.labelTextColor = c;
+    this.labelTextColor = toColorObject(c);
     return this;
   }
 
   separatorColor(c: Color): this {
-    this.separatorColorValue = c;
+    this.separatorColorValue = toColorObject(c);
     return this;
   }
 
   shortcutText(c: Color): this {
-    this.shortcutTextColor = c;
+    this.shortcutTextColor = toColorObject(c);
     return this;
   }
 
   checkColor(c: Color): this {
-    this.checkColorValue = c;
+    this.checkColorValue = toColorObject(c);
     return this;
   }
 

@@ -10,8 +10,8 @@
  * primitives of different types need to interleave correctly.
  */
 
-import type { Color, ContentMask, Bounds, TransformationMatrix } from "./types.ts";
-import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
+import type { ColorObject, ContentMask, Bounds, TransformationMatrix } from "./types.ts";
+import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform, toColorObject } from "./types.ts";
 import { BoundsTree, type DrawOrder } from "./bounds_tree.ts";
 
 export type { DrawOrder } from "./bounds_tree.ts";
@@ -175,10 +175,10 @@ export interface RectPrimitive {
   y: number;
   width: number;
   height: number;
-  color: Color;
+  color: ColorObject;
   cornerRadius: number;
   borderWidth: number;
-  borderColor: Color;
+  borderColor: ColorObject;
   /** Whether border is dashed (1.0) or solid (0.0). */
   borderDashed?: number;
   /** Dash length for dashed borders. Default 6. */
@@ -200,7 +200,7 @@ export interface ShadowPrimitive {
   width: number;
   height: number;
   cornerRadius: number;
-  color: Color;
+  color: ColorObject;
   blur: number;
   offsetX: number;
   offsetY: number;
@@ -223,7 +223,7 @@ export interface GlyphPrimitive {
   atlasY: number;
   atlasWidth: number;
   atlasHeight: number;
-  color: Color;
+  color: ColorObject;
   clipBounds?: ClipBounds;
   /** Draw order for z-sorting. Assigned automatically by FlashScene. */
   order?: DrawOrder;
@@ -239,7 +239,7 @@ export interface TextPrimitive {
   y: number;
   fontSize: number;
   lineHeight: number;
-  color: Color;
+  color: ColorObject;
   fontFamily: string;
   maxWidth?: number;
 }
@@ -293,7 +293,7 @@ export interface PathVertex {
 export interface PathPrimitive {
   vertices: PathVertex[];
   indices: number[];
-  color: Color;
+  color: ColorObject;
   bounds: Bounds;
   clipBounds?: ClipBounds;
   transform?: TransformationMatrix;
@@ -342,7 +342,7 @@ export interface UnderlinePrimitive {
   y: number;
   width: number;
   thickness: number;
-  color: Color;
+  color: ColorObject;
   style: UnderlineStyle;
   /** Wavelength for wavy underlines (pixels per wave cycle). */
   wavelength?: number;
@@ -612,6 +612,8 @@ export class FlashScene {
       transform.ty !== 0;
     this.currentLayer.rects.push({
       ...rect,
+      color: toColorObject(rect.color),
+      borderColor: toColorObject(rect.borderColor),
       clipBounds,
       transform: hasTransform ? transform : undefined,
       order: this.assignDrawOrder(bounds),
@@ -637,6 +639,7 @@ export class FlashScene {
       transform.ty !== 0;
     this.currentLayer.shadows.push({
       ...shadow,
+      color: toColorObject(shadow.color),
       clipBounds,
       transform: hasTransform ? transform : undefined,
       order: this.assignDrawOrder(bounds),
@@ -654,6 +657,7 @@ export class FlashScene {
     const clipBounds = this.getCurrentClipBounds();
     this.currentLayer.glyphs.push({
       ...glyph,
+      color: toColorObject(glyph.color),
       clipBounds,
       order: this.assignDrawOrder(bounds),
     });
@@ -671,6 +675,7 @@ export class FlashScene {
     const clipBounds = this.getCurrentClipBounds();
     this.currentLayer.glyphs.push({
       ...glyph,
+      color: toColorObject(glyph.color),
       clipBounds,
       order,
     });
@@ -719,6 +724,7 @@ export class FlashScene {
       transform.ty !== 0;
     this.currentLayer.paths.push({
       ...path,
+      color: toColorObject(path.color),
       clipBounds,
       transform: hasTransform ? transform : undefined,
       order: this.assignDrawOrder(path.bounds),
@@ -749,6 +755,7 @@ export class FlashScene {
       transform.ty !== 0;
     this.currentLayer.underlines.push({
       ...underline,
+      color: toColorObject(underline.color),
       clipBounds,
       transform: hasTransform ? transform : undefined,
       order: this.assignDrawOrder(bounds),

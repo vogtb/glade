@@ -15,7 +15,7 @@ import {
   type RequestLayoutResult,
   type NoState,
 } from "./element.ts";
-import type { Bounds, Color } from "./types.ts";
+import { toColorObject, type Bounds, type Color, type ColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode } from "./dispatch.ts";
 
@@ -36,7 +36,7 @@ type DividerRequestState = {
  */
 export class FlashDivider extends FlashElement<DividerRequestState, NoState> {
   private orientation: DividerOrientation = "horizontal";
-  private colorValue: Color = { r: 0.2, g: 0.2, b: 0.2, a: 1 };
+  private colorValue: ColorObject = { r: 0.2, g: 0.2, b: 0.2, a: 1 };
   private thicknessValue = 1;
   private marginValue = 0;
 
@@ -62,7 +62,7 @@ export class FlashDivider extends FlashElement<DividerRequestState, NoState> {
    * Set the divider color.
    */
   color(c: Color): this {
-    this.colorValue = c;
+    this.colorValue = toColorObject(c);
     return this;
   }
 

@@ -10,19 +10,26 @@
  * 3. paint() - Emit GPU primitives using PrepaintState
  */
 
-import type { Bounds, Color, ContentMask, TransformationMatrix, FocusId } from "./types.ts";
+import type {
+  Bounds,
+  Color,
+  ColorObject,
+  ContentMask,
+  FocusId,
+  ScrollOffset,
+  TransformationMatrix,
+} from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles, Cursor, WhitespaceMode } from "./styles.ts";
 import type { HitTestNode, EventHandlers } from "./dispatch.ts";
 import type { FlashViewContext, FlashContext } from "./context.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
-import type { ScrollOffset } from "./types.ts";
 import type { FlashScene } from "./scene.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { FlashWindow as _FlashWindow } from "./window.ts";
 import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
-import { rgb } from "./types.ts";
+import { rgb, toColorObject } from "./types.ts";
 
 // ============ Debug Info Types ============
 
@@ -660,7 +667,7 @@ interface TextPrepaintState {
   handlers: EventHandlers;
   hitTestNode?: HitTestNode;
   measureId: number;
-  textColor: Color;
+  textColor: ColorObject;
 }
 
 /**
@@ -670,7 +677,7 @@ interface TextPrepaintState {
  * By default, text wraps to fit its parent container. Call `.noWrap()` to disable.
  */
 export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextPrepaintState> {
-  private textColor: Color = { r: 1, g: 1, b: 1, a: 1 };
+  private textColor: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
   private hasCustomTextColor = false;
   private fontSize = 14;
   private fontFamily = "system-ui";
@@ -682,7 +689,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
 
   // Selection support
   private isSelectable = false;
-  private selectionColorValue: Color = { ...rgb(0x3b82f6), a: 0.35 };
+  private selectionColorValue: ColorObject = { ...rgb(0x3b82f6), a: 0.35 };
 
   // Cached layout for hit testing and selection rendering
   private cachedLayout: CachedTextLayout | null = null;
@@ -693,7 +700,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
   }
 
   color(c: Color): this {
-    this.textColor = c;
+    this.textColor = toColorObject(c);
     this.hasCustomTextColor = true;
     return this;
   }
@@ -794,7 +801,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
    * Set the selection highlight color.
    */
   selectionColor(c: Color): this {
-    this.selectionColorValue = c;
+    this.selectionColorValue = toColorObject(c);
     return this;
   }
 

@@ -11,7 +11,7 @@
  * Uses content-based element keys to track elements across frame rebuilds.
  */
 
-import type { Bounds, Point, Color } from "./types.ts";
+import { toColorObject, type Bounds, type Point, type Color } from "./types.ts";
 import type { GlobalElementId } from "./element.ts";
 import type { FlashWindow } from "./window.ts";
 import type { FlashContext } from "./context.ts";
@@ -482,6 +482,7 @@ export class CrossElementSelectionManager {
    * Paint selection highlights for all selected ranges.
    */
   paintSelectionHighlights(scene: FlashScene, color: Color): void {
+    const highlightColor = toColorObject(color);
     const ranges = this.getSelectionRanges();
 
     for (const { key, range } of ranges) {
@@ -502,7 +503,7 @@ export class CrossElementSelectionManager {
           y: elem.bounds.y + rect.y,
           width: rect.width,
           height: rect.height,
-          color: color,
+          color: highlightColor,
           cornerRadius: 2,
           borderWidth: 0,
           borderColor: { r: 0, g: 0, b: 0, a: 0 },

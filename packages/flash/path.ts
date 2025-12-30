@@ -6,7 +6,7 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
-import type { Color, Bounds } from "./types.ts";
+import { toColorObject, type Color, type Bounds } from "./types.ts";
 import type { PathPrimitive, PathVertex } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 
@@ -277,7 +277,7 @@ export class PathBuilder {
     return {
       vertices: tessellated.vertices,
       indices: tessellated.indices,
-      color,
+      color: toColorObject(color),
       bounds: tessellated.bounds,
     };
   }

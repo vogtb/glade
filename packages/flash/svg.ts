@@ -9,7 +9,13 @@
  * - High-quality tessellation with fine tolerance
  */
 
-import type { Color, Bounds, TransformationMatrix } from "./types.ts";
+import {
+  toColorObject,
+  type Color,
+  type ColorObject,
+  type Bounds,
+  type TransformationMatrix,
+} from "./types.ts";
 import type {
   RequestLayoutContext,
   PrepaintContext,
@@ -195,7 +201,7 @@ interface SvgRequestState {
  */
 interface SvgPrepaintState {
   cachedPaths: CachedPathData[];
-  tintColor: Color;
+  tintColor: ColorObject;
 }
 
 /**
@@ -233,7 +239,7 @@ function meshToCachedPath(mesh: TessellatedMesh): CachedPathData {
  * ```
  */
 export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> {
-  private tintColor: Color = { r: 1, g: 1, b: 1, a: 1 };
+  private tintColor: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
   private hasCustomTint = false;
   private displayWidth?: number;
   private displayHeight?: number;
@@ -257,7 +263,7 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
   }
 
   color(c: Color): this {
-    this.tintColor = c;
+    this.tintColor = toColorObject(c);
     this.hasCustomTint = true;
     return this;
   }

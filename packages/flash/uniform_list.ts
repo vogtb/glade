@@ -17,7 +17,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color, ScrollOffset } from "./types.ts";
+import { toColorObject, type Bounds, type Color, type ScrollOffset } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import type { HitTestNode } from "./dispatch.ts";
@@ -167,7 +167,7 @@ export class UniformList<T> extends FlashElement<
    * Set background color.
    */
   bg(color: Color): this {
-    this.styles.backgroundColor = color;
+    this.styles.backgroundColor = toColorObject(color);
     return this;
   }
 
