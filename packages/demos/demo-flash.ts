@@ -115,40 +115,40 @@ let flowerImageTile: ImageTile | null = null;
  * Demo section identifiers.
  */
 type DemoSection =
+  | "shapes"
+  | "canvas"
+  | "svg-icons"
+  | "vector-paths"
   | "inter-text"
-  | "wrapped-text"
-  | "text-newline"
+  | "wrapping"
   | "text-input"
-  | "emoji-text"
-  | "mono-text"
-  | "mono-semibold"
+  | "monospaced"
   | "underlined-text"
-  | "group-styles"
+  | "text-selection"
+  | "emoji-text"
+  | "flexbox"
+  | "grid-layout"
+  | "div-demo"
+  | "border-styles"
   | "divider"
+  | "padding"
+  | "margin"
+  | "focus"
+  | "group-styles"
+  | "scrollbars"
+  | "virtual-scrolling"
+  | "clipboard"
+  | "webgpu-demos"
+  | "images"
+  | "deferred-anchored"
   | "icon"
   | "link"
-  | "controls"
+  | "button-placeholder"
   | "tabs"
+  | "controls"
   | "dropdown"
   | "right-click"
-  | "tooltip"
-  | "popover"
-  | "dialog"
-  | "table"
-  | "grid-layout"
-  | "canvas"
-  | "vector-paths"
-  | "border-styles"
-  | "png-images"
-  | "jpg-images"
-  | "virtual-scrolling"
-  | "scrollbars"
-  | "deferred-anchored"
-  | "svg-icons"
-  | "focus-navigation"
-  | "clipboard"
-  | "cross-element-selection"
-  | "webgpu-demos";
+  | "table";
 
 /**
  * Demo button configuration.
@@ -158,41 +158,76 @@ interface DemoButton {
   label: string;
 }
 
-const DEMO_BUTTONS: DemoButton[] = [
-  { id: "inter-text", label: "Inter Text" },
-  { id: "wrapped-text", label: "Wrapped Text" },
-  { id: "text-newline", label: "Text New Line" },
-  { id: "text-input", label: "Text Input" },
-  { id: "emoji-text", label: "Emoji Text" },
-  { id: "mono-text", label: "Monospace Text" },
-  { id: "mono-semibold", label: "Mono SemiBold" },
-  { id: "underlined-text", label: "Underlined Text" },
-  { id: "group-styles", label: "Group Styles" },
-  { id: "divider", label: "Divider" },
-  { id: "icon", label: "Icon" },
-  { id: "link", label: "Link" },
-  { id: "controls", label: "Controls" },
-  { id: "tabs", label: "Tabs" },
-  { id: "dropdown", label: "Dropdown" },
-  { id: "right-click", label: "Right Click" },
-  { id: "tooltip", label: "Tooltip" },
-  { id: "popover", label: "Popover" },
-  { id: "dialog", label: "Dialog" },
-  { id: "table", label: "Table" },
-  { id: "grid-layout", label: "Grid Layout" },
-  { id: "canvas", label: "Canvas" },
-  { id: "vector-paths", label: "Vector Paths" },
-  { id: "border-styles", label: "Border Styles" },
-  { id: "png-images", label: "PNG Images" },
-  { id: "jpg-images", label: "JPG Images" },
-  { id: "virtual-scrolling", label: "Virtual Scrolling" },
-  { id: "scrollbars", label: "Scrollbars" },
-  { id: "deferred-anchored", label: "Deferred/Anchored" },
-  { id: "svg-icons", label: "SVG Icons" },
-  { id: "focus-navigation", label: "Focus Nav" },
-  { id: "clipboard", label: "Clipboard" },
-  { id: "cross-element-selection", label: "Cross-Element Selection" },
-  { id: "webgpu-demos", label: "WebGPU Demos" },
+interface DemoGroup {
+  title: string;
+  buttons: DemoButton[];
+}
+
+const DEMO_GROUPS: DemoGroup[] = [
+  {
+    title: "Canvas",
+    buttons: [
+      { id: "shapes", label: "Shapes" },
+      { id: "canvas", label: "Canvas" },
+      { id: "svg-icons", label: "SVG" },
+      { id: "vector-paths", label: "Paths" },
+    ],
+  },
+  {
+    title: "Text",
+    buttons: [
+      { id: "inter-text", label: "Simple Text" },
+      { id: "wrapping", label: "Wrapping" },
+      { id: "text-input", label: "Input" },
+      { id: "monospaced", label: "Monospaced" },
+      { id: "underlined-text", label: "Underlined" },
+      { id: "text-selection", label: "Selection" },
+      { id: "emoji-text", label: "Emoji" },
+    ],
+  },
+  {
+    title: "Layouts",
+    buttons: [
+      { id: "flexbox", label: "Flexbox" },
+      { id: "grid-layout", label: "Grid" },
+    ],
+  },
+  {
+    title: "Utilities",
+    buttons: [
+      { id: "div-demo", label: "Div" },
+      { id: "border-styles", label: "Border" },
+      { id: "divider", label: "Divider" },
+      { id: "padding", label: "Padding" },
+      { id: "margin", label: "Margin" },
+      { id: "focus", label: "Focus" },
+      { id: "group-styles", label: "Groups" },
+      { id: "scrollbars", label: "Scrollbars" },
+      { id: "virtual-scrolling", label: "Virtual Scrolling" },
+    ],
+  },
+  {
+    title: "Special",
+    buttons: [
+      { id: "clipboard", label: "Clipboard" },
+      { id: "webgpu-demos", label: "WebGPU" },
+      { id: "images", label: "Images" },
+      { id: "deferred-anchored", label: "Deferred" },
+    ],
+  },
+  {
+    title: "Components",
+    buttons: [
+      { id: "icon", label: "Icon" },
+      { id: "link", label: "Link" },
+      { id: "button-placeholder", label: "Button" },
+      { id: "tabs", label: "Tabs" },
+      { id: "controls", label: "Controls" },
+      { id: "dropdown", label: "Dropdown" },
+      { id: "right-click", label: "Right-Click Menu" },
+      { id: "table", label: "Table" },
+    ],
+  },
 ];
 
 /**
@@ -565,42 +600,60 @@ class DemoRootView implements FlashView {
       .w(cx.window.width)
       .h(cx.window.height)
       .bg(rgb(0x14141a))
-      .gap(20)
-      .p(20)
+      .gap(12)
+      .p(16)
       .children_(this.renderNavigation(cx), this.renderContent(cx));
   }
 
   private renderNavigation(cx: FlashViewContext<this>): FlashDiv {
+    const navItems: FlashDiv[] = [];
+
+    for (const group of DEMO_GROUPS) {
+      navItems.push(
+        div()
+          .pt(10)
+          .pb(4)
+          .child(
+            text(group.title.toUpperCase())
+              .font("Inter")
+              .size(11)
+              .color({ r: 0.65, g: 0.68, b: 0.76, a: 1 })
+          )
+      );
+      navItems.push(...group.buttons.map((btn) => this.renderNavButton(cx, btn)));
+    }
+
     return div()
       .flex()
       .flexCol()
       .w(220)
-      .h(Math.max(200, cx.window.height - 40))
+      .h(Math.max(200, cx.window.height - 32))
       .flexShrink0()
       .bg(rgb(0x1f1f28))
       .rounded(12)
       .overflowHidden()
       .children_(
         div()
-          .px(16)
-          .pt(16)
-          .pb(8)
+          .px(12)
+          .pt(12)
+          .pb(6)
           .flexShrink0()
           .children_(
             text("Flash Demos").font("Inter").size(18).color({ r: 1, g: 1, b: 1, a: 1 }),
-            div().h(1).mt(8).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 })
+            div().h(1).mt(6).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 })
           ),
         div()
           .flex()
           .flexCol()
-          .gap(8)
-          .px(16)
-          .pb(16)
+          .gap(6)
+          .px(12)
+          .pb(12)
           .flexGrow()
           .hMax(cx.window.height - 120)
-          .overflowAuto()
+          .overflowScroll()
+          .scrollbarAlways()
           .trackScroll(this.leftNavScrollHandle!)
-          .children_(...DEMO_BUTTONS.map((btn) => this.renderNavButton(cx, btn)))
+          .children_(...navItems)
       );
   }
 
@@ -636,10 +689,10 @@ class DemoRootView implements FlashView {
       .flexGrow()
       .bg(rgb(0x2a2a35))
       .rounded(12)
-      .p(24)
+      .p(16)
       .flex()
       .flexCol()
-      .gap(16)
+      .gap(12)
       .overflowHidden()
       .trackScroll(this.rightScrollHandle!)
       .child(this.renderDemoContent(cx));
@@ -647,74 +700,74 @@ class DemoRootView implements FlashView {
 
   private renderDemoContent(cx: FlashViewContext<this>): FlashDiv {
     switch (this.selectedDemo) {
+      case "shapes":
+        return this.renderShapesDemo();
+      case "canvas":
+        return this.renderCanvasDemo();
+      case "svg-icons":
+        return this.renderSvgIconsDemo();
+      case "vector-paths":
+        return this.renderVectorPathsDemo();
       case "inter-text":
         return this.renderInterTextDemo();
-      case "wrapped-text":
-        return this.renderWrappedTextDemo();
-      case "text-newline":
-        return this.renderTextNewLineDemo();
+      case "wrapping":
+        return this.renderWrappingDemo();
       case "text-input":
         return this.renderTextInputDemo(cx);
-      case "emoji-text":
-        return this.renderEmojiTextDemo();
-      case "mono-text":
-        return this.renderMonoTextDemo();
-      case "mono-semibold":
-        return this.renderMonoSemiBoldDemo();
+      case "monospaced":
+        return this.renderMonospacedDemo();
       case "underlined-text":
         return this.renderUnderlinedTextDemo();
-      case "group-styles":
-        return this.renderGroupStylesDemo();
+      case "text-selection":
+        return this.renderTextSelectionDemo();
+      case "emoji-text":
+        return this.renderEmojiTextDemo();
+      case "flexbox":
+        return this.renderFlexboxDemo();
+      case "grid-layout":
+        return this.renderGridLayoutDemo();
+      case "div-demo":
+        return this.renderDivDemo();
+      case "border-styles":
+        return this.renderBorderStylesDemo();
       case "divider":
         return this.renderDividerDemo();
+      case "padding":
+        return this.renderPaddingDemo();
+      case "margin":
+        return this.renderMarginDemo();
+      case "focus":
+        return this.renderFocusDemo(cx);
+      case "group-styles":
+        return this.renderGroupStylesDemo();
+      case "scrollbars":
+        return this.renderScrollbarsDemo(cx);
+      case "virtual-scrolling":
+        return this.renderVirtualScrollingDemo(cx);
+      case "clipboard":
+        return this.renderClipboardDemo(cx);
+      case "deferred-anchored":
+        return this.renderDeferredAnchoredDemo(cx);
+      case "webgpu-demos":
+        return this.renderWebGPUDemosSection(cx);
+      case "images":
+        return this.renderImagesDemo();
       case "icon":
         return this.renderIconDemo();
       case "link":
         return this.renderLinkDemo();
-      case "controls":
-        return this.renderControlsDemo(cx);
+      case "button-placeholder":
+        return this.renderButtonPlaceholderDemo();
       case "tabs":
         return this.renderTabsDemo(cx);
+      case "controls":
+        return this.renderControlsAndOverlaysDemo(cx);
       case "dropdown":
         return this.renderDropdownDemo(cx);
       case "right-click":
         return this.renderRightClickDemo(cx);
-      case "tooltip":
-        return this.renderTooltipDemo();
-      case "popover":
-        return this.renderPopoverDemo(cx);
-      case "dialog":
-        return this.renderDialogDemo(cx);
       case "table":
         return this.renderTableDemo();
-      case "grid-layout":
-        return this.renderGridLayoutDemo();
-      case "canvas":
-        return this.renderCanvasDemo();
-      case "vector-paths":
-        return this.renderVectorPathsDemo();
-      case "border-styles":
-        return this.renderBorderStylesDemo();
-      case "png-images":
-        return this.renderPngImagesDemo();
-      case "jpg-images":
-        return this.renderJpgImagesDemo();
-      case "virtual-scrolling":
-        return this.renderVirtualScrollingDemo(cx);
-      case "scrollbars":
-        return this.renderScrollbarsDemo(cx);
-      case "deferred-anchored":
-        return this.renderDeferredAnchoredDemo(cx);
-      case "svg-icons":
-        return this.renderSvgIconsDemo();
-      case "focus-navigation":
-        return this.renderFocusNavigationDemo(cx);
-      case "clipboard":
-        return this.renderClipboardDemo(cx);
-      case "cross-element-selection":
-        return this.renderCrossElementSelectionDemo();
-      case "webgpu-demos":
-        return this.renderWebGPUDemosSection(cx);
       default:
         return div();
     }
@@ -1117,6 +1170,23 @@ class DemoRootView implements FlashView {
       );
   }
 
+  private renderWrappingDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Wrapping").font("Inter").size(30).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Soft-wrapping and newline-aware rendering in one place.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.72, g: 0.76, b: 0.88, a: 1 }),
+        this.renderWrappedTextDemo(),
+        div().h(1).bg({ r: 0.3, g: 0.32, b: 0.4, a: 0.5 }),
+        this.renderTextNewLineDemo()
+      );
+  }
+
   private renderTextInputDemo(cx: FlashViewContext<this>): FlashDiv {
     const inputHandle = this.ensureTextInputHandle(cx);
     const controller = this.textInputController;
@@ -1369,6 +1439,23 @@ class DemoRootView implements FlashView {
       );
   }
 
+  private renderMonospacedDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Monospaced").font("Inter").size(30).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Code, inline snippets, and a heavier weight variant.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.72, g: 0.76, b: 0.88, a: 1 }),
+        this.renderMonoTextDemo(),
+        div().h(1).bg({ r: 0.3, g: 0.32, b: 0.4, a: 0.5 }),
+        this.renderMonoSemiBoldDemo()
+      );
+  }
+
   private renderUnderlinedTextDemo(): FlashDiv {
     return div()
       .flex()
@@ -1444,6 +1531,90 @@ class DemoRootView implements FlashView {
               wavelength: 6,
               amplitude: 2,
             })
+          )
+      );
+  }
+
+  private renderDivDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Div").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Base container with background, rounding, border, and shadows.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .flexWrap()
+          .children_(
+            div()
+              .w(260)
+              .p(14)
+              .bg({ r: 0.15, g: 0.17, b: 0.21, a: 1 })
+              .rounded(12)
+              .border(1)
+              .borderColor({ r: 0.32, g: 0.36, b: 0.45, a: 1 })
+              .shadow()
+              .children_(
+                text("Card with border + shadow")
+                  .font("Inter")
+                  .size(15)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+                div()
+                  .mt(6)
+                  .child(
+                    text("Mix radius, borders, and shadows to compose reusable shells.")
+                      .font("Inter")
+                      .size(13)
+                      .color({ r: 0.74, g: 0.78, b: 0.86, a: 1 })
+                  )
+              ),
+            div()
+              .w(260)
+              .p(14)
+              .bg({ r: 0.13, g: 0.15, b: 0.18, a: 1 })
+              .rounded(8)
+              .border(1)
+              .borderColor({ r: 0.22, g: 0.24, b: 0.32, a: 1 })
+              .children_(
+                text("Outlined container")
+                  .font("Inter")
+                  .size(15)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+                div()
+                  .mt(6)
+                  .child(
+                    text("Border without shadow for low-elevation surfaces.")
+                      .font("Inter")
+                      .size(13)
+                      .color({ r: 0.74, g: 0.78, b: 0.86, a: 1 })
+                  )
+              ),
+            div()
+              .w(260)
+              .p(14)
+              .bg({ r: 0.12, g: 0.14, b: 0.18, a: 1 })
+              .rounded(12)
+              .shadow()
+              .children_(
+                text("Plain background")
+                  .font("Inter")
+                  .size(15)
+                  .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+                div()
+                  .mt(6)
+                  .child(
+                    text("Only bg + radius; useful for inset groupings.")
+                      .font("Inter")
+                      .size(13)
+                      .color({ r: 0.74, g: 0.78, b: 0.86, a: 1 })
+                  )
+              )
           )
       );
   }
@@ -1624,6 +1795,99 @@ class DemoRootView implements FlashView {
                   .child(divider().color({ r: 0.4, g: 0.9, b: 0.5, a: 1 }).thickness(2))
               )
           )
+      );
+  }
+
+  private renderPaddingDemo(): FlashDiv {
+    const shell = { r: 0.14, g: 0.14, b: 0.18, a: 1 };
+    const accent = { r: 0.86, g: 0.88, b: 0.96, a: 1 };
+
+    const paddedBlock = (padding: number, px?: number, py?: number) => {
+      const label =
+        px !== undefined || py !== undefined
+          ? `px(${px ?? padding}) • py(${py ?? padding})`
+          : `p(${padding})`;
+
+      const block = div()
+        .w(200)
+        .bg(shell)
+        .rounded(10)
+        .border(1)
+        .borderColor({ r: 0.28, g: 0.32, b: 0.42, a: 1 });
+
+      if (px !== undefined || py !== undefined) {
+        block.px(px ?? padding).py(py ?? padding);
+      } else {
+        block.p(padding);
+      }
+
+      return block.child(text(label).font("Inter").size(14).color(accent));
+    };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Padding").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Control interior spacing with p(), px(), and py().")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .flexWrap()
+          .children_(paddedBlock(8), paddedBlock(16), paddedBlock(24)),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .flexWrap()
+          .children_(paddedBlock(10, 18, 10), paddedBlock(10, 10, 18))
+      );
+  }
+
+  private renderMarginDemo(): FlashDiv {
+    const base = { r: 0.14, g: 0.14, b: 0.18, a: 1 };
+    const accent = { r: 0.86, g: 0.88, b: 0.96, a: 1 };
+
+    const marginRow = (label: string, marginTop: number) =>
+      div()
+        .bg({ r: 0.18, g: 0.2, b: 0.26, a: 1 })
+        .rounded(8)
+        .border(1)
+        .borderColor({ r: 0.25, g: 0.28, b: 0.36, a: 1 })
+        .p(12)
+        .mt(marginTop)
+        .child(text(label).font("Inter").size(14).color(accent));
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Margin").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Outer spacing with mt()/mb()/mx()/my() for precise offsets.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div()
+          .flex()
+          .flexCol()
+          .bg(base)
+          .rounded(12)
+          .p(12)
+          .border(1)
+          .borderColor({ r: 0.28, g: 0.32, b: 0.42, a: 1 })
+          .children_(marginRow("mt(0)", 0), marginRow("mt(12)", 12), marginRow("mt(24)", 24)),
+        text(
+          "Tip: prefer gap() inside flex containers; reserve margins for fine-grain offsets or mixed layouts."
+        )
+          .font("Inter")
+          .size(13)
+          .color({ r: 0.74, g: 0.78, b: 0.86, a: 1 })
       );
   }
 
@@ -1937,6 +2201,43 @@ class DemoRootView implements FlashView {
               .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
             link("GitHub repository", "https://github.com").font("Inter").size(14),
             text("to contribute.").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+          )
+      );
+  }
+
+  private renderButtonPlaceholderDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(12)
+      .children_(
+        text("Button").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Reserved for a dedicated button showcase.").font("Inter").size(16).color({
+          r: 0.72,
+          g: 0.76,
+          b: 0.88,
+          a: 1,
+        }),
+        div()
+          .p(14)
+          .bg({ r: 0.12, g: 0.14, b: 0.18, a: 1 })
+          .rounded(10)
+          .border(1)
+          .borderColor({ r: 0.28, g: 0.32, b: 0.42, a: 1 })
+          .children_(
+            text("Coming soon")
+              .font("Inter")
+              .size(14)
+              .color({ r: 0.86, g: 0.88, b: 0.96, a: 1 })
+              .weight(600),
+            div()
+              .mt(6)
+              .child(
+                text("This slot will host button variants, states, and icon buttons.")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.74, g: 0.78, b: 0.86, a: 1 })
+              )
           )
       );
   }
@@ -2316,6 +2617,20 @@ class DemoRootView implements FlashView {
                   )
               )
           )
+      );
+  }
+
+  private renderControlsAndOverlaysDemo(cx: FlashViewContext<this>): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(16)
+      .children_(
+        this.renderControlsDemo(cx),
+        div().h(1).bg({ r: 0.35, g: 0.37, b: 0.45, a: 0.5 }),
+        this.renderTooltipDemo(),
+        this.renderPopoverDemo(cx),
+        this.renderDialogDemo(cx)
       );
   }
 
@@ -4128,6 +4443,168 @@ class DemoRootView implements FlashView {
       );
   }
 
+  private renderFlexboxDemo(): FlashDiv {
+    const cardBg = { r: 0.14, g: 0.14, b: 0.18, a: 1 };
+    const accent1 = { r: 0.35, g: 0.78, b: 0.98, a: 1 };
+    const accent2 = { r: 0.62, g: 0.86, b: 0.44, a: 1 };
+    const accent3 = { r: 0.98, g: 0.69, b: 0.27, a: 1 };
+    const accent4 = { r: 0.84, g: 0.53, b: 0.98, a: 1 };
+    const accent5 = { r: 0.32, g: 0.82, b: 0.8, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Flexbox").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Row/column alignment, wrapping, and spacing helpers.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .flexWrap()
+          .children_(
+            div()
+              .w(360)
+              .flex()
+              .flexCol()
+              .gap(10)
+              .bg(cardBg)
+              .rounded(10)
+              .p(12)
+              .border(1)
+              .borderColor({ r: 0.28, g: 0.32, b: 0.42, a: 1 })
+              .children_(
+                text("Row • justifyBetween • itemsCenter")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.86, g: 0.88, b: 0.96, a: 1 }),
+                div()
+                  .flex()
+                  .flexRow()
+                  .itemsCenter()
+                  .justifyBetween()
+                  .mt(10)
+                  .children_(
+                    div().w(40).h(40).rounded(6).bg(accent1),
+                    div().w(60).h(60).rounded(6).bg(accent2),
+                    div().w(40).h(40).rounded(6).bg(accent3)
+                  )
+              ),
+            div()
+              .w(360)
+              .flex()
+              .flexCol()
+              .gap(10)
+              .bg(cardBg)
+              .rounded(10)
+              .p(12)
+              .border(1)
+              .borderColor({ r: 0.28, g: 0.32, b: 0.42, a: 1 })
+              .children_(
+                text("Column • gap • align center")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.86, g: 0.88, b: 0.96, a: 1 }),
+                div()
+                  .flex()
+                  .flexCol()
+                  .itemsCenter()
+                  .gap(10)
+                  .mt(10)
+                  .children_(
+                    div().w(100).h(32).rounded(6).bg(accent1),
+                    div().w(140).h(32).rounded(6).bg(accent2),
+                    div().w(80).h(32).rounded(6).bg(accent3)
+                  )
+              ),
+            div()
+              .w(360)
+              .flex()
+              .flexCol()
+              .gap(10)
+              .bg(cardBg)
+              .rounded(10)
+              .p(12)
+              .border(1)
+              .borderColor({ r: 0.28, g: 0.32, b: 0.42, a: 1 })
+              .children_(
+                text("Wrap • gap • align start")
+                  .font("Inter")
+                  .size(13)
+                  .color({ r: 0.86, g: 0.88, b: 0.96, a: 1 }),
+                div()
+                  .flex()
+                  .flexRow()
+                  .flexWrap()
+                  .gap(8)
+                  .itemsStart()
+                  .mt(10)
+                  .children_(
+                    div()
+                      .w(64)
+                      .h(26)
+                      .rounded(6)
+                      .bg(accent1)
+                      .flex()
+                      .itemsCenter()
+                      .justifyCenter()
+                      .child(
+                        text("A").font("Inter").size(11).color({ r: 0.1, g: 0.12, b: 0.16, a: 1 })
+                      ),
+                    div()
+                      .w(96)
+                      .h(26)
+                      .rounded(6)
+                      .bg(accent2)
+                      .flex()
+                      .itemsCenter()
+                      .justifyCenter()
+                      .child(
+                        text("B").font("Inter").size(11).color({ r: 0.1, g: 0.12, b: 0.16, a: 1 })
+                      ),
+                    div()
+                      .w(72)
+                      .h(26)
+                      .rounded(6)
+                      .bg(accent3)
+                      .flex()
+                      .itemsCenter()
+                      .justifyCenter()
+                      .child(
+                        text("C").font("Inter").size(11).color({ r: 0.1, g: 0.12, b: 0.16, a: 1 })
+                      ),
+                    div()
+                      .w(104)
+                      .h(26)
+                      .rounded(6)
+                      .bg(accent4)
+                      .flex()
+                      .itemsCenter()
+                      .justifyCenter()
+                      .child(
+                        text("D").font("Inter").size(11).color({ r: 0.1, g: 0.12, b: 0.16, a: 1 })
+                      ),
+                    div()
+                      .w(80)
+                      .h(26)
+                      .rounded(6)
+                      .bg(accent5)
+                      .flex()
+                      .itemsCenter()
+                      .justifyCenter()
+                      .child(
+                        text("E").font("Inter").size(11).color({ r: 0.1, g: 0.12, b: 0.16, a: 1 })
+                      )
+                  )
+              )
+          )
+      );
+  }
+
   private renderGridLayoutDemo(): FlashDiv {
     // Colors for grid cells
     const red = { r: 0.9, g: 0.3, b: 0.3, a: 1 };
@@ -4587,6 +5064,50 @@ class DemoRootView implements FlashView {
       );
   }
 
+  private renderShapesDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Shapes").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Star, polygon, circle, heart, and arrow primitives rendered through vector paths.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
+        text("Large shapes (64px)").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(16)
+          .flexWrap()
+          .children_(
+            pathShape("star", { r: 1, g: 0.8, b: 0.2, a: 1 }, 64),
+            pathShape("polygon", { r: 0.3, g: 0.8, b: 1, a: 1 }, 64),
+            pathShape("circle", { r: 0.9, g: 0.3, b: 0.5, a: 1 }, 64),
+            pathShape("heart", { r: 1, g: 0.3, b: 0.4, a: 1 }, 64),
+            pathShape("arrow", { r: 0.4, g: 0.9, b: 0.5, a: 1 }, 64)
+          ),
+        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
+        text("Small shapes (32px)").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(10)
+          .flexWrap()
+          .children_(
+            pathShape("star", { r: 0.9, g: 0.5, b: 0.9, a: 1 }, 32),
+            pathShape("polygon", { r: 0.5, g: 0.9, b: 0.7, a: 1 }, 32),
+            pathShape("circle", { r: 0.9, g: 0.7, b: 0.3, a: 1 }, 32),
+            pathShape("heart", { r: 0.7, g: 0.3, b: 0.9, a: 1 }, 32),
+            pathShape("arrow", { r: 0.3, g: 0.7, b: 0.9, a: 1 }, 32),
+            pathShape("star", { r: 0.9, g: 0.4, b: 0.4, a: 1 }, 32),
+            pathShape("polygon", { r: 0.4, g: 0.9, b: 0.4, a: 1 }, 32)
+          )
+      );
+  }
+
   private renderVectorPathsDemo(): FlashDiv {
     return div()
       .flex()
@@ -4706,6 +5227,44 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .justifyCenter()
               .child(text("▢").font("Inter").size(16).color({ r: 1, g: 0.8, b: 0.2, a: 1 }))
+          ),
+        text("Thickness").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div()
+          .flex()
+          .flexRow()
+          .gap(12)
+          .flexWrap()
+          .children_(
+            div()
+              .w(80)
+              .h(60)
+              .rounded(8)
+              .border(1)
+              .borderColor({ r: 0.35, g: 0.75, b: 1, a: 1 })
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("1px").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })),
+            div()
+              .w(80)
+              .h(60)
+              .rounded(8)
+              .border(2)
+              .borderColor({ r: 0.62, g: 0.86, b: 0.44, a: 1 })
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("2px").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })),
+            div()
+              .w(80)
+              .h(60)
+              .rounded(8)
+              .border(4)
+              .borderColor({ r: 0.98, g: 0.69, b: 0.27, a: 1 })
+              .flex()
+              .itemsCenter()
+              .justifyCenter()
+              .child(text("4px").font("Inter").size(12).color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }))
           )
       );
   }
@@ -4832,6 +5391,23 @@ class DemoRootView implements FlashView {
                 text("Circle").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
               )
           )
+      );
+  }
+
+  private renderImagesDemo(): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Images").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("PNG + JPG decoding with GPU filters, rounding, and effects.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        this.renderPngImagesDemo(),
+        div().h(1).bg({ r: 0.34, g: 0.36, b: 0.44, a: 0.6 }),
+        this.renderJpgImagesDemo()
       );
   }
 
@@ -5739,6 +6315,53 @@ class DemoRootView implements FlashView {
       );
   }
 
+  private renderTextSelectionDemo(): FlashDiv {
+    const labelColor = { r: 0.78, g: 0.82, b: 0.94, a: 1 };
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Selection").font("Inter").size(26).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Standard selectable text and cross-element selection in one view.")
+          .font("Inter")
+          .size(14)
+          .color(labelColor),
+        div()
+          .flex()
+          .flexCol()
+          .gap(10)
+          .bg(rgb(0x0f172a))
+          .rounded(12)
+          .p(14)
+          .border(1)
+          .borderColor({ r: 0.23, g: 0.25, b: 0.34, a: 1 })
+          .children_(
+            text("Single element selection")
+              .font("Inter")
+              .size(15)
+              .weight(600)
+              .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text(
+              "Click and drag to select inside this paragraph. Double-click selects words; triple-click selects the full line."
+            )
+              .font("Inter")
+              .size(14)
+              .lineHeight(22)
+              .color({ r: 0.88, g: 0.9, b: 0.98, a: 1 })
+              .selectable(),
+            text("Selection respects the same color + underline styles as text inputs.")
+              .font("Inter")
+              .size(13)
+              .color(labelColor)
+              .selectable()
+          ),
+        div().h(1).bg({ r: 0.32, g: 0.34, b: 0.42, a: 0.45 }),
+        this.renderCrossElementSelectionDemo()
+      );
+  }
+
   private renderCrossElementSelectionDemo(): FlashDiv {
     return div()
       .flex()
@@ -6009,6 +6632,21 @@ class DemoRootView implements FlashView {
               .size(13)
               .color(labelColor)
           )
+      );
+  }
+
+  private renderFocusDemo(cx: FlashViewContext<this>): FlashDiv {
+    return div()
+      .flex()
+      .flexCol()
+      .gap(14)
+      .children_(
+        text("Focus").font("Inter").size(30).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Keyboard traversal across toolbars, groups, and modal dialogs.")
+          .font("Inter")
+          .size(16)
+          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        this.renderFocusNavigationDemo(cx)
       );
   }
 
