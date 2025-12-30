@@ -1510,21 +1510,17 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(16)
       .children_(
-        text("Icon").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Simple icon component wrapping SVG icons")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("Icon").font("Inter").size(32),
+        text("Simple icon component wrapping SVG icons").font("Inter").size(16),
         divider().color({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
 
         // Icon grid
-        text("Available Icons").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Available Icons").font("Inter").size(18),
         div()
           .flex()
           .flexWrap()
           .gap(12)
           .p(16)
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
           .rounded(8)
           .children_(
             ...iconNames.map((name) =>
@@ -1541,14 +1537,14 @@ class DemoRootView implements FlashView {
           ),
 
         // Sizes
-        text("Icon Sizes").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Icon Sizes").font("Inter").size(18),
         div()
           .flex()
           .flexRow()
           .gap(24)
           .p(16)
           .itemsEnd()
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+
           .rounded(8)
           .children_(
             div()
@@ -1556,47 +1552,34 @@ class DemoRootView implements FlashView {
               .flexCol()
               .gap(4)
               .itemsCenter()
-              .children_(
-                icon("star", 16).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-                text("16px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
-              ),
+              .children_(icon("star", 16), text("16px").font("Inter").size(11)),
             div()
               .flex()
               .flexCol()
               .gap(4)
               .itemsCenter()
-              .children_(
-                icon("star", 24).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-                text("24px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
-              ),
+              .children_(icon("star", 24), text("24px").font("Inter").size(11)),
             div()
               .flex()
               .flexCol()
               .gap(4)
               .itemsCenter()
-              .children_(
-                icon("star", 32).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-                text("32px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
-              ),
+              .children_(icon("star", 32), text("32px").font("Inter").size(11)),
             div()
               .flex()
               .flexCol()
               .gap(4)
               .itemsCenter()
-              .children_(
-                icon("star", 48).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-                text("48px").font("Inter").size(11).color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
-              )
+              .children_(icon("star", 48), text("48px").font("Inter").size(11))
           ),
 
         // Colors
-        text("Icon Colors").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Icon Colors").font("Inter").size(18),
         div()
           .flex()
           .flexRow()
           .gap(16)
           .p(16)
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
           .rounded(8)
           .children_(
             icon("heart", 32).color({ r: 0.9, g: 0.3, b: 0.3, a: 1 }),
@@ -1608,13 +1591,12 @@ class DemoRootView implements FlashView {
           ),
 
         // Usage in buttons
-        text("Icons in Buttons").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Icons in Buttons").font("Inter").size(18),
         div()
           .flex()
           .flexRow()
           .gap(12)
           .p(16)
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
           .rounded(8)
           .children_(
             div()
@@ -4765,11 +4747,8 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(16)
       .children_(
-        text("PNG Image Rendering").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("PNG decoding with GPU-accelerated rendering and effects")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("PNG Image Rendering").font("Inter").size(32),
+        text("PNG decoding with GPU-accelerated rendering and effects").font("Inter").size(16),
         div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
         div()
           .flex()
@@ -4784,7 +4763,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(demoImageTile!).size(150, 100),
-                text("Original").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Original").font("Inter").size(11)
               ),
             div()
               .flex()
@@ -4793,7 +4772,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(demoImageTile!).size(150, 100).rounded(16),
-                text("Rounded").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Rounded").font("Inter").size(11)
               ),
             div()
               .flex()
@@ -4802,7 +4781,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(demoImageTile!).size(150, 100).grayscale(),
-                text("Grayscale").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Grayscale").font("Inter").size(11)
               ),
             div()
               .flex()
@@ -4811,7 +4790,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(demoImageTile!).size(150, 100).opacity(0.5),
-                text("50% Opacity").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("50% Opacity").font("Inter").size(11)
               ),
             div()
               .flex()
@@ -4820,7 +4799,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(demoImageTile!).size(100, 100).rounded(50),
-                text("Circle").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Circle").font("Inter").size(11)
               )
           )
       );
@@ -4832,11 +4811,8 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(16)
       .children_(
-        text("JPEG Image Rendering").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("JPEG decoding with GPU-accelerated rendering and effects")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("JPEG Image Rendering").font("Inter").size(32),
+        text("JPEG decoding with GPU-accelerated rendering and effects").font("Inter").size(16),
         div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
         div()
           .flex()
@@ -4851,7 +4827,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(flowerImageTile!).size(150, 100),
-                text("Original").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Original").font("Inter").size(11)
               ),
             div()
               .flex()
@@ -4860,7 +4836,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(flowerImageTile!).size(150, 100).rounded(16),
-                text("Rounded").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Rounded").font("Inter").size(11)
               ),
             div()
               .flex()
@@ -4869,7 +4845,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(flowerImageTile!).size(150, 100).grayscale(),
-                text("Grayscale").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Grayscale").font("Inter").size(11)
               ),
             div()
               .flex()
@@ -4878,7 +4854,7 @@ class DemoRootView implements FlashView {
               .itemsCenter()
               .children_(
                 img(flowerImageTile!).size(100, 100).rounded(50),
-                text("Circle").font("Inter").size(11).color({ r: 0.6, g: 0.6, b: 0.7, a: 1 })
+                text("Circle").font("Inter").size(11)
               )
           )
       );
@@ -4890,11 +4866,8 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(14)
       .children_(
-        text("Images").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("PNG + JPG decoding with GPU filters, rounding, and effects.")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("Images").font("Inter").size(32),
+        text("PNG + JPG decoding with GPU filters, rounding, and effects.").font("Inter").size(16),
         this.renderPngImagesDemo(),
         div().h(1).bg({ r: 0.34, g: 0.36, b: 0.44, a: 0.6 }),
         this.renderJpgImagesDemo()
@@ -5189,8 +5162,8 @@ class DemoRootView implements FlashView {
 
     const popupContent = div()
       .w(200)
-      .bg({ r: 0.15, g: 0.15, b: 0.22, a: 0.98 })
       .rounded(8)
+      .bg({ r: 1, g: 1, b: 1, a: 1 })
       .border(1)
       .borderColor({ r: 0.4, g: 0.4, b: 0.6, a: 1 })
       .shadowLg()
@@ -5199,35 +5172,32 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(8)
       .children_(
-        text("Popup Menu").font("Inter").size(14).weight(600).color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Popup Menu").font("Inter").size(14).weight(600),
         div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
         div()
           .h(32)
           .px(8)
-          .bg({ r: 0.2, g: 0.2, b: 0.28, a: 1 })
           .rounded(4)
           .cursorPointer()
-          .hover((s) => s.bg({ r: 0.3, g: 0.3, b: 0.4, a: 1 }))
+          .hover((s) => s.bg({ r: 0.9, g: 0.9, b: 0.9, a: 1 }))
           .flex()
           .itemsCenter()
-          .child(text("Option 1").font("Inter").size(13).color({ r: 0.9, g: 0.9, b: 1, a: 1 })),
+          .child(text("Option 1").font("Inter").size(13)),
         div()
           .h(32)
           .px(8)
-          .bg({ r: 0.2, g: 0.2, b: 0.28, a: 1 })
           .rounded(4)
           .cursorPointer()
-          .hover((s) => s.bg({ r: 0.3, g: 0.3, b: 0.4, a: 1 }))
+          .hover((s) => s.bg({ r: 0.9, g: 0.9, b: 0.9, a: 1 }))
           .flex()
           .itemsCenter()
-          .child(text("Option 2").font("Inter").size(13).color({ r: 0.9, g: 0.9, b: 1, a: 1 })),
+          .child(text("Option 2").font("Inter").size(13)),
         div()
           .h(32)
           .px(8)
-          .bg({ r: 0.2, g: 0.2, b: 0.28, a: 1 })
           .rounded(4)
           .cursorPointer()
-          .hover((s) => s.bg({ r: 0.3, g: 0.3, b: 0.4, a: 1 }))
+          .hover((s) => s.bg({ r: 0.9, g: 0.9, b: 0.9, a: 1 }))
           .flex()
           .itemsCenter()
           .onClick(
@@ -5236,7 +5206,7 @@ class DemoRootView implements FlashView {
               ecx.notify();
             })
           )
-          .child(text("Close Menu").font("Inter").size(13).color({ r: 1, g: 0.6, b: 0.6, a: 1 }))
+          .child(text("Close Menu").font("Inter").size(13))
       );
 
     const deferredPopup = this.popupVisible
@@ -5256,10 +5226,7 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(16)
       .children_(
-        text("Deferred & Anchored Elements")
-          .font("Inter")
-          .size(32)
-          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("Deferred & Anchored Elements").font("Inter").size(32),
         text("Floating overlays with intelligent positioning").font("Inter").size(16),
         div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
         div()
@@ -5267,10 +5234,7 @@ class DemoRootView implements FlashView {
           .flexCol()
           .gap(12)
           .children_(
-            text("Anchor Corner Selection")
-              .font("Inter")
-              .size(14)
-              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("Anchor Corner Selection").font("Inter").size(14),
             div()
               .flex()
               .flexRow()
@@ -5297,7 +5261,7 @@ class DemoRootView implements FlashView {
                         ecx.notify();
                       })
                     )
-                    .child(text(corner).font("Inter").size(12).color({ r: 1, g: 1, b: 1, a: 1 }))
+                    .child(text(corner).font("Inter").size(12))
                 )
               )
           ),
@@ -5307,13 +5271,9 @@ class DemoRootView implements FlashView {
           .flexCol()
           .gap(12)
           .children_(
-            text("Click area to position popup")
-              .font("Inter")
-              .size(14)
-              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("Click area to position popup").font("Inter").size(14),
             div()
               .h(300)
-              .bg({ r: 0.12, g: 0.12, b: 0.16, a: 1 })
               .rounded(8)
               .border(2)
               .borderColor({ r: 0.3, g: 0.3, b: 0.4, a: 0.8 })
@@ -5336,11 +5296,7 @@ class DemoRootView implements FlashView {
                     )
                       .font("Inter")
                       .size(14)
-                      .color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
-                  : text("Click anywhere to show anchored popup")
-                      .font("Inter")
-                      .size(14)
-                      .color({ r: 0.5, g: 0.5, b: 0.6, a: 1 })
+                  : text("Click anywhere to show anchored popup").font("Inter").size(14)
               )
           ),
         div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
@@ -5349,23 +5305,15 @@ class DemoRootView implements FlashView {
           .flexCol()
           .gap(8)
           .children_(
-            text("Features:").font("Inter").size(14).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+            text("Features:").font("Inter").size(14),
             text("• Deferred elements paint after normal content (always on top)")
               .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-            text("• Anchored elements position relative to a point")
-              .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+              .size(12),
+            text("• Anchored elements position relative to a point").font("Inter").size(12),
             text("• Smart overflow handling: switch anchor or snap to edges")
               .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-            text("• Perfect for menus, tooltips, dropdowns, autocomplete")
-              .font("Inter")
-              .size(12)
-              .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
+              .size(12),
+            text("• Perfect for menus, tooltips, dropdowns, autocomplete").font("Inter").size(12)
           ),
         deferredPopup
       );
@@ -5934,11 +5882,8 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(24)
       .children_(
-        text("WebGPU Demos").font("Inter").size(28).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Custom WebGPU rendering embedded within Flash UI layout")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.75, g: 0.8, b: 0.9, a: 1 }),
+        text("WebGPU Demos").font("Inter").size(28),
+        text("Custom WebGPU rendering embedded within Flash UI layout").font("Inter").size(16),
         div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
         // Main content: demo view + selector grid
         div()
@@ -5956,8 +5901,7 @@ class DemoRootView implements FlashView {
                 text(currentDemo?.label ?? "")
                   .font("Inter")
                   .size(16)
-                  .weight(600)
-                  .color({ r: 1, g: 1, b: 1, a: 1 }),
+                  .weight(600),
                 text(currentDemo?.desc ?? "")
                   .font("Inter")
                   .size(13)
@@ -5969,7 +5913,7 @@ class DemoRootView implements FlashView {
               .flexCol()
               .gap(12)
               .children_(
-                text("Select Demo").font("Inter").size(14).weight(600).color(labelColor),
+                text("Select Demo").font("Inter").size(14).weight(600),
                 div()
                   .grid()
                   .gridCols(2)
