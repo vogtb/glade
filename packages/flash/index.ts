@@ -466,6 +466,21 @@ export type {
 
 export { List, ListState, list, createListState, type ListMeasureItem } from "./list.ts";
 
+// Table elements
+export {
+  FlashTable,
+  FlashTableSection,
+  FlashTableRow,
+  FlashTableCell,
+  table,
+  thead,
+  tbody,
+  tfoot,
+  tr,
+  th,
+  td,
+} from "./table.ts";
+
 // Deferred element (overlay/popup support)
 export type { DeferredDrawEntry } from "./deferred.ts";
 

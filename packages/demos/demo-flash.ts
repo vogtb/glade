@@ -22,6 +22,7 @@ import {
   svg,
   SvgIcons,
   type FlashDiv,
+  type FlashTableRow,
   type FocusHandle,
   type ScrollHandle,
   type ImageTile,
@@ -67,6 +68,13 @@ import {
   mono,
   monoCode,
   monoPre,
+  table,
+  thead,
+  tbody,
+  tfoot,
+  tr,
+  th,
+  td,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
 import { createHexagonHost } from "./hexagon.ts";
@@ -126,6 +134,7 @@ type DemoSection =
   | "tooltip"
   | "popover"
   | "dialog"
+  | "table"
   | "grid-layout"
   | "canvas"
   | "vector-paths"
@@ -169,6 +178,7 @@ const DEMO_BUTTONS: DemoButton[] = [
   { id: "tooltip", label: "Tooltip" },
   { id: "popover", label: "Popover" },
   { id: "dialog", label: "Dialog" },
+  { id: "table", label: "Table" },
   { id: "grid-layout", label: "Grid Layout" },
   { id: "canvas", label: "Canvas" },
   { id: "vector-paths", label: "Vector Paths" },
@@ -675,6 +685,8 @@ class DemoRootView implements FlashView {
         return this.renderPopoverDemo(cx);
       case "dialog":
         return this.renderDialogDemo(cx);
+      case "table":
+        return this.renderTableDemo();
       case "grid-layout":
         return this.renderGridLayoutDemo();
       case "canvas":
@@ -3896,6 +3908,222 @@ class DemoRootView implements FlashView {
               .font("JetBrains Mono")
               .size(12)
               .color(dimColor)
+          )
+      );
+  }
+
+  private renderTableDemo(): FlashDiv {
+    type Status = "Active" | "Idle" | "Offline";
+    type Row = {
+      name: string;
+      role: string;
+      status: Status;
+      email: string;
+      lastActive: string;
+      note?: string;
+      highlight?: boolean;
+    };
+
+    const headers = ["Name", "Role", "Status", "Email", "Last Active"];
+    const rows: Row[] = [
+      {
+        name: "Ada Lovelace",
+        role: "Graphics Engineer",
+        status: "Active",
+        email: "ada@glade.dev",
+        lastActive: "2m ago",
+        note: "Leads the WebGPU pipeline work.",
+      },
+      {
+        name: "Grace Hopper",
+        role: "Runtime Engineer",
+        status: "Idle",
+        email: "grace@glade.dev",
+        lastActive: "12m ago",
+      },
+      {
+        name: "Alan Turing",
+        role: "Security Engineer",
+        status: "Offline",
+        email: "alan@glade.dev",
+        lastActive: "1h ago",
+        note: "Reviewing upcoming auth changes.",
+      },
+      {
+        name: "Margaret Hamilton",
+        role: "Engineering Manager",
+        status: "Active",
+        email: "margaret@glade.dev",
+        lastActive: "5m ago",
+        highlight: true,
+      },
+      {
+        name: "Linus Torvalds",
+        role: "Systems Engineer",
+        status: "Idle",
+        email: "linus@glade.dev",
+        lastActive: "28m ago",
+      },
+    ];
+
+    const tableBg = rgb(0x0f111a);
+    const headerBg = rgb(0x181b2a);
+    const gridLine = rgb(0x2d3042);
+    const labelColor = rgb(0x9ca3af);
+    const cellText = rgb(0xe5e7f4);
+    const noteBg = rgb(0x10131f);
+    const statusText = { r: 0.06, g: 0.08, b: 0.12, a: 1 };
+
+    const statusColor = (status: Status) => {
+      switch (status) {
+        case "Active":
+          return rgb(0x22c55e);
+        case "Idle":
+          return rgb(0xf59e0b);
+        case "Offline":
+        default:
+          return rgb(0xef4444);
+      }
+    };
+
+    const rowBackground = (
+      index: number,
+      highlight: boolean
+    ): { r: number; g: number; b: number; a: number } => {
+      if (highlight) {
+        return rgb(0x132c3f);
+      }
+      return index % 2 === 0 ? rgb(0x141824) : rgb(0x10121b);
+    };
+
+    const bodyRows: FlashTableRow[] = [];
+
+    rows.forEach((row, index) => {
+      const bgColor = rowBackground(index, row.highlight ?? false);
+
+      bodyRows.push(
+        tr().children_(
+          td()
+            .bg(bgColor)
+            .border(1)
+            .borderColor(gridLine)
+            .px(10)
+            .py(6)
+            .child(text(row.name).font("Inter").size(13).weight(600).color(cellText)),
+          td()
+            .bg(bgColor)
+            .border(1)
+            .borderColor(gridLine)
+            .px(10)
+            .py(6)
+            .child(text(row.role).font("Inter").size(13).color(cellText)),
+          td()
+            .bg(bgColor)
+            .border(1)
+            .borderColor(gridLine)
+            .child(
+              div()
+                .flex()
+                .itemsCenter()
+                .px(10)
+                .py(6)
+                .roundedFull()
+                .bg(statusColor(row.status))
+                .child(text(row.status).font("Inter").size(12).weight(700).color(statusText))
+            ),
+          td()
+            .bg(bgColor)
+            .border(1)
+            .borderColor(gridLine)
+            .px(10)
+            .py(6)
+            .child(text(row.email).font("Inter").size(12).color(rgb(0x93c5fd))),
+          td()
+            .bg(bgColor)
+            .border(1)
+            .borderColor(gridLine)
+            .px(10)
+            .py(6)
+            .child(text(row.lastActive).font("Inter").size(12).color(cellText))
+        )
+      );
+
+      if (row.note) {
+        bodyRows.push(
+          tr().child(
+            td()
+              .colSpan(headers.length)
+              .bg(noteBg)
+              .border(1)
+              .borderColor(gridLine)
+              .px(10)
+              .py(6)
+              .child(text(row.note).font("Inter").size(12).color(labelColor))
+          )
+        );
+      }
+    });
+
+    return div()
+      .flex()
+      .flexCol()
+      .gap(12)
+      .children_(
+        text("Table Component")
+          .font("Inter")
+          .size(26)
+          .weight(700)
+          .color({ r: 1, g: 1, b: 1, a: 1 }),
+        text("HTML-like table built on Flash grid layout with table/thead/tr/th/td helpers.")
+          .font("Inter")
+          .size(13)
+          .color(labelColor),
+        table()
+          .columnTemplate([180, 140, 120, "1fr", 120])
+          .rowGap(0)
+          .columnGap(0)
+          .style({
+            width: "100%",
+            backgroundColor: tableBg,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: gridLine,
+            overflow: "hidden",
+          })
+          .child(
+            thead().child(
+              tr().children_(
+                ...headers.map((title) =>
+                  th()
+                    .bg(headerBg)
+                    .border(1)
+                    .borderColor(gridLine)
+                    .px(10)
+                    .py(6)
+                    .child(text(title).font("Inter").size(12).weight(700).color(cellText))
+                )
+              )
+            )
+          )
+          .child(tbody().children_(...bodyRows))
+          .child(
+            tfoot().child(
+              tr().child(
+                td()
+                  .colSpan(headers.length)
+                  .bg(headerBg)
+                  .border(1)
+                  .borderColor(gridLine)
+                  .px(10)
+                  .py(6)
+                  .child(
+                    text(`Showing ${rows.length} team members`)
+                      .font("Inter")
+                      .size(12)
+                      .color(labelColor)
+                  )
+              )
+            )
           )
       );
   }
