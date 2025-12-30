@@ -2173,8 +2173,8 @@ class DemoRootView implements FlashView {
   }
 
   private renderTabsDemo(cx: FlashViewContext<this>): FlashDiv {
-    const labelColor = { r: 0.9, g: 0.9, b: 1, a: 1 };
-    const dimColor = { r: 0.6, g: 0.6, b: 0.7, a: 1 };
+    const labelColor = { r: 0.3, g: 0.3, b: 0.3, a: 1 };
+    const dimColor = { r: 0.4, g: 0.4, b: 0.4, a: 1 };
     const accentColor = { r: 0.4, g: 0.6, b: 1, a: 1 };
 
     return div()
@@ -2183,11 +2183,8 @@ class DemoRootView implements FlashView {
       .gap(24)
       .children_(
         // Header
-        text("Tabs").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Layered content sections with tab-based navigation")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("Tabs").font("Inter").size(32),
+        text("Layered content sections with tab-based navigation").font("Inter").size(16),
         div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
 
         // Basic Tabs Example
@@ -2200,7 +2197,7 @@ class DemoRootView implements FlashView {
           .flex()
           .flexCol()
           .p(16)
-          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
+
           .rounded(8)
           .children_(
             tabs()
@@ -2310,95 +2307,6 @@ class DemoRootView implements FlashView {
                           icon("info", 16).color(accentColor),
                           text("Email Digests").font("Inter").size(14).color(labelColor)
                         )
-                    )
-                )
-              )
-          ),
-
-        // Styled Tabs Example
-        text("Custom Styled Tabs").font("Inter").size(20).color(labelColor),
-        text("Tabs with custom colors and styling").font("Inter").size(14).color(dimColor),
-        div()
-          .flex()
-          .flexCol()
-          .p(16)
-          .bg({ r: 0.12, g: 0.12, b: 0.15, a: 1 })
-          .rounded(8)
-          .children_(
-            tabs()
-              .wFull()
-              .value(
-                this.selectedTab === "account"
-                  ? "overview"
-                  : this.selectedTab === "security"
-                    ? "analytics"
-                    : "reports"
-              )
-              .onValueChange((value) => {
-                if (value === "overview") {
-                  this.selectedTab = "account";
-                } else if (value === "analytics") {
-                  this.selectedTab = "security";
-                } else {
-                  this.selectedTab = "notifications";
-                }
-                cx.notify();
-              })
-              .triggerBg({ r: 0.08, g: 0.08, b: 0.1, a: 1 })
-              .triggerActiveBg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
-              .indicatorColor({ r: 0.3, g: 0.8, b: 0.5, a: 1 })
-              .contentBg({ r: 0.1, g: 0.1, b: 0.12, a: 1 })
-              .contentPadding(20)
-              .items(
-                tab("overview", "Overview").content(
-                  div()
-                    .flex()
-                    .flexCol()
-                    .gap(8)
-                    .children_(
-                      text("Dashboard Overview")
-                        .font("Inter")
-                        .size(16)
-                        .weight(600)
-                        .color(labelColor),
-                      text("View your key metrics and performance at a glance.")
-                        .font("Inter")
-                        .size(14)
-                        .color(dimColor)
-                    )
-                ),
-                tab("analytics", "Analytics").content(
-                  div()
-                    .flex()
-                    .flexCol()
-                    .gap(8)
-                    .children_(
-                      text("Analytics Dashboard")
-                        .font("Inter")
-                        .size(16)
-                        .weight(600)
-                        .color(labelColor),
-                      text("Deep dive into your data with detailed charts and reports.")
-                        .font("Inter")
-                        .size(14)
-                        .color(dimColor)
-                    )
-                ),
-                tab("reports", "Reports").content(
-                  div()
-                    .flex()
-                    .flexCol()
-                    .gap(8)
-                    .children_(
-                      text("Generated Reports")
-                        .font("Inter")
-                        .size(16)
-                        .weight(600)
-                        .color(labelColor),
-                      text("Access and download your saved reports.")
-                        .font("Inter")
-                        .size(14)
-                        .color(dimColor)
                     )
                 )
               )
