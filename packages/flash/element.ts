@@ -582,8 +582,9 @@ export abstract class FlashContainerElement<
   RequestLayoutState = NoState,
   PrepaintState = NoState,
 > extends FlashElement<RequestLayoutState, PrepaintState> {
+  // TODO: we should definitely be able to type the children
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected children: FlashElement<any, any>[] = [];
+  protected _children: FlashElement<any, any>[] = [];
   protected childLayoutIds: LayoutId[] = [];
 
   /**
@@ -592,15 +593,28 @@ export abstract class FlashContainerElement<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   child(element: FlashElement<any, any> | string | number): this {
     if (typeof element === "string" || typeof element === "number") {
-      this.children.push(new FlashTextElement(String(element)));
+      this._children.push(new FlashTextElement(String(element)));
     } else {
-      this.children.push(element);
+      this._children.push(element);
     }
     return this;
   }
 
   /**
    * Add multiple children.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  children(...elements: Array<FlashElement<any, any> | string | number | null | undefined>): this {
+    for (const el of elements) {
+      if (el != null) {
+        this.child(el);
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Add multiple children (nullable-friendly).
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   children_(...elements: Array<FlashElement<any, any> | string | number | null | undefined>): this {
@@ -617,7 +631,14 @@ export abstract class FlashContainerElement<
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getChildren(): readonly FlashElement<any, any>[] {
-    return this.children;
+    return this._children;
+  }
+
+  /**
+   * Backwards-compatible accessor used by generated container code.
+   */
+  get children__(): readonly FlashElement<any, any>[] {
+    return this._children;
   }
 }
 

@@ -228,7 +228,7 @@ export class AnchoredElement extends FlashContainerElement<
     const childElementIds: GlobalElementId[] = [];
     const childRequestStates: unknown[] = [];
 
-    for (const child of this.children) {
+    for (const child of this.children__) {
       const childElementId = cx.allocateChildId();
       childElementIds.push(childElementId);
 
@@ -262,7 +262,7 @@ export class AnchoredElement extends FlashContainerElement<
   ): AnchoredPrepaintState {
     const { childLayoutIds, childElementIds, childRequestStates } = requestState;
 
-    if (this.children.length === 0) {
+    if (this.children__.length === 0) {
       return {
         childElementIds: [],
         childPrepaintStates: [],
@@ -352,8 +352,8 @@ export class AnchoredElement extends FlashContainerElement<
     const adjustedChildBounds: Bounds[] = [];
     const childHitTestNodes: HitTestNode[] = [];
 
-    for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i]!;
+    for (let i = 0; i < this.children__.length; i++) {
+      const child = this.children__[i]!;
       const childElementId = childElementIds[i]!;
       const childLayoutBound = childLayoutBounds[i]!;
       const childRequestState = childRequestStates[i];
@@ -399,8 +399,8 @@ export class AnchoredElement extends FlashContainerElement<
   paint(cx: PaintContext, _bounds: Bounds, prepaintState: AnchoredPrepaintState): void {
     const { childElementIds, childPrepaintStates, childBounds } = prepaintState;
 
-    for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i]!;
+    for (let i = 0; i < this.children__.length; i++) {
+      const child = this.children__[i]!;
       const childElementId = childElementIds[i]!;
       const childBound = childBounds[i]!;
       const childPrepaintState = childPrepaintStates[i];

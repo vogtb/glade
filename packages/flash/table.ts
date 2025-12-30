@@ -336,7 +336,7 @@ export class FlashTable extends FlashContainerElement<TableRequestState, TablePr
 
   private collectSections(): FlashTableSection[] {
     const sections: FlashTableSection[] = [];
-    for (const child of this.children) {
+    for (const child of this.children__) {
       if (child instanceof FlashTableSection) {
         sections.push(child);
       } else if (child instanceof FlashTableRow) {

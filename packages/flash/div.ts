@@ -1088,7 +1088,7 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     const childElementIds: GlobalElementId[] = [];
     const childRequestStates: unknown[] = [];
 
-    for (const child of this.children) {
+    for (const child of this.children__) {
       const childId = cx.allocateChildId();
       const childCx: RequestLayoutContext = {
         ...cx,
@@ -1163,8 +1163,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
     // Get scroll offset if this is a scroll container
     const scrollOffset = this.scrollHandleRef ? cx.getScrollOffset(this.scrollHandleRef) : null;
 
-    for (let i = 0; i < this.children.length; i++) {
-      const child = this.children[i]!;
+    for (let i = 0; i < this.children__.length; i++) {
+      const child = this.children__[i]!;
       const childId = childElementIds[i]!;
       let childBound = layoutChildBounds[i]!;
       const childRequestState = childRequestStates[i];
@@ -1227,8 +1227,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
     // Build hit test node with scroll-adjusted child bounds
     const childHitTestNodes: HitTestNode[] = [];
-    for (let i = this.children.length - 1; i >= 0; i--) {
-      const child = this.children[i];
+    for (let i = this.children__.length - 1; i >= 0; i--) {
+      const child = this.children__[i];
       const childPrepaintState = childPrepaintStates[i] as DivPrepaintState | undefined;
       if (child && childPrepaintState?.hitTestNode) {
         childHitTestNodes.unshift(childPrepaintState.hitTestNode);
@@ -1505,8 +1505,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
 
       // Paint children with optional clipping
       const paintChildren = () => {
-        for (let i = 0; i < this.children.length; i++) {
-          const child = this.children[i]!;
+        for (let i = 0; i < this.children__.length; i++) {
+          const child = this.children__[i]!;
           const childId = childElementIds[i]!;
           const childBound = childBounds[i]!;
           const childPrepaintState = childPrepaintStates[i];
@@ -1622,8 +1622,8 @@ export class FlashDiv extends FlashContainerElement<DivRequestLayoutState, DivPr
   hitTest(bounds: Bounds, childBounds: Bounds[]): HitTestNode {
     const childNodes: HitTestNode[] = [];
 
-    for (let i = this.children.length - 1; i >= 0; i--) {
-      const child = this.children[i];
+    for (let i = this.children__.length - 1; i >= 0; i--) {
+      const child = this.children__[i];
       const childBound = childBounds[i];
       if (child && childBound) {
         const childNode = child.hitTest(childBound, []);
