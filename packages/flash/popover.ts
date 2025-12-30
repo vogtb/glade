@@ -18,15 +18,9 @@ import type { FlashContext } from "./context.ts";
 import type { HitboxId } from "./hitbox.ts";
 import type { Corner } from "./anchored.ts";
 
-/**
- * Side preference for popover placement.
- */
 export type PopoverSide = "top" | "bottom" | "left" | "right";
-
-/**
- * Alignment along the side.
- */
 export type PopoverAlign = "start" | "center" | "end";
+export type PopoverCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 /**
  * Popover configuration.

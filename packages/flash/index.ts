@@ -254,6 +254,7 @@ export {
   selectionPrimitives,
   compositionUnderlines,
 } from "./text";
+export { underlinedText } from "./underlined_text";
 
 // Event dispatch
 export type {
@@ -307,10 +308,8 @@ export type { FlashAppOptions } from "./app";
 
 export { FlashApp } from "./app";
 
-// Mouse utilities
 export { MouseState, coreModsToFlashMods } from "./mouse";
 
-// Drag and drop
 export type {
   DragId,
   DragHandler,
@@ -323,7 +322,6 @@ export type {
 
 export { DragTracker, dragPayload, dragPayloadWithPreview } from "./drag";
 
-// Tooltip system
 export type {
   TooltipPosition,
   TooltipConfig,
@@ -339,10 +337,10 @@ export {
   DEFAULT_TOOLTIP_CONFIG,
 } from "./tooltip";
 
-// Popover system
 export type {
   PopoverSide,
   PopoverAlign,
+  PopoverCorner,
   PopoverConfig,
   PopoverBuilder,
   PopoverRegistration,
@@ -356,7 +354,6 @@ export {
   DEFAULT_POPOVER_CONFIG,
 } from "./popover";
 
-// Dialog system
 export type {
   DialogOpenChangeHandler,
   DialogActionHandler,
@@ -382,20 +379,16 @@ export {
   dialogFooter,
 } from "./dialog";
 
-// Keyboard utilities
 export type { Keystroke } from "./keyboard";
 
 export { Key, parseKeystroke, matchesKeystroke, formatKeystroke } from "./keyboard";
 
-// Focus management
 export { FocusStack, FocusNavigator, FocusContextStack } from "./focus";
 
-// Tab stops and navigation
 export type { TabStopConfig, TabStop } from "./tab";
 
 export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab";
 
-// Action system
 export type { Action, KeyBinding } from "./actions";
 
 export {
@@ -406,7 +399,6 @@ export {
   createDefaultKeymap,
 } from "./actions";
 
-// Renderer
 export type { RendererConfig } from "./renderer";
 
 export { FlashRenderer, PREMULTIPLIED_ALPHA_BLEND, STANDARD_ALPHA_BLEND } from "./renderer";
