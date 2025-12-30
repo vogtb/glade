@@ -4,6 +4,7 @@ import { colors, toColorObject, type Color, type ColorObject, rgb } from "@glade
 export interface Theme {
   scheme: ColorScheme;
   background: ColorObject;
+  backgroundHover: ColorObject;
   surface: ColorObject;
   surfaceMuted: ColorObject;
   border: ColorObject;
@@ -41,17 +42,18 @@ export interface ThemeConfig {
 const DARK_THEME: Theme = {
   scheme: "dark",
   background: rgb(colors.black.x900),
+  backgroundHover: rgb(colors.black.x800),
   surface: rgb(colors.black.x800),
   surfaceMuted: rgb(colors.black.x700),
   border: rgb(colors.slate.x700),
   text: rgb(colors.slate.x50),
   textMuted: rgb(colors.slate.x300),
-  primary: rgb(colors.indigo.x600),
+  primary: rgb(colors.blue.x600),
   primaryForeground: rgb(colors.white.default),
   selectionBackground: { ...rgb(colors.blue.x400), a: 0.35 },
   selectionForeground: rgb(colors.white.default),
   caret: rgb(colors.white.default),
-  focusRing: rgb(colors.indigo.x400),
+  focusRing: rgb(colors.blue.x400),
   overlayBackground: { ...rgb(colors.black.x950), a: 0.85 },
   overlayBorder: rgb(colors.slate.x700),
   danger: rgb(colors.red.x600),
@@ -62,6 +64,7 @@ const DARK_THEME: Theme = {
 const LIGHT_THEME: Theme = {
   scheme: "light",
   background: rgb(colors.white.default),
+  backgroundHover: rgb(colors.white.x200),
   surface: rgb(colors.gray.x50),
   surfaceMuted: rgb(colors.gray.x100),
   border: rgb(colors.gray.x300),
