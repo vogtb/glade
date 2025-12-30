@@ -26,9 +26,9 @@ export type {
   TransformationMatrix,
   ScrollOffset,
   ScrollState,
-} from "./types.ts";
+} from "./types";
 
-export type { Theme, ThemeConfig, ThemeOverrides } from "./theme.ts";
+export type { Theme, ThemeConfig, ThemeOverrides } from "./theme";
 export {
   resolveTheme,
   ThemeManager,
@@ -39,7 +39,7 @@ export {
   switchColors,
   linkColors,
   tabColors,
-} from "./theme.ts";
+} from "./theme";
 
 export {
   rgb,
@@ -59,12 +59,12 @@ export {
   createScrollState,
   clampScrollOffset,
   isScrollable,
-} from "./types.ts";
+} from "./types";
 
 // Layout engine
-export type { LayoutId, AvailableSpace, AvailableSpaceValue } from "./layout.ts";
+export type { LayoutId, AvailableSpace, AvailableSpaceValue } from "./layout";
 
-export { FlashLayoutEngine, definite, minContent, maxContent } from "./layout.ts";
+export { FlashLayoutEngine, definite, minContent, maxContent } from "./layout";
 
 // Entity system
 export {
@@ -74,9 +74,9 @@ export {
   ScrollHandle,
   ObserverHandle,
   SubscriberHandle,
-} from "./entity.ts";
+} from "./entity";
 
-export type { EntityMeta, ObserverCallback, SubscriberCallback } from "./entity.ts";
+export type { EntityMeta, ObserverCallback, SubscriberCallback } from "./entity";
 
 // Context system
 export type {
@@ -86,7 +86,7 @@ export type {
   FlashEntityContext,
   FlashViewContext,
   FlashWindowContext,
-} from "./context.ts";
+} from "./context";
 
 // Styles
 export type {
@@ -103,14 +103,14 @@ export type {
   Cursor,
   ShadowPreset,
   BorderStyle,
-} from "./styles.ts";
+} from "./styles";
 
 export {
   StyleBuilder,
   SHADOW_DEFINITIONS,
   overflowAllowsScroll,
   overflowClipsContent,
-} from "./styles.ts";
+} from "./styles";
 
 // Scrollbar
 export type {
@@ -118,7 +118,7 @@ export type {
   ScrollbarDragState,
   ScrollbarVisibility,
   ThumbMetrics,
-} from "./scrollbar.ts";
+} from "./scrollbar";
 
 export {
   DEFAULT_SCROLLBAR_CONFIG,
@@ -131,7 +131,7 @@ export {
   calculateDragScrollOffset,
   isPointInThumb,
   getThumbColor,
-} from "./scrollbar.ts";
+} from "./scrollbar";
 
 // Elements
 export type {
@@ -145,7 +145,7 @@ export type {
   NoState,
   RequestLayoutResult,
   ElementDebugMeta,
-} from "./element.ts";
+} from "./element";
 
 export {
   FlashElement,
@@ -154,7 +154,7 @@ export {
   FlashImageElement,
   text,
   img,
-} from "./element.ts";
+} from "./element";
 export {
   canvas,
   CanvasElement,
@@ -162,17 +162,17 @@ export {
   type CanvasPaint,
   type CanvasOptionsWithPrepaint,
   type CanvasOptionsWithoutPrepaint,
-} from "./canvas.ts";
+} from "./canvas";
 
 // Div element
-export { FlashDiv, div } from "./div.ts";
+export { FlashDiv, div } from "./div";
 
 // Divider element
-export { FlashDivider, divider } from "./divider.ts";
+export { FlashDivider, divider } from "./divider";
 
 // Monospace text helpers
-export type { MonoVariant } from "./mono.ts";
-export { MonoElement, mono, code, pre } from "./mono.ts";
+export type { MonoVariant } from "./mono";
+export { MonoElement, mono, code, pre } from "./mono";
 
 // Text input element
 export {
@@ -181,7 +181,7 @@ export {
   TEXT_INPUT_CONTEXT,
   TextInputController,
   renderTextDecorations,
-} from "./input.ts";
+} from "./input";
 
 // Scene and GPU primitives
 export type {
@@ -196,12 +196,12 @@ export type {
   UnderlineStyle,
   SceneLayer,
   DrawOrder,
-} from "./scene.ts";
+} from "./scene";
 
-export { FlashScene } from "./scene.ts";
+export { FlashScene } from "./scene";
 
 // Spatial indexing
-export { BoundsTree } from "./bounds_tree.ts";
+export { BoundsTree } from "./bounds_tree";
 
 // Text system
 export type {
@@ -211,9 +211,9 @@ export type {
   ShapedText,
   GlyphInstance,
   GlyphAtlasConfig,
-} from "./text.ts";
+} from "./text";
 
-export { GlyphAtlas, TextSystem, TextPipeline } from "./text.ts";
+export { GlyphAtlas, TextSystem, TextPipeline } from "./text";
 
 // Text input state helpers
 export type {
@@ -228,7 +228,7 @@ export type {
   SelectionAnchor,
   PointerSelectionSession,
   TextSelectionRect,
-} from "./text.ts";
+} from "./text";
 export {
   createTextInputState,
   valueWithComposition,
@@ -257,7 +257,7 @@ export {
   caretPrimitive,
   selectionPrimitives,
   compositionUnderlines,
-} from "./text.ts";
+} from "./text";
 
 // Event dispatch
 export type {
@@ -275,7 +275,7 @@ export type {
   ScrollHandler,
   EventHandlers,
   HitTestNode,
-} from "./dispatch.ts";
+} from "./dispatch";
 
 export {
   hitTest,
@@ -285,10 +285,10 @@ export {
   dispatchScrollEvent,
   buildKeyContextChain,
   getFocusedPath,
-} from "./dispatch.ts";
+} from "./dispatch";
 
 // Hitbox system
-export type { Hitbox, HitboxId, HitTest, HitboxFrame } from "./hitbox.ts";
+export type { Hitbox, HitboxId, HitTest, HitboxFrame } from "./hitbox";
 
 export {
   HitboxBehavior,
@@ -299,25 +299,20 @@ export {
   isHitboxHovered,
   shouldHitboxHandleScroll,
   GroupHitboxes,
-} from "./hitbox.ts";
+} from "./hitbox";
 
 // Window
-export type {
-  WindowOptions,
-  FlashPlatform,
-  FlashRenderTarget,
-  DecodedImageData,
-} from "./window.ts";
+export type { WindowOptions, FlashPlatform, FlashRenderTarget, DecodedImageData } from "./window";
 
-export { FlashWindow } from "./window.ts";
+export { FlashWindow } from "./window";
 
 // App
-export type { FlashAppOptions } from "./app.ts";
+export type { FlashAppOptions } from "./app";
 
-export { FlashApp } from "./app.ts";
+export { FlashApp } from "./app";
 
 // Mouse utilities
-export { MouseState, coreModsToFlashMods } from "./mouse.ts";
+export { MouseState, coreModsToFlashMods } from "./mouse";
 
 // Drag and drop
 export type {
@@ -328,9 +323,9 @@ export type {
   DragPayload,
   ActiveDrag,
   DropTarget,
-} from "./drag.ts";
+} from "./drag";
 
-export { DragTracker, dragPayload, dragPayloadWithPreview } from "./drag.ts";
+export { DragTracker, dragPayload, dragPayloadWithPreview } from "./drag";
 
 // Tooltip system
 export type {
@@ -339,14 +334,14 @@ export type {
   TooltipBuilder,
   TooltipRegistration,
   ActiveTooltip,
-} from "./tooltip.ts";
+} from "./tooltip";
 
 export {
   TooltipManager,
   TooltipConfigBuilder,
   tooltipConfig,
   DEFAULT_TOOLTIP_CONFIG,
-} from "./tooltip.ts";
+} from "./tooltip";
 
 // Popover system
 export type {
@@ -356,14 +351,14 @@ export type {
   PopoverBuilder,
   PopoverRegistration,
   ActivePopover,
-} from "./popover.ts";
+} from "./popover";
 
 export {
   PopoverManager,
   PopoverConfigBuilder,
   popoverConfig,
   DEFAULT_POPOVER_CONFIG,
-} from "./popover.ts";
+} from "./popover";
 
 // Dialog system
 export type {
@@ -374,7 +369,7 @@ export type {
   DialogRegistration,
   ActiveDialog,
   DialogContentContext,
-} from "./dialog.ts";
+} from "./dialog";
 
 export {
   DialogManager,
@@ -389,23 +384,23 @@ export {
   dialogContent,
   dialogHeader,
   dialogFooter,
-} from "./dialog.ts";
+} from "./dialog";
 
 // Keyboard utilities
-export type { Keystroke } from "./keyboard.ts";
+export type { Keystroke } from "./keyboard";
 
-export { Key, parseKeystroke, matchesKeystroke, formatKeystroke } from "./keyboard.ts";
+export { Key, parseKeystroke, matchesKeystroke, formatKeystroke } from "./keyboard";
 
 // Focus management
-export { FocusStack, FocusNavigator, FocusContextStack } from "./focus.ts";
+export { FocusStack, FocusNavigator, FocusContextStack } from "./focus";
 
 // Tab stops and navigation
-export type { TabStopConfig, TabStop } from "./tab.ts";
+export type { TabStopConfig, TabStop } from "./tab";
 
-export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab.ts";
+export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab";
 
 // Action system
-export type { Action, KeyBinding } from "./actions.ts";
+export type { Action, KeyBinding } from "./actions";
 
 export {
   ActionRegistry,
@@ -413,37 +408,37 @@ export {
   KeyDispatcher,
   BuiltinActions,
   createDefaultKeymap,
-} from "./actions.ts";
+} from "./actions";
 
 // Renderer
-export type { RendererConfig } from "./renderer.ts";
+export type { RendererConfig } from "./renderer";
 
-export { FlashRenderer, PREMULTIPLIED_ALPHA_BLEND, STANDARD_ALPHA_BLEND } from "./renderer.ts";
+export { FlashRenderer, PREMULTIPLIED_ALPHA_BLEND, STANDARD_ALPHA_BLEND } from "./renderer";
 
 // Pipelines
-export { RectPipeline } from "./rect.ts";
+export { RectPipeline } from "./rect";
 
-export { ShadowPipeline } from "./shadow.ts";
+export { ShadowPipeline } from "./shadow";
 
 // Path rendering
-export type { PathCommand, TessellatedPath } from "./path.ts";
+export type { PathCommand, TessellatedPath } from "./path";
 
-export { PathBuilder, PathPipeline, path } from "./path.ts";
+export { PathBuilder, PathPipeline, path } from "./path";
 
 // Underline rendering
-export { UnderlinePipeline } from "./underline.ts";
+export { UnderlinePipeline } from "./underline";
 
 // Image rendering
-export type { ImageId, DecodedImage, ImageTile, ImageInstance, ImageAtlasConfig } from "./image.ts";
+export type { ImageId, DecodedImage, ImageTile, ImageInstance, ImageAtlasConfig } from "./image";
 
-export { ImageAtlas, ImagePipeline } from "./image.ts";
+export { ImageAtlas, ImagePipeline } from "./image";
 
 // WebGPU Host rendering
-export type { RenderTexture, WebGPUHost, WebGPUHostInput } from "./host.ts";
+export type { RenderTexture, WebGPUHost, WebGPUHostInput } from "./host";
 
-export { createRenderTexture, HostTexturePipeline, WebGPUHostElement, webgpuHost } from "./host.ts";
+export { createRenderTexture, HostTexturePipeline, WebGPUHostElement, webgpuHost } from "./host";
 
-export type { HostTexturePrimitive } from "./scene.ts";
+export type { HostTexturePrimitive } from "./scene";
 
 // Buffer utilities
 export {
@@ -452,21 +447,17 @@ export {
   StagingBuffer,
   UniformBufferManager,
   BufferFactory,
-} from "./buffers.ts";
+} from "./buffers";
 
 // Inspector/Debug Mode
-export type { ElementDebugInfo, InspectorState } from "./inspector.ts";
+export type { ElementDebugInfo, InspectorState } from "./inspector";
 
-export { Inspector, INSPECTOR_COLORS, createInspector, createInspectorState } from "./inspector.ts";
+export { Inspector, INSPECTOR_COLORS, createInspector, createInspectorState } from "./inspector";
 
 // Virtual scrolling - UniformList (fixed height)
-export type {
-  ScrollToStrategy,
-  UniformListItemProps,
-  UniformListRenderItem,
-} from "./uniform_list.ts";
+export type { ScrollToStrategy, UniformListItemProps, UniformListRenderItem } from "./uniform_list";
 
-export { UniformList, uniformList } from "./uniform_list.ts";
+export { UniformList, uniformList } from "./uniform_list";
 
 // Virtual scrolling - List (variable height)
 export type {
@@ -475,9 +466,9 @@ export type {
   ListScrollEvent,
   ListItemProps,
   ListRenderItem,
-} from "./list.ts";
+} from "./list";
 
-export { List, ListState, list, createListState, type ListMeasureItem } from "./list.ts";
+export { List, ListState, list, createListState, type ListMeasureItem } from "./list";
 
 // Table elements
 export {
@@ -492,46 +483,46 @@ export {
   tr,
   th,
   td,
-} from "./table.ts";
+} from "./table";
 
 // Deferred element (overlay/popup support)
-export type { DeferredDrawEntry } from "./deferred.ts";
+export type { DeferredDrawEntry } from "./deferred";
 
-export { DeferredElement, deferred } from "./deferred.ts";
+export { DeferredElement, deferred } from "./deferred";
 
 // Anchored element (positioned overlays)
-export type { Corner, AnchoredPositionMode, AnchoredFitMode, Edges } from "./anchored.ts";
+export type { Corner, AnchoredPositionMode, AnchoredFitMode, Edges } from "./anchored";
 
-export { AnchoredElement, anchored, edges } from "./anchored.ts";
+export { AnchoredElement, anchored, edges } from "./anchored";
 
 // SVG rendering
-export type { SvgPathCommand, ParsedSvgPath, ParsedSvg, TessellatedMesh } from "./svg.ts";
+export type { SvgPathCommand, ParsedSvgPath, ParsedSvg, TessellatedMesh } from "./svg";
 
-export { SvgElement, svg, parseSvg, SvgIcons, clearSvgCache } from "./svg.ts";
+export { SvgElement, svg, parseSvg, SvgIcons, clearSvgCache } from "./svg";
 
 // Icon element
-export type { IconName } from "./icon.ts";
+export type { IconName } from "./icon";
 
-export { FlashIcon, icon } from "./icon.ts";
+export { FlashIcon, icon } from "./icon";
 
 // Link element
-export { FlashLink, link } from "./link.ts";
+export { FlashLink, link } from "./link";
 
 // Checkbox element
-export type { CheckedState, CheckedChangeHandler } from "./checkbox.ts";
-export { FlashCheckbox, checkbox } from "./checkbox.ts";
+export type { CheckedState, CheckedChangeHandler } from "./checkbox";
+export { FlashCheckbox, checkbox } from "./checkbox";
 
 // Radio group elements
-export type { RadioValueChangeHandler } from "./radio.ts";
-export { FlashRadioGroup, FlashRadioGroupItem, radioGroup, radioItem } from "./radio.ts";
+export type { RadioValueChangeHandler } from "./radio";
+export { FlashRadioGroup, FlashRadioGroupItem, radioGroup, radioItem } from "./radio";
 
 // Switch element
-export type { SwitchChangeHandler } from "./switch.ts";
-export { FlashSwitch, switchToggle, toggle } from "./switch.ts";
+export type { SwitchChangeHandler } from "./switch";
+export { FlashSwitch, switchToggle, toggle } from "./switch";
 
 // Tabs elements
-export type { TabValueChangeHandler } from "./tabs.ts";
-export { FlashTabs, FlashTab, tabs, tab } from "./tabs.ts";
+export type { TabValueChangeHandler } from "./tabs";
+export { FlashTabs, FlashTab, tabs, tab } from "./tabs";
 
 // Dropdown menu elements
 export type {
@@ -546,7 +537,7 @@ export type {
   DropdownMenuContext,
   DropdownMenuState,
   MenuItemElement,
-} from "./dropdown.ts";
+} from "./dropdown";
 export {
   FlashDropdown,
   FlashDropdownItem,
@@ -565,7 +556,7 @@ export {
   dropdownRadio,
   dropdownRadioGroup,
   dropdownSub,
-} from "./dropdown.ts";
+} from "./dropdown";
 
 // Right click (context) menu elements
 export {
@@ -578,7 +569,7 @@ export {
   rightClickRadio,
   rightClickRadioGroup,
   rightClickSub,
-} from "./right_click.ts";
+} from "./right_click";
 
 // Ideal text editor system
 export type {
@@ -594,7 +585,7 @@ export type {
   SelectionGesture,
   HitTestResult,
   TextRect,
-} from "./editor.ts";
+} from "./editor";
 
 export {
   offset,
@@ -621,4 +612,6 @@ export {
   selectionRects,
   caretRect,
   TextEditor,
-} from "./editor.ts";
+} from "./editor";
+
+export * from "./header";
