@@ -5,8 +5,8 @@ import {
   createWebGPUContext,
   runWebGPURenderLoop,
 } from "@glade/platform";
-import { FlashApp, FlashElement, type FlashContext } from "@glade/flash";
-import { MainView, type Demo } from "./demo.ts";
+import { FlashApp, type FlashContext } from "@glade/flash";
+import { MainView } from "./main.ts";
 
 const interFontBase64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
 
@@ -37,12 +37,9 @@ async function main() {
   const app = new FlashApp({ platform, colorSchemeProvider });
   await app.initialize();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const demos: Demo<FlashElement<any, any>>[] = [];
-
   const window = await app.openWindow(
     { width: ctx.width, height: ctx.height, title: "Glade Example" },
-    (cx: FlashContext) => cx.newView(() => new MainView(demos))
+    (cx: FlashContext) => cx.newView(() => new MainView())
   );
 
   window.registerFont("Inter", base64ToBytes(interFontBase64));

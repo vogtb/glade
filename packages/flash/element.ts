@@ -673,7 +673,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
   private textColor: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
   private hasCustomTextColor = false;
   private fontSize = 14;
-  private fontFamily = "system-ui";
+  private fontFamily = "Inter";
   private fontWeight = 400;
   private lineHeightValue: number | null = null;
   private maxWidthValue: number | null = null;
