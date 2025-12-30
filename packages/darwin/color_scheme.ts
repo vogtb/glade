@@ -36,17 +36,26 @@ function readSystemScheme(): ColorScheme {
 export function createColorSchemeProvider(): ColorSchemeProvider {
   let scheme = readSystemScheme();
   const listeners = new Set<(value: ColorScheme) => void>();
-
   const POLL_INTERVAL_MS = 2000;
-  const timer = setInterval(() => {
-    const next = readSystemScheme();
-    if (next !== scheme) {
-      scheme = next;
-      for (const listener of listeners) {
-        listener(scheme);
-      }
+  let timer: ReturnType<typeof setInterval> | null = null;
+
+  const ensurePolling = (): void => {
+    if (timer !== null) {
+      return;
     }
-  }, POLL_INTERVAL_MS);
+    timer = setInterval(() => {
+      if (listeners.size === 0) {
+        return;
+      }
+      const next = readSystemScheme();
+      if (next !== scheme) {
+        scheme = next;
+        for (const listener of listeners) {
+          listener(scheme);
+        }
+      }
+    }, POLL_INTERVAL_MS);
+  };
 
   return {
     get(): ColorScheme {
@@ -54,10 +63,12 @@ export function createColorSchemeProvider(): ColorSchemeProvider {
     },
     subscribe(callback: (value: ColorScheme) => void): () => void {
       listeners.add(callback);
+      ensurePolling();
       return () => {
         listeners.delete(callback);
-        if (listeners.size === 0) {
+        if (listeners.size === 0 && timer !== null) {
           clearInterval(timer);
+          timer = null;
         }
       };
     },

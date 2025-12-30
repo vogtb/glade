@@ -21,7 +21,10 @@ export function createColorSchemeProvider(): ColorSchemeProvider {
   let scheme = detectScheme(mediaQuery);
 
   let cleanup: (() => void) | null = null;
-  if (mediaQuery) {
+  const ensureListener = (): void => {
+    if (!mediaQuery || cleanup) {
+      return;
+    }
     const handler = (event: MediaQueryListEvent): void => {
       const nextScheme = event.matches ? "dark" : "light";
       if (nextScheme !== scheme) {
@@ -35,7 +38,7 @@ export function createColorSchemeProvider(): ColorSchemeProvider {
     cleanup = () => {
       mediaQuery.removeEventListener("change", handler);
     };
-  }
+  };
 
   return {
     get(): ColorScheme {
@@ -43,6 +46,7 @@ export function createColorSchemeProvider(): ColorSchemeProvider {
     },
     subscribe(callback: (value: ColorScheme) => void): () => void {
       listeners.add(callback);
+      ensureListener();
       return () => {
         listeners.delete(callback);
         if (listeners.size === 0 && cleanup) {

@@ -153,6 +153,10 @@ export class FlashApp {
       this.platform.cancelAnimationFrame(this.frameId);
       this.frameId = null;
     }
+    if (this.colorSchemeCleanup) {
+      this.colorSchemeCleanup();
+      this.colorSchemeCleanup = null;
+    }
   }
 
   // ============ Entity Management ============
@@ -438,7 +442,9 @@ export class FlashApp {
         return;
       }
       this.frame(time);
-      this.scheduleFrame();
+      if (this.running) {
+        this.scheduleFrame();
+      }
     });
   }
 
@@ -456,6 +462,10 @@ export class FlashApp {
       window.present();
     }
     this.dirtyWindows.clear();
+
+    if (this.windows.size === 0) {
+      this.stop();
+    }
   }
 
   markWindowDirty(windowId: WindowId): void {
