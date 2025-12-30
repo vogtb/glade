@@ -1023,7 +1023,6 @@ class DemoRootView implements FlashView {
     ].join("\n");
     const wrappedPreSample =
       "GET /api/search?q=monospace%20demo&limit=25&cursor=eyJvZmZzZXQiOjE0NH0=&user-agent=glade-demo/1.0";
-    const codeBg = { r: 0.12, g: 0.14, b: 0.18, a: 1 };
 
     return div()
       .flex()
@@ -1046,9 +1045,9 @@ class DemoRootView implements FlashView {
           ),
         div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
         text("Preformatted block (no wrap, scrollable)").font("Inter").size(16),
-        pre(preSample).padding(12).bg(codeBg).rounded(8).wrap(false).scrollable(true),
+        pre(preSample).padding(12).rounded(8).wrap(false).scrollable(true),
         text("Wrapped preformatted text (tabSize: 4)").font("Inter").size(16),
-        pre(wrappedPreSample).wrap(true).tabSize(4).padding(12).bg(codeBg).rounded(8),
+        pre(wrappedPreSample).wrap(true).tabSize(4).padding(12).rounded(8),
         text("Custom font override (JetBrains Mono SemiBold)").font("Inter").size(16),
         div()
           .flex()

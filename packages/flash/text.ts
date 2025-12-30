@@ -1059,13 +1059,12 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
   let is_color = in.params.z > 0.5;
 
   if is_color {
-    let tint = select(in.color.rgb / max(in.color.a, 0.0001), in.color.rgb, in.color.a < 0.0001);
     let alpha = sample.a * in.color.a;
-    let tinted_rgb = sample.rgb * tint * alpha;
     if alpha < 0.01 {
       discard;
     }
-    return vec4<f32>(tinted_rgb, alpha);
+    let premul_rgb = sample.rgb * alpha;
+    return vec4<f32>(premul_rgb, alpha);
   }
 
   let alpha = sample.a;
