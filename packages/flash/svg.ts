@@ -195,6 +195,7 @@ interface SvgRequestState {
  */
 interface SvgPrepaintState {
   cachedPaths: CachedPathData[];
+  tintColor: Color;
 }
 
 /**
@@ -233,6 +234,7 @@ function meshToCachedPath(mesh: TessellatedMesh): CachedPathData {
  */
 export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> {
   private tintColor: Color = { r: 1, g: 1, b: 1, a: 1 };
+  private hasCustomTint = false;
   private displayWidth?: number;
   private displayHeight?: number;
   private svgContent: string;
@@ -256,6 +258,7 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
 
   color(c: Color): this {
     this.tintColor = c;
+    this.hasCustomTint = true;
     return this;
   }
 
@@ -306,8 +309,10 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
     };
   }
 
-  prepaint(_cx: PrepaintContext, _bounds: Bounds, requestState: SvgRequestState): SvgPrepaintState {
-    return { cachedPaths: requestState.cachedPaths };
+  prepaint(cx: PrepaintContext, _bounds: Bounds, requestState: SvgRequestState): SvgPrepaintState {
+    const theme = cx.getWindow().getTheme();
+    const tintColor = this.hasCustomTint ? this.tintColor : theme.text;
+    return { cachedPaths: requestState.cachedPaths, tintColor };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: SvgPrepaintState): void {
@@ -327,7 +332,7 @@ export class SvgElement extends FlashElement<SvgRequestState, SvgPrepaintState> 
           width: cached.bounds.width,
           height: cached.bounds.height,
         },
-        this.tintColor
+        prepaintState.tintColor
       );
     }
   }
