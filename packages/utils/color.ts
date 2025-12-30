@@ -6,6 +6,25 @@ export type ColorObject = {
 };
 
 /**
+ * RGBA color with components in 0-1 range.
+ *
+ * Accepts either a packed hex number (0xRRGGBB) or an object representation.
+ * The engine normalizes to a ColorObject internally.
+ */
+export type Color = ColorObject | number;
+
+export function isColorObject(colorValue: Color): colorValue is ColorObject {
+  return typeof colorValue === "object" && colorValue !== null;
+}
+
+export function toColorObject(colorValue: Color): ColorObject {
+  if (isColorObject(colorValue)) {
+    return colorValue;
+  }
+  return rgb(colorValue);
+}
+
+/**
  * Create a color from a hex value (e.g., 0xFF5500).
  */
 export function rgb(hex: number): ColorObject {

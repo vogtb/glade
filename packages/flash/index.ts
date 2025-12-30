@@ -20,7 +20,6 @@ export type {
   Point,
   Size,
   Bounds,
-  Color,
   FlashTask,
   ContentMask,
   TransformationMatrix,
@@ -42,9 +41,6 @@ export {
 } from "./theme";
 
 export {
-  rgb,
-  rgba,
-  color,
   boundsContains,
   boundsIntersect,
   boundsIsEmpty,

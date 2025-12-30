@@ -71,6 +71,7 @@
         "@glade/core": "workspace:*",
         "@glade/flash": "workspace:*",
         "@glade/platform": "workspace:*",
+        "@glade/utils": "workspace:*",
       },
     },
     "packages/flash": {

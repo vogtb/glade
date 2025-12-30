@@ -14,8 +14,8 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import type { Bounds, Color, TransformationMatrix } from "./types.ts";
-import { rotateTransform, scaleTransform, translateTransform, toColorObject } from "./types.ts";
+import type { Bounds, TransformationMatrix } from "./types.ts";
+import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
 import { overflowClipsContent } from "./styles.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles, Cursor } from "./styles.ts";
@@ -48,6 +48,7 @@ import {
   trackClickToScrollOffset,
   resolveScrollbarConfig,
 } from "./scrollbar.ts";
+import { toColorObject, type Color } from "@glade/utils";
 
 /**
  * State passed from requestLayout to prepaint for FlashDiv.

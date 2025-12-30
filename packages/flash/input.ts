@@ -1,4 +1,4 @@
-import type { Color, Bounds } from "./types.ts";
+import type { Bounds } from "./types.ts";
 import {
   FlashElement,
   type RequestLayoutContext,
@@ -65,6 +65,7 @@ import {
 import type { FontStyle } from "@glade/shaper";
 import { FlashScene } from "./scene.ts";
 import { inputColors } from "./theme.ts";
+import type { Color } from "@glade/utils";
 
 export const TEXT_INPUT_CONTEXT = "flash:text-input";
 

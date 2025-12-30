@@ -6,8 +6,6 @@
  * is bad. Maybe split these things out and put the types where they live.
  */
 
-import { rgb, rgba, color, type ColorObject } from "@glade/utils";
-
 // Branded types for type-safe IDs
 declare const __entityIdBrand: unique symbol;
 export type EntityId = number & { [__entityIdBrand]: true };
@@ -59,31 +57,6 @@ export function boundsContains(bounds: Bounds, point: Point): boolean {
     point.y < bounds.y + bounds.height
   );
 }
-
-/**
- * RGBA color with components in 0-1 range.
- *
- * Accepts either a packed hex number (0xRRGGBB) or an object representation.
- * The engine normalizes to a ColorObject internally.
- */
-export type Color = ColorObject | number;
-
-export function isColorObject(colorValue: Color): colorValue is ColorObject {
-  return typeof colorValue === "object" && colorValue !== null;
-}
-
-export function toColorObject(colorValue: Color): ColorObject {
-  if (isColorObject(colorValue)) {
-    return colorValue;
-  }
-  return rgb(colorValue);
-}
-
-/**
- * Color helpers are shared via @glade/utils.
- * TODO: don't re-export
- */
-export { rgb, rgba, color };
 
 /**
  * Async task handle.

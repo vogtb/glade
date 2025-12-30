@@ -14,12 +14,12 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import { toColorObject, type Bounds, type Color, type Size, type WindowId } from "./types.ts";
+import { type Bounds, type Size, type WindowId } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler, KeyHandler, MouseHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { ColorObject } from "@glade/utils";
+import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 // ============================================================================ //
 // Defaults                                                                     //

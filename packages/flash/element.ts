@@ -10,14 +10,7 @@
  * 3. paint() - Emit GPU primitives using PrepaintState
  */
 
-import type {
-  Bounds,
-  Color,
-  ContentMask,
-  FocusId,
-  ScrollOffset,
-  TransformationMatrix,
-} from "./types.ts";
+import type { Bounds, ContentMask, ScrollOffset, TransformationMatrix } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles, Cursor, WhitespaceMode } from "./styles.ts";
 import type { HitTestNode, EventHandlers } from "./dispatch.ts";
@@ -28,8 +21,7 @@ import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { FlashWindow as _FlashWindow } from "./window.ts";
 import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
-import { rgb, toColorObject } from "./types.ts";
-import type { ColorObject } from "@glade/utils";
+import { toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
 
 // ============ Debug Info Types ============
 

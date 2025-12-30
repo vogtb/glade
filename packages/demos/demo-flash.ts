@@ -20,7 +20,6 @@ import {
   divider,
   icon,
   link,
-  rgb,
   text,
   path,
   img,
@@ -87,6 +86,7 @@ import { createParticleHost } from "./particle.ts";
 import { createRaymarchHost } from "./raymarch.ts";
 import { createTerrainHost } from "./terrain.ts";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
+import { rgb } from "@glade/utils";
 
 // Embed fonts as base64 at build time via Bun macro
 const interFontBase64 = COMPTIME_embedAsBase64(

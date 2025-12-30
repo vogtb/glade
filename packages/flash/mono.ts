@@ -21,9 +21,8 @@ import {
 } from "./element.ts";
 import { div, type FlashDiv } from "./div.ts";
 import type { HitTestNode } from "./dispatch.ts";
-import type { Bounds, Color } from "./types.ts";
-import { toColorObject } from "./types.ts";
-import type { ColorObject } from "@glade/utils";
+import type { Bounds } from "./types.ts";
+import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 // TODO: clean up. This is bad.
 const DEFAULT_MONO_FONT_FAMILY =

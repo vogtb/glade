@@ -15,7 +15,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import { toColorObject, type Bounds, type Color, type ScrollOffset } from "./types.ts";
+import { type Bounds, type ScrollOffset } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import type { HitTestNode } from "./dispatch.ts";
@@ -23,6 +23,7 @@ import type { FlashContext } from "./context.ts";
 import type { ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
+import { toColorObject, type Color } from "@glade/utils";
 
 /**
  * Alignment for list items (top-aligned or bottom-aligned).

@@ -14,14 +14,13 @@ import type {
   FocusId,
   Point,
   Bounds,
-  Color,
   ContentMask,
   TransformationMatrix,
   ScrollHandleId,
   ScrollOffset,
   ScrollState,
 } from "./types.ts";
-import { createScrollState, clampScrollOffset, toColorObject } from "./types.ts";
+import { createScrollState, clampScrollOffset } from "./types.ts";
 import type { ScrollbarDragState } from "./scrollbar.ts";
 import { calculateDragScrollOffset } from "./scrollbar.ts";
 import { CursorStyle } from "@glade/core/events.ts";
@@ -98,6 +97,7 @@ import { HostTexturePipeline } from "./host.ts";
 import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 import { CrossElementSelectionManager } from "./select.ts";
+import { toColorObject, type Color } from "@glade/utils";
 
 function normalizeMouseButton(button: number, mods: Modifiers): number {
   if (button === 0 && mods.ctrl) {

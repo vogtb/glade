@@ -17,7 +17,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import { toColorObject, type Bounds, type Color } from "./types.ts";
+import { type Bounds } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
@@ -26,7 +26,7 @@ import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import { tabColors } from "./theme.ts";
-import type { ColorObject } from "@glade/utils";
+import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 /**
  * Default colors for tabs.

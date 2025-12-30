@@ -4,9 +4,9 @@
  * Provides a Tailwind-like styling API for layout and visual properties.
  */
 
-import type { ColorObject } from "@glade/utils";
-import type { Color, TransformationMatrix } from "./types.ts";
-import { scaleTransform, rotateTransform, translateTransform, toColorObject } from "./types.ts";
+import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import type { TransformationMatrix } from "./types.ts";
+import { scaleTransform, rotateTransform, translateTransform } from "./types.ts";
 import { CursorStyle } from "@glade/core/events.ts";
 
 /**

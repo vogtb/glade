@@ -23,6 +23,7 @@
     "@glade/comptime": "workspace:*",
     "@glade/core": "workspace:*",
     "@glade/flash": "workspace:*",
-    "@glade/platform": "workspace:*"
+    "@glade/platform": "workspace:*",
+    "@glade/utils": "workspace:*"
   }
 }

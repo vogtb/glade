@@ -11,7 +11,7 @@
  * Uses content-based element keys to track elements across frame rebuilds.
  */
 
-import { toColorObject, type Bounds, type Point, type Color } from "./types.ts";
+import { type Bounds, type Point } from "./types.ts";
 import type { GlobalElementId } from "./element.ts";
 import type { FlashWindow } from "./window.ts";
 import type { FlashContext } from "./context.ts";
@@ -21,6 +21,7 @@ import { hitTestWithLayout, computeRangeRectsWithLayout } from "./text.ts";
 import type { FlashMouseEvent, FlashKeyEvent, EventResult } from "./dispatch.ts";
 import { FocusHandle } from "./entity.ts";
 import { Key } from "./keyboard.ts";
+import { toColorObject, type Color } from "@glade/utils";
 
 /**
  * Content-based element key for tracking elements across frame rebuilds.

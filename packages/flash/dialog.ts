@@ -34,13 +34,13 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import { toColorObject, type Bounds, type Color, type Size } from "./types.ts";
+import { type Bounds, type Size } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { FlashContext } from "./context.ts";
-import type { ColorObject } from "@glade/utils";
+import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 // ============================================================================
 // Default Colors and Sizes
