@@ -124,7 +124,8 @@ export class FlashApp {
       renderTarget,
       rootView as FlashViewHandle<FlashView>,
       () => this.createContext(),
-      <V extends FlashView>(handle: FlashViewHandle<V>) => this.readEntity(handle) as V
+      <V extends FlashView>(handle: FlashViewHandle<V>) => this.readEntity(handle) as V,
+      () => this.handleWindowClosed(windowId)
     );
 
     this.windows.set(windowId, window);
@@ -475,6 +476,13 @@ export class FlashApp {
   private markAllWindowsDirty(): void {
     for (const windowId of this.windows.keys()) {
       this.markWindowDirty(windowId);
+    }
+  }
+
+  private handleWindowClosed(windowId: WindowId): void {
+    this.windows.delete(windowId);
+    if (this.windows.size === 0) {
+      this.stop();
     }
   }
 

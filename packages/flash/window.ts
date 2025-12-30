@@ -302,7 +302,8 @@ export class FlashWindow {
     private renderTarget: FlashRenderTarget,
     private rootView: FlashViewHandle<FlashView>,
     private getContext: () => FlashContext,
-    private readView: <V extends FlashView>(handle: FlashViewHandle<V>) => V
+    private readView: <V extends FlashView>(handle: FlashViewHandle<V>) => V,
+    private onClosed?: () => void
   ) {
     this.scene = new FlashScene();
     this.layoutEngine = new FlashLayoutEngine();
@@ -2230,6 +2231,9 @@ export class FlashWindow {
         this.closed = true;
         this.destroy();
         this.getContext().markWindowDirty(this.id);
+        if (this.onClosed) {
+          this.onClosed();
+        }
       });
       this.eventCleanups.push(cleanup);
     }
