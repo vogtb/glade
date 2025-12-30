@@ -5,14 +5,8 @@ import {
   createWebGPUContext,
   runWebGPURenderLoop,
 } from "@glade/platform";
-import {
-  FlashApp,
-  type FlashContext,
-  type FlashView,
-  type FlashViewContext,
-  div,
-  text,
-} from "@glade/flash";
+import { FlashApp, type FlashContext } from "@glade/flash";
+import { MainView } from "./demo";
 
 const interFontBase64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
 
@@ -30,22 +24,6 @@ function base64ToBytes(base64: string): Uint8Array {
   return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 }
 
-class ExampleView implements FlashView {
-  render(cx: FlashViewContext<this>) {
-    const theme = cx.getTheme();
-    const message = "Hello from Glade Example";
-
-    return div()
-      .flex()
-      .itemsCenter()
-      .justifyCenter()
-      .w(cx.window.width)
-      .h(cx.window.height)
-      .bg(theme.surface)
-      .child(text(message).font("Inter").size(24).color(theme.text));
-  }
-}
-
 async function main() {
   const ctx = await createWebGPUContext({
     width: 960,
@@ -61,7 +39,7 @@ async function main() {
 
   const window = await app.openWindow(
     { width: ctx.width, height: ctx.height, title: "Glade Example" },
-    (cx: FlashContext) => cx.newView<ExampleView>(() => new ExampleView())
+    (cx: FlashContext) => cx.newView(() => new MainView())
   );
 
   window.registerFont("Inter", base64ToBytes(interFontBase64));
