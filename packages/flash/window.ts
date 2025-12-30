@@ -25,6 +25,7 @@ import { createScrollState, clampScrollOffset } from "./types.ts";
 import type { ScrollbarDragState } from "./scrollbar.ts";
 import { calculateDragScrollOffset } from "./scrollbar.ts";
 import { CursorStyle } from "@glade/core/events.ts";
+import type { Theme } from "./theme.ts";
 import type { Clipboard, CharEvent, CompositionEvent, TextInputEvent } from "@glade/core";
 import type { FlashViewHandle, ScrollHandle } from "./entity.ts";
 import { FocusHandle } from "./entity.ts";
@@ -310,8 +311,9 @@ export class FlashWindow {
     this.renderTarget.configure(device, format);
 
     // Initialize renderer with pipelines (4x MSAA for smooth edges)
+    const theme = this.getContext().getTheme();
     this.renderer = new FlashRenderer(device, format, {
-      clearColor: { r: 0.08, g: 0.08, b: 0.1, a: 1 },
+      clearColor: theme.background,
       msaaSampleCount: 4,
     });
     const sampleCount = this.renderer.getSampleCount();
@@ -928,6 +930,13 @@ export class FlashWindow {
     this.currentContentMask = mask;
   }
 
+  /**
+   * Get the active theme.
+   */
+  getTheme(): Theme {
+    return this.getContext().getTheme();
+  }
+
   // ============ Drag and Drop ============
 
   /**
@@ -1169,6 +1178,9 @@ export class FlashWindow {
     this.didRenderThisFrame = false;
     this.beginFrame();
 
+    const theme = this.getTheme();
+    this.renderer.setClearColor(theme.background);
+
     this.scene.clear();
     this.layoutEngine.clear();
     this.layoutEngine.setScaleFactor(1);
@@ -1254,7 +1266,7 @@ export class FlashWindow {
     if (this.crossElementSelection) {
       // Compute visual order before painting (needed for getSelectionRanges)
       this.crossElementSelection.computeVisualOrder();
-      const selectionColor = { r: 0.23, g: 0.51, b: 0.96, a: 0.35 }; // Blue with 35% opacity
+      const selectionColor = this.getTheme().selectionBackground;
       this.crossElementSelection.paintSelectionHighlights(this.scene, selectionColor);
     }
 

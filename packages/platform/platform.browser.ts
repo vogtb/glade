@@ -6,6 +6,8 @@ export {
   createClipboard,
   // Flash
   createFlashPlatform,
+  // Color scheme
+  createColorSchemeProvider,
   // Types
   type BrowserWebGPUContext,
   type BrowserContextOptions,

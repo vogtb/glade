@@ -6,6 +6,8 @@
  */
 
 import type { EntityId, FocusId, WindowId, FlashTask, ScrollOffset, Bounds } from "./types.ts";
+import type { Theme, ThemeConfig, ThemeOverrides } from "./theme.ts";
+import type { ColorScheme } from "@glade/core";
 import type {
   FlashHandle,
   FlashViewHandle,
@@ -38,6 +40,16 @@ export interface FlashReadContext {
   readEntity<T>(handle: FlashHandle<T>): Readonly<T>;
 
   /**
+   * Get the current resolved theme.
+   */
+  getTheme(): Theme;
+
+  /**
+   * Get the platform color scheme preference.
+   */
+  getSystemColorScheme(): ColorScheme;
+
+  /**
    * Check if a focus handle currently has focus.
    */
   isFocused(handle: FocusHandle): boolean;
@@ -57,6 +69,21 @@ export interface FlashReadContext {
  * Full context - can read, update, create entities, queue effects.
  */
 export interface FlashContext extends FlashReadContext {
+  /**
+   * Override the active theme using a full theme or a theme config.
+   */
+  setTheme(config: Theme | ThemeConfig): void;
+
+  /**
+   * Override only the scheme (light/dark/system).
+   */
+  setThemeScheme(scheme: ColorScheme | "system"): void;
+
+  /**
+   * Override theme tokens while keeping the current scheme.
+   */
+  setThemeOverrides(overrides: ThemeOverrides): void;
+
   // Entity management
 
   /**

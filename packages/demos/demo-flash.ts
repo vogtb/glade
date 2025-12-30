@@ -6,7 +6,12 @@
  * Run with: bun run run:flash:native
  */
 
-import { createWebGPUContext, runWebGPURenderLoop, createFlashPlatform } from "@glade/platform";
+import {
+  createWebGPUContext,
+  runWebGPURenderLoop,
+  createFlashPlatform,
+  createColorSchemeProvider,
+} from "@glade/platform";
 import {
   FlashApp,
   type FlashView,
@@ -574,6 +579,8 @@ class DemoRootView implements FlashView {
   private dialogLastAction = "";
 
   render(cx: FlashViewContext<this>): FlashDiv {
+    const theme = cx.getTheme();
+
     if (!this.rightScrollHandle) {
       this.rightScrollHandle = cx.newScrollHandle(cx.windowId);
     }
@@ -599,13 +606,14 @@ class DemoRootView implements FlashView {
       .flexRow()
       .w(cx.window.width)
       .h(cx.window.height)
-      .bg(rgb(0x14141a))
+      .bg(theme.background)
       .gap(12)
       .p(16)
       .children_(this.renderNavigation(cx), this.renderContent(cx));
   }
 
   private renderNavigation(cx: FlashViewContext<this>): FlashDiv {
+    const theme = cx.getTheme();
     const navItems: FlashDiv[] = [];
 
     for (const group of DEMO_GROUPS) {
@@ -613,12 +621,7 @@ class DemoRootView implements FlashView {
         div()
           .pt(10)
           .pb(4)
-          .child(
-            text(group.title.toUpperCase())
-              .font("Inter")
-              .size(11)
-              .color({ r: 0.65, g: 0.68, b: 0.76, a: 1 })
-          )
+          .child(text(group.title.toUpperCase()).font("Inter").size(11).color(theme.textMuted))
       );
       navItems.push(...group.buttons.map((btn) => this.renderNavButton(cx, btn)));
     }
@@ -629,7 +632,7 @@ class DemoRootView implements FlashView {
       .w(220)
       .h(Math.max(200, cx.window.height - 32))
       .flexShrink0()
-      .bg(rgb(0x1f1f28))
+      .bg(theme.surface)
       .rounded(12)
       .overflowHidden()
       .children_(
@@ -639,8 +642,11 @@ class DemoRootView implements FlashView {
           .pb(6)
           .flexShrink0()
           .children_(
-            text("Flash Demos").font("Inter").size(18).color({ r: 1, g: 1, b: 1, a: 1 }),
-            div().h(1).mt(6).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 })
+            text("Flash Demos").font("Inter").size(18).color(theme.text),
+            div()
+              .h(1)
+              .mt(6)
+              .bg({ ...theme.border, a: theme.border.a * 0.6 })
           ),
         div()
           .flex()
@@ -658,19 +664,23 @@ class DemoRootView implements FlashView {
   }
 
   private renderNavButton(cx: FlashViewContext<this>, btn: DemoButton): FlashDiv {
+    const theme = cx.getTheme();
     const isSelected = this.selectedDemo === btn.id;
+    const baseBg = isSelected ? theme.primary : theme.surfaceMuted;
+    const hoverBg = isSelected ? theme.primary : theme.surface;
+    const textColor = isSelected ? theme.primaryForeground : theme.text;
 
     return div()
       .h(22)
       .wFull()
       .flexShrink0()
-      .bg(rgb(isSelected ? 0x2563eb : 0x4a4a55))
+      .bg(baseBg)
       .rounded(4)
       .cursorPointer()
       .border(2)
-      .borderColor({ r: 1, g: 1, b: 1, a: isSelected ? 0.3 : 0 })
-      .hover((s) => s.bg(rgb(isSelected ? 0x2563eb : 0x5a5a65)).shadow("md"))
-      .active((s) => s.bg(rgb(isSelected ? 0x2563eb : 0x5a5a65)))
+      .borderColor({ ...theme.border, a: isSelected ? theme.border.a : 0 })
+      .hover((s) => s.bg(hoverBg).shadow("md"))
+      .active((s) => s.bg(hoverBg))
       .flex()
       .flexRow()
       .itemsCenter()
@@ -682,15 +692,14 @@ class DemoRootView implements FlashView {
           ecx.notify();
         })
       )
-      .child(
-        text(btn.label).font("Inter").size(12).lineHeight(22).color({ r: 1, g: 1, b: 1, a: 1 })
-      );
+      .child(text(btn.label).font("Inter").size(12).lineHeight(22).color(textColor));
   }
 
   private renderContent(cx: FlashViewContext<this>): FlashDiv {
+    const theme = cx.getTheme();
     return div()
       .flexGrow()
-      .bg(rgb(0x2a2a35))
+      .bg(theme.surface)
       .rounded(12)
       .p(16)
       .flex()
@@ -712,9 +721,9 @@ class DemoRootView implements FlashView {
       case "vector-paths":
         return this.renderVectorPathsDemo();
       case "inter-text":
-        return this.renderInterTextDemo();
+        return this.renderInterTextDemo(cx);
       case "wrapping":
-        return this.renderWrappingDemo();
+        return this.renderWrappingDemo(cx);
       case "text-input":
         return this.renderTextInputDemo(cx);
       case "monospaced":
@@ -776,79 +785,48 @@ class DemoRootView implements FlashView {
     }
   }
 
-  private renderInterTextDemo(): FlashDiv {
+  private renderInterTextDemo(cx: FlashViewContext<this>): FlashDiv {
+    const theme = cx.getTheme();
+
     return div()
       .flex()
       .flexCol()
       .gap(16)
       .children_(
-        text("Inter Variable Font").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("GPU-accelerated text rendering with cosmic-text shaping")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("Inter Variable Font").font("Inter").size(32).color(theme.text),
+        text("GPU-accelerated text rendering with cosmic-text shaping").font("Inter").size(16),
         text(
           "Wrapped text automatically breaks across lines to fit the available width without clipping or overflow."
         )
           .font("Inter")
           .size(14)
-          .color({ r: 0.8, g: 0.8, b: 0.95, a: 1 })
           .maxWidth(520),
-        div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
-        text("The quick brown fox jumps over the lazy dog.")
-          .font("Inter")
-          .size(14)
-          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-        text("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-          .font("Inter")
-          .size(14)
-          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-        text("abcdefghijklmnopqrstuvwxyz")
-          .font("Inter")
-          .size(14)
-          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-        text("0123456789 !@#$%^&*()_+-=[]{}|;':\",./<>?")
-          .font("Inter")
-          .size(14)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-        text("Font Sizes").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-        text("10px: The quick brown fox")
-          .font("Inter")
-          .size(10)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-        text("12px: The quick brown fox")
-          .font("Inter")
-          .size(12)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
-        text("14px: The quick brown fox")
-          .font("Inter")
-          .size(14)
-          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-        text("18px: The quick brown fox")
-          .font("Inter")
-          .size(18)
-          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
-        text("24px: The quick brown fox")
-          .font("Inter")
-          .size(24)
-          .color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
-        text("32px: The quick brown fox").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        div().h(1).bg({ r: 0.3, g: 0.3, b: 0.4, a: 0.5 }),
-        text("Selectable Text").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        div().h(1).bg(theme.border),
+        text("The quick brown fox jumps over the lazy dog.").font("Inter").size(14),
+        text("ABCDEFGHIJKLMNOPQRSTUVWXYZ").font("Inter").size(14),
+        text("abcdefghijklmnopqrstuvwxyz").font("Inter").size(14),
+        text("0123456789 !@#$%^&*()_+-=[]{}|;':\",./<>?").font("Inter").size(14),
+        div().h(1).bg(theme.border),
+        text("Font Sizes").font("Inter").size(18),
+        text("10px: The quick brown fox").font("Inter").size(10),
+        text("12px: The quick brown fox").font("Inter").size(12),
+        text("14px: The quick brown fox").font("Inter").size(14),
+        text("18px: The quick brown fox").font("Inter").size(18),
+        text("24px: The quick brown fox").font("Inter").size(24),
+        text("32px: The quick brown fox").font("Inter").size(32),
+        div().h(1).bg(theme.border),
+        text("Selectable Text").font("Inter").size(18),
         text(
           "Click and drag to select this text. Try double-click for word, triple-click for line."
         )
           .font("Inter")
           .size(14)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 })
           .selectable(),
         text(
           "This paragraph is selectable. You can use Cmd+A to select all, Cmd+C to copy, and arrow keys to move the cursor. The selection highlight will appear when you drag across the text."
         )
           .font("Inter")
           .size(14)
-          .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
           .maxWidth(520)
           .selectable(),
         text("Custom selection color example")
@@ -864,7 +842,8 @@ class DemoRootView implements FlashView {
       );
   }
 
-  private renderWrappedTextDemo(): FlashDiv {
+  private renderWrappedTextDemo(cx: FlashViewContext<this>): FlashDiv {
+    const theme = cx.getTheme();
     const sample =
       "Wrapped text will break across lines when a maxWidth is provided. Without it, the text stays on one line if there is space.";
 
@@ -873,11 +852,8 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(16)
       .children_(
-        text("Text Wrapping").font("Inter").size(28).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Side-by-side comparison of wrapped vs. unwrapped text.")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.75, g: 0.8, b: 0.9, a: 1 }),
+        text("Text Wrapping").font("Inter").size(28),
+        text("Side-by-side comparison of wrapped vs. unwrapped text.").font("Inter").size(16),
         div()
           .flex()
           .flexRow()
@@ -890,17 +866,10 @@ class DemoRootView implements FlashView {
               .w(320)
               .p(12)
               .rounded(12)
-              .bg({ r: 0.16, g: 0.18, b: 0.22, a: 1 })
+              .bg(theme.surfaceMuted)
               .children_(
-                text("Wrapped (maxWidth 300)")
-                  .font("Inter")
-                  .size(16)
-                  .color({ r: 1, g: 1, b: 1, a: 1 }),
-                text(sample)
-                  .font("Inter")
-                  .size(14)
-                  .color({ r: 0.85, g: 0.88, b: 0.95, a: 1 })
-                  .maxWidth(300)
+                text("Wrapped (maxWidth 300)").font("Inter").size(16),
+                text(sample).font("Inter").size(14).maxWidth(300)
               ),
             div()
               .flex()
@@ -909,17 +878,14 @@ class DemoRootView implements FlashView {
               .w(320)
               .p(12)
               .rounded(12)
-              .bg({ r: 0.14, g: 0.16, b: 0.2, a: 1 })
+              .bg(theme.surfaceMuted)
               .children_(
-                text("Unwrapped (no maxWidth)")
-                  .font("Inter")
-                  .size(16)
-                  .color({ r: 1, g: 1, b: 1, a: 1 }),
-                text(sample).font("Inter").size(14).color({ r: 0.85, g: 0.88, b: 0.95, a: 1 })
+                text("Unwrapped (no maxWidth)").font("Inter").size(16),
+                text(sample).font("Inter").size(14)
               )
           ),
-        div().h(1).bg({ r: 0.35, g: 0.4, b: 0.5, a: 0.5 }),
-        text("Single column wrap demo").font("Inter").size(16).color({ r: 1, g: 1, b: 1, a: 1 }),
+        div().h(1).bg(theme.border),
+        text("Single column wrap demo").font("Inter").size(16),
         div()
           .flex()
           .flexCol()
@@ -1173,19 +1139,17 @@ class DemoRootView implements FlashView {
       );
   }
 
-  private renderWrappingDemo(): FlashDiv {
+  private renderWrappingDemo(cx: FlashViewContext<this>): FlashDiv {
+    const theme = cx.getTheme();
     return div()
       .flex()
       .flexCol()
       .gap(14)
       .children_(
-        text("Wrapping").font("Inter").size(30).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Soft-wrapping and newline-aware rendering in one place.")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.72, g: 0.76, b: 0.88, a: 1 }),
-        this.renderWrappedTextDemo(),
-        div().h(1).bg({ r: 0.3, g: 0.32, b: 0.4, a: 0.5 }),
+        text("Wrapping").font("Inter").size(30),
+        text("Soft-wrapping and newline-aware rendering in one place.").font("Inter").size(16),
+        this.renderWrappedTextDemo(cx),
+        div().h(1).bg(theme.border),
         this.renderTextNewLineDemo()
       );
   }
@@ -7003,10 +6967,20 @@ class DemoRootView implements FlashView {
       return div();
     }
 
+    const theme = cx.getTheme();
+    const panelBg = { ...theme.surface, a: 0.95 };
+    const borderColor = theme.border;
+    const headingColor = theme.text;
+    const bodyColor = theme.textMuted;
+    const confirmBg = theme.primary;
+    const confirmText = theme.primaryForeground;
+    const dangerBg = theme.danger;
+    const textColor = theme.primaryForeground;
+
     return div()
-      .bg({ r: 0.12, g: 0.13, b: 0.17, a: 0.95 })
+      .bg(panelBg)
       .border(1)
-      .borderColor({ r: 1, g: 1, b: 1, a: 0.08 })
+      .borderColor(borderColor)
       .rounded(12)
       .p(12)
       .gap(8)
@@ -7014,12 +6988,14 @@ class DemoRootView implements FlashView {
       .flexCol()
       .keyContext("focus-demo.modal")
       .children_(
-        text("Modal Focus").font("Inter").size(16).color({ r: 0.95, g: 0.96, b: 1, a: 1 }),
+        text("Modal Focus").font("Inter").size(16).color(headingColor),
         text("Tab between modal buttons; Escape or Close restores focus.")
           .font("Inter")
           .size(13)
-          .color({ r: 0.8, g: 0.82, b: 0.92, a: 1 }),
-        div().h(1).bg({ r: 0.24, g: 0.26, b: 0.32, a: 1 }),
+          .color(bodyColor),
+        div()
+          .h(1)
+          .bg({ ...borderColor, a: borderColor.a }),
         div()
           .flex()
           .flexRow()
@@ -7029,12 +7005,12 @@ class DemoRootView implements FlashView {
               .h(40)
               .px(14)
               .rounded(8)
-              .bg(rgb(0x10b981))
+              .bg(confirmBg)
               .border(2)
-              .borderColor({ r: 1, g: 1, b: 1, a: 0.12 })
+              .borderColor(borderColor)
               .cursorPointer()
-              .hover((s) => s.bg(rgb(0x059669)).shadow("md"))
-              .focused((s) => s.borderColor(rgb(0xfcd34d)).shadow("lg"))
+              .hover((s) => s.bg(confirmBg).shadow("md"))
+              .focused((s) => s.borderColor(theme.focusRing).shadow("lg"))
               .trackFocus(this.modalPrimaryHandle)
               .tabStop({ index: 8 })
               .onClick(
@@ -7043,17 +7019,17 @@ class DemoRootView implements FlashView {
                   ecx.notify();
                 })
               )
-              .child(text("Confirm").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 })),
+              .child(text("Confirm").font("Inter").size(13).color(confirmText)),
             div()
               .h(40)
               .px(14)
               .rounded(8)
-              .bg(rgb(0xef4444))
+              .bg(dangerBg)
               .border(2)
-              .borderColor({ r: 1, g: 1, b: 1, a: 0.12 })
+              .borderColor(borderColor)
               .cursorPointer()
-              .hover((s) => s.bg(rgb(0xdc2626)).shadow("md"))
-              .focused((s) => s.borderColor(rgb(0xfcd34d)).shadow("lg"))
+              .hover((s) => s.bg(dangerBg).shadow("md"))
+              .focused((s) => s.borderColor(theme.focusRing).shadow("lg"))
               .trackFocus(this.modalCloseHandle)
               .tabStop({ index: 9 })
               .onClick(
@@ -7064,7 +7040,7 @@ class DemoRootView implements FlashView {
                   ecx.notify();
                 })
               )
-              .child(text("Close").font("Inter").size(13).color({ r: 1, g: 1, b: 1, a: 1 }))
+              .child(text("Close").font("Inter").size(13).color(textColor))
           )
       );
   }
@@ -7080,8 +7056,9 @@ async function main() {
   });
 
   const platform = createFlashPlatform(ctx);
+  const colorSchemeProvider = createColorSchemeProvider();
 
-  const app = new FlashApp({ platform });
+  const app = new FlashApp({ platform, colorSchemeProvider });
   await app.initialize();
 
   const window = await app.openWindow({ width: 1200, height: 900, title: "Flash App Demo" }, (cx) =>

@@ -12,3 +12,6 @@ export * from "./webgpu";
 
 // Flash platform
 export { createFlashPlatform, type DarwinFlashPlatformInstance } from "./flash";
+
+// Color scheme
+export { createColorSchemeProvider } from "./color_scheme.ts";

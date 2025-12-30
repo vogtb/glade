@@ -22,13 +22,8 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
+import { switchColors } from "./theme.ts";
 
-/**
- * Default colors for switch states.
- */
-const DEFAULT_UNCHECKED_TRACK: Color = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
-const DEFAULT_CHECKED_TRACK: Color = { r: 0.4, g: 0.6, b: 1, a: 1 };
-const DEFAULT_THUMB_COLOR: Color = { r: 1, g: 1, b: 1, a: 1 };
 const DEFAULT_DISABLED_OPACITY = 0.5;
 
 // Default dimensions following common switch proportions
@@ -49,6 +44,11 @@ type SwitchRequestState = {
 type SwitchPrepaintState = {
   hitbox: Hitbox;
   hitTestNode: HitTestNode;
+  colors: {
+    uncheckedTrack: Color;
+    checkedTrack: Color;
+    thumb: Color;
+  };
 };
 
 /**
@@ -70,9 +70,9 @@ export class FlashSwitch extends FlashElement<SwitchRequestState, SwitchPrepaint
   private onCheckedChangeHandler: SwitchChangeHandler | null = null;
 
   // Styling
-  private uncheckedTrackColor: Color = DEFAULT_UNCHECKED_TRACK;
-  private checkedTrackColor: Color = DEFAULT_CHECKED_TRACK;
-  private thumbColorValue: Color = DEFAULT_THUMB_COLOR;
+  private uncheckedTrackColor: Color | null = null;
+  private checkedTrackColor: Color | null = null;
+  private thumbColorValue: Color | null = null;
   private thumbPaddingValue: number = DEFAULT_THUMB_PADDING;
 
   // State-based styles
@@ -230,16 +230,25 @@ export class FlashSwitch extends FlashElement<SwitchRequestState, SwitchPrepaint
       children: [],
     };
 
-    return { hitbox, hitTestNode };
+    const theme = cx.getWindow().getTheme();
+    const defaults = switchColors(theme);
+    const colors = {
+      uncheckedTrack: this.uncheckedTrackColor ?? defaults.trackOff,
+      checkedTrack: this.checkedTrackColor ?? defaults.trackOn,
+      thumb: this.thumbColorValue ?? defaults.thumb,
+    };
+
+    return { hitbox, hitTestNode, colors };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: SwitchPrepaintState): void {
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.focusHandleRef ? cx.isFocused(this.focusHandleRef) : false;
+    const colors = prepaintState.colors;
 
     // Determine track color
-    let trackColor = this.checkedValue ? this.checkedTrackColor : this.uncheckedTrackColor;
-    const thumbColor = this.thumbColorValue;
+    let trackColor = this.checkedValue ? colors.checkedTrack : colors.uncheckedTrack;
+    const thumbColor = colors.thumb;
     let opacity = this.disabledValue ? DEFAULT_DISABLED_OPACITY : 1;
 
     // Apply hover styles

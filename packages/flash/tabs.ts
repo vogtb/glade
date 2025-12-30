@@ -25,6 +25,7 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
+import { tabColors } from "./theme.ts";
 
 /**
  * Default colors for tabs.
@@ -413,6 +414,18 @@ type TabsPrepaintState = {
   contentPrepaintState: unknown;
   contentBounds: Bounds | null;
   hitTestNode: HitTestNode;
+  context: TabsContext;
+  colors: ResolvedTabsColors;
+};
+
+type ResolvedTabsColors = {
+  triggerBg: Color;
+  triggerActiveBg: Color;
+  triggerText: Color;
+  triggerActiveText: Color;
+  indicator: Color;
+  border: Color;
+  contentBg: Color;
 };
 
 /**
@@ -432,13 +445,13 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
   private triggerElements: FlashTabTrigger[] = [];
 
   // Styling configuration
-  private triggerBgColor: Color = DEFAULT_TRIGGER_BG;
-  private triggerActiveBgColor: Color = DEFAULT_TRIGGER_ACTIVE_BG;
-  private triggerTextColor: Color = DEFAULT_TRIGGER_TEXT;
-  private triggerActiveTextColor: Color = DEFAULT_TRIGGER_ACTIVE_TEXT;
-  private indicatorColorValue: Color = DEFAULT_INDICATOR_COLOR;
-  private borderColorValue: Color = DEFAULT_BORDER_COLOR;
-  private contentBgColor: Color = DEFAULT_CONTENT_BG;
+  private triggerBgColor: Color | null = null;
+  private triggerActiveBgColor: Color | null = null;
+  private triggerTextColor: Color | null = null;
+  private triggerActiveTextColor: Color | null = null;
+  private indicatorColorValue: Color | null = null;
+  private borderColorValue: Color | null = null;
+  private contentBgColor: Color | null = null;
 
   private triggerFontSizeValue: number = DEFAULT_TRIGGER_FONT_SIZE;
   private triggerPaddingXValue: number = DEFAULT_TRIGGER_PADDING_X;
@@ -628,20 +641,45 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
   /**
    * Build the context to pass to triggers.
    */
-  private buildContext(): TabsContext {
+  private buildContext(colors: ResolvedTabsColors): TabsContext {
     return {
       value: this.valueState,
       onValueChange: this.onValueChangeHandler,
       disabled: this.disabledValue,
-      triggerBg: this.triggerBgColor,
-      triggerActiveBg: this.triggerActiveBgColor,
-      triggerText: this.triggerTextColor,
-      triggerActiveText: this.triggerActiveTextColor,
-      indicatorColor: this.indicatorColorValue,
+      triggerBg: colors.triggerBg,
+      triggerActiveBg: colors.triggerActiveBg,
+      triggerText: colors.triggerText,
+      triggerActiveText: colors.triggerActiveText,
+      indicatorColor: colors.indicator,
       triggerFontSize: this.triggerFontSizeValue,
       triggerPaddingX: this.triggerPaddingXValue,
       triggerPaddingY: this.triggerPaddingYValue,
       indicatorHeight: this.indicatorHeightValue,
+    };
+  }
+
+  private resolveColors(theme?: import("./theme.ts").Theme): ResolvedTabsColors {
+    const palette = theme
+      ? tabColors(theme)
+      : { indicator: DEFAULT_INDICATOR_COLOR, border: DEFAULT_BORDER_COLOR };
+    const triggerBg = this.triggerBgColor ?? (theme ? theme.surfaceMuted : DEFAULT_TRIGGER_BG);
+    const triggerActiveBg =
+      this.triggerActiveBgColor ?? (theme ? theme.surface : DEFAULT_TRIGGER_ACTIVE_BG);
+    const triggerText = this.triggerTextColor ?? (theme ? theme.textMuted : DEFAULT_TRIGGER_TEXT);
+    const triggerActiveText =
+      this.triggerActiveTextColor ?? (theme ? theme.text : DEFAULT_TRIGGER_ACTIVE_TEXT);
+    const indicator = this.indicatorColorValue ?? palette.indicator;
+    const border = this.borderColorValue ?? palette.border;
+    const contentBg = this.contentBgColor ?? (theme ? theme.surface : DEFAULT_CONTENT_BG);
+
+    return {
+      triggerBg,
+      triggerActiveBg,
+      triggerText,
+      triggerActiveText,
+      indicator,
+      border,
+      contentBg,
     };
   }
 
@@ -662,7 +700,8 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TabsRequestState> {
-    const context = this.buildContext();
+    const colors = this.resolveColors();
+    const context = this.buildContext(colors);
 
     // Create trigger elements from tab items
     this.triggerElements = [];
@@ -767,7 +806,8 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
       contentElementId,
       contentRequestState,
     } = requestState;
-    const context = this.buildContext();
+    const colors = this.resolveColors(cx.getWindow().getTheme());
+    const context = this.buildContext(colors);
 
     // Get original bounds and compute delta for scroll offset propagation
     const originalBounds = cx.getBounds(layoutId);
@@ -859,6 +899,8 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
       contentPrepaintState,
       contentBounds,
       hitTestNode,
+      context,
+      colors,
     };
   }
 
@@ -870,8 +912,9 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
       contentElementId,
       contentPrepaintState,
       contentBounds,
+      context,
+      colors,
     } = prepaintState;
-    const context = this.buildContext();
 
     // Paint trigger list background
     let triggerListBounds: Bounds | null = null;
@@ -885,7 +928,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
 
       // Paint trigger list container background
       cx.paintRect(triggerListBounds, {
-        backgroundColor: this.triggerBgColor,
+        backgroundColor: colors.triggerBg,
       });
     }
 
@@ -912,7 +955,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
           height: 1,
         },
         {
-          backgroundColor: this.borderColorValue,
+          backgroundColor: colors.border,
         }
       );
     }
@@ -927,7 +970,7 @@ export class FlashTabs extends FlashContainerElement<TabsRequestState, TabsPrepa
       };
 
       cx.paintRect(contentAreaBounds, {
-        backgroundColor: this.contentBgColor,
+        backgroundColor: colors.contentBg,
         borderRadius: this.borderRadiusValue,
       });
     }

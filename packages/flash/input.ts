@@ -1,5 +1,4 @@
 import type { Color, Bounds } from "./types.ts";
-import { rgb } from "./types.ts";
 import {
   FlashElement,
   type RequestLayoutContext,
@@ -65,6 +64,7 @@ import {
 } from "./text.ts";
 import type { FontStyle } from "@glade/shaper";
 import { FlashScene } from "./scene.ts";
+import { inputColors } from "./theme.ts";
 
 export const TEXT_INPUT_CONTEXT = "flash:text-input";
 
@@ -105,6 +105,13 @@ interface TextInputPrepaintState {
   bounds: Bounds;
   hitbox: Hitbox | null;
   hitTestNode: HitTestNode;
+  colors: {
+    text: Color;
+    placeholder: Color;
+    selection: Color;
+    composition: Color;
+    caret: Color;
+  };
 }
 
 interface TextInputPersistentState {
@@ -705,12 +712,23 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
       children: [],
     };
 
+    const theme = cx.getWindow().getTheme();
+    const defaults = inputColors(theme);
+    const colors = {
+      text: defaults.text,
+      placeholder: defaults.placeholder,
+      selection: this.options.selectionColor ?? defaults.selection,
+      composition: this.options.compositionColor ?? defaults.composition,
+      caret: this.options.caretColor ?? defaults.caret,
+    };
+
     return {
       layoutId: requestState.layoutId,
       placeholderLayoutId: requestState.placeholderLayoutId,
       bounds,
       hitbox,
       hitTestNode,
+      colors,
     };
   }
 
@@ -1096,18 +1114,19 @@ export class FlashTextInput extends FlashElement<TextInputRequestState, TextInpu
     return handlers;
   }
 
-  paint(cx: PaintContext, bounds: Bounds, _prepaintState: TextInputPrepaintState): void {
+  paint(cx: PaintContext, bounds: Bounds, prepaintState: TextInputPrepaintState): void {
     const state = this.getState();
     const focused = this.controller.focusHandle
       ? cx.isFocused(this.controller.focusHandle)
       : state.isFocused;
     setFocused(state, focused);
 
-    const textColor = { r: 1, g: 1, b: 1, a: 1 };
-    const placeholderColor = { r: 0.6, g: 0.6, b: 0.7, a: 1 };
-    const selectionColor = this.options.selectionColor ?? { ...rgb(0x3b82f6), a: 0.35 };
-    const compositionColor = this.options.compositionColor ?? rgb(0x22c55e);
-    const caretColor = this.options.caretColor ?? { r: 1, g: 1, b: 1, a: 1 };
+    const colors = prepaintState.colors;
+    const textColor = colors.text;
+    const placeholderColor = colors.placeholder;
+    const selectionColor = colors.selection;
+    const compositionColor = colors.composition;
+    const caretColor = colors.caret;
 
     const lineHeight = this.getLineHeight();
     const contentX = bounds.x + this.padding.x;

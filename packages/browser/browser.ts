@@ -19,3 +19,6 @@ export { createClipboard } from "./clipboard.ts";
 
 // Flash platform
 export { createFlashPlatform } from "./flash";
+
+// Color scheme
+export { createColorSchemeProvider } from "./color_scheme.ts";

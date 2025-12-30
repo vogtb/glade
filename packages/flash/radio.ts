@@ -24,6 +24,7 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
+import { radioColors } from "./theme.ts";
 
 /**
  * Default colors for radio states.
@@ -327,10 +328,10 @@ export class FlashRadioGroup extends FlashContainerElement<
 
   // Styling for child radio items
   private itemSizeValue: number = DEFAULT_SIZE;
-  private uncheckedBgColor: Color = DEFAULT_UNCHECKED_BG;
-  private checkedBgColor: Color = DEFAULT_CHECKED_BG;
-  private borderColorValue: Color = DEFAULT_BORDER_COLOR;
-  private indicatorColorValue: Color = DEFAULT_INDICATOR_COLOR;
+  private uncheckedBgColor: Color | null = null;
+  private checkedBgColor: Color | null = null;
+  private borderColorValue: Color | null = null;
+  private indicatorColorValue: Color | null = null;
 
   // ============ Layout Styles ============
 
@@ -457,16 +458,24 @@ export class FlashRadioGroup extends FlashContainerElement<
   /**
    * Build the context to pass to child items.
    */
-  private buildContext(): RadioGroupContext {
+  private buildContext(theme?: import("./theme.ts").Theme): RadioGroupContext {
+    const defaults = theme
+      ? radioColors(theme)
+      : {
+          uncheckedBg: DEFAULT_UNCHECKED_BG,
+          checkedBg: DEFAULT_CHECKED_BG,
+          border: DEFAULT_BORDER_COLOR,
+          indicator: DEFAULT_INDICATOR_COLOR,
+        };
     return {
       value: this.valueState,
       onValueChange: this.onValueChangeHandler,
       disabled: this.disabledValue,
       size: this.itemSizeValue,
-      uncheckedBg: this.uncheckedBgColor,
-      checkedBg: this.checkedBgColor,
-      borderColor: this.borderColorValue,
-      indicatorColor: this.indicatorColorValue,
+      uncheckedBg: this.uncheckedBgColor ?? defaults.uncheckedBg,
+      checkedBg: this.checkedBgColor ?? defaults.checkedBg,
+      borderColor: this.borderColorValue ?? defaults.border,
+      indicatorColor: this.indicatorColorValue ?? defaults.indicator,
     };
   }
 
@@ -512,7 +521,7 @@ export class FlashRadioGroup extends FlashContainerElement<
     requestState: RadioGroupRequestState
   ): RadioGroupPrepaintState {
     const { layoutId, childLayoutIds, childElementIds, childRequestStates } = requestState;
-    const context = this.buildContext();
+    const context = this.buildContext(cx.getWindow().getTheme());
 
     // Get original bounds and compute delta for scroll offset propagation
     const originalBounds = cx.getBounds(layoutId);

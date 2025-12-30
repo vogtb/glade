@@ -6,6 +6,8 @@
  */
 
 import type { EntityId, WindowId, FocusId, FlashTask, ScrollOffset, Bounds } from "./types.ts";
+import type { ColorSchemeProvider, ColorScheme } from "@glade/core";
+import { createStaticColorSchemeProvider } from "@glade/core";
 import {
   FlashHandle,
   FlashViewHandle,
@@ -19,12 +21,15 @@ import {
 import type { FlashEffect, FlashContext, FlashEntityContext, FlashViewContext } from "./context.ts";
 import type { FlashView } from "./element.ts";
 import { FlashWindow, type WindowOptions, type FlashPlatform } from "./window.ts";
+import { ThemeManager, type ThemeConfig, type Theme, type ThemeOverrides } from "./theme.ts";
 
 /**
  * Options for creating a FlashApp.
  */
 export interface FlashAppOptions {
   platform: FlashPlatform;
+  theme?: ThemeConfig | Theme;
+  colorSchemeProvider?: ColorSchemeProvider;
 }
 
 /**
@@ -34,6 +39,9 @@ export class FlashApp {
   private platform: FlashPlatform;
   private device: GPUDevice | null = null;
   private format: GPUTextureFormat;
+  private colorSchemeProvider: ColorSchemeProvider;
+  private themeManager: ThemeManager;
+  private colorSchemeCleanup: (() => void) | null = null;
 
   // Entity storage
   private entities: Map<EntityId, unknown> = new Map();
@@ -64,6 +72,9 @@ export class FlashApp {
   constructor(options: FlashAppOptions) {
     this.platform = options.platform;
     this.format = this.platform.getPreferredCanvasFormat();
+    this.colorSchemeProvider =
+      options.colorSchemeProvider ?? createStaticColorSchemeProvider("dark");
+    this.themeManager = new ThemeManager(this.colorSchemeProvider.get(), options.theme);
   }
 
   /**
@@ -75,6 +86,13 @@ export class FlashApp {
     this.device.lost.then((info) => {
       console.error("WebGPU device lost:", info.message);
     });
+
+    if (!this.colorSchemeCleanup) {
+      this.colorSchemeCleanup = this.colorSchemeProvider.subscribe((scheme) => {
+        this.themeManager.setSystemScheme(scheme);
+        this.markAllWindowsDirty();
+      });
+    }
   }
 
   /**
@@ -444,8 +462,41 @@ export class FlashApp {
     this.dirtyWindows.add(windowId);
   }
 
+  private markAllWindowsDirty(): void {
+    for (const windowId of this.windows.keys()) {
+      this.markWindowDirty(windowId);
+    }
+  }
+
   recordInputTime(): void {
     this.lastInputTime = this.platform.now();
+  }
+
+  getTheme(): Theme {
+    return this.themeManager.getTheme();
+  }
+
+  getSystemColorScheme(): ColorScheme {
+    return this.themeManager.getSystemScheme();
+  }
+
+  setTheme(config: Theme | ThemeConfig): void {
+    if ("background" in config) {
+      this.themeManager.setTheme(config);
+    } else {
+      this.themeManager.setThemeConfig(config);
+    }
+    this.markAllWindowsDirty();
+  }
+
+  setThemeScheme(scheme: ColorScheme | "system"): void {
+    this.themeManager.setOverrideScheme(scheme);
+    this.markAllWindowsDirty();
+  }
+
+  setThemeOverrides(overrides: ThemeOverrides): void {
+    this.themeManager.setOverrides(overrides);
+    this.markAllWindowsDirty();
   }
 
   // ============ Context Factory ============
@@ -474,6 +525,26 @@ class FlashAppContext implements FlashContext {
 
   readEntity<T>(handle: FlashHandle<T>): Readonly<T> {
     return this.app.readEntity(handle);
+  }
+
+  getTheme(): Theme {
+    return this.app.getTheme();
+  }
+
+  getSystemColorScheme(): ColorScheme {
+    return this.app.getSystemColorScheme();
+  }
+
+  setTheme(config: Theme | ThemeConfig): void {
+    this.app.setTheme(config);
+  }
+
+  setThemeScheme(scheme: ColorScheme | "system"): void {
+    this.app.setThemeScheme(scheme);
+  }
+
+  setThemeOverrides(overrides: ThemeOverrides): void {
+    this.app.setThemeOverrides(overrides);
   }
 
   newEntity<T>(initializer: (cx: FlashEntityContext<T>) => T): FlashHandle<T> {

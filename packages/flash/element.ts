@@ -639,6 +639,7 @@ interface TextPrepaintState {
   handlers: EventHandlers;
   hitTestNode?: HitTestNode;
   measureId: number;
+  textColor: Color;
 }
 
 /**
@@ -649,6 +650,7 @@ interface TextPrepaintState {
  */
 export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextPrepaintState> {
   private textColor: Color = { r: 1, g: 1, b: 1, a: 1 };
+  private hasCustomTextColor = false;
   private fontSize = 14;
   private fontFamily = "system-ui";
   private fontWeight = 400;
@@ -671,6 +673,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
 
   color(c: Color): this {
     this.textColor = c;
+    this.hasCustomTextColor = true;
     return this;
   }
 
@@ -839,6 +842,8 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
     bounds: Bounds,
     requestState: TextRequestLayoutState
   ): TextPrepaintState {
+    const theme = cx.getWindow().getTheme();
+    const resolvedTextColor = this.hasCustomTextColor ? this.textColor : theme.text;
     let hitbox: Hitbox | null = null;
 
     // Register with cross-element selection manager if selectable
@@ -866,6 +871,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
       handlers: {},
       hitTestNode: undefined,
       measureId: requestState.measureId,
+      textColor: resolvedTextColor,
     };
   }
 
@@ -888,7 +894,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
 
     // Selection rendering is handled by CrossElementSelectionManager
     // Just render the text glyphs
-    cx.paintGlyphs(normalizedText, bounds, this.textColor, {
+    cx.paintGlyphs(normalizedText, bounds, prepaintState.textColor, {
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       fontWeight: this.fontWeight,

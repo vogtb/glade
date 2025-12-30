@@ -16,6 +16,7 @@ import type { LayoutId } from "./layout.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
+import { linkColors } from "./theme.ts";
 
 /**
  * Default link color (blue).
@@ -44,6 +45,10 @@ type LinkPrepaintState = {
   measureId: number;
   textWidth: number;
   hitTestNode: HitTestNode;
+  colors: {
+    default: Color;
+    hover: Color;
+  };
 };
 
 /**
@@ -55,8 +60,8 @@ type LinkPrepaintState = {
 export class FlashLink extends FlashElement<LinkRequestState, LinkPrepaintState> {
   private textContent: string;
   private href: string;
-  private colorValue: Color = DEFAULT_LINK_COLOR;
-  private hoverColorValue: Color = DEFAULT_HOVER_COLOR;
+  private colorValue: Color | null = null;
+  private hoverColorValue: Color | null = null;
   private fontSizeValue = 14;
   private fontFamilyValue = "system-ui";
   private fontWeightValue = 400;
@@ -166,17 +171,25 @@ export class FlashLink extends FlashElement<LinkRequestState, LinkPrepaintState>
       children: [],
     };
 
+    const theme = cx.getWindow().getTheme();
+    const palette = linkColors(theme);
+    const colors = {
+      default: this.colorValue ?? palette.default,
+      hover: this.hoverColorValue ?? palette.hover,
+    };
+
     return {
       hitbox,
       measureId: requestState.measureId,
       textWidth: requestState.textWidth,
       hitTestNode,
+      colors,
     };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: LinkPrepaintState): void {
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
-    const textColor = isHovered ? this.hoverColorValue : this.colorValue;
+    const textColor = isHovered ? prepaintState.colors.hover : prepaintState.colors.default;
     const showUnderline = this.underlineValue || (isHovered && this.hoverUnderlineValue);
 
     cx.paintGlyphs(this.textContent, bounds, textColor, {

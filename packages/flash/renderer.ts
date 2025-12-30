@@ -96,6 +96,10 @@ export class FlashRenderer {
     return this.sampleCount;
   }
 
+  setClearColor(color: { r: number; g: number; b: number; a: number }): void {
+    this.config.clearColor = color;
+  }
+
   /**
    * Initialize uniform buffer and bind group.
    */

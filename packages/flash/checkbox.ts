@@ -20,14 +20,8 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
+import { checkboxColors } from "./theme.ts";
 
-/**
- * Default colors for checkbox states.
- */
-const DEFAULT_UNCHECKED_BG: Color = { r: 0.15, g: 0.15, b: 0.15, a: 1 };
-const DEFAULT_CHECKED_BG: Color = { r: 0.4, g: 0.6, b: 1, a: 1 };
-const DEFAULT_BORDER_COLOR: Color = { r: 0.3, g: 0.3, b: 0.3, a: 1 };
-const DEFAULT_CHECK_COLOR: Color = { r: 1, g: 1, b: 1, a: 1 };
 const DEFAULT_DISABLED_OPACITY = 0.5;
 const DEFAULT_SIZE = 18;
 const DEFAULT_BORDER_RADIUS = 4;
@@ -45,6 +39,12 @@ type CheckboxRequestState = {
 type CheckboxPrepaintState = {
   hitbox: Hitbox;
   hitTestNode: HitTestNode;
+  colors: {
+    checkedBg: Color;
+    uncheckedBg: Color;
+    border: Color;
+    check: Color;
+  };
 };
 
 /**
@@ -71,10 +71,10 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
   private onCheckedChangeHandler: CheckedChangeHandler | null = null;
 
   // Styling
-  private uncheckedBgColor: Color = DEFAULT_UNCHECKED_BG;
-  private checkedBgColor: Color = DEFAULT_CHECKED_BG;
-  private borderColorValue: Color = DEFAULT_BORDER_COLOR;
-  private checkColorValue: Color = DEFAULT_CHECK_COLOR;
+  private uncheckedBgColor: Color | null = null;
+  private checkedBgColor: Color | null = null;
+  private borderColorValue: Color | null = null;
+  private checkColorValue: Color | null = null;
   private borderRadiusValue: number = DEFAULT_BORDER_RADIUS;
   private borderWidthValue: number = 1;
 
@@ -241,17 +241,27 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
       children: [],
     };
 
-    return { hitbox, hitTestNode };
+    const theme = cx.getWindow().getTheme();
+    const defaults = checkboxColors(theme);
+    const colors = {
+      checkedBg: this.checkedBgColor ?? defaults.checkedBg,
+      uncheckedBg: this.uncheckedBgColor ?? defaults.uncheckedBg,
+      border: this.borderColorValue ?? defaults.border,
+      check: this.checkColorValue ?? defaults.check,
+    };
+
+    return { hitbox, hitTestNode, colors };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: CheckboxPrepaintState): void {
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.focusHandleRef ? cx.isFocused(this.focusHandleRef) : false;
     const isCheckedOrIndeterminate = this.checkedValue || this.indeterminateValue;
+    const colors = prepaintState.colors;
 
     // Determine background color
-    let bgColor = isCheckedOrIndeterminate ? this.checkedBgColor : this.uncheckedBgColor;
-    let borderColor = this.borderColorValue;
+    let bgColor = isCheckedOrIndeterminate ? colors.checkedBg : colors.uncheckedBg;
+    let borderColor = colors.border;
     let opacity = this.disabledValue ? DEFAULT_DISABLED_OPACITY : 1;
 
     // Apply hover styles
@@ -294,19 +304,23 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
     }
 
     // Paint check mark or indeterminate line
+    const checkColor = { ...colors.check, a: colors.check.a * opacity };
     if (this.indeterminateValue) {
-      this.paintIndeterminateMark(cx, bounds, opacity);
+      this.paintIndeterminateMark(cx, bounds, opacity, checkColor);
     } else if (this.checkedValue) {
-      this.paintCheckMark(cx, bounds, opacity);
+      this.paintCheckMark(cx, bounds, opacity, checkColor);
     }
   }
 
   /**
    * Paint the check mark (✓) inside the checkbox using the Inter font checkmark character.
    */
-  private paintCheckMark(cx: PaintContext, bounds: Bounds, opacity: number): void {
-    const checkColor = { ...this.checkColorValue, a: this.checkColorValue.a * opacity };
-
+  private paintCheckMark(
+    cx: PaintContext,
+    bounds: Bounds,
+    _opacity: number,
+    checkColor: Color
+  ): void {
     // Use a font size that fits well within the checkbox
     const fontSize = this.sizeValue * 0.7;
 
@@ -331,8 +345,12 @@ export class FlashCheckbox extends FlashElement<CheckboxRequestState, CheckboxPr
   /**
    * Paint the indeterminate mark (—) inside the checkbox.
    */
-  private paintIndeterminateMark(cx: PaintContext, bounds: Bounds, opacity: number): void {
-    const checkColor = { ...this.checkColorValue, a: this.checkColorValue.a * opacity };
+  private paintIndeterminateMark(
+    cx: PaintContext,
+    bounds: Bounds,
+    _opacity: number,
+    checkColor: Color
+  ): void {
     const padding = this.sizeValue * 0.25;
     const strokeWidth = Math.max(2, this.sizeValue * 0.15);
 

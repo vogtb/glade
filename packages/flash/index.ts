@@ -28,6 +28,19 @@ export type {
   ScrollState,
 } from "./types.ts";
 
+export type { Theme, ThemeConfig, ThemeOverrides } from "./theme.ts";
+export {
+  resolveTheme,
+  ThemeManager,
+  menuColors,
+  inputColors,
+  checkboxColors,
+  radioColors,
+  switchColors,
+  linkColors,
+  tabColors,
+} from "./theme.ts";
+
 export {
   rgb,
   rgba,

@@ -12,27 +12,14 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { PopoverConfig } from "./popover.ts";
 import type { FlashContext } from "./context.ts";
 import {
-  DEFAULT_CHECK_COLOR,
-  DEFAULT_DESTRUCTIVE_HOVER_BG,
-  DEFAULT_DESTRUCTIVE_TEXT,
   DEFAULT_FONT_SIZE,
   DEFAULT_INDICATOR_WIDTH,
-  DEFAULT_ITEM_BG,
-  DEFAULT_ITEM_DISABLED_TEXT,
-  DEFAULT_ITEM_HOVER_BG,
-  DEFAULT_ITEM_HOVER_TEXT,
   DEFAULT_ITEM_PADDING_X,
   DEFAULT_ITEM_PADDING_Y,
-  DEFAULT_ITEM_TEXT,
   DEFAULT_LABEL_FONT_SIZE,
-  DEFAULT_LABEL_TEXT,
-  DEFAULT_MENU_BG,
-  DEFAULT_MENU_BORDER,
   DEFAULT_MENU_BORDER_RADIUS,
   DEFAULT_MENU_PADDING,
-  DEFAULT_SEPARATOR_COLOR,
   DEFAULT_SHORTCUT_FONT_SIZE,
-  DEFAULT_SHORTCUT_TEXT,
   FlashDropdownCheckbox,
   FlashDropdownItem,
   FlashDropdownLabel,
@@ -54,6 +41,7 @@ import {
   type DropdownAlign,
   type MenuItemElement,
 } from "./menu.ts";
+import { menuColors } from "./theme.ts";
 
 type RightClickRequestState = {
   layoutId: LayoutId;
@@ -90,21 +78,21 @@ export class FlashRightClickMenu extends FlashContainerElement<
   private sideOffsetValue = 4;
   private windowMarginValue = 8;
 
-  private menuBgColor: Color = DEFAULT_MENU_BG;
-  private menuBorderColor: Color = DEFAULT_MENU_BORDER;
+  private menuBgColor: Color | null = null;
+  private menuBorderColor: Color | null = null;
   private menuBorderRadiusValue = DEFAULT_MENU_BORDER_RADIUS;
   private menuPaddingValue = DEFAULT_MENU_PADDING;
-  private itemBgColor: Color = DEFAULT_ITEM_BG;
-  private itemHoverBgColor: Color = DEFAULT_ITEM_HOVER_BG;
-  private itemTextColor: Color = DEFAULT_ITEM_TEXT;
-  private itemHoverTextColor: Color = DEFAULT_ITEM_HOVER_TEXT;
-  private itemDisabledTextColor: Color = DEFAULT_ITEM_DISABLED_TEXT;
-  private labelTextColor: Color = DEFAULT_LABEL_TEXT;
-  private separatorColorValue: Color = DEFAULT_SEPARATOR_COLOR;
-  private destructiveTextColor: Color = DEFAULT_DESTRUCTIVE_TEXT;
-  private destructiveHoverBgColor: Color = DEFAULT_DESTRUCTIVE_HOVER_BG;
-  private shortcutTextColor: Color = DEFAULT_SHORTCUT_TEXT;
-  private checkColorValue: Color = DEFAULT_CHECK_COLOR;
+  private itemBgColor: Color | null = null;
+  private itemHoverBgColor: Color | null = null;
+  private itemTextColor: Color | null = null;
+  private itemHoverTextColor: Color | null = null;
+  private itemDisabledTextColor: Color | null = null;
+  private labelTextColor: Color | null = null;
+  private separatorColorValue: Color | null = null;
+  private destructiveTextColor: Color | null = null;
+  private destructiveHoverBgColor: Color | null = null;
+  private shortcutTextColor: Color | null = null;
+  private checkColorValue: Color | null = null;
   private fontSizeValue = DEFAULT_FONT_SIZE;
   private labelFontSizeValue = DEFAULT_LABEL_FONT_SIZE;
   private shortcutFontSizeValue = DEFAULT_SHORTCUT_FONT_SIZE;
@@ -270,28 +258,29 @@ export class FlashRightClickMenu extends FlashContainerElement<
     return this;
   }
 
-  private buildMenuContext(): DropdownMenuContext {
+  private buildMenuContext(theme: import("./theme.ts").Theme): DropdownMenuContext {
+    const base = menuColors(theme);
     return buildRootMenuContext(
       this.menuId,
       this.menuItems,
       this.disabledValue,
       this.onOpenChangeHandler,
       {
-        menuBg: this.menuBgColor,
-        menuBorder: this.menuBorderColor,
+        menuBg: this.menuBgColor ?? base.menuBg,
+        menuBorder: this.menuBorderColor ?? base.menuBorder,
         menuBorderRadius: this.menuBorderRadiusValue,
         menuPadding: this.menuPaddingValue,
-        itemBg: this.itemBgColor,
-        itemHoverBg: this.itemHoverBgColor,
-        itemText: this.itemTextColor,
-        itemHoverText: this.itemHoverTextColor,
-        itemDisabledText: this.itemDisabledTextColor,
-        labelText: this.labelTextColor,
-        separatorColor: this.separatorColorValue,
-        destructiveText: this.destructiveTextColor,
-        destructiveHoverBg: this.destructiveHoverBgColor,
-        shortcutText: this.shortcutTextColor,
-        checkColor: this.checkColorValue,
+        itemBg: this.itemBgColor ?? base.itemBg,
+        itemHoverBg: this.itemHoverBgColor ?? base.itemHoverBg,
+        itemText: this.itemTextColor ?? base.itemText,
+        itemHoverText: this.itemHoverTextColor ?? base.itemHoverText,
+        itemDisabledText: this.itemDisabledTextColor ?? base.itemDisabledText,
+        labelText: this.labelTextColor ?? base.labelText,
+        separatorColor: this.separatorColorValue ?? base.separatorColor,
+        destructiveText: this.destructiveTextColor ?? base.destructiveText,
+        destructiveHoverBg: this.destructiveHoverBgColor ?? base.destructiveHoverBg,
+        shortcutText: this.shortcutTextColor ?? base.shortcutText,
+        checkColor: this.checkColorValue ?? base.checkColor,
         fontSize: this.fontSizeValue,
         labelFontSize: this.labelFontSizeValue,
         shortcutFontSize: this.shortcutFontSizeValue,
@@ -333,7 +322,8 @@ export class FlashRightClickMenu extends FlashContainerElement<
 
     if (this.openValue && this.menuItems.length > 0) {
       const menuItems = [...this.menuItems];
-      const menuContext = this.buildMenuContext();
+      const theme = cx.getWindow().getTheme();
+      const menuContext = this.buildMenuContext(theme);
 
       // We still need a hitbox for PopoverManager to handle outside click.
       const hitbox = cx.insertHitbox(triggerBounds, HitboxBehavior.Normal, "default");
