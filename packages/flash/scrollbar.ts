@@ -5,13 +5,8 @@
  * and rendering utilities for scroll containers.
  */
 
-import {
-  toColorObject,
-  type Color,
-  type ColorObject,
-  type Bounds,
-  type ScrollHandleId,
-} from "./types.ts";
+import type { ColorObject } from "@glade/utils";
+import { toColorObject, type Color, type Bounds, type ScrollHandleId } from "./types.ts";
 
 /**
  * When to show scrollbars.

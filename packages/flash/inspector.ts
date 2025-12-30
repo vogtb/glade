@@ -8,12 +8,13 @@
  * - Element tree navigation
  */
 
-import type { Bounds, ColorObject, Point } from "./types.ts";
+import type { Bounds, Point } from "./types.ts";
 import type { Styles } from "./styles.ts";
 import type { GlobalElementId } from "./element.ts";
 import type { FlashScene } from "./scene.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { TextSystem } from "./text.ts";
+import type { ColorObject } from "@glade/utils";
 
 /**
  * Debug info attached to elements during render.

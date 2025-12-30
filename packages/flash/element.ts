@@ -13,7 +13,6 @@
 import type {
   Bounds,
   Color,
-  ColorObject,
   ContentMask,
   FocusId,
   ScrollOffset,
@@ -30,6 +29,7 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FlashWindow as _FlashWindow } from "./window.ts";
 import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
 import { rgb, toColorObject } from "./types.ts";
+import type { ColorObject } from "@glade/utils";
 
 // ============ Debug Info Types ============
 
@@ -643,7 +643,9 @@ export abstract class FlashContainerElement<
 
   /**
    * Backwards-compatible accessor used by generated container code.
+   * TODO: don't use any
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get children__(): readonly FlashElement<any, any>[] {
     return this._children;
   }

@@ -38,7 +38,7 @@
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
-import { clamp } from "@glade/utils";
+import { clamp, type ColorObject } from "@glade/utils";
 import {
   createTextShaper,
   type TextShaper,
@@ -48,7 +48,7 @@ import {
   type LayoutResult,
   type FontStyle,
 } from "@glade/shaper";
-import { toColorObject, type Color, type ColorObject } from "./types.ts";
+import { toColorObject, type Color } from "./types.ts";
 import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 

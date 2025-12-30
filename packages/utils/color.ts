@@ -1,4 +1,4 @@
-export type Color = {
+export type ColorObject = {
   r: number;
   g: number;
   b: number;
@@ -8,7 +8,7 @@ export type Color = {
 /**
  * Create a color from a hex value (e.g., 0xFF5500).
  */
-export function rgb(hex: number): Color {
+export function rgb(hex: number): ColorObject {
   return {
     r: ((hex >> 16) & 0xff) / 255,
     g: ((hex >> 8) & 0xff) / 255,
@@ -20,7 +20,7 @@ export function rgb(hex: number): Color {
 /**
  * Create a color from RGBA hex value (e.g., 0xFF550080).
  */
-export function rgba(hex: number): Color {
+export function rgba(hex: number): ColorObject {
   return {
     r: ((hex >> 24) & 0xff) / 255,
     g: ((hex >> 16) & 0xff) / 255,
@@ -32,7 +32,7 @@ export function rgba(hex: number): Color {
 /**
  * Create a color from individual components (0-255).
  */
-export function color(r: number, g: number, b: number, a = 255): Color {
+export function color(r: number, g: number, b: number, a = 255): ColorObject {
   return {
     r: r / 255,
     g: g / 255,

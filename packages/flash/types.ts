@@ -6,7 +6,7 @@
  * is bad. Maybe split these things out and put the types where they live.
  */
 
-import { rgb, rgba, color } from "@glade/utils";
+import { rgb, rgba, color, type ColorObject } from "@glade/utils";
 
 // Branded types for type-safe IDs
 declare const __entityIdBrand: unique symbol;
@@ -59,13 +59,6 @@ export function boundsContains(bounds: Bounds, point: Point): boolean {
     point.y < bounds.y + bounds.height
   );
 }
-
-export type ColorObject = {
-  r: number;
-  g: number;
-  b: number;
-  a: number;
-};
 
 /**
  * RGBA color with components in 0-1 range.

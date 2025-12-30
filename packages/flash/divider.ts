@@ -15,9 +15,10 @@ import {
   type RequestLayoutResult,
   type NoState,
 } from "./element.ts";
-import { toColorObject, type Bounds, type Color, type ColorObject } from "./types.ts";
+import { toColorObject, type Bounds, type Color } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode } from "./dispatch.ts";
+import type { ColorObject } from "@glade/utils";
 
 type DividerOrientation = "horizontal" | "vertical";
 

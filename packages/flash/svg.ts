@@ -9,13 +9,7 @@
  * - High-quality tessellation with fine tolerance
  */
 
-import {
-  toColorObject,
-  type Color,
-  type ColorObject,
-  type Bounds,
-  type TransformationMatrix,
-} from "./types.ts";
+import { toColorObject, type Color, type Bounds, type TransformationMatrix } from "./types.ts";
 import type {
   RequestLayoutContext,
   PrepaintContext,
@@ -30,6 +24,7 @@ import {
   type TessellatedMesh,
   type ParsedSvg as WasmParsedSvg,
 } from "@glade/svg";
+import type { ColorObject } from "@glade/utils";
 
 export type { TessellatedMesh } from "@glade/svg";
 

@@ -1,6 +1,6 @@
 import type { ColorScheme } from "@glade/core";
-import { colors } from "@glade/utils";
-import type { Color, ColorObject } from "./types.ts";
+import { colors, type ColorObject } from "@glade/utils";
+import type { Color } from "./types.ts";
 import { rgb, toColorObject } from "./types.ts";
 
 export interface Theme {

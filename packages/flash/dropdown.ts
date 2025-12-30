@@ -6,7 +6,7 @@ import {
   type RequestLayoutResult,
   type GlobalElementId,
 } from "./element.ts";
-import { toColorObject, type Bounds, type Color, type ColorObject } from "./types.ts";
+import { toColorObject, type Bounds, type Color } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import { HitboxBehavior } from "./hitbox.ts";
@@ -46,6 +46,7 @@ import {
   type MenuItemElement,
 } from "./menu.ts";
 import { menuColors } from "./theme.ts";
+import type { ColorObject } from "@glade/utils";
 
 type DropdownRequestState = {
   layoutId: LayoutId;

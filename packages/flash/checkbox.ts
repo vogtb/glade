@@ -12,7 +12,7 @@ import {
   type PaintContext,
   type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds, Color, ColorObject } from "./types.ts";
+import type { Bounds, Color } from "./types.ts";
 import { toColorObject } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
@@ -22,6 +22,7 @@ import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import { checkboxColors } from "./theme.ts";
+import type { ColorObject } from "@glade/utils";
 
 const DEFAULT_DISABLED_OPACITY = 0.5;
 const DEFAULT_SIZE = 18;

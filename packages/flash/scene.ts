@@ -10,9 +10,10 @@
  * primitives of different types need to interleave correctly.
  */
 
-import type { ColorObject, ContentMask, Bounds, TransformationMatrix } from "./types.ts";
+import type { ContentMask, Bounds, TransformationMatrix } from "./types.ts";
 import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform, toColorObject } from "./types.ts";
 import { BoundsTree, type DrawOrder } from "./bounds_tree.ts";
+import type { ColorObject } from "@glade/utils";
 
 export type { DrawOrder } from "./bounds_tree.ts";
 
