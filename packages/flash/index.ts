@@ -189,10 +189,10 @@ export type {
   PathPrimitive,
   PathVertex,
   UnderlinePrimitive,
-  UnderlineStyle,
   SceneLayer,
   DrawOrder,
 } from "./scene";
+export type { UnderlineStyle } from "./element";
 
 export { FlashScene } from "./scene";
 
@@ -254,7 +254,6 @@ export {
   selectionPrimitives,
   compositionUnderlines,
 } from "./text";
-export { underlinedText } from "./underlined_text";
 
 // Event dispatch
 export type {

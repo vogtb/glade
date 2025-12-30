@@ -23,8 +23,6 @@ import type { FlashWindow as _FlashWindow } from "./window.ts";
 import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
 import { toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
 
-// ============ Debug Info Types ============
-
 /**
  * Debug information attached to elements for inspector mode.
  */
@@ -34,8 +32,6 @@ export interface ElementDebugMeta {
   /** Optional custom debug label */
   debugLabel?: string;
 }
-
-// ============ Element Identity Types ============
 
 declare const __globalElementIdBrand: unique symbol;
 export type GlobalElementId = number & { [__globalElementIdBrand]: true };
@@ -47,6 +43,8 @@ export type DispatchNodeId = number & { [__dispatchNodeIdBrand]: true };
  * Marker type for elements that don't need state between phases.
  */
 export type NoState = void;
+
+export type UnderlineStyle = "solid" | "wavy";
 
 /**
  * Result of the requestLayout phase.
@@ -112,6 +110,7 @@ export interface RequestLayoutContext {
     lineHeight: number;
     noWrap: boolean;
     maxWidth: number | null;
+    underlineSpace?: number;
   }): number;
 
   /**
@@ -378,7 +377,7 @@ export interface PaintContext {
     width: number,
     thickness: number,
     color: Color,
-    style: "solid" | "wavy",
+    style: UnderlineStyle,
     options?: { wavelength?: number; amplitude?: number }
   ): void;
 
@@ -685,6 +684,14 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
   private isSelectable = false;
   private selectionColorValue: ColorObject = { ...rgb(0x3b82f6), a: 0.35 };
 
+  // Underline support
+  private underlineEnabled = false;
+  private underlineStyle: UnderlineStyle = "solid";
+  private underlineColorOverride: ColorObject | null = null;
+  private underlineThickness = 1;
+  private underlineWavelength?: number;
+  private underlineAmplitude?: number;
+
   // Cached layout for hit testing and selection rendering
   private cachedLayout: CachedTextLayout | null = null;
   private cachedLayoutKey = "";
@@ -799,8 +806,45 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
     return this;
   }
 
+  underlined(options?: {
+    style?: UnderlineStyle;
+    color?: Color;
+    thickness?: number;
+    wavelength?: number;
+    amplitude?: number;
+  }): this {
+    this.underlineEnabled = true;
+    if (options?.style) {
+      this.underlineStyle = options.style;
+    }
+    if (options?.color) {
+      this.underlineColorOverride = toColorObject(options.color);
+    }
+    if (options?.thickness !== undefined) {
+      this.underlineThickness = options.thickness;
+    }
+    if (options?.wavelength !== undefined) {
+      this.underlineWavelength = options.wavelength;
+    }
+    if (options?.amplitude !== undefined) {
+      this.underlineAmplitude = options.amplitude;
+    }
+    return this;
+  }
+
   private getLineHeight(): number {
     return this.lineHeightValue ?? this.fontSize * 1.2;
+  }
+
+  private getUnderlineSpace(): number {
+    if (!this.underlineEnabled) {
+      return 0;
+    }
+    const amplitude = this.underlineAmplitude ?? 1;
+    if (this.underlineStyle === "wavy") {
+      return this.underlineThickness + amplitude * 2 + 2;
+    }
+    return this.underlineThickness + 2;
   }
 
   private getLayoutWithWrapWidth(wrapWidth: number | undefined): CachedTextLayout {
@@ -843,6 +887,7 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
       lineHeight,
       noWrap: effectiveNoWrap,
       maxWidth: this.maxWidthValue,
+      underlineSpace: this.getUnderlineSpace(),
     });
 
     // Create a measurable leaf node - Taffy will call back during layout
@@ -923,6 +968,25 @@ export class FlashTextElement extends FlashElement<TextRequestLayoutState, TextP
       lineHeight,
       maxWidth: wrapWidth,
     });
+
+    if (this.underlineEnabled) {
+      const layout = this.getLayoutWithWrapWidth(wrapWidth);
+      const lastLine = layout.lines[layout.lines.length - 1];
+      if (lastLine) {
+        const underlineY = bounds.y + lastLine.y + this.fontSize * 1.1;
+        const underlineWidth = Math.min(bounds.width, lastLine.width);
+        const underlineColor = this.underlineColorOverride ?? prepaintState.textColor;
+        cx.paintUnderline(
+          bounds.x,
+          underlineY,
+          underlineWidth,
+          this.underlineThickness,
+          underlineColor,
+          this.underlineStyle,
+          { wavelength: this.underlineWavelength, amplitude: this.underlineAmplitude }
+        );
+      }
+    }
   }
 
   hitTest(_bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {

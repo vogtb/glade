@@ -78,7 +78,6 @@ import {
   tr,
   th,
   td,
-  underlinedText,
   type PopoverCorner,
 } from "@glade/flash";
 import { createGalaxyHost } from "./galaxy.ts";
@@ -1009,34 +1008,26 @@ class DemoRootView implements FlashView {
           .flexWrap()
           .itemsEnd()
           .children(
-            underlinedText("Hyperlink", {
-              style: "solid",
-              textColor: theme.text,
-              underlineColor: theme.primary,
-              fontSize: 16,
-              thickness: 1,
-            }),
-            underlinedText("Important", {
-              style: "solid",
-              textColor: theme.text,
-              underlineColor: theme.success,
-              fontSize: 16,
-              thickness: 2,
-            }),
-            underlinedText("Speling Error", {
+            text("Hyperlink")
+              .font("Inter")
+              .size(16)
+              .color(theme.text)
+              .underlined({ style: "solid", color: theme.primary, thickness: 1 }),
+            text("Important")
+              .font("Inter")
+              .size(16)
+              .color(theme.text)
+              .underlined({ style: "solid", color: theme.success, thickness: 2 }),
+            text("Speling Error").font("Inter").size(16).color(theme.text).underlined({
               style: "wavy",
-              textColor: theme.text,
-              underlineColor: theme.danger,
-              fontSize: 16,
+              color: theme.danger,
               thickness: 1.5,
               wavelength: 4,
               amplitude: 1.5,
             }),
-            underlinedText("Grammer Issue", {
+            text("Grammer Issue").font("Inter").size(16).color(theme.text).underlined({
               style: "wavy",
-              textColor: theme.text,
-              underlineColor: theme.primary,
-              fontSize: 16,
+              color: theme.primary,
               thickness: 1.5,
               wavelength: 5,
               amplitude: 1.5,
@@ -1051,19 +1042,14 @@ class DemoRootView implements FlashView {
           .flexWrap()
           .itemsEnd()
           .children(
-            underlinedText("Title Text", {
-              style: "solid",
-              textColor: theme.text,
-              underlineColor: theme.primary,
-              fontSize: 24,
-              thickness: 2,
-            }),
-            underlinedText("Code Identifier", {
+            text("Title Text")
+              .font("Inter")
+              .size(24)
+              .color(theme.text)
+              .underlined({ style: "solid", color: theme.primary, thickness: 2 }),
+            text("Code Identifier").font("JetBrains Mono").size(18).color(theme.text).underlined({
               style: "wavy",
-              textColor: theme.text,
-              underlineColor: theme.warning,
-              fontFamily: "JetBrains Mono",
-              fontSize: 18,
+              color: theme.warning,
               thickness: 2,
               wavelength: 6,
               amplitude: 2,

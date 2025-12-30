@@ -288,6 +288,7 @@ export class FlashWindow {
       lineHeight: number;
       noWrap: boolean;
       maxWidth: number | null;
+      underlineSpace?: number;
       // Computed during measurement, retrieved during paint
       computedWrapWidth?: number;
     }
@@ -505,6 +506,7 @@ export class FlashWindow {
     lineHeight: number;
     noWrap: boolean;
     maxWidth: number | null;
+    underlineSpace?: number;
   }): number {
     const id = this.nextMeasureId++;
     this.measureRegistry.set(id, data);
@@ -593,7 +595,7 @@ export class FlashWindow {
       1,
       Math.round((rawResult.height - ascentOffset) / data.lineHeight)
     );
-    const normalizedHeight = estimatedLines * data.lineHeight;
+    const normalizedHeight = estimatedLines * data.lineHeight + (data.underlineSpace ?? 0);
 
     return { width: rawResult.width, height: normalizedHeight };
   }

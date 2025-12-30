@@ -11,6 +11,7 @@
  */
 
 import type { ContentMask, Bounds, TransformationMatrix } from "./types.ts";
+import type { UnderlineStyle } from "./element.ts";
 import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
 import { BoundsTree, type DrawOrder } from "./bounds_tree.ts";
 import { toColorObject, type ColorObject } from "@glade/utils";
@@ -328,11 +329,6 @@ export interface HostTexturePrimitive {
   /** Draw order for z-sorting. Assigned automatically by FlashScene. */
   order?: DrawOrder;
 }
-
-/**
- * Underline style.
- */
-export type UnderlineStyle = "solid" | "wavy";
 
 /**
  * Underline primitive for text decoration rendering.
