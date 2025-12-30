@@ -768,7 +768,7 @@ class DemoRootView implements FlashView {
       case "link":
         return this.renderLinkDemo();
       case "button-placeholder":
-        return this.renderButtonPlaceholderDemo();
+        return this.renderButtonDemo();
       case "tabs":
         return this.renderTabsDemo(cx);
       case "controls":
@@ -1651,21 +1651,18 @@ class DemoRootView implements FlashView {
       .flexCol()
       .gap(16)
       .children_(
-        text("Link").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Clickable text links that open URLs in the browser")
-          .font("Inter")
-          .size(16)
-          .color({ r: 0.7, g: 0.7, b: 0.8, a: 1 }),
+        text("Link").font("Inter").size(32),
+        text("Clickable text links that open URLs in the browser").font("Inter").size(16),
         divider().color({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
 
         // Basic links
-        text("Basic Links").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Basic Links").font("Inter").size(18),
         div()
           .flex()
           .flexCol()
           .gap(12)
           .p(16)
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
+
           .rounded(8)
           .children_(
             link("Visit GitHub", "https://github.com").font("Inter"),
@@ -1674,13 +1671,12 @@ class DemoRootView implements FlashView {
           ),
 
         // Styled links
-        text("Styled Links").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Styled Links").font("Inter").size(18),
         div()
           .flex()
           .flexCol()
           .gap(12)
           .p(16)
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
           .rounded(8)
           .children_(
             link("Large Link (18px)", "https://example.com").font("Inter").size(18),
@@ -1696,13 +1692,12 @@ class DemoRootView implements FlashView {
           ),
 
         // Underline variants
-        text("Underline Variants").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Underline Variants").font("Inter").size(18),
         div()
           .flex()
           .flexCol()
           .gap(12)
           .p(16)
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
           .rounded(8)
           .children_(
             div()
@@ -1711,10 +1706,7 @@ class DemoRootView implements FlashView {
               .gap(8)
               .itemsCenter()
               .children_(
-                text("Default (underline on hover):")
-                  .font("Inter")
-                  .size(13)
-                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                text("Default (underline on hover):").font("Inter").size(13),
                 link("Hover me", "https://example.com").font("Inter")
               ),
             div()
@@ -1723,10 +1715,7 @@ class DemoRootView implements FlashView {
               .gap(8)
               .itemsCenter()
               .children_(
-                text("Always underlined:")
-                  .font("Inter")
-                  .size(13)
-                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                text("Always underlined:").font("Inter").size(13),
                 link("Always underlined", "https://example.com").font("Inter").underline()
               ),
             div()
@@ -1735,54 +1724,42 @@ class DemoRootView implements FlashView {
               .gap(8)
               .itemsCenter()
               .children_(
-                text("Never underlined:")
-                  .font("Inter")
-                  .size(13)
-                  .color({ r: 0.6, g: 0.6, b: 0.7, a: 1 }),
+                text("Never underlined:").font("Inter").size(13),
                 link("No underline", "https://example.com").font("Inter").noUnderline()
               )
           ),
 
         // Inline links
-        text("Inline Links").font("Inter").size(18).color({ r: 0.9, g: 0.9, b: 1, a: 1 }),
+        text("Inline Links").font("Inter").size(18),
         div()
           .flex()
           .flexRow()
           .flexWrap()
           .gap(4)
           .p(16)
-          .bg({ r: 0.15, g: 0.15, b: 0.2, a: 1 })
           .rounded(8)
           .itemsBaseline()
           .children_(
-            text("Check out the").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("Check out the").font("Inter").size(14),
             link("documentation", "https://docs.example.com").font("Inter").size(14),
-            text("for more information, or visit our")
-              .font("Inter")
-              .size(14)
-              .color({ r: 0.8, g: 0.8, b: 0.9, a: 1 }),
+            text("for more information, or visit our").font("Inter").size(14),
             link("GitHub repository", "https://github.com").font("Inter").size(14),
-            text("to contribute.").font("Inter").size(14).color({ r: 0.8, g: 0.8, b: 0.9, a: 1 })
+            text("to contribute.").font("Inter").size(14)
           )
       );
   }
 
-  private renderButtonPlaceholderDemo(): FlashDiv {
+  private renderButtonDemo(): FlashDiv {
     return div()
       .flex()
       .flexCol()
       .gap(12)
       .children_(
-        text("Button").font("Inter").size(32).color({ r: 1, g: 1, b: 1, a: 1 }),
-        text("Reserved for a dedicated button showcase.").font("Inter").size(16).color({
-          r: 0.72,
-          g: 0.76,
-          b: 0.88,
-          a: 1,
-        }),
+        text("Button").font("Inter").size(32),
+        text("Reserved for a dedicated button showcase.").font("Inter").size(16),
         div()
           .p(14)
-          .bg({ r: 0.12, g: 0.14, b: 0.18, a: 1 })
+
           .rounded(10)
           .border(1)
           .borderColor({ r: 0.28, g: 0.32, b: 0.42, a: 1 })
@@ -1790,7 +1767,7 @@ class DemoRootView implements FlashView {
             text("Coming soon")
               .font("Inter")
               .size(14)
-              .color({ r: 0.86, g: 0.88, b: 0.96, a: 1 })
+
               .weight(600),
             div()
               .mt(6)
@@ -1798,7 +1775,6 @@ class DemoRootView implements FlashView {
                 text("This slot will host button variants, states, and icon buttons.")
                   .font("Inter")
                   .size(13)
-                  .color({ r: 0.74, g: 0.78, b: 0.86, a: 1 })
               )
           )
       );
