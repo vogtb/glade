@@ -1,7 +1,7 @@
 import type { ColorScheme } from "@glade/core";
 import { colors, toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
 
-export interface Theme {
+export type Theme = {
   scheme: ColorScheme;
   background: ColorObject;
   backgroundHover: ColorObject;
@@ -21,13 +21,13 @@ export interface Theme {
   danger: ColorObject;
   warning: ColorObject;
   success: ColorObject;
-}
+};
 
 type ThemeColorKey = Exclude<keyof Theme, "scheme">;
 
 export type ThemeOverrides = Partial<Record<ThemeColorKey, Color>>;
 
-export interface ThemeConfig {
+export type ThemeConfig = {
   /**
    * Desired scheme. Use "system" to follow platform preference.
    * Defaults to "system".
@@ -37,7 +37,7 @@ export interface ThemeConfig {
    * Partial overrides applied on top of the base light/dark palette.
    */
   overrides?: ThemeOverrides;
-}
+};
 
 const DARK_THEME: Theme = {
   scheme: "dark",
