@@ -16,14 +16,14 @@ import { DIV_DEMO } from "./div_demo";
 import { HEADING_DEMO } from "./heading_demo";
 import { FONTS_DEMO } from "./fonts_demo";
 import { SPACER_10PX } from "./common";
+import { CODE_DEMO } from "./code_pre_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
   DIV_DEMO,
   HEADING_DEMO,
   FONTS_DEMO,
-  { name: "Monospaced", renderElement: (_cx) => [] },
-  { name: "Code/Pre", renderElement: (_cx) => [] },
+  CODE_DEMO,
   { name: "Emoji", renderElement: (_cx) => [] },
   { name: "Underlined", renderElement: (_cx) => [] },
   { name: "Input", renderElement: (_cx) => [] },

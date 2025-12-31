@@ -36,7 +36,7 @@ async function main() {
   );
 
   window.registerFont("Inter", base64ToBytes(interFontBase64));
-  window.registerFont("JetBrains Mono SemiBold", base64ToBytes(jetBrainsMonoSemiBoldBase64));
+  window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoSemiBoldBase64));
   window.registerFont("Noto Color Emoji", base64ToBytes(notoEmojiBase64));
 
   app.run();

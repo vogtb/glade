@@ -9,9 +9,7 @@ export const FONTS_DEMO: Demo = {
     SPACER_10PX,
     div().child(text("Inter is a sans serif font.").size(28)),
     SPACER_10PX,
-    div().child(
-      text("JetBrains Mono SemiBold is a monospaced font.").font("JetBrains Mono SemiBold").size(28)
-    ),
+    div().child(text("JetBrains Mono is a monospaced font.").font("JetBrains Mono").size(28)),
     SPACER_10PX,
     div().child(text("Noto Color Emoji is an open source emoji font.").size(28)),
     div().child(
