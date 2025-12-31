@@ -1247,6 +1247,7 @@ export class FlashDialogContent extends FlashElement<
 // ============================================================================
 
 type DialogRequestState = {
+  dialogLayoutId: LayoutId;
   triggerLayoutId: LayoutId;
   triggerElementId: GlobalElementId;
   triggerRequestState: unknown;
@@ -1424,6 +1425,7 @@ export class FlashDialog extends FlashContainerElement<DialogRequestState, Dialo
       return {
         layoutId,
         requestState: {
+          dialogLayoutId: layoutId,
           triggerLayoutId: layoutId,
           triggerElementId: cx.elementId,
           triggerRequestState: undefined,
@@ -1446,6 +1448,7 @@ export class FlashDialog extends FlashContainerElement<DialogRequestState, Dialo
     return {
       layoutId,
       requestState: {
+        dialogLayoutId: layoutId,
         triggerLayoutId: triggerResult.layoutId,
         triggerElementId,
         triggerRequestState: triggerResult.requestState,
@@ -1458,10 +1461,25 @@ export class FlashDialog extends FlashContainerElement<DialogRequestState, Dialo
     bounds: Bounds,
     requestState: DialogRequestState
   ): DialogPrepaintState {
-    const { triggerLayoutId, triggerElementId, triggerRequestState } = requestState;
+    const { dialogLayoutId, triggerLayoutId, triggerElementId, triggerRequestState } = requestState;
 
-    // Get trigger bounds
-    const triggerBounds = cx.getBounds(triggerLayoutId);
+    // Get trigger bounds and adjust for scroll offset.
+    // The parent passes scroll-adjusted bounds for the dialog wrapper.
+    // We need to apply the same scroll adjustment to the trigger.
+    const dialogLayoutBounds = cx.getBounds(dialogLayoutId);
+    const triggerLayoutBounds = cx.getBounds(triggerLayoutId);
+
+    // The trigger's position relative to the dialog wrapper (in layout space)
+    const relativeX = triggerLayoutBounds.x - dialogLayoutBounds.x;
+    const relativeY = triggerLayoutBounds.y - dialogLayoutBounds.y;
+
+    // Apply scroll adjustment: use the scroll-adjusted dialog bounds as base
+    const triggerBounds: Bounds = {
+      x: bounds.x + relativeX,
+      y: bounds.y + relativeY,
+      width: triggerLayoutBounds.width,
+      height: triggerLayoutBounds.height,
+    };
 
     // Prepaint trigger
     let triggerPrepaintState: unknown;
