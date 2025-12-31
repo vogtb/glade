@@ -19,6 +19,7 @@ import { UNDERLINE_DEMO } from "./underline_demo";
 import { EMOJI_DEMO } from "./emoji_demo";
 import { INPUTS_DEMO } from "./input_demo";
 import { FOCUS_DEMO } from "./focus_demo";
+import { FLEXBOX_DEMO } from "./flexbox_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -30,10 +31,10 @@ const DEMOS: Demo[] = [
   EMOJI_DEMO,
   INPUTS_DEMO,
   FOCUS_DEMO,
+  FLEXBOX_DEMO,
   { name: "Canvas", renderElement: (_cx, _state) => [] },
   { name: "Simple Selection", renderElement: (_cx, _state) => [] },
   { name: "X-Element Selection", renderElement: (_cx, _state) => [] },
-  { name: "Flexbox", renderElement: (_cx, _state) => [] },
   { name: "Grid", renderElement: (_cx, _state) => [] },
   { name: "Table", renderElement: (_cx, _state) => [] },
   { name: "Border", renderElement: (_cx, _state) => [] },
