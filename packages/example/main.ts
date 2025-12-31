@@ -28,6 +28,7 @@ import { MULTI_SELECTION_DEMO } from "./multi_selection";
 import { BORDER_DEMO } from "./border_demo";
 import { PADDING_DEMO } from "./padding_demo";
 import { MARGIN_DEMO } from "./margin_demo";
+import { GROUPS_DEMO } from "./groups_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -47,7 +48,7 @@ const DEMOS: Demo[] = [
   BORDER_DEMO,
   PADDING_DEMO,
   MARGIN_DEMO,
-  { name: "Groups", renderElement: (_cx, _state) => [] },
+  GROUPS_DEMO,
   { name: "Scrollbars", renderElement: (_cx, _state) => [] },
   { name: "Virtual Scrolling", renderElement: (_cx, _state) => [] },
   { name: "Clipboard", renderElement: (_cx, _state) => [] },
