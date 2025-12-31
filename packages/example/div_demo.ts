@@ -1,6 +1,6 @@
 import { div, text } from "@glade/flash";
 import type { Demo, DemoItem } from "./demo";
-import { SEPARATOR_10PX } from "./common";
+import { SPACER_10PX } from "./common";
 import { colors } from "@glade/utils";
 
 function flexBox(label: string) {
@@ -24,7 +24,7 @@ export const DIV_DEMO: Demo = {
   name: "Div",
   renderElement: (cx): DemoItem[] => [
     text("They're basically like an HTML <div />").size(16),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     div()
       .p(20)
       .border(2)
@@ -32,7 +32,7 @@ export const DIV_DEMO: Demo = {
       .bg(cx.getTheme().surfaceMuted)
       .rounded(4)
       .child(text("p=20, border 2px, rounded 2px")),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     div()
       .p(20)
       .m(20)
@@ -41,7 +41,7 @@ export const DIV_DEMO: Demo = {
       .bg(cx.getTheme().surfaceMuted)
       .rounded(10)
       .child(text("p=20, m=20, border 4px, rounded 10px")),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     div().child(
       div()
         .p(10)
@@ -61,9 +61,9 @@ export const DIV_DEMO: Demo = {
     // size of the items. we should shift them up/down by their size for
     // most cases.
 
-    SEPARATOR_10PX,
+    SPACER_10PX,
     text("justifyContent (horizontal distribution)").size(16).weight(600),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("justifyStart").size(14),
     div()
@@ -77,7 +77,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBox("1"))
       .child(flexBox("2"))
       .child(flexBox("3")),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("justifyCenter").size(14),
     div()
@@ -91,7 +91,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBox("1"))
       .child(flexBox("2"))
       .child(flexBox("3")),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("justifyEnd").size(14),
     div()
@@ -105,7 +105,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBox("1"))
       .child(flexBox("2"))
       .child(flexBox("3")),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("justifyBetween").size(14),
     div()
@@ -118,7 +118,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBox("1"))
       .child(flexBox("2"))
       .child(flexBox("3")),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("justifyAround").size(14),
     div()
@@ -131,7 +131,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBox("1"))
       .child(flexBox("2"))
       .child(flexBox("3")),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("justifyEvenly").size(14),
     div()
@@ -146,9 +146,9 @@ export const DIV_DEMO: Demo = {
       .child(flexBox("3")),
 
     // ============ Flexbox: Align Items ============
-    SEPARATOR_10PX,
+    SPACER_10PX,
     text("alignItems (cross-axis alignment)").size(16).weight(600),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("itemsStart").size(14),
     div()
@@ -163,7 +163,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBoxTall("1", 30))
       .child(flexBoxTall("2", 50))
       .child(flexBoxTall("3", 40)),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("itemsCenter").size(14),
     div()
@@ -178,7 +178,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBoxTall("1", 30))
       .child(flexBoxTall("2", 50))
       .child(flexBoxTall("3", 40)),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("itemsEnd").size(14),
     div()
@@ -193,7 +193,7 @@ export const DIV_DEMO: Demo = {
       .child(flexBoxTall("1", 30))
       .child(flexBoxTall("2", 50))
       .child(flexBoxTall("3", 40)),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("itemsStretch").size(14),
     div()
@@ -214,7 +214,7 @@ export const DIV_DEMO: Demo = {
       .child(
         div().p(8).bg(colors.blue.x600).rounded(4).child(text("3").color(colors.white.default))
       ),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("itemsBaseline").size(14),
     div()
@@ -251,9 +251,9 @@ export const DIV_DEMO: Demo = {
       ),
 
     // ============ Flexbox: Align Self ============
-    SEPARATOR_10PX,
+    SPACER_10PX,
     text("alignSelf (individual item alignment)").size(16).weight(600),
-    SEPARATOR_10PX,
+    SPACER_10PX,
 
     text("selfStart, selfCenter, selfEnd, selfStretch").size(14),
     div()

@@ -1,18 +1,18 @@
 import { div, text } from "@glade/flash";
 import { colors, rgb } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
-import { SEPARATOR_10PX } from "./common";
+import { SPACER_10PX } from "./common";
 
 export const TEXT_DEMO: Demo = {
   name: "Text",
   renderElement: (_cx): DemoItem[] => [
     text("GPU-accelerated text rendering with cosmic-text shaping").size(16),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     text("The quick brown fox jumps over the lazy dog.").size(14),
     text("ABCDEFGHIJKLMNOPQRSTUVWXYZ").size(14),
     text("abcdefghijklmnopqrstuvwxyz").size(14),
     text("0123456789 !@#$%^&*()_+-=[]{}|;':\",./<>?").size(14),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     ...[
       "Humongous Apple",
       "41 Sunset Avenue",
@@ -20,19 +20,19 @@ export const TEXT_DEMO: Demo = {
       "We Found River Man!",
       "The 100th Lunch",
     ].map((t) => text(t).size(36).lineHeight(48)),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     ...[55, 44, 33, 28, 26, 24, 22, 16, 14, 12, 11, 10, 8].map((size) =>
       div().child(text(`Font Size ${size}`).size(size))
     ),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     ...[55, 44, 33, 28, 26, 24, 22, 16, 14, 12].map((height) =>
       div().child(text(`Line Height ${height} (14px)`).size(14).lineHeight(height))
     ),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     ...[100, 200, 300, 400, 500, 600, 700, 800].map((weight) =>
       div().child(text(`Font Weight ${weight}`).size(22).weight(weight))
     ),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     text("It does colors too!").size(16),
     div(),
     ...[
@@ -54,7 +54,7 @@ export const TEXT_DEMO: Demo = {
           .color(color)
       )
     ),
-    SEPARATOR_10PX,
+    SPACER_10PX,
     ...[1, 0.9, 0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1].map((alpha) =>
       div().child(
         text(`Font Opacity ${alpha}`)

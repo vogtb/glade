@@ -13,11 +13,12 @@ import {
 import type { Demo, DemoItem } from "./demo";
 import { TEXT_DEMO } from "./text_demo";
 import { DIV_DEMO } from "./div_demo";
+import { HEADING_DEMO } from "./heading_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
   DIV_DEMO,
-  { name: "Headers", renderElement: (_cx) => [] },
+  HEADING_DEMO,
   { name: "Fonts", renderElement: (_cx) => [] },
   { name: "Monospaced", renderElement: (_cx) => [] },
   { name: "Code/Pre", renderElement: (_cx) => [] },
