@@ -14,11 +14,9 @@ type CanvasBarsState = {
 export const CANVAS_DEMO: Demo = {
   name: "Canvas",
   renderElement: (_cx, _state): DemoItem[] => [
-    text("Direct access to low-level paint APIs without defining a custom element.")
-      .font("Inter")
-      .size(16),
+    text("Direct access to low-level paint APIs without defining a custom element.").size(16),
     div().h(1).bg({ r: 0.4, g: 0.4, b: 0.5, a: 0.5 }),
-    text("Bars via canvas()").font("Inter").size(18),
+    text("Bars via canvas()").size(18),
     canvas<CanvasBarsState>({
       styles: { width: "100%", height: 260 },
       prepaint: (bounds: Bounds, _cx: PrepaintContext): CanvasBarsState => {
@@ -93,8 +91,6 @@ export const CANVAS_DEMO: Demo = {
     }),
     text(
       "canvas() feeds prepaint -> paint so you can push custom primitives directly into the scene."
-    )
-      .font("Inter")
-      .size(14),
+    ).size(14),
   ],
 };

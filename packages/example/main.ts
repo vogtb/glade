@@ -23,6 +23,7 @@ import { FLEXBOX_DEMO } from "./flexbox_demo";
 import { GRID_DEMO } from "./grid_demo";
 import { TABLE_DEMO } from "./table_demo";
 import { CANVAS_DEMO } from "./canvas_demo";
+import { TEXT_SELECTION_DEMO } from "./text_selection_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -37,7 +38,7 @@ const DEMOS: Demo[] = [
   FLEXBOX_DEMO,
   GRID_DEMO,
   TABLE_DEMO,
-  { name: "Simple Selection", renderElement: (_cx, _state) => [] },
+  TEXT_SELECTION_DEMO,
   { name: "X-Element Selection", renderElement: (_cx, _state) => [] },
   { name: "Border", renderElement: (_cx, _state) => [] },
   { name: "Padding", renderElement: (_cx, _state) => [] },
