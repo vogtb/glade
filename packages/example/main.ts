@@ -1,4 +1,5 @@
 import {
+  createListState,
   div,
   h1,
   text,
@@ -6,6 +7,8 @@ import {
   type FlashView,
   type FlashViewContext,
   type FocusHandle,
+  type ImageTile,
+  type ListState,
   type ScrollHandle,
   type Theme,
 } from "@glade/flash";
@@ -29,6 +32,18 @@ import { BORDER_DEMO } from "./border_demo";
 import { PADDING_DEMO } from "./padding_demo";
 import { MARGIN_DEMO } from "./margin_demo";
 import { GROUPS_DEMO } from "./groups_demo";
+import { SCROLLBAR_DEMO } from "./scrollbar_demo";
+import { VIRTUAL_SCROLLING_DEMO } from "./virtual_scrolling_demo";
+import { CLIPBOARD_DEMO } from "./clipboard_demo";
+import { WEBGPU_DEMO } from "./webgpu_demo";
+import { IMAGES_DEMO } from "./images_demo";
+import { DEFERRED_DEMO } from "./deferred_demo";
+import { ICON_DEMO } from "./icon_demo";
+import { LINK_DEMO } from "./link_demo";
+import { BUTTON_DEMO } from "./button_demo";
+import { RADIO_INPUT_DEMO } from "./radio_demo";
+import { SWITCH_DEMO } from "./switch_demo";
+import { CHECKBOX_DEMO } from "./checkbox_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -49,20 +64,19 @@ const DEMOS: Demo[] = [
   PADDING_DEMO,
   MARGIN_DEMO,
   GROUPS_DEMO,
-  { name: "Scrollbars", renderElement: (_cx, _state) => [] },
-  { name: "Virtual Scrolling", renderElement: (_cx, _state) => [] },
-  { name: "Clipboard", renderElement: (_cx, _state) => [] },
-  { name: "WebGPU", renderElement: (_cx, _state) => [] },
-  { name: "Images", renderElement: (_cx, _state) => [] },
-  { name: "Deferred", renderElement: (_cx, _state) => [] },
+  SCROLLBAR_DEMO,
+  VIRTUAL_SCROLLING_DEMO,
+  CLIPBOARD_DEMO,
+  WEBGPU_DEMO,
   CANVAS_DEMO,
-  { name: "Icon", renderElement: (_cx, _state) => [] },
-  { name: "Link", renderElement: (_cx, _state) => [] },
-  { name: "Button", renderElement: (_cx, _state) => [] },
-  { name: "Tab", renderElement: (_cx, _state) => [] },
-  { name: "Radio", renderElement: (_cx, _state) => [] },
-  { name: "Switch", renderElement: (_cx, _state) => [] },
-  { name: "Checkbox", renderElement: (_cx, _state) => [] },
+  IMAGES_DEMO,
+  DEFERRED_DEMO,
+  ICON_DEMO,
+  LINK_DEMO,
+  BUTTON_DEMO,
+  RADIO_INPUT_DEMO,
+  SWITCH_DEMO,
+  CHECKBOX_DEMO,
   { name: "Popover", renderElement: (_cx, _state) => [] },
   { name: "Dropdown", renderElement: (_cx, _state) => [] },
   { name: "Right-Click Menu", renderElement: (_cx, _state) => [] },
@@ -91,9 +105,37 @@ export class MainView implements FlashView {
   private focusModalOpen = false;
   private focusActionsRegistered = false;
 
+  private scrollbarHandle1: ScrollHandle | null = null;
+  private scrollbarHandle2: ScrollHandle | null = null;
+  private scrollbarHandle3: ScrollHandle | null = null;
+
+  private uniformListScrollHandle: ScrollHandle | null = null;
+  private variableListScrollHandle: ScrollHandle | null = null;
+  private variableListState: ListState | null = null;
+
+  private clipboardLastText: string | null = null;
+  private clipboardStatus = "Click Copy or Paste to interact with the clipboard.";
+  private clipboardSample = "Hello from Glade clipboard demo!";
+
+  private selectedWebGPUDemo:
+    | "hexagon"
+    | "metaball"
+    | "particle"
+    | "raymarch"
+    | "terrain"
+    | "galaxy" = "hexagon";
+
+  private pngImageTile: ImageTile | null = null;
+  private jpgImageTile: ImageTile | null = null;
+
   constructor() {
     this.selectedDemoName = this.demos[0]?.name ?? "Demo";
     this.selectedDemo = this.demos[0]!;
+  }
+
+  setImageTiles(pngTile: ImageTile, jpgTile: ImageTile): void {
+    this.pngImageTile = pngTile;
+    this.jpgImageTile = jpgTile;
   }
 
   private ensureDemoState(cx: FlashViewContext<this>): DemoState {
@@ -133,6 +175,27 @@ export class MainView implements FlashView {
       this.modalCloseHandle = cx.newFocusHandle(cx.windowId);
     }
 
+    if (!this.scrollbarHandle1) {
+      this.scrollbarHandle1 = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.scrollbarHandle2) {
+      this.scrollbarHandle2 = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.scrollbarHandle3) {
+      this.scrollbarHandle3 = cx.newScrollHandle(cx.windowId);
+    }
+
+    if (!this.uniformListScrollHandle) {
+      this.uniformListScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.variableListScrollHandle) {
+      this.variableListScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.variableListState) {
+      this.variableListState = createListState();
+      this.variableListState.setScrollHandle(this.variableListScrollHandle!);
+    }
+
     this.registerFocusDemoActions(cx);
 
     return {
@@ -159,6 +222,34 @@ export class MainView implements FlashView {
       setFocusModalOpen: (open: boolean) => {
         this.focusModalOpen = open;
       },
+
+      scrollbarHandle1: this.scrollbarHandle1,
+      scrollbarHandle2: this.scrollbarHandle2,
+      scrollbarHandle3: this.scrollbarHandle3,
+
+      uniformListScrollHandle: this.uniformListScrollHandle,
+      variableListScrollHandle: this.variableListScrollHandle,
+      variableListState: this.variableListState,
+
+      clipboardLastText: this.clipboardLastText,
+      clipboardStatus: this.clipboardStatus,
+      clipboardSample: this.clipboardSample,
+      setClipboardLastText: (text: string | null) => {
+        this.clipboardLastText = text;
+      },
+      setClipboardStatus: (status: string) => {
+        this.clipboardStatus = status;
+      },
+
+      selectedWebGPUDemo: this.selectedWebGPUDemo,
+      setSelectedWebGPUDemo: (
+        demo: "hexagon" | "metaball" | "particle" | "raymarch" | "terrain" | "galaxy"
+      ) => {
+        this.selectedWebGPUDemo = demo;
+      },
+
+      pngImageTile: this.pngImageTile,
+      jpgImageTile: this.jpgImageTile,
     };
   }
 

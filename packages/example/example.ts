@@ -16,6 +16,8 @@ const jetBrainsMonoSemiBoldBase64 = COMPTIME_embedAsBase64(
   "../../assets/JetBrainsMono-SemiBold.ttf"
 ) as unknown as string;
 const notoEmojiBase64 = COMPTIME_embedAsBase64("../../assets/NotoColorEmoji-Regular.ttf");
+const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png");
+const flowerJpgBase64 = COMPTIME_embedAsBase64("../../assets/flower.jpg");
 
 async function main() {
   const ctx = await createWebGPUContext({
@@ -30,14 +32,25 @@ async function main() {
   const app = new FlashApp({ platform, colorSchemeProvider });
   await app.initialize();
 
+  const mainView = new MainView();
   const window = await app.openWindow(
     { width: ctx.width, height: ctx.height, title: "Glade Example" },
-    (cx: FlashContext) => cx.newView(() => new MainView())
+    (cx: FlashContext) => cx.newView(() => mainView)
   );
 
   window.registerFont("Inter", base64ToBytes(interFontBase64));
   window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoSemiBoldBase64));
   window.registerFont("Noto Color Emoji", base64ToBytes(notoEmojiBase64));
+
+  const pngData = base64ToBytes(demoPngBase64);
+  const decodedPng = await platform.decodeImage(pngData);
+  const pngImageTile = window.uploadImage(decodedPng);
+
+  const jpgData = base64ToBytes(flowerJpgBase64);
+  const decodedJpg = await platform.decodeImage(jpgData);
+  const jpgImageTile = window.uploadImage(decodedJpg);
+
+  mainView.setImageTiles(pngImageTile, jpgImageTile);
 
   app.run();
 

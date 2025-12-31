@@ -2,6 +2,14 @@
   "name": "@glade/demos",
   "version": "0.0.1",
   "type": "module",
+  "exports": {
+    "./hexagon": "./hexagon.ts",
+    "./metaball": "./metaball.ts",
+    "./particle": "./particle.ts",
+    "./raymarch": "./raymarch.ts",
+    "./terrain": "./terrain.ts",
+    "./galaxy": "./galaxy.ts"
+  },
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",
