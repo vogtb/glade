@@ -12,10 +12,11 @@ import {
 } from "@glade/flash";
 import type { Demo, DemoItem } from "./demo";
 import { TEXT_DEMO } from "./text_demo";
+import { DIV_DEMO } from "./div_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
-  { name: "Divs", renderElement: (_cx) => [] },
+  DIV_DEMO,
   { name: "Headers", renderElement: (_cx) => [] },
   { name: "Fonts", renderElement: (_cx) => [] },
   { name: "Monospaced", renderElement: (_cx) => [] },
