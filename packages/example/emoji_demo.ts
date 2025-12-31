@@ -1,0 +1,16 @@
+import { div, text } from "@glade/flash";
+import type { Demo, DemoItem } from "./demo";
+import { SPACER_10PX } from "./common";
+
+export const EMOJI_DEMO: Demo = {
+  name: "Emoji",
+  renderElement: (_cx): DemoItem[] => [
+    div().child(text("We use Noto Color Emoji for these.").size(28)),
+    SPACER_10PX,
+    div().child(text("🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🦁🐮").font("Noto Color Emoji").size(28)),
+    SPACER_10PX,
+    div().child(text("👐🏼🙌🏼👏🏼👊🏽✊🏽🤛🏽🤜🏽🤞🏽👋🏾🤙🏾💪🏾🖕🏾").font("Noto Color Emoji").size(28)),
+    SPACER_10PX,
+    div().child(text("🍅🍆🥒🥕🌽🌶🧄🧅🥔🍠🌰🥓").font("Noto Color Emoji").size(28)),
+  ],
+};

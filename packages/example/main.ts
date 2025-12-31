@@ -18,6 +18,7 @@ import { FONTS_DEMO } from "./fonts_demo";
 import { SPACER_10PX } from "./common";
 import { CODE_DEMO } from "./code_pre_demo";
 import { UNDERLINE_DEMO } from "./underline_demo";
+import { EMOJI_DEMO } from "./emoji_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -26,7 +27,7 @@ const DEMOS: Demo[] = [
   FONTS_DEMO,
   CODE_DEMO,
   UNDERLINE_DEMO,
-  { name: "Emoji", renderElement: (_cx) => [] },
+  EMOJI_DEMO,
   { name: "Input", renderElement: (_cx) => [] },
   { name: "Focus", renderElement: (_cx) => [] },
   { name: "Canvas", renderElement: (_cx) => [] },
