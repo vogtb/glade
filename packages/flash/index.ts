@@ -197,7 +197,7 @@ export type { UnderlineStyle } from "./element";
 export { FlashScene } from "./scene";
 
 // Spatial indexing
-export { BoundsTree } from "./bounds_tree";
+export { BoundsTree } from "./bounds";
 
 // Text system
 export type {

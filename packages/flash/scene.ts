@@ -13,10 +13,10 @@
 import type { ContentMask, Bounds, TransformationMatrix } from "./types.ts";
 import type { UnderlineStyle } from "./element.ts";
 import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
-import { BoundsTree, type DrawOrder } from "./bounds_tree.ts";
+import { BoundsTree, type DrawOrder } from "./bounds.ts";
 import { toColorObject, type ColorObject } from "@glade/utils";
 
-export type { DrawOrder } from "./bounds_tree.ts";
+export type { DrawOrder } from "./bounds.ts";
 
 /**
  * Primitive types for batch iteration.

@@ -3,7 +3,7 @@ import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";
 
 export const HEADING_DEMO: Demo = {
-  name: "Headers",
+  name: "Headings",
   renderElement: (_cx): DemoItem[] => [
     text("Headings like HTML h1, h2, and so on").size(16),
     SPACER_10PX,

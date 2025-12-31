@@ -14,12 +14,14 @@ import type { Demo, DemoItem } from "./demo";
 import { TEXT_DEMO } from "./text_demo";
 import { DIV_DEMO } from "./div_demo";
 import { HEADING_DEMO } from "./heading_demo";
+import { FONTS_DEMO } from "./fonts_demo";
+import { SPACER_10PX } from "./common";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
   DIV_DEMO,
   HEADING_DEMO,
-  { name: "Fonts", renderElement: (_cx) => [] },
+  FONTS_DEMO,
   { name: "Monospaced", renderElement: (_cx) => [] },
   { name: "Code/Pre", renderElement: (_cx) => [] },
   { name: "Emoji", renderElement: (_cx) => [] },
@@ -108,6 +110,7 @@ export class MainView implements FlashView {
               .trackScroll(this.navScrollHandle!)
               .children(...this.demos.map((demo) => this.renderDemoButton(cx, theme, demo)))
           ),
+        div().flex().flexCol().flexShrink().w(10).bg(theme.background),
         div()
           .flex()
           .flexCol()
@@ -127,8 +130,11 @@ export class MainView implements FlashView {
       .flex1()
       .children(
         list<DemoItem>((item, _props, _itemCx) => item, this.contentListState!)
-          .p(12)
-          .data([div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)), ...items])
+          .data([
+            div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)),
+            SPACER_10PX,
+            ...items,
+          ])
           .estimatedItemHeight(36)
           .setOverdraw(3)
           .trackScroll(this.contentScrollHandle!)
