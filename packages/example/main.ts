@@ -21,6 +21,7 @@ import { INPUTS_DEMO } from "./input_demo";
 import { FOCUS_DEMO } from "./focus_demo";
 import { FLEXBOX_DEMO } from "./flexbox_demo";
 import { GRID_DEMO } from "./grid_demo";
+import { TABLE_DEMO } from "./table_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -34,7 +35,7 @@ const DEMOS: Demo[] = [
   FOCUS_DEMO,
   FLEXBOX_DEMO,
   GRID_DEMO,
-  { name: "Table", renderElement: (_cx, _state) => [] },
+  TABLE_DEMO,
   { name: "Simple Selection", renderElement: (_cx, _state) => [] },
   { name: "X-Element Selection", renderElement: (_cx, _state) => [] },
   { name: "Border", renderElement: (_cx, _state) => [] },
