@@ -22,6 +22,7 @@ import { FOCUS_DEMO } from "./focus_demo";
 import { FLEXBOX_DEMO } from "./flexbox_demo";
 import { GRID_DEMO } from "./grid_demo";
 import { TABLE_DEMO } from "./table_demo";
+import { CANVAS_DEMO } from "./canvas_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -48,7 +49,7 @@ const DEMOS: Demo[] = [
   { name: "WebGPU", renderElement: (_cx, _state) => [] },
   { name: "Images", renderElement: (_cx, _state) => [] },
   { name: "Deferred", renderElement: (_cx, _state) => [] },
-  { name: "Canvas", renderElement: (_cx, _state) => [] },
+  CANVAS_DEMO,
   { name: "Icon", renderElement: (_cx, _state) => [] },
   { name: "Link", renderElement: (_cx, _state) => [] },
   { name: "Button", renderElement: (_cx, _state) => [] },
