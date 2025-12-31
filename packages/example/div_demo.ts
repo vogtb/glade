@@ -22,7 +22,7 @@ function flexBoxTall(label: string, height: number) {
 
 export const DIV_DEMO: Demo = {
   name: "Div",
-  renderElement: (cx): DemoItem[] => [
+  renderElement: (cx, _state): DemoItem[] => [
     text("They're basically like an HTML <div />").size(16),
     SPACER_10PX,
     div()

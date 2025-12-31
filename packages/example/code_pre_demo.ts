@@ -22,7 +22,7 @@ const WRAPPED_PRE_SAMPLE =
 
 export const CODE_DEMO: Demo = {
   name: "Code & Pre",
-  renderElement: (_cx): DemoItem[] => [
+  renderElement: (_cx, _state): DemoItem[] => [
     div()
       .flex()
       .flexCol()

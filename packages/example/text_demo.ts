@@ -5,7 +5,7 @@ import { SPACER_10PX } from "./common";
 
 export const TEXT_DEMO: Demo = {
   name: "Text",
-  renderElement: (_cx): DemoItem[] => [
+  renderElement: (_cx, _state): DemoItem[] => [
     text("GPU-accelerated text rendering with cosmic-text shaping").size(16),
     SPACER_10PX,
     text("The quick brown fox jumps over the lazy dog.").size(14),

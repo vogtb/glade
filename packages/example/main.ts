@@ -1,24 +1,24 @@
 import {
-  createListState,
   div,
   h1,
-  list,
   text,
+  TextInputController,
   type FlashView,
   type FlashViewContext,
-  type ListState,
+  type FocusHandle,
   type ScrollHandle,
   type Theme,
 } from "@glade/flash";
-import type { Demo, DemoItem } from "./demo";
+import type { Demo, DemoState } from "./demo";
 import { TEXT_DEMO } from "./text_demo";
 import { DIV_DEMO } from "./div_demo";
 import { HEADING_DEMO } from "./heading_demo";
 import { FONTS_DEMO } from "./fonts_demo";
-import { SPACER_10PX } from "./common";
+
 import { CODE_DEMO } from "./code_pre_demo";
 import { UNDERLINE_DEMO } from "./underline_demo";
 import { EMOJI_DEMO } from "./emoji_demo";
+import { INPUTS_DEMO } from "./input_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -28,35 +28,35 @@ const DEMOS: Demo[] = [
   CODE_DEMO,
   UNDERLINE_DEMO,
   EMOJI_DEMO,
-  { name: "Input", renderElement: (_cx) => [] },
-  { name: "Focus", renderElement: (_cx) => [] },
-  { name: "Canvas", renderElement: (_cx) => [] },
-  { name: "Simple Selection", renderElement: (_cx) => [] },
-  { name: "X-Element Selection", renderElement: (_cx) => [] },
-  { name: "Flexbox", renderElement: (_cx) => [] },
-  { name: "Grid", renderElement: (_cx) => [] },
-  { name: "Table", renderElement: (_cx) => [] },
-  { name: "Border", renderElement: (_cx) => [] },
-  { name: "Padding", renderElement: (_cx) => [] },
-  { name: "Margin", renderElement: (_cx) => [] },
-  { name: "Groups", renderElement: (_cx) => [] },
-  { name: "Scrollbars", renderElement: (_cx) => [] },
-  { name: "Virtual Scrolling", renderElement: (_cx) => [] },
-  { name: "Clipboard", renderElement: (_cx) => [] },
-  { name: "WebGPU", renderElement: (_cx) => [] },
-  { name: "Images", renderElement: (_cx) => [] },
-  { name: "Deferred", renderElement: (_cx) => [] },
-  { name: "Icon", renderElement: (_cx) => [] },
-  { name: "Link", renderElement: (_cx) => [] },
-  { name: "Button", renderElement: (_cx) => [] },
-  { name: "Tab", renderElement: (_cx) => [] },
-  { name: "Radio", renderElement: (_cx) => [] },
-  { name: "Switch", renderElement: (_cx) => [] },
-  { name: "Checkbox", renderElement: (_cx) => [] },
-  { name: "Popover", renderElement: (_cx) => [] },
-  { name: "Dropdown", renderElement: (_cx) => [] },
-  { name: "Right-Click Menu", renderElement: (_cx) => [] },
-  { name: "Debug Mode", renderElement: (_cx) => [] },
+  INPUTS_DEMO,
+  { name: "Focus", renderElement: (_cx, _state) => [] },
+  { name: "Canvas", renderElement: (_cx, _state) => [] },
+  { name: "Simple Selection", renderElement: (_cx, _state) => [] },
+  { name: "X-Element Selection", renderElement: (_cx, _state) => [] },
+  { name: "Flexbox", renderElement: (_cx, _state) => [] },
+  { name: "Grid", renderElement: (_cx, _state) => [] },
+  { name: "Table", renderElement: (_cx, _state) => [] },
+  { name: "Border", renderElement: (_cx, _state) => [] },
+  { name: "Padding", renderElement: (_cx, _state) => [] },
+  { name: "Margin", renderElement: (_cx, _state) => [] },
+  { name: "Groups", renderElement: (_cx, _state) => [] },
+  { name: "Scrollbars", renderElement: (_cx, _state) => [] },
+  { name: "Virtual Scrolling", renderElement: (_cx, _state) => [] },
+  { name: "Clipboard", renderElement: (_cx, _state) => [] },
+  { name: "WebGPU", renderElement: (_cx, _state) => [] },
+  { name: "Images", renderElement: (_cx, _state) => [] },
+  { name: "Deferred", renderElement: (_cx, _state) => [] },
+  { name: "Icon", renderElement: (_cx, _state) => [] },
+  { name: "Link", renderElement: (_cx, _state) => [] },
+  { name: "Button", renderElement: (_cx, _state) => [] },
+  { name: "Tab", renderElement: (_cx, _state) => [] },
+  { name: "Radio", renderElement: (_cx, _state) => [] },
+  { name: "Switch", renderElement: (_cx, _state) => [] },
+  { name: "Checkbox", renderElement: (_cx, _state) => [] },
+  { name: "Popover", renderElement: (_cx, _state) => [] },
+  { name: "Dropdown", renderElement: (_cx, _state) => [] },
+  { name: "Right-Click Menu", renderElement: (_cx, _state) => [] },
+  { name: "Debug Mode", renderElement: (_cx, _state) => [] },
 ];
 
 export class MainView implements FlashView {
@@ -65,11 +65,34 @@ export class MainView implements FlashView {
   private selectedDemoName: string;
   private navScrollHandle: ScrollHandle | null = null;
   private contentScrollHandle: ScrollHandle | null = null;
-  private contentListState: ListState | null = null;
+  private textInputHandle: FocusHandle | null = null;
+  private textInputController: TextInputController | null = null;
+  private textInputStatus = "Click the field to focus, then type to insert characters.";
 
   constructor() {
     this.selectedDemoName = this.demos[0]?.name ?? "Demo";
     this.selectedDemo = this.demos[0]!;
+  }
+
+  private ensureDemoState(cx: FlashViewContext<this>): DemoState {
+    if (!this.textInputHandle) {
+      this.textInputHandle = cx.focusHandle();
+    }
+    if (!this.textInputController) {
+      this.textInputController = new TextInputController({ multiline: true });
+    }
+    return {
+      textInputHandle: this.textInputHandle,
+      textInputController: this.textInputController,
+      textInputStatus: this.textInputStatus,
+      setTextInputStatus: (status: string) => {
+        this.textInputStatus = status;
+      },
+    };
+  }
+
+  setTextInputStatus(status: string) {
+    this.textInputStatus = status;
   }
 
   render(cx: FlashViewContext<this>) {
@@ -80,10 +103,6 @@ export class MainView implements FlashView {
     }
     if (!this.contentScrollHandle) {
       this.contentScrollHandle = cx.newScrollHandle(cx.windowId);
-    }
-    if (!this.contentListState) {
-      this.contentListState = createListState();
-      this.contentListState.setScrollHandle(this.contentScrollHandle!);
     }
 
     return div()
@@ -124,26 +143,19 @@ export class MainView implements FlashView {
   }
 
   private renderActiveDemo(cx: FlashViewContext<this>, theme: Theme) {
-    const items = this.selectedDemo.renderElement(cx);
+    const state = this.ensureDemoState(cx);
+    const items = this.selectedDemo.renderElement(cx, state);
 
     return div()
       .flex()
       .flexCol()
       .flex1()
-      .children(
-        list<DemoItem>((item, _props, _itemCx) => item, this.contentListState!)
-          .data([
-            div().pt(8).child(h1(this.selectedDemoName).font("Inter").color(theme.text)),
-            SPACER_10PX,
-            ...items,
-          ])
-          .estimatedItemHeight(36)
-          .setOverdraw(3)
-          .trackScroll(this.contentScrollHandle!)
-          .setContext(cx)
-          .scrollbarAlways()
-          .flex1()
-      );
+      .p(12)
+      .gap(8)
+      .overflowScroll()
+      .scrollbarAlways()
+      .trackScroll(this.contentScrollHandle!)
+      .children(div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)), ...items);
   }
 
   private renderDemoButton(cx: FlashViewContext<this>, theme: Theme, demo: Demo) {

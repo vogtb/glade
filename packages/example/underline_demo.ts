@@ -4,7 +4,7 @@ import { SPACER_10PX } from "./common";
 
 export const UNDERLINE_DEMO: Demo = {
   name: "Underline",
-  renderElement: (cx): DemoItem[] => {
+  renderElement: (cx, _state): DemoItem[] => {
     const theme = cx.getTheme();
 
     return [
