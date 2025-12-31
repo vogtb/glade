@@ -37,13 +37,15 @@ import { VIRTUAL_SCROLLING_DEMO } from "./virtual_scrolling_demo";
 import { CLIPBOARD_DEMO } from "./clipboard_demo";
 import { WEBGPU_DEMO } from "./webgpu_demo";
 import { IMAGES_DEMO } from "./images_demo";
-import { DEFERRED_DEMO } from "./deferred_demo";
 import { ICON_DEMO } from "./icon_demo";
 import { LINK_DEMO } from "./link_demo";
 import { BUTTON_DEMO } from "./button_demo";
 import { RADIO_INPUT_DEMO } from "./radio_demo";
 import { SWITCH_DEMO } from "./switch_demo";
 import { CHECKBOX_DEMO } from "./checkbox_demo";
+import { DEBUG_MODE_DEMO } from "./debug_mode_demo";
+import { DROPDOWN_DEMO } from "./dropdown_demo";
+import { THEME_DEMO } from "./theme_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -67,20 +69,18 @@ const DEMOS: Demo[] = [
   SCROLLBAR_DEMO,
   VIRTUAL_SCROLLING_DEMO,
   CLIPBOARD_DEMO,
+  DEBUG_MODE_DEMO,
   WEBGPU_DEMO,
   CANVAS_DEMO,
   IMAGES_DEMO,
-  DEFERRED_DEMO,
   ICON_DEMO,
   LINK_DEMO,
   BUTTON_DEMO,
   RADIO_INPUT_DEMO,
   SWITCH_DEMO,
   CHECKBOX_DEMO,
-  { name: "Popover", renderElement: (_cx, _state) => [] },
-  { name: "Dropdown", renderElement: (_cx, _state) => [] },
-  { name: "Right-Click Menu", renderElement: (_cx, _state) => [] },
-  { name: "Debug Mode", renderElement: (_cx, _state) => [] },
+  DROPDOWN_DEMO,
+  THEME_DEMO,
 ];
 
 export class MainView implements FlashView {
