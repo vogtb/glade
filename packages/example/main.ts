@@ -20,6 +20,7 @@ import { EMOJI_DEMO } from "./emoji_demo";
 import { INPUTS_DEMO } from "./input_demo";
 import { FOCUS_DEMO } from "./focus_demo";
 import { FLEXBOX_DEMO } from "./flexbox_demo";
+import { GRID_DEMO } from "./grid_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -32,11 +33,10 @@ const DEMOS: Demo[] = [
   INPUTS_DEMO,
   FOCUS_DEMO,
   FLEXBOX_DEMO,
-  { name: "Canvas", renderElement: (_cx, _state) => [] },
+  GRID_DEMO,
+  { name: "Table", renderElement: (_cx, _state) => [] },
   { name: "Simple Selection", renderElement: (_cx, _state) => [] },
   { name: "X-Element Selection", renderElement: (_cx, _state) => [] },
-  { name: "Grid", renderElement: (_cx, _state) => [] },
-  { name: "Table", renderElement: (_cx, _state) => [] },
   { name: "Border", renderElement: (_cx, _state) => [] },
   { name: "Padding", renderElement: (_cx, _state) => [] },
   { name: "Margin", renderElement: (_cx, _state) => [] },
@@ -47,6 +47,7 @@ const DEMOS: Demo[] = [
   { name: "WebGPU", renderElement: (_cx, _state) => [] },
   { name: "Images", renderElement: (_cx, _state) => [] },
   { name: "Deferred", renderElement: (_cx, _state) => [] },
+  { name: "Canvas", renderElement: (_cx, _state) => [] },
   { name: "Icon", renderElement: (_cx, _state) => [] },
   { name: "Link", renderElement: (_cx, _state) => [] },
   { name: "Button", renderElement: (_cx, _state) => [] },
