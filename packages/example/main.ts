@@ -17,6 +17,7 @@ import { HEADING_DEMO } from "./heading_demo";
 import { FONTS_DEMO } from "./fonts_demo";
 import { SPACER_10PX } from "./common";
 import { CODE_DEMO } from "./code_pre_demo";
+import { UNDERLINE_DEMO } from "./underline_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -24,8 +25,8 @@ const DEMOS: Demo[] = [
   HEADING_DEMO,
   FONTS_DEMO,
   CODE_DEMO,
+  UNDERLINE_DEMO,
   { name: "Emoji", renderElement: (_cx) => [] },
-  { name: "Underlined", renderElement: (_cx) => [] },
   { name: "Input", renderElement: (_cx) => [] },
   { name: "Focus", renderElement: (_cx) => [] },
   { name: "Canvas", renderElement: (_cx) => [] },
@@ -131,7 +132,7 @@ export class MainView implements FlashView {
       .children(
         list<DemoItem>((item, _props, _itemCx) => item, this.contentListState!)
           .data([
-            div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)),
+            div().pt(8).child(h1(this.selectedDemoName).font("Inter").color(theme.text)),
             SPACER_10PX,
             ...items,
           ])
