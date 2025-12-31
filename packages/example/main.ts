@@ -24,6 +24,7 @@ import { GRID_DEMO } from "./grid_demo";
 import { TABLE_DEMO } from "./table_demo";
 import { CANVAS_DEMO } from "./canvas_demo";
 import { TEXT_SELECTION_DEMO } from "./text_selection_demo";
+import { MULTI_SELECTION_DEMO } from "./multi_selection";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -39,7 +40,7 @@ const DEMOS: Demo[] = [
   GRID_DEMO,
   TABLE_DEMO,
   TEXT_SELECTION_DEMO,
-  { name: "X-Element Selection", renderElement: (_cx, _state) => [] },
+  MULTI_SELECTION_DEMO,
   { name: "Border", renderElement: (_cx, _state) => [] },
   { name: "Padding", renderElement: (_cx, _state) => [] },
   { name: "Margin", renderElement: (_cx, _state) => [] },
