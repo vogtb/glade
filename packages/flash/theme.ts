@@ -144,31 +144,8 @@ export function resolveTheme(
   return applyOverrides(normalizedBase, config?.overrides);
 }
 
-function colorsEqual(a: ColorObject, b: ColorObject): boolean {
-  return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
-}
-
 function themesEqual(a: Theme, b: Theme): boolean {
-  return (
-    a.scheme === b.scheme &&
-    colorsEqual(a.background, b.background) &&
-    colorsEqual(a.surface, b.surface) &&
-    colorsEqual(a.surfaceMuted, b.surfaceMuted) &&
-    colorsEqual(a.border, b.border) &&
-    colorsEqual(a.text, b.text) &&
-    colorsEqual(a.textMuted, b.textMuted) &&
-    colorsEqual(a.primary, b.primary) &&
-    colorsEqual(a.primaryForeground, b.primaryForeground) &&
-    colorsEqual(a.selectionBackground, b.selectionBackground) &&
-    colorsEqual(a.selectionForeground, b.selectionForeground) &&
-    colorsEqual(a.caret, b.caret) &&
-    colorsEqual(a.focusRing, b.focusRing) &&
-    colorsEqual(a.overlayBackground, b.overlayBackground) &&
-    colorsEqual(a.overlayBorder, b.overlayBorder) &&
-    colorsEqual(a.danger, b.danger) &&
-    colorsEqual(a.warning, b.warning) &&
-    colorsEqual(a.success, b.success)
-  );
+  return a.scheme === b.scheme && JSON.stringify(a) === JSON.stringify(b);
 }
 
 export class ThemeManager {

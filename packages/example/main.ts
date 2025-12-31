@@ -1,53 +1,56 @@
 import {
+  createListState,
   div,
   h1,
+  list,
   text,
   type FlashView,
   type FlashViewContext,
+  type ListState,
   type ScrollHandle,
   type Theme,
 } from "@glade/flash";
-import type { Demo } from "./demo";
+import type { Demo, DemoItem } from "./demo";
 import { TEXT_DEMO } from "./text_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
-  { name: "Divs", renderElement: (_cx) => div() },
-  { name: "Headers", renderElement: (_cx) => div() },
-  { name: "Fonts", renderElement: (_cx) => div() },
-  { name: "Monospaced", renderElement: (_cx) => div() },
-  { name: "Code/Pre", renderElement: (_cx) => div() },
-  { name: "Emoji", renderElement: (_cx) => div() },
-  { name: "Underlined", renderElement: (_cx) => div() },
-  { name: "Input", renderElement: (_cx) => div() },
-  { name: "Focus", renderElement: (_cx) => div() },
-  { name: "Canvas", renderElement: (_cx) => div() },
-  { name: "Simple Selection", renderElement: (_cx) => div() },
-  { name: "X-Element Selection", renderElement: (_cx) => div() },
-  { name: "Flexbox", renderElement: (_cx) => div() },
-  { name: "Grid", renderElement: (_cx) => div() },
-  { name: "Table", renderElement: (_cx) => div() },
-  { name: "Border", renderElement: (_cx) => div() },
-  { name: "Padding", renderElement: (_cx) => div() },
-  { name: "Margin", renderElement: (_cx) => div() },
-  { name: "Groups", renderElement: (_cx) => div() },
-  { name: "Scrollbars", renderElement: (_cx) => div() },
-  { name: "Virtual Scrolling", renderElement: (_cx) => div() },
-  { name: "Clipboard", renderElement: (_cx) => div() },
-  { name: "WebGPU", renderElement: (_cx) => div() },
-  { name: "Images", renderElement: (_cx) => div() },
-  { name: "Deferred", renderElement: (_cx) => div() },
-  { name: "Icon", renderElement: (_cx) => div() },
-  { name: "Link", renderElement: (_cx) => div() },
-  { name: "Button", renderElement: (_cx) => div() },
-  { name: "Tab", renderElement: (_cx) => div() },
-  { name: "Radio", renderElement: (_cx) => div() },
-  { name: "Switch", renderElement: (_cx) => div() },
-  { name: "Checkbox", renderElement: (_cx) => div() },
-  { name: "Popover", renderElement: (_cx) => div() },
-  { name: "Dropdown", renderElement: (_cx) => div() },
-  { name: "Right-Click Menu", renderElement: (_cx) => div() },
-  { name: "Debug Mode", renderElement: (_cx) => div() },
+  { name: "Divs", renderElement: (_cx) => [] },
+  { name: "Headers", renderElement: (_cx) => [] },
+  { name: "Fonts", renderElement: (_cx) => [] },
+  { name: "Monospaced", renderElement: (_cx) => [] },
+  { name: "Code/Pre", renderElement: (_cx) => [] },
+  { name: "Emoji", renderElement: (_cx) => [] },
+  { name: "Underlined", renderElement: (_cx) => [] },
+  { name: "Input", renderElement: (_cx) => [] },
+  { name: "Focus", renderElement: (_cx) => [] },
+  { name: "Canvas", renderElement: (_cx) => [] },
+  { name: "Simple Selection", renderElement: (_cx) => [] },
+  { name: "X-Element Selection", renderElement: (_cx) => [] },
+  { name: "Flexbox", renderElement: (_cx) => [] },
+  { name: "Grid", renderElement: (_cx) => [] },
+  { name: "Table", renderElement: (_cx) => [] },
+  { name: "Border", renderElement: (_cx) => [] },
+  { name: "Padding", renderElement: (_cx) => [] },
+  { name: "Margin", renderElement: (_cx) => [] },
+  { name: "Groups", renderElement: (_cx) => [] },
+  { name: "Scrollbars", renderElement: (_cx) => [] },
+  { name: "Virtual Scrolling", renderElement: (_cx) => [] },
+  { name: "Clipboard", renderElement: (_cx) => [] },
+  { name: "WebGPU", renderElement: (_cx) => [] },
+  { name: "Images", renderElement: (_cx) => [] },
+  { name: "Deferred", renderElement: (_cx) => [] },
+  { name: "Icon", renderElement: (_cx) => [] },
+  { name: "Link", renderElement: (_cx) => [] },
+  { name: "Button", renderElement: (_cx) => [] },
+  { name: "Tab", renderElement: (_cx) => [] },
+  { name: "Radio", renderElement: (_cx) => [] },
+  { name: "Switch", renderElement: (_cx) => [] },
+  { name: "Checkbox", renderElement: (_cx) => [] },
+  { name: "Popover", renderElement: (_cx) => [] },
+  { name: "Dropdown", renderElement: (_cx) => [] },
+  { name: "Right-Click Menu", renderElement: (_cx) => [] },
+  { name: "Debug Mode", renderElement: (_cx) => [] },
 ];
 
 export class MainView implements FlashView {
@@ -56,6 +59,7 @@ export class MainView implements FlashView {
   private selectedDemoName: string;
   private navScrollHandle: ScrollHandle | null = null;
   private contentScrollHandle: ScrollHandle | null = null;
+  private contentListState: ListState | null = null;
 
   constructor() {
     this.selectedDemoName = this.demos[0]?.name ?? "Demo";
@@ -70,6 +74,10 @@ export class MainView implements FlashView {
     }
     if (!this.contentScrollHandle) {
       this.contentScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+    if (!this.contentListState) {
+      this.contentListState = createListState();
+      this.contentListState.setScrollHandle(this.contentScrollHandle!);
     }
 
     return div()
@@ -109,18 +117,22 @@ export class MainView implements FlashView {
   }
 
   private renderActiveDemo(cx: FlashViewContext<this>, theme: Theme) {
+    const items = this.selectedDemo.renderElement(cx);
+
     return div()
       .flex()
       .flexCol()
-      .gap(12)
-      .p(12)
       .flex1()
-      .overflowScroll()
-      .scrollbarAlways()
-      .trackScroll(this.contentScrollHandle!)
       .children(
-        div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)),
-        this.selectedDemo.renderElement(cx)
+        list<DemoItem>((item, _props, _itemCx) => item, this.contentListState!)
+          .p(12)
+          .data([div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)), ...items])
+          .estimatedItemHeight(36)
+          .setOverdraw(3)
+          .trackScroll(this.contentScrollHandle!)
+          .setContext(cx)
+          .scrollbarAlways()
+          .flex1()
       );
   }
 
