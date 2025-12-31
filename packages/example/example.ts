@@ -7,22 +7,9 @@ import {
 } from "@glade/platform";
 import { FlashApp, type FlashContext } from "@glade/flash";
 import { MainView } from "./main.ts";
+import { base64ToBytes } from "@glade/utils";
 
 const interFontBase64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
-
-function base64ToBytes(base64: string): Uint8Array {
-  if (typeof globalThis.atob === "function") {
-    const decoded = globalThis.atob(base64);
-    const bytes = new Uint8Array(decoded.length);
-    for (let index = 0; index < decoded.length; index += 1) {
-      bytes[index] = decoded.charCodeAt(index);
-    }
-    return bytes;
-  }
-
-  const buffer = Buffer.from(base64, "base64");
-  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-}
 
 async function main() {
   const ctx = await createWebGPUContext({

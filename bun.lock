@@ -74,6 +74,17 @@
         "@glade/utils": "workspace:*",
       },
     },
+    "packages/example": {
+      "name": "@glade/example",
+      "version": "0.0.1",
+      "dependencies": {
+        "@glade/comptime": "workspace:*",
+        "@glade/core": "workspace:*",
+        "@glade/flash": "workspace:*",
+        "@glade/platform": "workspace:*",
+        "@glade/utils": "workspace:*",
+      },
+    },
     "packages/flash": {
       "name": "@glade/flash",
       "version": "0.0.1",
@@ -97,6 +108,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/comptime": "workspace:*",
+        "@glade/utils": "workspace:*",
       },
     },
     "packages/platform": {
@@ -120,6 +132,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/comptime": "workspace:*",
+        "@glade/utils": "workspace:*",
       },
     },
     "packages/utils": {
@@ -269,6 +282,8 @@
     "@glade/dawn": ["@glade/dawn@workspace:packages/dawn"],
 
     "@glade/demos": ["@glade/demos@workspace:packages/demos"],
+
+    "@glade/example": ["@glade/example@workspace:packages/example"],
 
     "@glade/flash": ["@glade/flash@workspace:packages/flash"],
 

@@ -19,6 +19,7 @@
     "nuke": "rm -rf node_modules"
   },
   "dependencies": {
-    "@glade/comptime": "workspace:*"
+    "@glade/comptime": "workspace:*",
+    "@glade/utils": "workspace:*"
   }
 }

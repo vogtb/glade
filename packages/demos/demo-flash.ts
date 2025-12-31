@@ -87,7 +87,7 @@ import { createParticleHost } from "./particle.ts";
 import { createRaymarchHost } from "./raymarch.ts";
 import { createTerrainHost } from "./terrain.ts";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
-import { rgb } from "@glade/utils";
+import { base64ToBytes, rgb } from "@glade/utils";
 
 // Embed fonts as base64 at build time via Bun macro
 const interFontBase64 = COMPTIME_embedAsBase64(
@@ -234,19 +234,6 @@ const DEMO_GROUPS: DemoGroup[] = [
     ],
   },
 ];
-
-/**
- * Decode base64 to Uint8Array (works in both browser and Node/Bun)
- * TODO: put in utils
- */
-function base64ToBytes(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 /**
  * Decode base64 to string (for SVG files)

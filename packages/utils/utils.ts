@@ -1,3 +1,4 @@
+export * from "./bytes";
 export * from "./clamp";
 export * from "./color";
 export * from "./hash";

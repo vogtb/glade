@@ -12,42 +12,42 @@ import { TEXT_DEMO } from "./text_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
-  { name: "Divs", renderElement: () => div() },
-  { name: "Fonts", renderElement: () => div() },
-  { name: "Monospaced", renderElement: () => div() },
-  { name: "Code/Pre", renderElement: () => div() },
-  { name: "Emoji", renderElement: () => div() },
-  { name: "Underlined", renderElement: () => div() },
-  { name: "Input", renderElement: () => div() },
-  { name: "Focus", renderElement: () => div() },
-  { name: "Headers", renderElement: () => div() },
-  { name: "Canvas", renderElement: () => div() },
-  { name: "Simple Selection", renderElement: () => div() },
-  { name: "X-Element Selection", renderElement: () => div() },
-  { name: "Flexbox", renderElement: () => div() },
-  { name: "Grid", renderElement: () => div() },
-  { name: "Table", renderElement: () => div() },
-  { name: "Border", renderElement: () => div() },
-  { name: "Padding", renderElement: () => div() },
-  { name: "Margin", renderElement: () => div() },
-  { name: "Focus", renderElement: () => div() },
-  { name: "Groups", renderElement: () => div() },
-  { name: "Scrollbars", renderElement: () => div() },
-  { name: "Virtual Scrolling", renderElement: () => div() },
-  { name: "Clipboard", renderElement: () => div() },
-  { name: "WebGPU", renderElement: () => div() },
-  { name: "Images", renderElement: () => div() },
-  { name: "Deferred", renderElement: () => div() },
-  { name: "Icon", renderElement: () => div() },
-  { name: "Link", renderElement: () => div() },
-  { name: "Button", renderElement: () => div() },
-  { name: "Tab", renderElement: () => div() },
-  { name: "Radio", renderElement: () => div() },
-  { name: "Switch", renderElement: () => div() },
-  { name: "Checkbox", renderElement: () => div() },
-  { name: "Popover", renderElement: () => div() },
-  { name: "Dropdown", renderElement: () => div() },
-  { name: "Right-Click Menu", renderElement: () => div() },
+  { name: "Divs", renderElement: (_cx) => div() },
+  { name: "Headers", renderElement: (_cx) => div() },
+  { name: "Fonts", renderElement: (_cx) => div() },
+  { name: "Monospaced", renderElement: (_cx) => div() },
+  { name: "Code/Pre", renderElement: (_cx) => div() },
+  { name: "Emoji", renderElement: (_cx) => div() },
+  { name: "Underlined", renderElement: (_cx) => div() },
+  { name: "Input", renderElement: (_cx) => div() },
+  { name: "Focus", renderElement: (_cx) => div() },
+  { name: "Canvas", renderElement: (_cx) => div() },
+  { name: "Simple Selection", renderElement: (_cx) => div() },
+  { name: "X-Element Selection", renderElement: (_cx) => div() },
+  { name: "Flexbox", renderElement: (_cx) => div() },
+  { name: "Grid", renderElement: (_cx) => div() },
+  { name: "Table", renderElement: (_cx) => div() },
+  { name: "Border", renderElement: (_cx) => div() },
+  { name: "Padding", renderElement: (_cx) => div() },
+  { name: "Margin", renderElement: (_cx) => div() },
+  { name: "Groups", renderElement: (_cx) => div() },
+  { name: "Scrollbars", renderElement: (_cx) => div() },
+  { name: "Virtual Scrolling", renderElement: (_cx) => div() },
+  { name: "Clipboard", renderElement: (_cx) => div() },
+  { name: "WebGPU", renderElement: (_cx) => div() },
+  { name: "Images", renderElement: (_cx) => div() },
+  { name: "Deferred", renderElement: (_cx) => div() },
+  { name: "Icon", renderElement: (_cx) => div() },
+  { name: "Link", renderElement: (_cx) => div() },
+  { name: "Button", renderElement: (_cx) => div() },
+  { name: "Tab", renderElement: (_cx) => div() },
+  { name: "Radio", renderElement: (_cx) => div() },
+  { name: "Switch", renderElement: (_cx) => div() },
+  { name: "Checkbox", renderElement: (_cx) => div() },
+  { name: "Popover", renderElement: (_cx) => div() },
+  { name: "Dropdown", renderElement: (_cx) => div() },
+  { name: "Right-Click Menu", renderElement: (_cx) => div() },
+  { name: "Debug Mode", renderElement: (_cx) => div() },
 ];
 
 export class MainView implements FlashView {
@@ -64,7 +64,6 @@ export class MainView implements FlashView {
 
   render(cx: FlashViewContext<this>) {
     const theme = cx.getTheme();
-    const navWidth = Math.min(320, Math.max(220, Math.floor(cx.window.width * 0.28)));
 
     if (!this.navScrollHandle) {
       this.navScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -83,7 +82,7 @@ export class MainView implements FlashView {
         div()
           .flex()
           .flexCol()
-          .w(navWidth)
+          .w(220)
           .hFull()
           .flexShrink0()
           .bg(theme.surfaceMuted)
@@ -102,8 +101,7 @@ export class MainView implements FlashView {
         div()
           .flex()
           .flexCol()
-          .flexGrow()
-          .hFull()
+          .flex1()
           .bg(theme.background)
           .overflowHidden()
           .child(this.renderActiveDemo(cx, theme))
@@ -116,13 +114,13 @@ export class MainView implements FlashView {
       .flexCol()
       .gap(12)
       .p(12)
-      .hFull()
+      .flex1()
       .overflowScroll()
       .scrollbarAlways()
       .trackScroll(this.contentScrollHandle!)
       .children(
         div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)),
-        div().child(this.selectedDemo.renderElement())
+        this.selectedDemo.renderElement(cx)
       );
   }
 

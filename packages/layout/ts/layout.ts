@@ -8,6 +8,7 @@
  * native (Bun) and browser environments.
  */
 
+import { base64ToBytes } from "@glade/utils";
 import { initSync, TaffyLayoutEngine, type InitOutput } from "../pkg/layout";
 import type { LayoutId, LayoutBounds } from "../pkg/layout";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
@@ -16,18 +17,6 @@ import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 const wasmBase64 = COMPTIME_embedAsBase64("../layout/pkg/layout_bg.wasm");
 
 let wasmModule: InitOutput | null = null;
-
-/**
- * Decode base64 to Uint8Array (works in both browser and Node/Bun)
- */
-function base64ToBytes(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 /**
  * Initialize the WASM module synchronously.

@@ -5,6 +5,7 @@
  * for GPU rendering in Flash.
  */
 
+import { base64ToBytes } from "@glade/utils";
 import { initSync, SvgTessellator, type InitOutput } from "../pkg/svg";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
@@ -15,15 +16,6 @@ const wasmBase64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm");
 // global mutable state is bad.
 let wasmModule: InitOutput | null = null;
 let sharedTessellator: SvgTessellator | null = null;
-
-function base64ToBytes(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 export function initSvg(): InitOutput {
   if (wasmModule) {
