@@ -273,11 +273,6 @@ export class GladeWindow {
   // Deferred drawing
   private deferredDrawQueue: import("./deferred.ts").DeferredDrawEntry[] = [];
 
-  // FPS tracking (console logging)
-  private fpsFrameCount = 0;
-  private fpsLastTime = 0;
-  private fpsTrackingEnabled = true;
-
   // FPS overlay (visual display)
   private fpsOverlay: GladeFps | null = null;
   private fpsConfig: FpsConfig = { corner: "bottom-right", margin: 8 };
@@ -386,9 +381,6 @@ export class GladeWindow {
 
     // Initialize inspector
     this.inspector = new Inspector();
-
-    // Initialize FPS tracking time
-    this.fpsLastTime = performance.now();
 
     this.setupEventListeners();
   }
@@ -1362,31 +1354,7 @@ export class GladeWindow {
   present(): void {
     if (this.didRenderThisFrame) {
       this.renderTarget.present();
-      this.trackFps();
     }
-  }
-
-  /**
-   * Enable FPS tracking. Logs FPS to console every second.
-   */
-  enableFpsTracking(): void {
-    this.fpsTrackingEnabled = true;
-    this.fpsFrameCount = 0;
-    this.fpsLastTime = performance.now();
-  }
-
-  /**
-   * Disable FPS tracking.
-   */
-  disableFpsTracking(): void {
-    this.fpsTrackingEnabled = false;
-  }
-
-  /**
-   * Check if FPS tracking is enabled.
-   */
-  isFpsTrackingEnabled(): boolean {
-    return this.fpsTrackingEnabled;
   }
 
   /**
@@ -1416,23 +1384,6 @@ export class GladeWindow {
    */
   isFpsOverlayVisible(): boolean {
     return this.fpsOverlay !== null;
-  }
-
-  private trackFps(): void {
-    if (!this.fpsTrackingEnabled) {
-      return;
-    }
-
-    this.fpsFrameCount++;
-    const now = performance.now();
-    const elapsed = now - this.fpsLastTime;
-
-    if (elapsed >= 1000) {
-      const fps = (this.fpsFrameCount / elapsed) * 1000;
-      console.log(`FPS: ${fps.toFixed(1)}`);
-      this.fpsFrameCount = 0;
-      this.fpsLastTime = now;
-    }
   }
 
   /**
