@@ -2,27 +2,15 @@
   "name": "@glade/demos",
   "version": "0.0.1",
   "type": "module",
-  "exports": {
-    "./hexagon": "./hexagon.ts",
-    "./metaball": "./metaball.ts",
-    "./particle": "./particle.ts",
-    "./raymarch": "./raymarch.ts",
-    "./terrain": "./terrain.ts",
-    "./galaxy": "./galaxy.ts"
-  },
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",
-    "dev:webgpu:native": "bun ./demo-webgpu.ts",
-    "dev:webgpu:web": "bun build ./demo-webgpu.ts --outdir=./dist --minify && bun ./serve.ts",
-    "build:webgpu:native": "bun build ./demo-webgpu.ts --compile --outfile=./dist/demo-webgpu",
-    "build:webgpu:web": "bun build ./demo-webgpu.ts ./demo-flash.ts --outdir=./dist --minify",
-    "run:webgpu:native": "bun build ./demo-webgpu.ts --compile --outfile=./dist/demo-webgpu && ./dist/demo-webgpu",
-    "run:webgpu:web": "bun build ./demo-webgpu.ts ./demo-flash.ts --outdir=./dist --minify && open 'http://localhost:3000/index.html' && bun ./serve.ts",
-    "run:flash:native": "bun build ./demo-flash.ts --compile --outfile=./dist/demo-flash && ./dist/demo-flash",
-    "run:flash:web": "bun build ./demo-flash.ts --outdir=./dist --minify && open 'http://localhost:3000/flash.html' && bun ./serve.ts",
-    "build:flash:native": "bun build ./demo-flash.ts --compile --outfile=./dist/demo-flash",
-    "build:flash:web": "bun build ./demo-flash.ts ./demo-flash.ts --outdir=./dist --minify",
+    "dev:demos:native": "bun ./demos.ts",
+    "dev:demos:web": "bun build ./demos.ts --outdir=./dist --minify && bun ./serve.ts",
+    "build:demos:native": "bun build ./demos.ts --compile --outfile=./dist/demos",
+    "build:demos:web": "bun build ./demos.ts --outdir=./dist --minify",
+    "run:demos:native": "bun build ./demos.ts --compile --outfile=./dist/demos && ./dist/demos",
+    "run:demos:web": "bun build ./demos.ts --outdir=./dist --minify && open 'http://localhost:3000/index.html' && bun ./serve.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "nuke": "rm -rf node_modules"
@@ -30,6 +18,7 @@
   "dependencies": {
     "@glade/comptime": "workspace:*",
     "@glade/core": "workspace:*",
+    "@glade/demos": "workspace:*",
     "@glade/flash": "workspace:*",
     "@glade/platform": "workspace:*",
     "@glade/utils": "workspace:*"
