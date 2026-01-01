@@ -23,7 +23,7 @@ export const CHECKBOX_DEMO: Demo = {
             state.setCheckboxChecked(checked);
             cx.notify();
           }),
-        text("Accept terms and conditions").size(14)
+        text("Accept terms and conditions")
       ),
 
     // Indeterminate checkbox
@@ -46,7 +46,7 @@ export const CHECKBOX_DEMO: Demo = {
             }
             cx.notify();
           }),
-        text("Select all items (indeterminate when partial)").size(14)
+        text("Select all items (indeterminate when partial)")
       ),
     div()
       .flex()
@@ -87,7 +87,7 @@ export const CHECKBOX_DEMO: Demo = {
       .flexRow()
       .gap(12)
       .itemsCenter()
-      .children(checkbox().checked(true).disabled(true), text("Disabled (checked)").size(14)),
+      .children(checkbox().checked(true).disabled(true), text("Disabled (checked)")),
 
     // Custom styled checkbox
     text("Custom Styled").size(18),
@@ -106,7 +106,7 @@ export const CHECKBOX_DEMO: Demo = {
             state.setCheckboxChecked(checked);
             cx.notify();
           }),
-        text("Custom styled (green, larger)").size(14)
+        text("Custom styled (green, larger)")
       ),
   ],
 };

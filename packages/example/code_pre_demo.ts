@@ -37,8 +37,8 @@ export const CODE_DEMO: Demo = {
           .flexWrap()
           .gap(10)
           .children(
-            text("Inline sample:").size(14),
-            code(INLINE_SAMPLE).size(14),
+            text("Inline sample:"),
+            code(INLINE_SAMPLE),
             text("→ whitespace collapses and wraps").size(13)
           ),
         SPACER_10PX,
@@ -57,8 +57,8 @@ export const CODE_DEMO: Demo = {
           .flexCol()
           .gap(6)
           .children(
-            code("const ready = true;").font("JetBrains Mono").size(14),
-            code("export type FlashTask = () => void;").font("JetBrains Mono").size(14)
+            code("const ready = true;").font("JetBrains Mono"),
+            code("export type FlashTask = () => void;").font("JetBrains Mono")
           )
       ),
   ],

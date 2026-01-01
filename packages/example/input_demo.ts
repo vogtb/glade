@@ -24,7 +24,7 @@ export const INPUTS_DEMO: Demo = {
       SPACER_10PX,
       text(
         "Click to focus, type with IME, use Cmd/Ctrl+C/V/X for clipboard, and drag-select (double click for words, triple for lines)."
-      ).size(14),
+      ),
       SPACER_10PX,
       div()
         .border(1)
@@ -61,18 +61,18 @@ export const INPUTS_DEMO: Demo = {
         .flexRow()
         .gap(12)
         .children(
-          text(`Focused: ${focused ? "yes" : "no"}`).size(14),
-          text(`Length: ${inputState.value.length}`).size(14),
-          text(`Selection: ${selectionLength} chars`).size(14)
+          text(`Focused: ${focused ? "yes" : "no"}`),
+          text(`Length: ${inputState.value.length}`),
+          text(`Selection: ${selectionLength} chars`)
         ),
       SPACER_10PX,
       text(
         compositionText.length > 0
           ? `Composing: "${compositionText}" (${compositionText.length} chars)`
           : "Composition: none"
-      ).size(14),
+      ),
       SPACER_10PX,
-      text(`Status: ${demoState.textInputStatus}`).size(14),
+      text(`Status: ${demoState.textInputStatus}`),
     ];
   },
 };

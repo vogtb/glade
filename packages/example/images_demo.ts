@@ -10,7 +10,7 @@ export const IMAGES_DEMO: Demo = {
       return [
         text("Images").size(32),
         SPACER_10PX,
-        text("Loading images...").size(14).color(colors.black.x400),
+        text("Loading images...").color(colors.black.x400),
       ];
     }
 
@@ -24,7 +24,7 @@ export const IMAGES_DEMO: Demo = {
 
       text("PNG Image Rendering").size(24),
       SPACER_10PX,
-      text("PNG decoding with GPU-accelerated rendering and effects").size(14),
+      text("PNG decoding with GPU-accelerated rendering and effects"),
       SPACER_10PX,
       div()
         .flex()
@@ -76,7 +76,7 @@ export const IMAGES_DEMO: Demo = {
 
       text("JPEG Image Rendering").size(24),
       SPACER_10PX,
-      text("JPEG decoding with GPU-accelerated rendering and effects").size(14),
+      text("JPEG decoding with GPU-accelerated rendering and effects"),
       SPACER_10PX,
       div()
         .flex()

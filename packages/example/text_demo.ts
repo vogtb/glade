@@ -8,10 +8,10 @@ export const TEXT_DEMO: Demo = {
   renderElement: (_cx, _state): DemoItem[] => [
     text("GPU-accelerated text rendering with cosmic-text shaping").size(16),
     SPACER_10PX,
-    text("The quick brown fox jumps over the lazy dog.").size(14),
-    text("ABCDEFGHIJKLMNOPQRSTUVWXYZ").size(14),
-    text("abcdefghijklmnopqrstuvwxyz").size(14),
-    text("0123456789 !@#$%^&*()_+-=[]{}|;':\",./<>?").size(14),
+    text("The quick brown fox jumps over the lazy dog."),
+    text("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+    text("abcdefghijklmnopqrstuvwxyz"),
+    text("0123456789 !@#$%^&*()_+-=[]{}|;':\",./<>?"),
     SPACER_10PX,
     ...[
       "Humongous Apple",
@@ -26,7 +26,7 @@ export const TEXT_DEMO: Demo = {
     ),
     SPACER_10PX,
     ...[55, 44, 33, 28, 26, 24, 22, 16, 14, 12].map((height) =>
-      div().child(text(`Line Height ${height} (14px)`).size(14).lineHeight(height))
+      div().child(text(`Line Height ${height} (14px)`).lineHeight(height))
     ),
     SPACER_10PX,
     ...[100, 200, 300, 400, 500, 600, 700, 800].map((weight) =>

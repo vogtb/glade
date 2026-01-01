@@ -35,8 +35,8 @@ export const DEBUG_MODE_DEMO: Demo = {
               .rounded(6)
               .border(1)
               .borderColor(colors.gray.x600)
-              .children(text("I").size(14).color(colors.white.default)),
-            text("Press 'I' to toggle inspector mode").size(14)
+              .children(text("I").color(colors.white.default)),
+            text("Press 'I' to toggle inspector mode")
           )
       ),
 
@@ -57,7 +57,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             icon("check", 18).color(colors.green.x500),
-            text("Element bounds visualization with colored outlines").size(14)
+            text("Element bounds visualization with colored outlines")
           ),
         div()
           .flex()
@@ -66,7 +66,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             icon("check", 18).color(colors.green.x500),
-            text("Element selection for inspection (click to select)").size(14)
+            text("Element selection for inspection (click to select)")
           ),
         div()
           .flex()
@@ -75,7 +75,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             icon("check", 18).color(colors.green.x500),
-            text("Hover highlighting with element info tooltips").size(14)
+            text("Hover highlighting with element info tooltips")
           ),
         div()
           .flex()
@@ -84,7 +84,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             icon("check", 18).color(colors.green.x500),
-            text("Element tree navigation and bounds display").size(14)
+            text("Element tree navigation and bounds display")
           ),
         div()
           .flex()
@@ -93,7 +93,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             icon("check", 18).color(colors.green.x500),
-            text("Computed styles display for selected elements").size(14)
+            text("Computed styles display for selected elements")
           )
       ),
 
@@ -114,7 +114,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             div().w(24).h(24).rounded(4).bg({ r: 0.2, g: 0.6, b: 1.0, a: 0.8 }),
-            text("Bounds - Default element outline").size(14)
+            text("Bounds - Default element outline")
           ),
         div()
           .flex()
@@ -123,7 +123,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             div().w(24).h(24).rounded(4).bg({ r: 1.0, g: 0.4, b: 0.2, a: 0.9 }),
-            text("Hover - Highlighted when hovering").size(14)
+            text("Hover - Highlighted when hovering")
           ),
         div()
           .flex()
@@ -132,7 +132,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             div().w(24).h(24).rounded(4).bg({ r: 0.2, g: 1.0, b: 0.4, a: 1.0 }),
-            text("Selected - Currently selected element").size(14)
+            text("Selected - Currently selected element")
           ),
         div()
           .flex()
@@ -141,7 +141,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             div().w(24).h(24).rounded(4).bg({ r: 0.2, g: 0.8, b: 0.4, a: 0.3 }),
-            text("Padding - Padding visualization").size(14)
+            text("Padding - Padding visualization")
           ),
         div()
           .flex()
@@ -150,7 +150,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .itemsCenter()
           .children(
             div().w(24).h(24).rounded(4).bg({ r: 1.0, g: 0.6, b: 0.2, a: 0.3 }),
-            text("Margin - Margin visualization").size(14)
+            text("Margin - Margin visualization")
           )
       ),
 
@@ -173,7 +173,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .rounded(8)
           .debugLabel("Blue Container")
           .children(
-            text("Container A").size(14).color(colors.white.default),
+            text("Container A").color(colors.white.default),
             div()
               .p(8)
               .bg(colors.blue.x500)
@@ -190,7 +190,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .rounded(8)
           .debugLabel("Green Container")
           .children(
-            text("Container B").size(14).color(colors.white.default),
+            text("Container B").color(colors.white.default),
             div()
               .flex()
               .flexRow()
@@ -221,7 +221,7 @@ export const DEBUG_MODE_DEMO: Demo = {
           .rounded(8)
           .debugLabel("Purple Container with Margin")
           .children(
-            text("Container C").size(14).color(colors.white.default),
+            text("Container C").color(colors.white.default),
             text("Has margin").size(12).color(colors.purple.x200)
           )
       ),
@@ -236,11 +236,11 @@ export const DEBUG_MODE_DEMO: Demo = {
       .bg(colors.gray.x800)
       .rounded(8)
       .children(
-        text("1. Press 'I' to enable the inspector overlay").size(14),
-        text("2. Hover over elements to see their bounds highlighted").size(14),
-        text("3. Click an element to select it and view details").size(14),
-        text("4. Use .debugLabel('name') on elements for easier identification").size(14),
-        text("5. Press 'I' again to disable inspector mode").size(14)
+        text("1. Press 'I' to enable the inspector overlay"),
+        text("2. Hover over elements to see their bounds highlighted"),
+        text("3. Click an element to select it and view details"),
+        text("4. Use .debugLabel('name') on elements for easier identification"),
+        text("5. Press 'I' again to disable inspector mode")
       ),
   ],
 };

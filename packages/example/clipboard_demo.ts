@@ -88,7 +88,7 @@ export const CLIPBOARD_DEMO: Demo = {
     });
 
     return [
-      text("Cross-platform copy/paste powered by platform clipboards.").size(14),
+      text("Cross-platform copy/paste powered by platform clipboards."),
       SPACER_10PX,
 
       text("Capabilities").size(13),
@@ -116,7 +116,7 @@ export const CLIPBOARD_DEMO: Demo = {
             .hover((s) => s.bg(rgb(0x1d4ed8)))
             .active((s) => s.bg(rgb(0x1e40af)))
             .onClick(copyHandler)
-            .child(text("Copy sample").size(14).color(colors.white.default)),
+            .child(text("Copy sample").color(colors.white.default)),
           div()
             .flex()
             .itemsCenter()
@@ -129,7 +129,7 @@ export const CLIPBOARD_DEMO: Demo = {
             .hover((s) => s.bg(rgb(0x16a34a)))
             .active((s) => s.bg(rgb(0x15803d)))
             .onClick(pasteHandler)
-            .child(text("Paste from system").size(14).color(colors.white.default))
+            .child(text("Paste from system").color(colors.white.default))
         ),
 
       SPACER_10PX,

@@ -78,7 +78,7 @@ export const GRID_DEMO: Demo = {
             .bg(colors.pink.x500)
             .itemsCenter()
             .justifyCenter()
-            .child(text("Full Width (colSpanFull)").size(14)),
+            .child(text("Full Width (colSpanFull)")),
           div()
             .colSpan(2)
             .h(50)
@@ -86,21 +86,21 @@ export const GRID_DEMO: Demo = {
             .bg(colors.blue.x500)
             .itemsCenter()
             .justifyCenter()
-            .child(text("Span 2").size(14)),
+            .child(text("Span 2")),
           div()
             .h(50)
             .rounded(8)
             .bg(colors.green.x500)
             .itemsCenter()
             .justifyCenter()
-            .child(text("1").size(14)),
+            .child(text("1")),
           div()
             .h(50)
             .rounded(8)
             .bg(colors.orange.x500)
             .itemsCenter()
             .justifyCenter()
-            .child(text("1").size(14)),
+            .child(text("1")),
           div()
             .colSpan(2)
             .h(50)
@@ -108,7 +108,7 @@ export const GRID_DEMO: Demo = {
             .bg(colors.purple.x500)
             .itemsCenter()
             .justifyCenter()
-            .child(text("Span 2").size(14))
+            .child(text("Span 2"))
         ),
 
       // Example 3: 4-column grid with varied content
@@ -199,42 +199,42 @@ export const GRID_DEMO: Demo = {
                 .bg(colors.blue.x500)
                 .itemsCenter()
                 .justifyCenter()
-                .child(text("Feature (2x2)").size(14)),
+                .child(text("Feature (2x2)")),
               div()
                 .gridCell(3, 1)
                 .rounded(8)
                 .bg(colors.green.x500)
                 .itemsCenter()
                 .justifyCenter()
-                .child(text("A").size(14)),
+                .child(text("A")),
               div()
                 .gridCell(4, 1)
                 .rounded(8)
                 .bg(colors.orange.x500)
                 .itemsCenter()
                 .justifyCenter()
-                .child(text("B").size(14)),
+                .child(text("B")),
               div()
                 .gridCell(3, 2)
                 .rounded(8)
                 .bg(colors.purple.x500)
                 .itemsCenter()
                 .justifyCenter()
-                .child(text("C").size(14)),
+                .child(text("C")),
               div()
                 .gridCell(4, 2)
                 .rounded(8)
                 .bg(colors.pink.x500)
                 .itemsCenter()
                 .justifyCenter()
-                .child(text("D").size(14)),
+                .child(text("D")),
               div()
                 .colSpanFull()
                 .rounded(8)
                 .bg(colors.slate.x600)
                 .itemsCenter()
                 .justifyCenter()
-                .child(text("Bottom Bar (row 3)").size(14))
+                .child(text("Bottom Bar (row 3)"))
             )
         ),
     ];

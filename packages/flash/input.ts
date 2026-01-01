@@ -392,7 +392,7 @@ export function renderTextDecorations(
 export class FlashTextInput extends FlashElement<TextInputRequestState, TextInputPrepaintState> {
   private options: TextInputOptions;
   private controller: TextInputController;
-  private fontFamily = "system-ui";
+  private fontFamily = "Inter";
   private fontSize = 14;
   private fontWeight = 400;
   private lineHeight: number | null = null;

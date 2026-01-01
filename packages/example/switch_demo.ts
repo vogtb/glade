@@ -19,7 +19,7 @@ export const SWITCH_DEMO: Demo = {
       .justifyBetween()
       .w(300)
       .children(
-        text("Enable feature").size(14),
+        text("Enable feature"),
         switchToggle()
           .checked(state.switchEnabled)
           .onCheckedChange((checked) => {
@@ -48,7 +48,7 @@ export const SWITCH_DEMO: Demo = {
               .flexCol()
               .gap(2)
               .children(
-                text("Notifications").size(14),
+                text("Notifications"),
                 text("Receive push notifications").size(12).color(colors.gray.x400)
               ),
             switchToggle()
@@ -70,7 +70,7 @@ export const SWITCH_DEMO: Demo = {
               .flexCol()
               .gap(2)
               .children(
-                text("Dark Mode").size(14),
+                text("Dark Mode"),
                 text("Use dark color scheme").size(12).color(colors.gray.x400)
               ),
             switchToggle()
@@ -89,7 +89,7 @@ export const SWITCH_DEMO: Demo = {
       .flexRow()
       .gap(12)
       .itemsCenter()
-      .children(switchToggle().checked(true).disabled(true), text("Disabled (on)").size(14)),
+      .children(switchToggle().checked(true).disabled(true), text("Disabled (on)")),
 
     // Size variations
     text("Size Variations").size(18),

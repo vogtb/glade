@@ -58,7 +58,7 @@ export const MULTI_SELECTION_DEMO: Demo = {
       .border(1)
       .borderColor(colors.gray.x700)
       .children(
-        text("Try:").size(14).weight(600),
+        text("Try:").weight(600),
         text("- Click and drag to select text across paragraphs").size(13),
         text("- Cmd+C to copy selected text to clipboard").size(13),
         text("- Cmd+A to select all text in all selectable elements").size(13),

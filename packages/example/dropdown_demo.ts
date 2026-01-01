@@ -25,11 +25,11 @@ export const DROPDOWN_DEMO: Demo = {
       .flexRow()
       .gap(8)
       .itemsCenter()
-      .children(text("Last Action:").size(14), text(state.dropdownLastAction).size(14).weight(600)),
+      .children(text("Last Action:"), text(state.dropdownLastAction).weight(600)),
 
     // Basic Dropdown
     text("Basic Dropdown").size(20),
-    text("Click the button to open a simple dropdown menu").size(14),
+    text("Click the button to open a simple dropdown menu"),
     dropdown()
       .open(state.dropdownOpen)
       .onOpenChange((open) => {
@@ -47,7 +47,7 @@ export const DROPDOWN_DEMO: Demo = {
           .bg(colors.gray.x700)
           .rounded(6)
           .cursorPointer()
-          .children(text("Open Menu").size(14), icon("arrowDown", 14))
+          .children(text("Open Menu"), icon("arrowDown", 14))
       )
       .items(
         dropdownItem("New File").onSelect(() => {
@@ -71,7 +71,7 @@ export const DROPDOWN_DEMO: Demo = {
 
     // Dropdown with Labels
     text("Dropdown with Labels").size(20),
-    text("Group items with section labels").size(14),
+    text("Group items with section labels"),
     dropdown()
       .open(state.dropdown2Open)
       .onOpenChange((open) => {
@@ -89,7 +89,7 @@ export const DROPDOWN_DEMO: Demo = {
           .bg(colors.gray.x700)
           .rounded(6)
           .cursorPointer()
-          .children(text("Actions").size(14), icon("arrowDown", 14))
+          .children(text("Actions"), icon("arrowDown", 14))
       )
       .items(
         dropdownLabel("Edit"),
@@ -123,7 +123,7 @@ export const DROPDOWN_DEMO: Demo = {
 
     // Destructive Actions
     text("Destructive Actions").size(20),
-    text("Items with destructive styling for dangerous actions").size(14),
+    text("Items with destructive styling for dangerous actions"),
     dropdown()
       .open(state.dropdown3Open)
       .onOpenChange((open) => {
@@ -141,7 +141,7 @@ export const DROPDOWN_DEMO: Demo = {
           .bg(colors.gray.x700)
           .rounded(6)
           .cursorPointer()
-          .children(icon("settings", 16), text("Settings").size(14), icon("arrowDown", 14))
+          .children(icon("settings", 16), text("Settings"), icon("arrowDown", 14))
       )
       .items(
         dropdownItem("Profile").onSelect(() => {
@@ -167,7 +167,7 @@ export const DROPDOWN_DEMO: Demo = {
 
     // Nested Submenus
     text("Nested Submenus").size(20),
-    text("Hover over submenu items to reveal nested menus").size(14),
+    text("Hover over submenu items to reveal nested menus"),
     dropdown()
       .id("file-menu-dropdown")
       .open(state.dropdown4Open)
@@ -186,7 +186,7 @@ export const DROPDOWN_DEMO: Demo = {
           .bg(colors.gray.x700)
           .rounded(6)
           .cursorPointer()
-          .children(text("File Menu").size(14), icon("arrowDown", 14))
+          .children(text("File Menu"), icon("arrowDown", 14))
       )
       .items(
         dropdownItem("New").onSelect(() => {

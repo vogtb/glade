@@ -30,7 +30,7 @@ export const FLEXBOX_DEMO: Demo = {
     text("justifyContent (horizontal distribution)").size(16).weight(600),
     SPACER_10PX,
 
-    text("justifyStart").size(14),
+    text("justifyStart"),
     div()
       .flexRow()
       .justifyStart()
@@ -44,7 +44,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBox("3")),
     SPACER_10PX,
 
-    text("justifyCenter").size(14),
+    text("justifyCenter"),
     div()
       .flexRow()
       .justifyCenter()
@@ -58,7 +58,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBox("3")),
     SPACER_10PX,
 
-    text("justifyEnd").size(14),
+    text("justifyEnd"),
     div()
       .flexRow()
       .justifyEnd()
@@ -72,7 +72,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBox("3")),
     SPACER_10PX,
 
-    text("justifyBetween").size(14),
+    text("justifyBetween"),
     div()
       .flexRow()
       .justifyBetween()
@@ -85,7 +85,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBox("3")),
     SPACER_10PX,
 
-    text("justifyAround").size(14),
+    text("justifyAround"),
     div()
       .flexRow()
       .justifyAround()
@@ -98,7 +98,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBox("3")),
     SPACER_10PX,
 
-    text("justifyEvenly").size(14),
+    text("justifyEvenly"),
     div()
       .flexRow()
       .justifyEvenly()
@@ -115,7 +115,7 @@ export const FLEXBOX_DEMO: Demo = {
     text("alignItems (cross-axis alignment)").size(16).weight(600),
     SPACER_10PX,
 
-    text("itemsStart").size(14),
+    text("itemsStart"),
     div()
       .flexRow()
       .itemsStart()
@@ -130,7 +130,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBoxTall("3", 40)),
     SPACER_10PX,
 
-    text("itemsCenter").size(14),
+    text("itemsCenter"),
     div()
       .flexRow()
       .itemsCenter()
@@ -145,7 +145,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBoxTall("3", 40)),
     SPACER_10PX,
 
-    text("itemsEnd").size(14),
+    text("itemsEnd"),
     div()
       .flexRow()
       .itemsEnd()
@@ -160,7 +160,7 @@ export const FLEXBOX_DEMO: Demo = {
       .child(flexBoxTall("3", 40)),
     SPACER_10PX,
 
-    text("itemsStretch").size(14),
+    text("itemsStretch"),
     div()
       .flexRow()
       .itemsStretch()
@@ -181,7 +181,7 @@ export const FLEXBOX_DEMO: Demo = {
       ),
     SPACER_10PX,
 
-    text("itemsBaseline").size(14),
+    text("itemsBaseline"),
     div()
       .flexRow()
       .itemsBaseline()
@@ -220,7 +220,7 @@ export const FLEXBOX_DEMO: Demo = {
     text("alignSelf (individual item alignment)").size(16).weight(600),
     SPACER_10PX,
 
-    text("selfStart, selfCenter, selfEnd, selfStretch").size(14),
+    text("selfStart, selfCenter, selfEnd, selfStretch"),
     div()
       .flexRow()
       .itemsStretch()

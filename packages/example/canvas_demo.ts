@@ -91,6 +91,6 @@ export const CANVAS_DEMO: Demo = {
     }),
     text(
       "canvas() feeds prepaint -> paint so you can push custom primitives directly into the scene."
-    ).size(14),
+    ),
   ],
 };

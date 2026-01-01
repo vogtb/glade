@@ -83,7 +83,6 @@ export const WEBGPU_DEMO: Demo = {
         })
         .children(
           text(demo.label)
-            .size(14)
             .weight(isSelected ? 600 : HEIGHT)
             .color(colors.white.default),
           text(demo.desc).size(11).color(colors.black.x400)
@@ -121,7 +120,7 @@ export const WEBGPU_DEMO: Demo = {
             .flexCol()
             .gap(12)
             .children(
-              text("Select Demo").size(14).weight(600),
+              text("Select Demo").weight(600),
               div()
                 .grid()
                 .gridCols(2)

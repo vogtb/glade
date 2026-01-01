@@ -10,7 +10,7 @@ export const SCROLLBAR_DEMO: Demo = {
   renderElement: (_cx, state): DemoItem[] => [
     text("Draggable scrollbars with visual scroll position indication").size(16),
     SPACER_10PX,
-    text("Interactions:").size(14),
+    text("Interactions:"),
     text("- Scroll with mouse wheel or trackpad").size(12),
     text("- Drag the scrollbar thumb to scroll").size(12),
     text("- Click the track to jump to that position").size(12),
@@ -26,7 +26,7 @@ export const SCROLLBAR_DEMO: Demo = {
           .flexCol()
           .gap(8)
           .children(
-            text("Default (Auto)").size(14),
+            text("Default (Auto)"),
             text("Scrollbar appears when content overflows").size(12),
             div()
               .w(220)
@@ -53,7 +53,7 @@ export const SCROLLBAR_DEMO: Demo = {
           .flexCol()
           .gap(8)
           .children(
-            text("Always Visible").size(14),
+            text("Always Visible"),
             text("Scrollbar is always shown").size(12),
             div()
               .w(220)
@@ -81,7 +81,7 @@ export const SCROLLBAR_DEMO: Demo = {
           .flexCol()
           .gap(8)
           .children(
-            text("Custom Style").size(14),
+            text("Custom Style"),
             text("Custom colors and width").size(12),
             div()
               .w(220)

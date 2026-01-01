@@ -58,7 +58,7 @@ export class FlashLink extends FlashElement<LinkRequestState, LinkPrepaintState>
   private colorValue: ColorObject | null = null;
   private hoverColorValue: ColorObject | null = null;
   private fontSizeValue = 14;
-  private fontFamilyValue = "system-ui";
+  private fontFamilyValue = "Inter";
   private fontWeightValue = 400;
   private underlineValue = false;
   private hoverUnderlineValue = true;

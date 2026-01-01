@@ -17,7 +17,6 @@ export const TEXT_SELECTION_DEMO: Demo = {
               "Even if text is wrapped, you can still select multiple lines.",
             ].join(" ")
           )
-            .size(14)
             .lineHeight(22)
             .selectable()
         ),

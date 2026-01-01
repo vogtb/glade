@@ -239,9 +239,9 @@ export const FOCUS_DEMO: Demo = {
             .rounded(10)
             .p(12)
             .children(
-              text(`Current Focus: ${focusedLabel}`).size(14),
-              text(`Key Context Chain: ${contextLabel}`).size(14),
-              text(`Focus Log: ${state.focusLog}`).size(14)
+              text(`Current Focus: ${focusedLabel}`),
+              text(`Key Context Chain: ${contextLabel}`),
+              text(`Focus Log: ${state.focusLog}`)
             )
         ),
     ];

@@ -36,7 +36,7 @@ export const GROUPS_DEMO: Demo = {
     SPACER_10PX,
     div().h(1).bg(colors.black.x600),
     SPACER_10PX,
-    text("Hover or click any button in a group to see coordinated effects").size(14),
+    text("Hover or click any button in a group to see coordinated effects"),
     SPACER_10PX,
     div()
       .flex()

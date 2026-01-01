@@ -134,7 +134,7 @@ export const ICON_DEMO: Demo = {
           .cursorPointer()
           .children(
             icon("download", 18).color(colors.white.default),
-            text("Download").size(14).color(colors.white.default)
+            text("Download").color(colors.white.default)
           ),
         div()
           .flex()
@@ -148,7 +148,7 @@ export const ICON_DEMO: Demo = {
           .cursorPointer()
           .children(
             icon("check", 18).color(colors.white.default),
-            text("Confirm").size(14).color(colors.white.default)
+            text("Confirm").color(colors.white.default)
           ),
         div()
           .flex()
@@ -162,7 +162,7 @@ export const ICON_DEMO: Demo = {
           .cursorPointer()
           .children(
             icon("trash", 18).color(colors.white.default),
-            text("Delete").size(14).color(colors.white.default)
+            text("Delete").color(colors.white.default)
           )
       ),
   ],
