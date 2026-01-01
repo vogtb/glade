@@ -5,9 +5,7 @@ export const TEXT_SELECTION_DEMO: Demo = {
   name: "Text Selection",
   renderElement: (_cx, _state): DemoItem[] => {
     return [
-      text("Standard selectable text and cross-element selection in one view.")
-        .font("Inter")
-        .size(16),
+      text("Standard selectable text and cross-element selection in one view.").size(16),
       div()
         .flex()
         .flexCol()

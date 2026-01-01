@@ -28,29 +28,29 @@ export const CODE_DEMO: Demo = {
       .flexCol()
       .gap(14)
       .children(
-        text("Monospace helpers (code + pre)").font("Inter").size(16),
-        text("Inline code collapses whitespace; preformatted blocks preserve whitespace and tabs.")
-          .font("Inter")
-          .size(15),
+        text("Monospace helpers (code + pre)").size(16),
+        text(
+          "Inline code collapses whitespace; preformatted blocks preserve whitespace and tabs."
+        ).size(15),
         div()
           .flex()
           .flexWrap()
           .gap(10)
           .children(
-            text("Inline sample:").font("Inter").size(14),
+            text("Inline sample:").size(14),
             code(INLINE_SAMPLE).size(14),
-            text("→ whitespace collapses and wraps").font("Inter").size(13)
+            text("→ whitespace collapses and wraps").size(13)
           ),
         SPACER_10PX,
-        text("Preformatted block (no wrap, scrollable)").font("Inter").size(16),
+        text("Preformatted block (no wrap, scrollable)").size(16),
         SPACER_10PX,
         pre(PRE_SAMPLE).padding(12).rounded(8).wrap(false).scrollable(true),
         SPACER_10PX,
-        text("Wrapped preformatted text (tabSize: 4)").font("Inter").size(16),
+        text("Wrapped preformatted text (tabSize: 4)").size(16),
         SPACER_10PX,
         pre(WRAPPED_PRE_SAMPLE).wrap(true).tabSize(4).padding(12).rounded(8),
         SPACER_10PX,
-        text("Custom font override (JetBrains Mono)").font("Inter").size(16),
+        text("Custom font override (JetBrains Mono)").size(16),
         SPACER_10PX,
         div()
           .flex()

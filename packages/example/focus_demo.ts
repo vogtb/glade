@@ -60,7 +60,7 @@ function focusButton(
     })
   );
 
-  return button.child(text(label).font("Inter").size(13));
+  return button.child(text(label).size(13));
 }
 
 export const FOCUS_DEMO: Demo = {
@@ -101,25 +101,17 @@ export const FOCUS_DEMO: Demo = {
         .gap(16)
         .keyContext("focus-demo")
         .children(
-          text("Keyboard traversal across toolbars, groups, and modal dialogs.")
-            .font("Inter")
-            .size(16),
+          text("Keyboard traversal across toolbars, groups, and modal dialogs.").size(16),
           div().h(1).bg({ r: 0.3, g: 0.32, b: 0.38, a: 0.6 }),
-          text("• Tab/Shift+Tab respects custom tab indexes and focus groups.")
-            .font("Inter")
-            .size(13),
+          text("• Tab/Shift+Tab respects custom tab indexes and focus groups.").size(13),
           text(
             "• Right arrow in the toolbar uses focusNextSibling(); Home jumps to the first child."
-          )
-            .font("Inter")
-            .size(13),
+          ).size(13),
           text(
             "• Enter logs the current key context chain; Escape closes the modal and restores focus."
-          )
-            .font("Inter")
-            .size(13),
-          text("• The red button focuses on mouse down via focusOnPress().").font("Inter").size(13),
-          text("Tab Stops").font("Inter").size(18),
+          ).size(13),
+          text("• The red button focuses on mouse down via focusOnPress().").size(13),
+          text("Tab Stops").size(18),
           div()
             .flex()
             .flexRow()
@@ -164,12 +156,10 @@ export const FOCUS_DEMO: Demo = {
                 }
               )
             ),
-          text("Focus Group (Toolbar)").font("Inter").size(18),
+          text("Focus Group (Toolbar)").size(18),
           text(
             "Tab stays in the group first, Right arrow advances with focusNextSibling(), Home jumps to the first child."
-          )
-            .font("Inter")
-            .size(13),
+          ).size(13),
           div()
             .flex()
             .flexRow()
@@ -190,10 +180,8 @@ export const FOCUS_DEMO: Demo = {
                 onClickMessage: "Toolbar C focused",
               })
             ),
-          text("Focus Restoration (Dialog)").font("Inter").size(18),
-          text("Open the dialog; Escape or buttons close it and restore focus.")
-            .font("Inter")
-            .size(13),
+          text("Focus Restoration (Dialog)").size(18),
+          text("Open the dialog; Escape or buttons close it and restore focus.").size(13),
           dialog()
             .open(state.focusModalOpen)
             .onOpenChange((open) => {
@@ -216,7 +204,7 @@ export const FOCUS_DEMO: Demo = {
                 .hover((s) => s.bg(rgb(0x0284c7)).shadow("md"))
                 .trackFocus(state.modalTriggerHandle)
                 .tabStop({ index: 7 })
-                .child(text("Open Dialog").font("Inter").size(13))
+                .child(text("Open Dialog").size(13))
             )
             .content(
               dialogContent()
@@ -251,9 +239,9 @@ export const FOCUS_DEMO: Demo = {
             .rounded(10)
             .p(12)
             .children(
-              text(`Current Focus: ${focusedLabel}`).font("Inter").size(14),
-              text(`Key Context Chain: ${contextLabel}`).font("Inter").size(14),
-              text(`Focus Log: ${state.focusLog}`).font("Inter").size(14)
+              text(`Current Focus: ${focusedLabel}`).size(14),
+              text(`Key Context Chain: ${contextLabel}`).size(14),
+              text(`Focus Log: ${state.focusLog}`).size(14)
             )
         ),
     ];

@@ -8,21 +8,19 @@ export const UNDERLINE_DEMO: Demo = {
     const theme = cx.getTheme();
 
     return [
-      text("Solid and wavy underlines for text decoration").font("Inter").size(16),
+      text("Solid and wavy underlines for text decoration").size(16),
       SPACER_10PX,
       text("Hyperlink")
-        .font("Inter")
         .size(16)
         .color(theme.text)
         .underlined({ style: "solid", color: theme.primary, thickness: 1 }),
       SPACER_10PX,
       text("Important")
-        .font("Inter")
         .size(16)
         .color(theme.text)
         .underlined({ style: "solid", color: theme.success, thickness: 2 }),
       SPACER_10PX,
-      text("Speling Error").font("Inter").size(16).color(theme.text).underlined({
+      text("Speling Error").size(16).color(theme.text).underlined({
         style: "wavy",
         color: theme.danger,
         thickness: 1.5,
@@ -30,7 +28,7 @@ export const UNDERLINE_DEMO: Demo = {
         amplitude: 1.5,
       }),
       SPACER_10PX,
-      text("Grammer Issue").font("Inter").size(16).color(theme.text).underlined({
+      text("Grammer Issue").size(16).color(theme.text).underlined({
         style: "wavy",
         color: theme.primary,
         thickness: 1.5,
@@ -38,10 +36,9 @@ export const UNDERLINE_DEMO: Demo = {
         amplitude: 1.5,
       }),
       SPACER_10PX,
-      text("Larger Text").font("Inter").size(18),
+      text("Larger Text").size(18),
       SPACER_10PX,
       text("Title Text")
-        .font("Inter")
         .size(24)
         .color(theme.text)
         .underlined({ style: "solid", color: theme.primary, thickness: 2 }),

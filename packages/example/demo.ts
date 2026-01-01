@@ -51,6 +51,37 @@ export type DemoState = {
 
   pngImageTile: ImageTile | null;
   jpgImageTile: ImageTile | null;
+
+  checkboxChecked: boolean;
+  checkboxIndeterminate: boolean;
+  setCheckboxChecked: (checked: boolean) => void;
+  setCheckboxIndeterminate: (indeterminate: boolean) => void;
+
+  radioValue: string;
+  setRadioValue: (value: string) => void;
+
+  switchEnabled: boolean;
+  notificationsEnabled: boolean;
+  darkModeEnabled: boolean;
+  setSwitchEnabled: (enabled: boolean) => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
+  setDarkModeEnabled: (enabled: boolean) => void;
+
+  dropdownOpen: boolean;
+  dropdown2Open: boolean;
+  dropdown3Open: boolean;
+  dropdown4Open: boolean;
+  dropdownLastAction: string;
+  setDropdownOpen: (open: boolean) => void;
+  setDropdown2Open: (open: boolean) => void;
+  setDropdown3Open: (open: boolean) => void;
+  setDropdown4Open: (open: boolean) => void;
+  setDropdownLastAction: (action: string) => void;
+
+  useSystemTheme: boolean;
+  preferDarkMode: boolean;
+  setUseSystemTheme: (use: boolean) => void;
+  setPreferDarkMode: (dark: boolean) => void;
 };
 
 export type Demo<T extends DemoItem = DemoItem> = {

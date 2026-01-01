@@ -128,6 +128,23 @@ export class MainView implements FlashView {
   private pngImageTile: ImageTile | null = null;
   private jpgImageTile: ImageTile | null = null;
 
+  private checkboxChecked = false;
+  private checkboxIndeterminate = false;
+
+  private radioValue = "option1";
+  private switchEnabled = false;
+  private notificationsEnabled = true;
+  private darkModeEnabled = false;
+
+  private dropdownOpen = false;
+  private dropdown2Open = false;
+  private dropdown3Open = false;
+  private dropdown4Open = false;
+  private dropdownLastAction = "None";
+
+  private useSystemTheme = true;
+  private preferDarkMode = true;
+
   constructor() {
     this.selectedDemoName = this.demos[0]?.name ?? "Demo";
     this.selectedDemo = this.demos[0]!;
@@ -250,6 +267,63 @@ export class MainView implements FlashView {
 
       pngImageTile: this.pngImageTile,
       jpgImageTile: this.jpgImageTile,
+
+      checkboxChecked: this.checkboxChecked,
+      checkboxIndeterminate: this.checkboxIndeterminate,
+      setCheckboxChecked: (checked: boolean) => {
+        this.checkboxChecked = checked;
+      },
+      setCheckboxIndeterminate: (indeterminate: boolean) => {
+        this.checkboxIndeterminate = indeterminate;
+      },
+
+      radioValue: this.radioValue,
+      setRadioValue: (value: string) => {
+        this.radioValue = value;
+      },
+
+      switchEnabled: this.switchEnabled,
+      notificationsEnabled: this.notificationsEnabled,
+      darkModeEnabled: this.darkModeEnabled,
+      setSwitchEnabled: (enabled: boolean) => {
+        this.switchEnabled = enabled;
+      },
+      setNotificationsEnabled: (enabled: boolean) => {
+        this.notificationsEnabled = enabled;
+      },
+      setDarkModeEnabled: (enabled: boolean) => {
+        this.darkModeEnabled = enabled;
+      },
+
+      dropdownOpen: this.dropdownOpen,
+      dropdown2Open: this.dropdown2Open,
+      dropdown3Open: this.dropdown3Open,
+      dropdown4Open: this.dropdown4Open,
+      dropdownLastAction: this.dropdownLastAction,
+      setDropdownOpen: (open: boolean) => {
+        this.dropdownOpen = open;
+      },
+      setDropdown2Open: (open: boolean) => {
+        this.dropdown2Open = open;
+      },
+      setDropdown3Open: (open: boolean) => {
+        this.dropdown3Open = open;
+      },
+      setDropdown4Open: (open: boolean) => {
+        this.dropdown4Open = open;
+      },
+      setDropdownLastAction: (action: string) => {
+        this.dropdownLastAction = action;
+      },
+
+      useSystemTheme: this.useSystemTheme,
+      preferDarkMode: this.preferDarkMode,
+      setUseSystemTheme: (use: boolean) => {
+        this.useSystemTheme = use;
+      },
+      setPreferDarkMode: (dark: boolean) => {
+        this.preferDarkMode = dark;
+      },
     };
   }
 
@@ -378,7 +452,7 @@ export class MainView implements FlashView {
       .overflowScroll()
       .scrollbarAlways()
       .trackScroll(this.contentScrollHandle!)
-      .children(div().child(h1(this.selectedDemoName).font("Inter").color(theme.text)), ...items);
+      .children(div().child(h1(this.selectedDemoName).color(theme.text)), ...items);
   }
 
   private renderDemoButton(cx: FlashViewContext<this>, theme: Theme, demo: Demo) {
@@ -402,6 +476,6 @@ export class MainView implements FlashView {
           entityCx.notify();
         })
       )
-      .child(text(demo.name).font("Inter").size(12).lineHeight(20).color(textColor));
+      .child(text(demo.name).size(12).lineHeight(20).color(textColor));
   }
 }

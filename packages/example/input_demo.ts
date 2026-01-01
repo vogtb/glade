@@ -11,7 +11,7 @@ export const INPUTS_DEMO: Demo = {
     const controller = demoState.textInputController;
 
     if (!inputHandle || !controller) {
-      return [text("Input demo not initialized").font("Inter").size(16)];
+      return [text("Input demo not initialized").size(16)];
     }
 
     const inputState = controller.state;
@@ -20,15 +20,11 @@ export const INPUTS_DEMO: Demo = {
     const compositionText = inputState.composition?.text ?? "";
 
     return [
-      text("Demonstrates IME composition, selection, clipboard, and caret rendering.")
-        .font("Inter")
-        .size(16),
+      text("Demonstrates IME composition, selection, clipboard, and caret rendering.").size(16),
       SPACER_10PX,
       text(
         "Click to focus, type with IME, use Cmd/Ctrl+C/V/X for clipboard, and drag-select (double click for words, triple for lines)."
-      )
-        .font("Inter")
-        .size(14),
+      ).size(14),
       SPACER_10PX,
       div()
         .border(1)
@@ -55,7 +51,6 @@ export const INPUTS_DEMO: Demo = {
               cx.notify();
             },
           })
-            .font("Inter")
             .size(16)
             .pad(4)
             .caretBlink(0.7)
@@ -66,22 +61,18 @@ export const INPUTS_DEMO: Demo = {
         .flexRow()
         .gap(12)
         .children(
-          text(`Focused: ${focused ? "yes" : "no"}`)
-            .font("Inter")
-            .size(14),
-          text(`Length: ${inputState.value.length}`).font("Inter").size(14),
-          text(`Selection: ${selectionLength} chars`).font("Inter").size(14)
+          text(`Focused: ${focused ? "yes" : "no"}`).size(14),
+          text(`Length: ${inputState.value.length}`).size(14),
+          text(`Selection: ${selectionLength} chars`).size(14)
         ),
       SPACER_10PX,
       text(
         compositionText.length > 0
           ? `Composing: "${compositionText}" (${compositionText.length} chars)`
           : "Composition: none"
-      )
-        .font("Inter")
-        .size(14),
+      ).size(14),
       SPACER_10PX,
-      text(`Status: ${demoState.textInputStatus}`).font("Inter").size(14),
+      text(`Status: ${demoState.textInputStatus}`).size(14),
     ];
   },
 };
