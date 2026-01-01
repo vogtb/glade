@@ -2,8 +2,8 @@
   "name": "@glade/glade",
   "version": "0.0.1",
   "type": "module",
-  "main": "index.ts",
-  "types": "index.ts",
+  "main": "glade.ts",
+  "types": "glade.ts",
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",

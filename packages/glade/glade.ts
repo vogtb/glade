@@ -8,7 +8,7 @@
  * - GPU-native rendering via WebGPU
  * - Cross-platform support (browser and native)
  *
- * TODO: we should name this glade.ts instead of index.ts
+ * TODO: organize these exports
  *
  * @module @glade/glade
  */
@@ -30,6 +30,7 @@ export type {
 } from "./types";
 
 export type { Theme, ThemeConfig, ThemeOverrides } from "./theme";
+
 export {
   resolveTheme,
   ThemeManager,
@@ -606,3 +607,5 @@ export {
 export * from "./header";
 
 export * from "./button";
+
+export * from "./fps";

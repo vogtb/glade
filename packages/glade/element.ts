@@ -322,6 +322,20 @@ export interface PaintContext {
   getChildLayouts(parentBounds: Bounds, childLayoutIds: LayoutId[]): Bounds[];
 
   /**
+   * Measure text with the given options.
+   */
+  measureText(
+    text: string,
+    options: {
+      fontSize: number;
+      fontFamily: string;
+      fontWeight: number;
+      lineHeight?: number;
+      maxWidth?: number;
+    }
+  ): { width: number; height: number };
+
+  /**
    * Paint a rectangle primitive.
    */
   paintRect(bounds: Bounds, styles: Partial<Styles>): void;

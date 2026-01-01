@@ -25,8 +25,7 @@ import type { Bounds } from "./types.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 // TODO: clean up. This is bad.
-const DEFAULT_MONO_FONT_FAMILY =
-  'JetBrains Mono, ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+const DEFAULT_MONO_FONT_FAMILY = "JetBrains Mono";
 const GENERIC_FAMILY_NAMES = new Set([
   "ui-monospace",
   "monospace",

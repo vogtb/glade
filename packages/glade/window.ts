@@ -98,6 +98,7 @@ import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 import { CrossElementSelectionManager } from "./select.ts";
 import { toColorObject, type Color } from "@glade/utils";
+import { GladeFps, computeFpsBounds, type FpsCorner, type FpsConfig } from "./fps.ts";
 
 function normalizeMouseButton(button: number, mods: Modifiers): number {
   if (button === 0 && mods.ctrl) {
@@ -105,6 +106,9 @@ function normalizeMouseButton(button: number, mods: Modifiers): number {
   }
   return button;
 }
+
+// Priority 3 sits above dialogs (0-2) while staying under the 2,000,000 depth range.
+const FPS_OVERLAY_PRIORITY = 3;
 
 /**
  * Options for creating a window.
@@ -269,10 +273,14 @@ export class GladeWindow {
   // Deferred drawing
   private deferredDrawQueue: import("./deferred.ts").DeferredDrawEntry[] = [];
 
-  // FPS tracking
+  // FPS tracking (console logging)
   private fpsFrameCount = 0;
   private fpsLastTime = 0;
-  private fpsEnabled = true;
+  private fpsTrackingEnabled = true;
+
+  // FPS overlay (visual display)
+  private fpsOverlay: GladeFps | null = null;
+  private fpsConfig: FpsConfig = { corner: "bottom-right", margin: 8 };
 
   // Cross-element text selection
   private crossElementSelection: CrossElementSelectionManager | null = null;
@@ -1234,6 +1242,9 @@ export class GladeWindow {
     // Paint deferred elements in priority order (higher priority on top)
     this.paintDeferredElements();
 
+    // Render FPS overlay (on top of everything except inspector)
+    this.renderFpsOverlay();
+
     // Extract hit test tree from prepaint state (built with scroll-adjusted bounds)
     this.hitTestTree = [];
     const prepaintStateWithHitTest = rootPrepaintState as { hitTestNode?: HitTestNode };
@@ -1359,7 +1370,7 @@ export class GladeWindow {
    * Enable FPS tracking. Logs FPS to console every second.
    */
   enableFpsTracking(): void {
-    this.fpsEnabled = true;
+    this.fpsTrackingEnabled = true;
     this.fpsFrameCount = 0;
     this.fpsLastTime = performance.now();
   }
@@ -1368,18 +1379,47 @@ export class GladeWindow {
    * Disable FPS tracking.
    */
   disableFpsTracking(): void {
-    this.fpsEnabled = false;
+    this.fpsTrackingEnabled = false;
   }
 
   /**
    * Check if FPS tracking is enabled.
    */
   isFpsTrackingEnabled(): boolean {
-    return this.fpsEnabled;
+    return this.fpsTrackingEnabled;
+  }
+
+  /**
+   * Show the FPS overlay.
+   */
+  showFps(corner?: FpsCorner, margin?: number): void {
+    if (!this.fpsOverlay) {
+      this.fpsOverlay = new GladeFps();
+    }
+    if (corner !== undefined) {
+      this.fpsConfig.corner = corner;
+    }
+    if (margin !== undefined) {
+      this.fpsConfig.margin = margin;
+    }
+  }
+
+  /**
+   * Hide the FPS overlay.
+   */
+  hideFps(): void {
+    this.fpsOverlay = null;
+  }
+
+  /**
+   * Check if the FPS overlay is visible.
+   */
+  isFpsOverlayVisible(): boolean {
+    return this.fpsOverlay !== null;
   }
 
   private trackFps(): void {
-    if (!this.fpsEnabled) {
+    if (!this.fpsTrackingEnabled) {
       return;
     }
 
@@ -1458,6 +1498,32 @@ export class GladeWindow {
 
       this.scene.endOverlay();
     }
+  }
+
+  /**
+   * Render the FPS overlay if enabled.
+   * Paints directly using absolute positioning based on config.
+   */
+  private renderFpsOverlay(): void {
+    if (!this.fpsOverlay) {
+      return;
+    }
+
+    // Record frame time for FPS calculation
+    this.fpsOverlay.recordFrame();
+
+    // Compute bounds based on corner and margin
+    const bounds = computeFpsBounds(this.width, this.height, this.fpsConfig);
+
+    // Render above other overlays without exceeding depth range
+    this.scene.beginOverlay(FPS_OVERLAY_PRIORITY);
+
+    // Create a paint context and paint the FPS overlay
+    const fpsElementId = this.allocateElementId();
+    const paintCx = this.createPaintContext(fpsElementId);
+    this.fpsOverlay.paint(paintCx, bounds);
+
+    this.scene.endOverlay();
   }
 
   /**
@@ -2575,6 +2641,26 @@ export class GladeWindow {
 
       getChildLayouts: (_parentBounds: Bounds, childLayoutIds: LayoutId[]): Bounds[] => {
         return childLayoutIds.map((id) => layoutEngine.layoutBounds(id));
+      },
+
+      measureText: (
+        text: string,
+        options: {
+          fontSize: number;
+          fontFamily: string;
+          fontWeight: number;
+          lineHeight?: number;
+          maxWidth?: number;
+        }
+      ): { width: number; height: number } => {
+        const lineHeight = options.lineHeight ?? options.fontSize * 1.2;
+        return this.textSystem.measureText(
+          text,
+          options.fontSize,
+          lineHeight,
+          options.maxWidth ?? undefined,
+          { family: options.fontFamily, weight: options.fontWeight }
+        );
       },
 
       paintRect: (bounds: Bounds, styles: Partial<Styles>): void => {

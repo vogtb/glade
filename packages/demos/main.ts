@@ -145,6 +145,8 @@ export class MainView implements GladeView {
   private useSystemTheme = true;
   private preferDarkMode = true;
 
+  private fpsEnabled = false;
+
   constructor() {
     this.selectedDemoName = this.demos[0]?.name ?? "Demo";
     this.selectedDemo = this.demos[0]!;
@@ -400,6 +402,12 @@ export class MainView implements GladeView {
     }
     if (!this.contentScrollHandle) {
       this.contentScrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+
+    // Enable FPS overlay once
+    if (!this.fpsEnabled) {
+      cx.window.showFps();
+      this.fpsEnabled = true;
     }
 
     return div()
