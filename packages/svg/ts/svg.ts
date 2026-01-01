@@ -6,36 +6,24 @@
  */
 
 import { base64ToBytes } from "@glade/utils";
-import { initSync, SvgTessellator, type InitOutput } from "../pkg/svg";
+import { initSync, SvgTessellator as WasmSvgTessellator, type InitOutput } from "../pkg/svg";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 const wasmBase64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm");
 
-// TODO: we should not be using a single wasm module here. We should be creating
-// one inside the glade app, and using it FOR EVERYTHING inside the app because
-// global mutable state is bad.
-let wasmModule: InitOutput | null = null;
-let sharedTessellator: SvgTessellator | null = null;
+export class SvgTessellator extends WasmSvgTessellator {
+  readonly module: InitOutput;
 
-export function initSvg(): InitOutput {
-  if (wasmModule) {
-    return wasmModule;
+  constructor(module: InitOutput) {
+    super();
+    this.module = module;
   }
-  const wasmBytes = base64ToBytes(wasmBase64);
-  wasmModule = initSync({ module: wasmBytes });
-  return wasmModule;
 }
 
 export function createSvgTessellator(): SvgTessellator {
-  initSvg();
-  return new SvgTessellator();
-}
-
-export function getSharedTessellator(): SvgTessellator {
-  if (!sharedTessellator) {
-    sharedTessellator = createSvgTessellator();
-  }
-  return sharedTessellator;
+  const wasmBytes = base64ToBytes(wasmBase64);
+  const module = initSync({ module: wasmBytes });
+  return new SvgTessellator(module);
 }
 
 export interface TessellatedMesh {
@@ -86,24 +74,24 @@ function convertMesh(raw: RawMesh): TessellatedMesh {
   };
 }
 
-export function parseSvg(svgContent: string): ParsedSvg {
-  const tessellator = getSharedTessellator();
+export function parseSvg(tessellator: SvgTessellator, svgContent: string): ParsedSvg {
   return tessellator.parse_svg(svgContent) as ParsedSvg;
 }
 
 export function tessellatePath(
+  tessellator: SvgTessellator,
   pathD: string,
   offsetX = 0,
   offsetY = 0,
   scaleX = 1,
   scaleY = 1
 ): TessellatedMesh {
-  const tessellator = getSharedTessellator();
   const raw = tessellator.tessellate_path(pathD, offsetX, offsetY, scaleX, scaleY) as RawMesh;
   return convertMesh(raw);
 }
 
 export function tessellateStroke(
+  tessellator: SvgTessellator,
   pathD: string,
   strokeWidth: number,
   offsetX = 0,
@@ -111,7 +99,6 @@ export function tessellateStroke(
   scaleX = 1,
   scaleY = 1
 ): TessellatedMesh {
-  const tessellator = getSharedTessellator();
   const raw = tessellator.tessellate_stroke(
     pathD,
     strokeWidth,
@@ -124,11 +111,11 @@ export function tessellateStroke(
 }
 
 export function tessellateSvg(
+  tessellator: SvgTessellator,
   svgContent: string,
   displayWidth: number,
   displayHeight: number
 ): TessellatedMesh[] {
-  const tessellator = getSharedTessellator();
   const rawMeshes = tessellator.tessellate_svg(
     svgContent,
     displayWidth,
@@ -137,4 +124,4 @@ export function tessellateSvg(
   return rawMeshes.map(convertMesh);
 }
 
-export type { SvgTessellator, InitOutput };
+export type { InitOutput };

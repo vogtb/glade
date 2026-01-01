@@ -11,42 +11,18 @@
 import { initSync, TextShaper as WasmTextShaper, type InitOutput } from "../pkg/shaper";
 import type { FontId } from "../pkg/shaper";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
+import { base64ToBytes } from "@glade/utils";
 
 // Embed WASM as base64 at build time via Bun macro
 const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
-
-let wasmModule: InitOutput | null = null;
-
-/**
- * Decode base64 to Uint8Array (works in both browser and Node/Bun)
- */
-function base64ToBytes(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 /**
  * Initialize the WASM module synchronously.
  * Uses the embedded WASM binary - no network fetch required.
  */
 export function initShaper(): InitOutput {
-  if (wasmModule) {
-    return wasmModule;
-  }
   const wasmBytes = base64ToBytes(wasmBase64);
-  wasmModule = initSync({ module: wasmBytes });
-  return wasmModule;
-}
-
-/**
- * Check if the WASM module is initialized.
- */
-export function isInitialized(): boolean {
-  return wasmModule !== null;
+  return initSync({ module: wasmBytes });
 }
 
 /**
@@ -54,8 +30,9 @@ export function isInitialized(): boolean {
  * Automatically initializes WASM if not already done.
  */
 export function createTextShaper(): TextShaper {
-  initShaper();
-  return new TextShaper();
+  const wasmBytes = base64ToBytes(wasmBase64);
+  const module = initSync({ module: wasmBytes });
+  return new TextShaper(module);
 }
 
 // Re-export types
@@ -193,9 +170,11 @@ function convertShapedGlyph(glyph: {
  * High-level text shaper wrapping the WASM implementation.
  */
 export class TextShaper {
+  readonly module: InitOutput;
   private inner: WasmTextShaper;
 
-  constructor() {
+  constructor(module: InitOutput) {
+    this.module = module;
     this.inner = new WasmTextShaper();
   }
 

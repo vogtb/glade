@@ -19,14 +19,25 @@ import type {
 import { GladeElement } from "./element.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import {
+  createSvgTessellator,
   tessellateSvg,
   parseSvg as parseSvgWasm,
   type TessellatedMesh,
   type ParsedSvg as WasmParsedSvg,
+  type SvgTessellator,
 } from "@glade/svg";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 export type { TessellatedMesh } from "@glade/svg";
+
+let sharedTessellator: SvgTessellator | null = null;
+
+function getTessellator(): SvgTessellator {
+  if (!sharedTessellator) {
+    sharedTessellator = createSvgTessellator();
+  }
+  return sharedTessellator;
+}
 
 /**
  * Parsed SVG path command (legacy - kept for backwards compatibility).
@@ -87,7 +98,7 @@ export interface ParsedSvg {
  * Returns data compatible with the legacy ParsedSvg interface.
  */
 export function parseSvg(svgContent: string): ParsedSvg {
-  const wasmParsed: WasmParsedSvg = parseSvgWasm(svgContent);
+  const wasmParsed: WasmParsedSvg = parseSvgWasm(getTessellator(), svgContent);
   return {
     width: wasmParsed.width,
     height: wasmParsed.height,
@@ -248,7 +259,7 @@ export class SvgElement extends GladeElement<SvgRequestState, SvgPrepaintState> 
 
   private getNativeSize(): { width: number; height: number } {
     if (!this.cachedNativeSize) {
-      const parsed = parseSvgWasm(this.svgContent);
+      const parsed = parseSvgWasm(getTessellator(), this.svgContent);
       this.cachedNativeSize = {
         width: parsed.view_box?.width ?? parsed.width,
         height: parsed.view_box?.height ?? parsed.height,
@@ -291,7 +302,7 @@ export class SvgElement extends GladeElement<SvgRequestState, SvgPrepaintState> 
     let cachedPaths = globalSvgCache.get(this.svgContent, displayWidth, displayHeight);
 
     if (!cachedPaths) {
-      const meshes = tessellateSvg(this.svgContent, displayWidth, displayHeight);
+      const meshes = tessellateSvg(getTessellator(), this.svgContent, displayWidth, displayHeight);
       cachedPaths = meshes.map(meshToCachedPath);
       globalSvgCache.set(this.svgContent, displayWidth, displayHeight, cachedPaths);
     }

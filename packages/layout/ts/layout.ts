@@ -9,26 +9,24 @@
  */
 
 import { base64ToBytes } from "@glade/utils";
-import { initSync, TaffyLayoutEngine, type InitOutput } from "../pkg/layout";
+import {
+  initSync,
+  TaffyLayoutEngine as WasmTaffyLayoutEngine,
+  type InitOutput,
+} from "../pkg/layout";
 import type { LayoutId, LayoutBounds } from "../pkg/layout";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed WASM as base64 at build time via Bun macro
 const wasmBase64 = COMPTIME_embedAsBase64("../layout/pkg/layout_bg.wasm");
 
-let wasmModule: InitOutput | null = null;
+export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
+  readonly module: InitOutput;
 
-/**
- * Initialize the WASM module synchronously.
- * Uses the embedded WASM binary - no network fetch required.
- */
-export function initLayout(): InitOutput {
-  if (wasmModule) {
-    return wasmModule;
+  constructor(module: InitOutput) {
+    super();
+    this.module = module;
   }
-  const wasmBytes = base64ToBytes(wasmBase64);
-  wasmModule = initSync({ module: wasmBytes });
-  return wasmModule;
 }
 
 /**
@@ -36,12 +34,13 @@ export function initLayout(): InitOutput {
  * Automatically initializes WASM if not already done.
  */
 export function createLayoutEngine(): TaffyLayoutEngine {
-  initLayout();
-  return new TaffyLayoutEngine();
+  const wasmBytes = base64ToBytes(wasmBase64);
+  const module = initSync({ module: wasmBytes });
+  return new TaffyLayoutEngine(module);
 }
 
 // Re-export types
-export type { LayoutId, LayoutBounds, TaffyLayoutEngine, InitOutput };
+export type { LayoutId, LayoutBounds, InitOutput };
 
 /**
  * Callback type for measuring nodes during layout computation.

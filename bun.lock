@@ -114,6 +114,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/comptime": "workspace:*",
+        "@glade/utils": "workspace:*",
       },
     },
     "packages/svg": {
