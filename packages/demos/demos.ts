@@ -1,11 +1,11 @@
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import {
   createColorSchemeProvider,
-  createFlashPlatform,
+  createGladePlatform,
   createWebGPUContext,
   runWebGPURenderLoop,
 } from "@glade/platform";
-import { FlashApp, type FlashContext } from "@glade/flash";
+import { GladeApp, type GladeContext } from "@glade/glade";
 import { MainView } from "./main.ts";
 import { base64ToBytes } from "@glade/utils";
 
@@ -26,16 +26,16 @@ async function main() {
     title: "Glade Example",
   });
 
-  const platform = createFlashPlatform(ctx);
+  const platform = createGladePlatform(ctx);
   const colorSchemeProvider = createColorSchemeProvider();
 
-  const app = new FlashApp({ platform, colorSchemeProvider });
+  const app = new GladeApp({ platform, colorSchemeProvider });
   await app.initialize();
 
   const mainView = new MainView();
   const window = await app.openWindow(
     { width: ctx.width, height: ctx.height, title: "Glade Example" },
-    (cx: FlashContext) => cx.newView(() => mainView)
+    (cx: GladeContext) => cx.newView(() => mainView)
   );
 
   window.registerFont("Inter", base64ToBytes(interFontBase64));

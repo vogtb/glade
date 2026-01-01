@@ -1,15 +1,15 @@
 import type {
-  FlashElement,
-  FlashView,
-  FlashViewContext,
+  GladeElement,
+  GladeView,
+  GladeViewContext,
   FocusHandle,
   ImageTile,
   ListState,
   ScrollHandle,
   TextInputController,
-} from "@glade/flash";
+} from "@glade/glade";
 
-export type DemoItem = FlashElement<unknown, unknown>;
+export type DemoItem = GladeElement<unknown, unknown>;
 
 export type DemoState = {
   textInputHandle: FocusHandle | null;
@@ -86,5 +86,5 @@ export type DemoState = {
 
 export type Demo<T extends DemoItem = DemoItem> = {
   name: string;
-  renderElement: (cx: FlashViewContext<FlashView>, state: DemoState) => T[];
+  renderElement: (cx: GladeViewContext<GladeView>, state: DemoState) => T[];
 };

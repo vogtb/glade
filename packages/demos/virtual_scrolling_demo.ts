@@ -1,4 +1,4 @@
-import { div, text, uniformList, list } from "@glade/flash";
+import { div, text, uniformList, list } from "@glade/glade";
 import { colors } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";

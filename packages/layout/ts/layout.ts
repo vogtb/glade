@@ -2,7 +2,7 @@
  * @glade/layout - WASM-based Taffy layout engine
  *
  * Provides CSS flexbox/grid layout computation via Taffy,
- * compiled to WebAssembly for use in Flash.
+ * compiled to WebAssembly for use in Glade.
  *
  * Uses Bun macros to embed WASM at build time, works in both
  * native (Bun) and browser environments.
@@ -201,7 +201,7 @@ export function convertGridPlacement(placement: GridPlacement): GridPlacementInp
 
 /**
  * Style input for layout computation.
- * Maps to Flash's Styles interface.
+ * Maps to Glade's Styles interface.
  */
 export interface StyleInput {
   // Display & Flexbox

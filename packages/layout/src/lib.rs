@@ -1,4 +1,4 @@
-//! WASM-based Taffy layout engine for Flash.
+//! WASM-based Taffy layout engine for Glade.
 //!
 //! Provides a wrapper around Taffy's flexbox/grid layout engine,
 //! exposing it via wasm-bindgen for use in TypeScript.
@@ -80,7 +80,7 @@ impl LayoutBounds {
 // ============ CSS Grid Input Types ============
 
 /// Track size input from JavaScript.
-/// Maps to Flash's TrackSize type.
+/// Maps to Glade's TrackSize type.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum TrackSizeInput {
@@ -100,7 +100,7 @@ pub enum TrackSizeInput {
 }
 
 /// Grid template input from JavaScript.
-/// Maps to Flash's GridTemplate type.
+/// Maps to Glade's GridTemplate type.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum GridTemplateInput {
@@ -111,7 +111,7 @@ pub enum GridTemplateInput {
 }
 
 /// Grid placement input from JavaScript.
-/// Maps to Flash's GridPlacement type.
+/// Maps to Glade's GridPlacement type.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum GridPlacementInput {
@@ -123,7 +123,7 @@ pub enum GridPlacementInput {
 // ============ Style Input ============
 
 /// Style input from JavaScript.
-/// Maps to Flash's Styles interface.
+/// Maps to Glade's Styles interface.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct StyleInput {
     // Display & Flexbox

@@ -1,4 +1,4 @@
-import { text } from "@glade/flash";
+import { text } from "@glade/glade";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";
 

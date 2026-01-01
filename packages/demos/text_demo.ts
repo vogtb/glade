@@ -1,4 +1,4 @@
-import { div, text } from "@glade/flash";
+import { div, text } from "@glade/glade";
 import { colors, rgb } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";

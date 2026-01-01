@@ -1,4 +1,4 @@
-import { code, div, pre, text } from "@glade/flash";
+import { code, div, pre, text } from "@glade/glade";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";
 
@@ -58,7 +58,7 @@ export const CODE_DEMO: Demo = {
           .gap(6)
           .children(
             code("const ready = true;").font("JetBrains Mono"),
-            code("export type FlashTask = () => void;").font("JetBrains Mono")
+            code("export type GladeTask = () => void;").font("JetBrains Mono")
           )
       ),
   ],

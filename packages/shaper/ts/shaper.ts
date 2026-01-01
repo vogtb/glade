@@ -2,7 +2,7 @@
  * @glade/shaper - WASM-based text shaping engine
  *
  * Provides text shaping and layout via cosmic-text,
- * compiled to WebAssembly for use in Flash.
+ * compiled to WebAssembly for use in Glade.
  *
  * Uses Bun macros to embed WASM at build time, works in both
  * native (Bun) and browser environments.

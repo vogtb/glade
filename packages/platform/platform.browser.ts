@@ -4,8 +4,8 @@ export {
   runWebGPURenderLoop,
   // Clipboard
   createClipboard,
-  // Flash
-  createFlashPlatform,
+  // Glade
+  createGladePlatform,
   // Color scheme
   createColorSchemeProvider,
   // Types

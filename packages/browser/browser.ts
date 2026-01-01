@@ -17,8 +17,8 @@ export {
 // Clipboard
 export { createClipboard } from "./clipboard.ts";
 
-// Flash platform
-export { createFlashPlatform } from "./flash";
+// Glade platform
+export { createGladePlatform } from "./glade";
 
 // Theme utilities
 export { createColorSchemeProvider } from "./theme.ts";

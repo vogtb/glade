@@ -1,7 +1,7 @@
 //! WASM-based SVG parsing and tessellation using Lyon.
 //!
 //! Parses SVG content and tessellates paths into triangle meshes
-//! for GPU rendering in Flash.
+//! for GPU rendering in Glade.
 
 use lyon::math::Point;
 use lyon::tessellation::{

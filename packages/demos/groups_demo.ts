@@ -1,4 +1,4 @@
-import { div, text, type FlashDiv } from "@glade/flash";
+import { div, text, type GladeDiv } from "@glade/glade";
 import { colors, rgb } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";
@@ -9,7 +9,7 @@ function groupButton(
   baseColor: number,
   hoverColor: number,
   activeColor: number
-): FlashDiv {
+): GladeDiv {
   return div()
     .w(80)
     .h(44)

@@ -4,14 +4,14 @@ import {
   h1,
   text,
   TextInputController,
-  type FlashView,
-  type FlashViewContext,
+  type GladeView,
+  type GladeViewContext,
   type FocusHandle,
   type ImageTile,
   type ListState,
   type ScrollHandle,
   type Theme,
-} from "@glade/flash";
+} from "@glade/glade";
 import type { Demo, DemoState } from "./demo";
 import { TEXT_DEMO } from "./text_demo";
 import { DIV_DEMO } from "./div_demo";
@@ -83,7 +83,7 @@ const DEMOS: Demo[] = [
   THEME_DEMO,
 ];
 
-export class MainView implements FlashView {
+export class MainView implements GladeView {
   private readonly demos: Demo[] = DEMOS;
   private selectedDemo: Demo;
   private selectedDemoName: string;
@@ -155,7 +155,7 @@ export class MainView implements FlashView {
     this.jpgImageTile = jpgTile;
   }
 
-  private ensureDemoState(cx: FlashViewContext<this>): DemoState {
+  private ensureDemoState(cx: GladeViewContext<this>): DemoState {
     if (!this.textInputHandle) {
       this.textInputHandle = cx.focusHandle();
     }
@@ -327,7 +327,7 @@ export class MainView implements FlashView {
     };
   }
 
-  private registerFocusDemoActions(cx: FlashViewContext<this>): void {
+  private registerFocusDemoActions(cx: GladeViewContext<this>): void {
     if (this.focusActionsRegistered) {
       return;
     }
@@ -392,7 +392,7 @@ export class MainView implements FlashView {
     this.textInputStatus = status;
   }
 
-  render(cx: FlashViewContext<this>) {
+  render(cx: GladeViewContext<this>) {
     const theme = cx.getTheme();
 
     if (!this.navScrollHandle) {
@@ -439,7 +439,7 @@ export class MainView implements FlashView {
       );
   }
 
-  private renderActiveDemo(cx: FlashViewContext<this>, theme: Theme) {
+  private renderActiveDemo(cx: GladeViewContext<this>, theme: Theme) {
     const state = this.ensureDemoState(cx);
     const items = this.selectedDemo.renderElement(cx, state);
 
@@ -455,7 +455,7 @@ export class MainView implements FlashView {
       .children(div().child(h1(this.selectedDemoName).color(theme.text)), ...items);
   }
 
-  private renderDemoButton(cx: FlashViewContext<this>, theme: Theme, demo: Demo) {
+  private renderDemoButton(cx: GladeViewContext<this>, theme: Theme, demo: Demo) {
     const isSelected = demo.name === this.selectedDemoName;
     const baseBg = isSelected ? theme.primary : theme.background;
     const hoverBg = isSelected ? theme.primary : theme.backgroundHover;

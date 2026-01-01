@@ -1,5 +1,5 @@
-import { canvas, div, text } from "@glade/flash";
-import type { Bounds, PrepaintContext } from "@glade/flash";
+import { canvas, div, text } from "@glade/glade";
+import type { Bounds, PrepaintContext } from "@glade/glade";
 import type { Demo, DemoItem } from "./demo";
 
 type CanvasBarsState = {

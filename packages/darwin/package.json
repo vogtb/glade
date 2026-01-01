@@ -16,7 +16,7 @@
   "dependencies": {
     "@glade/core": "workspace:*",
     "@glade/dawn": "workspace:*",
-    "@glade/flash": "workspace:*",
+    "@glade/glade": "workspace:*",
     "@glade/glfw": "workspace:*",
     "@glade/utils": "workspace:*"
   },

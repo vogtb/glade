@@ -1,7 +1,7 @@
 //! WASM-based text shaping engine using cosmic-text.
 //!
 //! Provides text shaping, font management, and glyph positioning
-//! via wasm-bindgen for use in Flash.
+//! via wasm-bindgen for use in Glade.
 
 use cosmic_text::{
     Attrs, Buffer, Family, FontSystem, Metrics, ShapeBuffer, Shaping, Stretch, Style, Weight, Wrap,

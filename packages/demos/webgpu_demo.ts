@@ -1,7 +1,7 @@
-import { div, text, webgpuHost, type WebGPUHost } from "@glade/flash";
+import { div, text, webgpuHost, type WebGPUHost } from "@glade/glade";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
-import type { WebGPUHostInput, RenderTexture } from "@glade/flash/host.ts";
-import { createRenderTexture } from "@glade/flash/host.ts";
+import type { WebGPUHostInput, RenderTexture } from "@glade/glade/host.ts";
+import { createRenderTexture } from "@glade/glade/host.ts";
 import { colors } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";
@@ -2908,7 +2908,7 @@ export const WEBGPU_DEMO: Demo = {
     return [
       text("WebGPU Demos").size(28),
       SPACER_10PX,
-      text("Custom WebGPU rendering embedded within Flash UI layout").size(16),
+      text("Custom WebGPU rendering embedded within Glade UI layout").size(16),
       SPACER_10PX,
       div().h(1).bg(colors.black.x600),
       SPACER_10PX,
@@ -2961,7 +2961,7 @@ export const WEBGPU_DEMO: Demo = {
           text("Each demo implements the WebGPUHost interface and renders to its own texture.")
             .size(13)
             .color(colors.black.x300),
-          text("Flash samples these textures during its render pass, enabling full compositing.")
+          text("Glade samples these textures during its render pass, enabling full compositing.")
             .size(13)
             .color(colors.black.x300),
           text("Mouse coordinates are automatically transformed to local demo space.")

@@ -1,5 +1,5 @@
-import { table, tbody, td, text, tfoot, th, thead, tr } from "@glade/flash";
-import type { FlashTableRow } from "@glade/flash";
+import { table, tbody, td, text, tfoot, th, thead, tr } from "@glade/glade";
+import type { GladeTableRow } from "@glade/glade";
 import type { Demo, DemoItem } from "./demo";
 import { colors } from "@glade/utils";
 
@@ -53,7 +53,7 @@ export const TABLE_DEMO: Demo = {
       },
     ];
 
-    const bodyRows: FlashTableRow[] = [];
+    const bodyRows: GladeTableRow[] = [];
 
     rows.forEach((row, index) => {
       const rowBg = index % 2 === 0 ? colors.black.x700 : colors.black.x800;
@@ -69,7 +69,7 @@ export const TABLE_DEMO: Demo = {
     });
 
     return [
-      text("HTML-like table built on Flash grid layout with table/thead/tr/th/td helpers.").size(
+      text("HTML-like table built on Glade grid layout with table/thead/tr/th/td helpers.").size(
         16
       ),
       table()

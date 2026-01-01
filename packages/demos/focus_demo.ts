@@ -6,8 +6,8 @@ import {
   div,
   text,
   type FocusHandle,
-  type FlashDiv,
-} from "@glade/flash";
+  type GladeDiv,
+} from "@glade/glade";
 import { rgb } from "@glade/utils";
 import type { Demo, DemoItem, DemoState } from "./demo";
 
@@ -25,7 +25,7 @@ function focusButton(
     keyContext?: string;
     onClickMessage?: string;
   }
-): FlashDiv {
+): GladeDiv {
   let button = div()
     .h(44)
     .px(16)

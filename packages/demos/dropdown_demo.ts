@@ -8,7 +8,7 @@ import {
   dropdownSub,
   icon,
   text,
-} from "@glade/flash";
+} from "@glade/glade";
 import { colors } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
 

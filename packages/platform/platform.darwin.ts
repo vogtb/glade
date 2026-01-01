@@ -4,13 +4,13 @@ export {
   runWebGPURenderLoop,
   // Clipboard
   createClipboard,
-  // Flash
-  createFlashPlatform,
+  // Glade
+  createGladePlatform,
   // Color scheme
   createColorSchemeProvider,
   // Types
   type DarwinWebGPUContext,
   type DarwinContextOptions,
-  type DarwinFlashPlatformInstance,
+  type DarwinGladePlatformInstance,
 } from "@glade/darwin";
 export * from "@glade/core";

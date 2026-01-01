@@ -2,7 +2,7 @@
  * @glade/svg - WASM-based SVG parsing and tessellation
  *
  * Uses Lyon for high-quality path tessellation, providing triangle meshes
- * for GPU rendering in Flash.
+ * for GPU rendering in Glade.
  */
 
 import { base64ToBytes } from "@glade/utils";
@@ -12,7 +12,7 @@ import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 const wasmBase64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm");
 
 // TODO: we should not be using a single wasm module here. We should be creating
-// one inside the flash app, and using it FOR EVERYTHING inside the app because
+// one inside the glade app, and using it FOR EVERYTHING inside the app because
 // global mutable state is bad.
 let wasmModule: InitOutput | null = null;
 let sharedTessellator: SvgTessellator | null = null;
