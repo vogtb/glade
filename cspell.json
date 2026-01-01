@@ -46,6 +46,10 @@
     "shadcn's",
     "unorm",
     "RRGGBB",
-    "Rasterizes"
+    "Rasterizes",
+    "bindgen",
+    "serde",
+    "cdylib",
+    "rlib"
   ]
 }

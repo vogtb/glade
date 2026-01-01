@@ -9,13 +9,12 @@ description = "WASM-based Taffy layout engine for Glade"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-taffy = "0.7"
-wasm-bindgen = "0.2"
-serde = { version = "1.0", features = ["derive"] }
-serde-wasm-bindgen = "0.6"
-js-sys = "0.3"
+taffy = { workspace = true }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3"
-
+wasm-bindgen-test = { workspace = true }
 

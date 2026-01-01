@@ -1,0 +1,53 @@
+# Maximum cognitive complexity allowed for a function
+cognitive-complexity-threshold = 30
+
+# Maximum number of lines allowed in a function
+too-many-lines-threshold = 100
+
+# Maximum number of arguments allowed for a function
+too-many-arguments-threshold = 7
+
+# Maximum nesting level for blocks
+excessive-nesting-threshold = 5
+
+# Maximum enum variant size difference in bytes
+enum-variant-size-threshold = 200
+
+# Type complexity threshold
+type-complexity-threshold = 250
+
+# Maximum single file include size
+max-include-file-size = 1000000
+
+# Single character binding names threshold
+single-char-binding-names-threshold = 3
+
+# MSRV (Minimum Supported Rust Version)
+msrv = "1.80.0"
+
+# Allow expect/unwrap in tests
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true
+allow-dbg-in-tests = true
+allow-print-in-tests = true
+
+# Avoid breaking exported API
+avoid-breaking-exported-api = true
+
+# Maximum suggested slice pattern length
+max-suggested-slice-pattern-length = 3
+
+# Enforce iter loop reborrow
+enforce-iter-loop-reborrow = true
+
+# Standard threshold for array size to avoid stack overflow
+array-size-threshold = 512000
+
+# Vec size threshold to suggest using Box
+vec-box-size-threshold = 4096
+
+# Maximum trait bounds on a single type
+max-trait-bounds = 3
+
+# Standard pass by value size limit (in bytes)
+pass-by-value-size-limit = 256

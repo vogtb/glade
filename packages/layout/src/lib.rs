@@ -7,10 +7,9 @@ use js_sys::Function;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use taffy::prelude::*;
-use taffy::style_helpers::TaffyGridLine;
 use taffy::{
-    GridAutoFlow, GridPlacement, MaxTrackSizingFunction, MinTrackSizingFunction,
-    NonRepeatedTrackSizingFunction, Overflow, Point as TaffyPoint, TrackSizingFunction,
+    GridAutoFlow, GridPlacement, GridTemplateComponent, MaxTrackSizingFunction,
+    MinTrackSizingFunction, Overflow, Point as TaffyPoint, TrackSizingFunction,
 };
 use wasm_bindgen::prelude::*;
 
@@ -204,33 +203,21 @@ pub struct StyleInput {
 // ============ Grid Type Conversions ============
 
 impl TrackSizeInput {
-    /// Convert to Taffy's NonRepeatedTrackSizingFunction
-    fn to_taffy(&self) -> NonRepeatedTrackSizingFunction {
+    /// Convert to Taffy's TrackSizingFunction
+    fn to_taffy(&self) -> TrackSizingFunction {
         match self {
-            TrackSizeInput::Fixed { value } => NonRepeatedTrackSizingFunction {
-                min: MinTrackSizingFunction::Fixed(LengthPercentage::Length(*value)),
-                max: MaxTrackSizingFunction::Fixed(LengthPercentage::Length(*value)),
-            },
+            TrackSizeInput::Fixed { value } => TrackSizingFunction::from_length(*value),
             TrackSizeInput::Fr { value } => {
                 // Standard fr: minmax(0, Nfr) - allows shrinking to 0
-                NonRepeatedTrackSizingFunction {
-                    min: MinTrackSizingFunction::Fixed(LengthPercentage::Length(0.0)),
-                    max: MaxTrackSizingFunction::Fraction(*value),
+                TrackSizingFunction {
+                    min: MinTrackSizingFunction::from_length(0.0),
+                    max: MaxTrackSizingFunction::from_fr(*value),
                 }
             }
-            TrackSizeInput::Auto => NonRepeatedTrackSizingFunction {
-                min: MinTrackSizingFunction::Auto,
-                max: MaxTrackSizingFunction::Auto,
-            },
-            TrackSizeInput::MinContent => NonRepeatedTrackSizingFunction {
-                min: MinTrackSizingFunction::MinContent,
-                max: MaxTrackSizingFunction::MinContent,
-            },
-            TrackSizeInput::MaxContent => NonRepeatedTrackSizingFunction {
-                min: MinTrackSizingFunction::MaxContent,
-                max: MaxTrackSizingFunction::MaxContent,
-            },
-            TrackSizeInput::Minmax { min, max } => NonRepeatedTrackSizingFunction {
+            TrackSizeInput::Auto => TrackSizingFunction::AUTO,
+            TrackSizeInput::MinContent => TrackSizingFunction::MIN_CONTENT,
+            TrackSizeInput::MaxContent => TrackSizingFunction::MAX_CONTENT,
+            TrackSizeInput::Minmax { min, max } => TrackSizingFunction {
                 min: min.to_min_track(),
                 max: max.to_max_track(),
             },
@@ -240,16 +227,14 @@ impl TrackSizeInput {
     /// Convert to MinTrackSizingFunction (for minmax min value)
     fn to_min_track(&self) -> MinTrackSizingFunction {
         match self {
-            TrackSizeInput::Fixed { value } => {
-                MinTrackSizingFunction::Fixed(LengthPercentage::Length(*value))
-            }
+            TrackSizeInput::Fixed { value } => MinTrackSizingFunction::from_length(*value),
             TrackSizeInput::Fr { .. } => {
                 // Fr not valid for min, treat as 0
-                MinTrackSizingFunction::Fixed(LengthPercentage::Length(0.0))
+                MinTrackSizingFunction::from_length(0.0)
             }
-            TrackSizeInput::Auto => MinTrackSizingFunction::Auto,
-            TrackSizeInput::MinContent => MinTrackSizingFunction::MinContent,
-            TrackSizeInput::MaxContent => MinTrackSizingFunction::MaxContent,
+            TrackSizeInput::Auto => MinTrackSizingFunction::AUTO,
+            TrackSizeInput::MinContent => MinTrackSizingFunction::MIN_CONTENT,
+            TrackSizeInput::MaxContent => MinTrackSizingFunction::MAX_CONTENT,
             TrackSizeInput::Minmax { min, .. } => min.to_min_track(),
         }
     }
@@ -257,13 +242,11 @@ impl TrackSizeInput {
     /// Convert to MaxTrackSizingFunction (for minmax max value)
     fn to_max_track(&self) -> MaxTrackSizingFunction {
         match self {
-            TrackSizeInput::Fixed { value } => {
-                MaxTrackSizingFunction::Fixed(LengthPercentage::Length(*value))
-            }
-            TrackSizeInput::Fr { value } => MaxTrackSizingFunction::Fraction(*value),
-            TrackSizeInput::Auto => MaxTrackSizingFunction::Auto,
-            TrackSizeInput::MinContent => MaxTrackSizingFunction::MinContent,
-            TrackSizeInput::MaxContent => MaxTrackSizingFunction::MaxContent,
+            TrackSizeInput::Fixed { value } => MaxTrackSizingFunction::from_length(*value),
+            TrackSizeInput::Fr { value } => MaxTrackSizingFunction::from_fr(*value),
+            TrackSizeInput::Auto => MaxTrackSizingFunction::AUTO,
+            TrackSizeInput::MinContent => MaxTrackSizingFunction::MIN_CONTENT,
+            TrackSizeInput::MaxContent => MaxTrackSizingFunction::MAX_CONTENT,
             TrackSizeInput::Minmax { max, .. } => max.to_max_track(),
         }
     }
@@ -271,22 +254,22 @@ impl TrackSizeInput {
 
 impl GridTemplateInput {
     /// Convert to Vec<TrackSizingFunction> for Taffy
-    fn to_taffy(&self) -> Vec<TrackSizingFunction> {
+    fn to_taffy(&self) -> Vec<GridTemplateComponent<String>> {
         match self {
             GridTemplateInput::Count { value } => {
                 // N columns/rows of 1fr each (GPUI pattern: minmax(0, 1fr))
                 (0..*value)
                     .map(|_| {
-                        TrackSizingFunction::Single(NonRepeatedTrackSizingFunction {
-                            min: MinTrackSizingFunction::Fixed(LengthPercentage::Length(0.0)),
-                            max: MaxTrackSizingFunction::Fraction(1.0),
+                        GridTemplateComponent::from(TrackSizingFunction {
+                            min: MinTrackSizingFunction::from_length(0.0),
+                            max: MaxTrackSizingFunction::from_fr(1.0),
                         })
                     })
                     .collect()
             }
             GridTemplateInput::Tracks { tracks } => tracks
                 .iter()
-                .map(|t| TrackSizingFunction::Single(t.to_taffy()))
+                .map(|t| GridTemplateComponent::Single(t.to_taffy()))
                 .collect(),
         }
     }
@@ -349,7 +332,7 @@ impl StyleInput {
             style.flex_shrink = fs;
         }
         if let Some(fb) = self.flex_basis {
-            style.flex_basis = Dimension::Length(fb);
+            style.flex_basis = Dimension::length(fb);
         }
 
         // Align items
@@ -392,91 +375,91 @@ impl StyleInput {
         // Gap
         if let Some(g) = self.gap {
             style.gap = Size {
-                width: LengthPercentage::Length(g),
-                height: LengthPercentage::Length(g),
+                width: LengthPercentage::length(g),
+                height: LengthPercentage::length(g),
             };
         }
         if let Some(rg) = self.row_gap {
-            style.gap.height = LengthPercentage::Length(rg);
+            style.gap.height = LengthPercentage::length(rg);
         }
         if let Some(cg) = self.column_gap {
-            style.gap.width = LengthPercentage::Length(cg);
+            style.gap.width = LengthPercentage::length(cg);
         }
 
         // Sizing
         if let Some(w) = self.width {
-            style.size.width = Dimension::Length(w);
+            style.size.width = Dimension::length(w);
         } else if let Some(wp) = self.width_percent {
-            style.size.width = Dimension::Percent(wp / 100.0);
+            style.size.width = Dimension::percent(wp / 100.0);
         }
 
         if let Some(h) = self.height {
-            style.size.height = Dimension::Length(h);
+            style.size.height = Dimension::length(h);
         } else if let Some(hp) = self.height_percent {
-            style.size.height = Dimension::Percent(hp / 100.0);
+            style.size.height = Dimension::percent(hp / 100.0);
         }
 
         if let Some(mw) = self.min_width {
-            style.min_size.width = Dimension::Length(mw);
+            style.min_size.width = Dimension::length(mw);
         } else if let Some(mwp) = self.min_width_percent {
-            style.min_size.width = Dimension::Percent(mwp / 100.0);
+            style.min_size.width = Dimension::percent(mwp / 100.0);
         }
 
         if let Some(mw) = self.max_width {
-            style.max_size.width = Dimension::Length(mw);
+            style.max_size.width = Dimension::length(mw);
         } else if let Some(mwp) = self.max_width_percent {
-            style.max_size.width = Dimension::Percent(mwp / 100.0);
+            style.max_size.width = Dimension::percent(mwp / 100.0);
         }
 
         if let Some(mh) = self.min_height {
-            style.min_size.height = Dimension::Length(mh);
+            style.min_size.height = Dimension::length(mh);
         } else if let Some(mhp) = self.min_height_percent {
-            style.min_size.height = Dimension::Percent(mhp / 100.0);
+            style.min_size.height = Dimension::percent(mhp / 100.0);
         }
 
         if let Some(mh) = self.max_height {
-            style.max_size.height = Dimension::Length(mh);
+            style.max_size.height = Dimension::length(mh);
         } else if let Some(mhp) = self.max_height_percent {
-            style.max_size.height = Dimension::Percent(mhp / 100.0);
+            style.max_size.height = Dimension::percent(mhp / 100.0);
         }
 
         // Padding
         if let Some(pt) = self.padding_top {
-            style.padding.top = LengthPercentage::Length(pt);
+            style.padding.top = LengthPercentage::length(pt);
         }
         if let Some(pr) = self.padding_right {
-            style.padding.right = LengthPercentage::Length(pr);
+            style.padding.right = LengthPercentage::length(pr);
         }
         if let Some(pb) = self.padding_bottom {
-            style.padding.bottom = LengthPercentage::Length(pb);
+            style.padding.bottom = LengthPercentage::length(pb);
         }
         if let Some(pl) = self.padding_left {
-            style.padding.left = LengthPercentage::Length(pl);
+            style.padding.left = LengthPercentage::length(pl);
         }
 
         // Margin
         if self.margin_top_auto == Some(true) {
-            style.margin.top = LengthPercentageAuto::Auto;
+            style.margin.top = LengthPercentageAuto::AUTO;
         } else if let Some(mt) = self.margin_top {
-            style.margin.top = LengthPercentageAuto::Length(mt);
+            style.margin.top = LengthPercentageAuto::length(mt);
         }
 
         if self.margin_right_auto == Some(true) {
-            style.margin.right = LengthPercentageAuto::Auto;
+            style.margin.right = LengthPercentageAuto::AUTO;
         } else if let Some(mr) = self.margin_right {
-            style.margin.right = LengthPercentageAuto::Length(mr);
+            style.margin.right = LengthPercentageAuto::length(mr);
         }
 
         if self.margin_bottom_auto == Some(true) {
-            style.margin.bottom = LengthPercentageAuto::Auto;
+            style.margin.bottom = LengthPercentageAuto::AUTO;
         } else if let Some(mb) = self.margin_bottom {
-            style.margin.bottom = LengthPercentageAuto::Length(mb);
+            style.margin.bottom = LengthPercentageAuto::length(mb);
         }
 
         if self.margin_left_auto == Some(true) {
-            style.margin.left = LengthPercentageAuto::Auto;
+            style.margin.left = LengthPercentageAuto::AUTO;
         } else if let Some(ml) = self.margin_left {
-            style.margin.left = LengthPercentageAuto::Length(ml);
+            style.margin.left = LengthPercentageAuto::length(ml);
         }
 
         // Position
@@ -489,16 +472,16 @@ impl StyleInput {
         }
 
         if let Some(t) = self.top {
-            style.inset.top = LengthPercentageAuto::Length(t);
+            style.inset.top = LengthPercentageAuto::length(t);
         }
         if let Some(r) = self.right {
-            style.inset.right = LengthPercentageAuto::Length(r);
+            style.inset.right = LengthPercentageAuto::length(r);
         }
         if let Some(b) = self.bottom {
-            style.inset.bottom = LengthPercentageAuto::Length(b);
+            style.inset.bottom = LengthPercentageAuto::length(b);
         }
         if let Some(l) = self.left {
-            style.inset.left = LengthPercentageAuto::Length(l);
+            style.inset.left = LengthPercentageAuto::length(l);
         }
 
         // Overflow
@@ -523,10 +506,10 @@ impl StyleInput {
         // Border (affects layout)
         if let Some(bw) = self.border_width {
             style.border = Rect {
-                top: LengthPercentage::Length(bw),
-                right: LengthPercentage::Length(bw),
-                bottom: LengthPercentage::Length(bw),
-                left: LengthPercentage::Length(bw),
+                top: LengthPercentage::length(bw),
+                right: LengthPercentage::length(bw),
+                bottom: LengthPercentage::length(bw),
+                left: LengthPercentage::length(bw),
             };
         }
 
@@ -913,8 +896,8 @@ mod tests {
             .tree
             .new_leaf(Style {
                 size: Size {
-                    width: Dimension::Length(100.0),
-                    height: Dimension::Length(50.0),
+                    width: Dimension::length(100.0),
+                    height: Dimension::length(50.0),
                 },
                 ..Default::default()
             })
@@ -924,8 +907,8 @@ mod tests {
             .tree
             .new_leaf(Style {
                 size: Size {
-                    width: Dimension::Length(100.0),
-                    height: Dimension::Length(50.0),
+                    width: Dimension::length(100.0),
+                    height: Dimension::length(50.0),
                 },
                 ..Default::default()
             })
@@ -938,8 +921,8 @@ mod tests {
                     display: Display::Flex,
                     flex_direction: FlexDirection::Column,
                     size: Size {
-                        width: Dimension::Length(200.0),
-                        height: Dimension::Length(200.0),
+                        width: Dimension::length(200.0),
+                        height: Dimension::length(200.0),
                     },
                     ..Default::default()
                 },
