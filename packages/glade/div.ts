@@ -18,7 +18,7 @@ import type { Bounds, TransformationMatrix } from "./types.ts";
 import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
 import { overflowClipsContent } from "./styles.ts";
 import type { LayoutId } from "./layout.ts";
-import type { Styles, Cursor } from "./styles.ts";
+import type { Styles, Cursor, TrackSize, GridAutoFlow } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import type {
   EventHandlers,
@@ -295,7 +295,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
    * @example gridColsTemplate([200, "1fr", "2fr"]) // 200px, 1fr, 2fr
    * @example gridColsTemplate(["auto", { min: 100, max: "1fr" }])
    */
-  gridColsTemplate(tracks: import("./styles.ts").TrackSize[]): this {
+  gridColsTemplate(tracks: TrackSize[]): this {
     this.styles.gridTemplateColumns = tracks;
     return this;
   }
@@ -312,7 +312,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   /**
    * Set explicit grid row template with custom track sizes.
    */
-  gridRowsTemplate(tracks: import("./styles.ts").TrackSize[]): this {
+  gridRowsTemplate(tracks: TrackSize[]): this {
     this.styles.gridTemplateRows = tracks;
     return this;
   }
@@ -321,7 +321,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
    * Set auto-generated column sizing for implicit columns.
    * Equivalent to Tailwind's `auto-cols-*` classes.
    */
-  gridAutoCols(size: import("./styles.ts").TrackSize): this {
+  gridAutoCols(size: TrackSize): this {
     this.styles.gridAutoColumns = size;
     return this;
   }
@@ -330,7 +330,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
    * Set auto-generated row sizing for implicit rows.
    * Equivalent to Tailwind's `auto-rows-*` classes.
    */
-  gridAutoRows(size: import("./styles.ts").TrackSize): this {
+  gridAutoRows(size: TrackSize): this {
     this.styles.gridAutoRows = size;
     return this;
   }
@@ -339,7 +339,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
    * Set grid auto-flow direction.
    * Equivalent to Tailwind's `grid-flow-*` classes.
    */
-  gridFlow(flow: import("./styles.ts").GridAutoFlow): this {
+  gridFlow(flow: GridAutoFlow): this {
     this.styles.gridAutoFlow = flow;
     return this;
   }

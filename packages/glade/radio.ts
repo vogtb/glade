@@ -25,6 +25,7 @@ import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import { radioColors } from "./theme.ts";
+import type { Theme } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 /**
@@ -459,7 +460,7 @@ export class GladeRadioGroup extends GladeContainerElement<
   /**
    * Build the context to pass to child items.
    */
-  private buildContext(theme?: import("./theme.ts").Theme): RadioGroupContext {
+  private buildContext(theme?: Theme): RadioGroupContext {
     const defaults = theme
       ? radioColors(theme)
       : {

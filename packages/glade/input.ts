@@ -4,6 +4,7 @@ import {
   type RequestLayoutContext,
   type PrepaintContext,
   type PaintContext,
+  type RequestLayoutResult,
 } from "./element.ts";
 import type { LayoutId } from "./layout.ts";
 import type { GladeContext } from "./context.ts";
@@ -620,9 +621,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     }
   }
 
-  requestLayout(
-    cx: RequestLayoutContext
-  ): import("./element.ts").RequestLayoutResult<TextInputRequestState> {
+  requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TextInputRequestState> {
     this.syncController(cx);
     const state = this.getState();
     const lineHeight = this.getLineHeight();

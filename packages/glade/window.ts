@@ -35,7 +35,7 @@ import type {
   PaintContext,
   GlobalElementId,
 } from "./element.ts";
-import type { GladeContext } from "./context.ts";
+import type { GladeContext, GladeViewContext } from "./context.ts";
 import type {
   HitTestNode,
   GladeMouseEvent,
@@ -80,6 +80,7 @@ import { DialogManager, type DialogRegistration } from "./dialog.ts";
 import { GladeDiv } from "./div.ts";
 import { AnchoredElement } from "./anchored.ts";
 import { DeferredElement } from "./deferred.ts";
+import type { DeferredDrawEntry } from "./deferred.ts";
 import {
   TabStopRegistry,
   FocusContextManager,
@@ -91,6 +92,7 @@ import { RectPipeline } from "./rect.ts";
 import { ShadowPipeline } from "./shadow.ts";
 import { TextSystem, TextPipeline } from "./text.ts";
 import { PathPipeline } from "./path.ts";
+import type { PathBuilder } from "./path.ts";
 import { UnderlinePipeline } from "./underline.ts";
 import { ImageAtlas, ImagePipeline, type ImageTile, type DecodedImage } from "./image.ts";
 import { HostTexturePipeline } from "./host.ts";
@@ -271,7 +273,7 @@ export class GladeWindow {
   private inspector: Inspector;
 
   // Deferred drawing
-  private deferredDrawQueue: import("./deferred.ts").DeferredDrawEntry[] = [];
+  private deferredDrawQueue: DeferredDrawEntry[] = [];
 
   // FPS overlay (visual display)
   private fpsOverlay: GladeFps | null = null;
@@ -1176,7 +1178,7 @@ export class GladeWindow {
       entityId: EntityId,
       windowId: WindowId,
       window: GladeWindow
-    ) => import("./context.ts").GladeViewContext<V>
+    ) => GladeViewContext<V>
   ): void {
     this.didRenderThisFrame = false;
     this.beginFrame();
@@ -2508,7 +2510,7 @@ export class GladeWindow {
         return this.getScrollOffset(handle.id);
       },
 
-      registerDeferredDraw: (entry: import("./deferred.ts").DeferredDrawEntry): void => {
+      registerDeferredDraw: (entry: DeferredDrawEntry): void => {
         this.registerDeferredDraw(entry);
       },
 
@@ -2540,7 +2542,7 @@ export class GladeWindow {
     };
   }
 
-  private registerDeferredDraw(entry: import("./deferred.ts").DeferredDrawEntry): void {
+  private registerDeferredDraw(entry: DeferredDrawEntry): void {
     this.deferredDrawQueue.push(entry);
   }
 
@@ -2697,7 +2699,7 @@ export class GladeWindow {
         }
       },
 
-      paintPath: (pathBuilder: import("./path.ts").PathBuilder, color: Color): void => {
+      paintPath: (pathBuilder: PathBuilder, color: Color): void => {
         const pathPrimitive = pathBuilder.build(color);
         scene.addPath(pathPrimitive);
       },

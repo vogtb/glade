@@ -26,6 +26,7 @@ import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import { tabColors } from "./theme.ts";
+import type { Theme } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 /**
@@ -659,7 +660,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
     };
   }
 
-  private resolveColors(theme?: import("./theme.ts").Theme): ResolvedTabsColors {
+  private resolveColors(theme?: Theme): ResolvedTabsColors {
     const palette = theme
       ? tabColors(theme)
       : { indicator: DEFAULT_INDICATOR_COLOR, border: DEFAULT_BORDER_COLOR };

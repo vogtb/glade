@@ -42,6 +42,7 @@ import {
   type MenuItemElement,
 } from "./menu.ts";
 import { menuColors } from "./theme.ts";
+import type { Theme } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 type RightClickRequestState = {
@@ -259,7 +260,7 @@ export class GladeRightClickMenu extends GladeContainerElement<
     return this;
   }
 
-  private buildMenuContext(theme: import("./theme.ts").Theme): DropdownMenuContext {
+  private buildMenuContext(theme: Theme): DropdownMenuContext {
     const base = menuColors(theme);
     return buildRootMenuContext(
       this.menuId,

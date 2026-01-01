@@ -10,7 +10,7 @@
  * 3. paint() - Emit GPU primitives using PrepaintState
  */
 
-import type { Bounds, ContentMask, ScrollOffset, TransformationMatrix } from "./types.ts";
+import type { Bounds, ContentMask, ScrollOffset, TransformationMatrix, FocusId } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles, Cursor, WhitespaceMode } from "./styles.ts";
 import type { HitTestNode, EventHandlers } from "./dispatch.ts";
@@ -20,6 +20,13 @@ import type { GladeScene } from "./scene.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { GladeWindow as _GladeWindow } from "./window.ts";
+import type { TooltipConfig } from "./tooltip.ts";
+import type { PopoverRegistration } from "./popover.ts";
+import type { DialogRegistration } from "./dialog.ts";
+import type { DeferredDrawEntry } from "./deferred.ts";
+import type { TabStopConfig } from "./tab.ts";
+import type { PathBuilder } from "./path.ts";
+import type { ImageTile } from "./image.ts";
 import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
 import { toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
 
@@ -213,19 +220,19 @@ export interface PrepaintContext {
     hitboxId: HitboxId,
     bounds: Bounds,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    builder: (cx: import("./context.ts").GladeContext) => GladeElement<any, any>,
-    config: import("./tooltip.ts").TooltipConfig
+    builder: (cx: GladeContext) => GladeElement<any, any>,
+    config: TooltipConfig
   ): void;
 
   /**
    * Register a popover for an element.
    */
-  registerPopover(registration: import("./popover.ts").PopoverRegistration): void;
+  registerPopover(registration: PopoverRegistration): void;
 
   /**
    * Register a dialog for an element.
    */
-  registerDialog(registration: import("./dialog.ts").DialogRegistration): void;
+  registerDialog(registration: DialogRegistration): void;
 
   /**
    * Update the content and viewport size for a scroll handle.
@@ -247,7 +254,7 @@ export interface PrepaintContext {
    * Register a deferred draw entry.
    * The element will be painted after all normal elements in priority order.
    */
-  registerDeferredDraw?(entry: import("./deferred.ts").DeferredDrawEntry): void;
+  registerDeferredDraw?(entry: DeferredDrawEntry): void;
 
   /**
    * Get the window size for overflow calculations (e.g., anchored elements).
@@ -257,11 +264,7 @@ export interface PrepaintContext {
   /**
    * Register a tab stop for keyboard navigation.
    */
-  registerTabStop?(
-    focusId: import("./types.ts").FocusId,
-    bounds: Bounds,
-    config: import("./tab.ts").TabStopConfig
-  ): void;
+  registerTabStop?(focusId: FocusId, bounds: Bounds, config: TabStopConfig): void;
 
   /**
    * Get the computed wrap width for a text element.
@@ -369,7 +372,7 @@ export interface PaintContext {
   /**
    * Paint a path primitive.
    */
-  paintPath(path: import("./path.ts").PathBuilder, color: Color): void;
+  paintPath(path: PathBuilder, color: Color): void;
 
   /**
    * Paint a cached path (pre-tessellated vertices and indices).
@@ -399,7 +402,7 @@ export interface PaintContext {
    * Paint an image primitive.
    */
   paintImage(
-    tile: import("./image.ts").ImageTile,
+    tile: ImageTile,
     bounds: Bounds,
     options?: {
       cornerRadius?: number;
@@ -1029,7 +1032,7 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
   private displayWidth?: number;
   private displayHeight?: number;
 
-  constructor(private tile: import("./image.ts").ImageTile) {
+  constructor(private tile: ImageTile) {
     super();
   }
 
@@ -1117,6 +1120,6 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
 /**
  * Factory function to create an image element from a tile.
  */
-export function img(tile: import("./image.ts").ImageTile): GladeImageElement {
+export function img(tile: ImageTile): GladeImageElement {
   return new GladeImageElement(tile);
 }

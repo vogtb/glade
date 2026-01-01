@@ -9,8 +9,10 @@
 
 import { GladeDiv } from "./div.ts";
 import { GladeTextElement, text } from "./element.ts";
+import type { RequestLayoutContext, PrepaintContext } from "./element.ts";
 import { StyleBuilder } from "./styles.ts";
 import type { Theme } from "./theme.ts";
+import type { Bounds } from "./types.ts";
 import type { GladeElement } from "./element.ts";
 import type { ColorObject, Color } from "@glade/utils";
 import { toColorObject } from "@glade/utils";
@@ -310,7 +312,7 @@ export class GladeButton extends GladeDiv {
   /**
    * Override requestLayout to build content with theme colors.
    */
-  override requestLayout(cx: import("./element.ts").RequestLayoutContext) {
+  override requestLayout(cx: RequestLayoutContext) {
     // Get theme from persistent state or use a default approach
     // For now, we'll build content lazily - the theme will be applied in prepaint
 
@@ -327,11 +329,7 @@ export class GladeButton extends GladeDiv {
   /**
    * Override prepaint to apply theme-aware colors.
    */
-  override prepaint(
-    cx: import("./element.ts").PrepaintContext,
-    bounds: import("./types.ts").Bounds,
-    requestState: unknown
-  ) {
+  override prepaint(cx: PrepaintContext, bounds: Bounds, requestState: unknown) {
     const theme = cx.getWindow().getTheme();
     const colors = buttonColors(theme)[this.variantValue];
 
