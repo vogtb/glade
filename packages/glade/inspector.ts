@@ -14,6 +14,7 @@ import type { GlobalElementId } from "./element.ts";
 import type { GladeScene } from "./scene.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { TextSystem } from "./text.ts";
+import { DEFAULT_THEME_FONTS, type Theme } from "./theme.ts";
 import type { ColorObject } from "@glade/utils";
 
 /**
@@ -278,7 +279,8 @@ export class Inspector {
     scene: GladeScene,
     viewportWidth: number,
     viewportHeight: number,
-    textSystem?: TextSystem
+    textSystem?: TextSystem,
+    theme?: Theme
   ): void {
     if (!this.state.enabled) {
       return;
@@ -296,7 +298,7 @@ export class Inspector {
 
     if (this.state.selectedElementId) {
       this.renderSelectionHighlight(scene);
-      this.renderInfoPanel(scene, viewportWidth, viewportHeight, textSystem);
+      this.renderInfoPanel(scene, viewportWidth, viewportHeight, textSystem, theme);
     }
 
     if (this.state.showIds) {
@@ -456,7 +458,8 @@ export class Inspector {
     scene: GladeScene,
     viewportWidth: number,
     viewportHeight: number,
-    textSystem?: TextSystem
+    textSystem?: TextSystem,
+    theme?: Theme
   ): void {
     const info = this.getSelectedElement();
     if (!info) {
@@ -555,7 +558,7 @@ export class Inspector {
     const fontSize = 12;
     const lineHeight = 16;
     const textPadding = 12;
-    const fontFamily = "Inter";
+    const fontFamily = theme?.fonts.sans ?? DEFAULT_THEME_FONTS.sans;
 
     // Header title
     const headerGlyphs = textSystem.prepareGlyphInstances(

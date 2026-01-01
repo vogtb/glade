@@ -34,6 +34,8 @@ export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
  * Automatically initializes WASM if not already done.
  */
 export function createLayoutEngine(): TaffyLayoutEngine {
+  const bytes = new TextEncoder().encode(wasmBase64).length;
+  console.log(`Layout embedded WASM binary is ${bytes / 1000} kb`);
   const wasmBytes = base64ToBytes(wasmBase64);
   const module = initSync({ module: wasmBytes });
   return new TaffyLayoutEngine(module);

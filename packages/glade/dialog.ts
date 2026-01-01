@@ -359,6 +359,7 @@ type DialogHeaderRequestState = {
   titleSize?: { width: number; height: number };
   descriptionSize?: { width: number; height: number };
   closeIconSize?: { width: number; height: number };
+  fontFamily: string;
 };
 
 type DialogHeaderPrepaintState = {
@@ -368,6 +369,7 @@ type DialogHeaderPrepaintState = {
   closeButtonBounds?: Bounds;
   closeButtonHitbox?: Hitbox;
   closeIconSize?: { width: number; height: number };
+  fontFamily: string;
 };
 
 /**
@@ -432,6 +434,7 @@ export class GladeDialogHeader extends GladeElement<
     const headerGap = DEFAULT_HEADER_GAP;
     const closeButtonSize = 24;
     const closeIconFontSize = 18;
+    const fontFamily = cx.getTheme().fonts.sans;
 
     let totalHeight = 0;
     let maxWidth = 0;
@@ -443,7 +446,7 @@ export class GladeDialogHeader extends GladeElement<
     if (this.showCloseButton) {
       closeIconSize = cx.measureText("×", {
         fontSize: closeIconFontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 400,
       });
     }
@@ -452,7 +455,7 @@ export class GladeDialogHeader extends GladeElement<
     if (this.titleText) {
       titleSize = cx.measureText(this.titleText, {
         fontSize: titleFontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 600,
       });
       maxWidth = Math.max(
@@ -469,7 +472,7 @@ export class GladeDialogHeader extends GladeElement<
       }
       descriptionSize = cx.measureText(this.descriptionText, {
         fontSize: descriptionFontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 400,
         maxWidth: DEFAULT_DIALOG_MAX_WIDTH - DEFAULT_DIALOG_PADDING * 2,
       });
@@ -493,6 +496,7 @@ export class GladeDialogHeader extends GladeElement<
         titleSize,
         descriptionSize,
         closeIconSize,
+        fontFamily,
       },
     };
   }
@@ -550,6 +554,7 @@ export class GladeDialogHeader extends GladeElement<
       closeButtonBounds,
       closeButtonHitbox,
       closeIconSize: requestState.closeIconSize,
+      fontFamily: requestState.fontFamily,
     };
   }
 
@@ -558,12 +563,13 @@ export class GladeDialogHeader extends GladeElement<
     const descriptionColor = this.context?.descriptionColor ?? DEFAULT_DESCRIPTION_COLOR;
     const titleFontSize = DEFAULT_TITLE_FONT_SIZE;
     const descriptionFontSize = DEFAULT_DESCRIPTION_FONT_SIZE;
+    const fontFamily = prepaintState.fontFamily;
 
     // Paint title
     if (this.titleText && prepaintState.titleBounds) {
       cx.paintGlyphs(this.titleText, prepaintState.titleBounds, titleColor, {
         fontSize: titleFontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 600,
       });
     }
@@ -572,7 +578,7 @@ export class GladeDialogHeader extends GladeElement<
     if (this.descriptionText && prepaintState.descriptionBounds) {
       cx.paintGlyphs(this.descriptionText, prepaintState.descriptionBounds, descriptionColor, {
         fontSize: descriptionFontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 400,
         maxWidth: DEFAULT_DIALOG_MAX_WIDTH - DEFAULT_DIALOG_PADDING * 2,
       });
@@ -605,7 +611,7 @@ export class GladeDialogHeader extends GladeElement<
       };
       cx.paintGlyphs("×", iconBounds, iconColor, {
         fontSize: iconFontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 400,
         lineHeight: iconLineHeight,
       });
@@ -625,6 +631,7 @@ type DialogFooterRequestState = {
   layoutId: LayoutId;
   cancelSize?: { width: number; height: number };
   confirmSize?: { width: number; height: number };
+  fontFamily: string;
 };
 
 type DialogFooterPrepaintState = {
@@ -635,6 +642,7 @@ type DialogFooterPrepaintState = {
   confirmHitbox?: Hitbox;
   cancelTextSize?: { width: number; height: number };
   confirmTextSize?: { width: number; height: number };
+  fontFamily: string;
 };
 
 /**
@@ -707,6 +715,7 @@ export class GladeDialogFooter extends GladeElement<
     const paddingX = this.context?.buttonPaddingX ?? DEFAULT_BUTTON_PADDING_X;
     const paddingY = this.context?.buttonPaddingY ?? DEFAULT_BUTTON_PADDING_Y;
     const gap = DEFAULT_FOOTER_GAP;
+    const fontFamily = cx.getTheme().fonts.sans;
 
     let totalWidth = 0;
     let maxHeight = 0;
@@ -717,7 +726,7 @@ export class GladeDialogFooter extends GladeElement<
     if (this.cancelText) {
       cancelSize = cx.measureText(this.cancelText, {
         fontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 500,
       });
       totalWidth += cancelSize.width + paddingX * 2;
@@ -731,7 +740,7 @@ export class GladeDialogFooter extends GladeElement<
       }
       confirmSize = cx.measureText(this.confirmText, {
         fontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 500,
       });
       totalWidth += confirmSize.width + paddingX * 2;
@@ -752,6 +761,7 @@ export class GladeDialogFooter extends GladeElement<
         layoutId,
         cancelSize,
         confirmSize,
+        fontFamily,
       },
     };
   }
@@ -856,6 +866,7 @@ export class GladeDialogFooter extends GladeElement<
       confirmHitbox,
       cancelTextSize: requestState.cancelSize,
       confirmTextSize: requestState.confirmSize,
+      fontFamily: requestState.fontFamily,
     };
   }
 
@@ -876,6 +887,7 @@ export class GladeDialogFooter extends GladeElement<
     const destructiveHoverBg =
       this.context?.destructiveButtonHoverBg ?? DEFAULT_DESTRUCTIVE_BUTTON_HOVER_BG;
     const destructiveText = this.context?.destructiveButtonText ?? DEFAULT_DESTRUCTIVE_BUTTON_TEXT;
+    const fontFamily = prepaintState.fontFamily;
 
     // Paint cancel button
     if (this.cancelText && prepaintState.cancelBounds && prepaintState.cancelTextSize) {
@@ -900,7 +912,7 @@ export class GladeDialogFooter extends GladeElement<
       };
       cx.paintGlyphs(this.cancelText, cancelTextBounds, buttonText, {
         fontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 500,
         lineHeight,
       });
@@ -938,7 +950,7 @@ export class GladeDialogFooter extends GladeElement<
       };
       cx.paintGlyphs(this.confirmText, confirmTextBounds, textColor, {
         fontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 500,
         lineHeight,
       });

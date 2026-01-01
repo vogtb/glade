@@ -30,6 +30,7 @@ type LinkRequestState = {
   layoutId: LayoutId;
   measureId: number;
   textWidth: number;
+  fontFamily: string;
 };
 
 /**
@@ -44,6 +45,7 @@ type LinkPrepaintState = {
     default: ColorObject;
     hover: ColorObject;
   };
+  fontFamily: string;
 };
 
 /**
@@ -58,7 +60,7 @@ export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState>
   private colorValue: ColorObject | null = null;
   private hoverColorValue: ColorObject | null = null;
   private fontSizeValue = 14;
-  private fontFamilyValue = "Inter";
+  private fontFamilyValue: string | null = null;
   private fontWeightValue = 400;
   private underlineValue = false;
   private hoverUnderlineValue = true;
@@ -127,12 +129,15 @@ export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState>
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<LinkRequestState> {
+    const theme = cx.getTheme();
+    const fontFamily = this.fontFamilyValue ?? theme.fonts.sans;
+    const lineHeight = this.fontSizeValue * 1.2;
     const measureId = cx.registerTextMeasure({
       text: this.textContent,
       fontSize: this.fontSizeValue,
-      fontFamily: this.fontFamilyValue,
+      fontFamily,
       fontWeight: this.fontWeightValue,
-      lineHeight: this.fontSizeValue * 1.2,
+      lineHeight,
       noWrap: true,
       maxWidth: null,
     });
@@ -142,11 +147,14 @@ export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState>
     // Measure text width for underline
     const measured = cx.measureText(this.textContent, {
       fontSize: this.fontSizeValue,
-      fontFamily: this.fontFamilyValue,
+      fontFamily,
       fontWeight: this.fontWeightValue,
     });
 
-    return { layoutId, requestState: { layoutId, measureId, textWidth: measured.width } };
+    return {
+      layoutId,
+      requestState: { layoutId, measureId, textWidth: measured.width, fontFamily },
+    };
   }
 
   prepaint(cx: PrepaintContext, bounds: Bounds, requestState: LinkRequestState): LinkPrepaintState {
@@ -179,6 +187,7 @@ export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState>
       textWidth: requestState.textWidth,
       hitTestNode,
       colors,
+      fontFamily: requestState.fontFamily,
     };
   }
 
@@ -189,7 +198,7 @@ export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState>
 
     cx.paintGlyphs(this.textContent, bounds, textColor, {
       fontSize: this.fontSizeValue,
-      fontFamily: this.fontFamilyValue,
+      fontFamily: prepaintState.fontFamily,
       fontWeight: this.fontWeightValue,
     });
 

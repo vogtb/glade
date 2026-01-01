@@ -12,8 +12,8 @@ import { base64ToBytes } from "@glade/utils";
 const interFontBase64 = COMPTIME_embedAsBase64(
   "../../assets/InterVariable.ttf"
 ) as unknown as string;
-const jetBrainsMonoSemiBoldBase64 = COMPTIME_embedAsBase64(
-  "../../assets/JetBrainsMono-SemiBold.ttf"
+const jetBrainsMonoBase64 = COMPTIME_embedAsBase64(
+  "../../assets/JetBrainsMono-Regular.ttf"
 ) as unknown as string;
 const notoEmojiBase64 = COMPTIME_embedAsBase64("../../assets/NotoColorEmoji-Regular.ttf");
 const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png");
@@ -39,7 +39,7 @@ async function main() {
   );
 
   window.registerFont("Inter", base64ToBytes(interFontBase64));
-  window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoSemiBoldBase64));
+  window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoBase64));
   window.registerFont("Noto Color Emoji", base64ToBytes(notoEmojiBase64));
 
   const pngData = base64ToBytes(demoPngBase64);

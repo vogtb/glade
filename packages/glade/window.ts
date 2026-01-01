@@ -1184,6 +1184,7 @@ export class GladeWindow {
     this.beginFrame();
 
     const theme = this.getTheme();
+    this.textSystem.setThemeFonts(theme.fonts);
     this.renderer.setClearColor(theme.background);
 
     this.scene.clear();
@@ -1285,7 +1286,7 @@ export class GladeWindow {
       this.inspectorNextId = 0;
       this.buildInspectorFromHitTestTree(this.hitTestTree, 0);
       this.inspector.handleMouseMove(this.mousePosition);
-      this.inspector.renderOverlay(this.scene, this.width, this.height, this.textSystem);
+      this.inspector.renderOverlay(this.scene, this.width, this.height, this.textSystem, theme);
     }
 
     this.endFrame();
@@ -2427,6 +2428,10 @@ export class GladeWindow {
 
       getScrollOffset: (handle: ScrollHandle): ScrollOffset => {
         return this.getScrollOffset(handle.id);
+      },
+
+      getTheme: (): Theme => {
+        return this.getContext().getTheme();
       },
     };
   }

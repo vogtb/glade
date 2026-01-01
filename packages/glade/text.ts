@@ -50,6 +50,7 @@ import {
 } from "@glade/shaper";
 import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import { DEFAULT_THEME_FONTS, type ThemeFonts } from "./theme.ts";
 
 let sharedTextShaper: TextShaper | null = null;
 
@@ -196,8 +197,6 @@ const DEFAULT_ATLAS_CONFIG: GlyphAtlasConfig = {
   height: 2048,
   padding: 2,
 };
-
-const FONT_FALLBACK_PRIORITY: readonly string[] = ["Inter", "Noto Color Emoji"];
 
 /**
  * Glyph atlas for caching rasterized glyphs.
@@ -484,6 +483,7 @@ export class TextSystem {
   private fonts: Map<number, { family: string; data: Uint8Array }> = new Map();
   private fontFamilyToId: Map<string, FontId> = new Map();
   private _devicePixelRatio = 1;
+  private themeFonts: ThemeFonts = { ...DEFAULT_THEME_FONTS };
 
   constructor(device: GPUDevice, atlasConfig?: Partial<GlyphAtlasConfig>) {
     this.shaper = createTextShaper();
@@ -545,6 +545,10 @@ export class TextSystem {
     return this._devicePixelRatio;
   }
 
+  setThemeFonts(fonts: ThemeFonts): void {
+    this.themeFonts = { ...fonts };
+  }
+
   /**
    * Register a font from raw data.
    * The name is used to reference the font when rendering text.
@@ -590,14 +594,38 @@ export class TextSystem {
 
   private buildFallbackFamilies(primaryFamily: string): string[] {
     const families: string[] = [];
-    if (primaryFamily) {
-      families.push(primaryFamily);
-    }
-    for (const family of FONT_FALLBACK_PRIORITY) {
-      if (!families.includes(family)) {
+    const push = (family: string | undefined): void => {
+      if (family && !families.includes(family)) {
         families.push(family);
       }
+    };
+
+    const fonts = this.themeFonts;
+    push(primaryFamily);
+
+    if (primaryFamily === fonts.system) {
+      push(fonts.sans);
+      push(fonts.monospaced);
+      push(fonts.emoji);
+    } else if (primaryFamily === fonts.sans) {
+      push(fonts.system);
+      push(fonts.monospaced);
+      push(fonts.emoji);
+    } else if (primaryFamily === fonts.monospaced) {
+      push(fonts.system);
+      push(fonts.sans);
+      push(fonts.emoji);
+    } else if (primaryFamily === fonts.emoji) {
+      push(fonts.system);
+      push(fonts.sans);
+      push(fonts.monospaced);
+    } else {
+      push(fonts.system);
+      push(fonts.sans);
+      push(fonts.monospaced);
+      push(fonts.emoji);
     }
+
     return families;
   }
 

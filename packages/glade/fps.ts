@@ -28,8 +28,6 @@ const COMPONENT_HEIGHT = 24;
 const MAX_FRAMES = 80;
 const MAX_FPS = 120;
 
-const MONOSPACE_FONT = "JetBrains Mono";
-
 export type FpsCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 export interface FpsConfig {
@@ -95,6 +93,7 @@ export class GladeFps {
    * Paint the FPS overlay at the given bounds.
    */
   paint(cx: PaintContext, bounds: Bounds): void {
+    const fontFamily = cx.getWindow().getTheme().fonts.monospaced;
     const contentBounds = {
       x: bounds.x + 1,
       y: bounds.y + 1,
@@ -142,7 +141,7 @@ export class GladeFps {
       const fpsText = String(this.currentFps);
       const textSize = cx.measureText(fpsText, {
         fontSize: 11,
-        fontFamily: MONOSPACE_FONT,
+        fontFamily,
         fontWeight: 400,
         lineHeight: 16,
       });
@@ -150,7 +149,7 @@ export class GladeFps {
       const labelText = "fps";
       const labelSize = cx.measureText(labelText, {
         fontSize: 11,
-        fontFamily: MONOSPACE_FONT,
+        fontFamily,
         fontWeight: 400,
         lineHeight: 16,
       });
@@ -168,7 +167,7 @@ export class GladeFps {
         this.textColor,
         {
           fontSize: 11,
-          fontFamily: MONOSPACE_FONT,
+          fontFamily,
           fontWeight: 400,
           lineHeight: 16,
         }
@@ -180,7 +179,7 @@ export class GladeFps {
         this.labelColor,
         {
           fontSize: 11,
-          fontFamily: MONOSPACE_FONT,
+          fontFamily,
           fontWeight: 400,
           lineHeight: 16,
         }

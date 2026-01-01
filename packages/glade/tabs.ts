@@ -80,6 +80,7 @@ type TabsContext = {
 type TabTriggerRequestState = {
   layoutId: LayoutId;
   measureId: number;
+  fontFamily: string;
 };
 
 /**
@@ -89,6 +90,7 @@ type TabTriggerPrepaintState = {
   hitbox: Hitbox;
   hitTestNode: HitTestNode;
   textBounds: Bounds;
+  fontFamily: string;
 };
 
 /**
@@ -143,11 +145,12 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
     const paddingX = this.context?.triggerPaddingX ?? DEFAULT_TRIGGER_PADDING_X;
     const paddingY = this.context?.triggerPaddingY ?? DEFAULT_TRIGGER_PADDING_Y;
     const lineHeight = fontSize * 1.2;
+    const fontFamily = cx.getTheme().fonts.sans;
 
     const measureId = cx.registerTextMeasure({
       text: this.labelText,
       fontSize,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 500,
       lineHeight,
       noWrap: true,
@@ -165,13 +168,13 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
       measureId
     );
 
-    return { layoutId, requestState: { layoutId, measureId } };
+    return { layoutId, requestState: { layoutId, measureId, fontFamily } };
   }
 
   prepaint(
     cx: PrepaintContext,
     bounds: Bounds,
-    _requestState: TabTriggerRequestState
+    requestState: TabTriggerRequestState
   ): TabTriggerPrepaintState {
     const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
     const cursor = isDisabled ? "not-allowed" : "pointer";
@@ -208,7 +211,7 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
       height: bounds.height - paddingY * 2,
     };
 
-    return { hitbox, hitTestNode, textBounds };
+    return { hitbox, hitTestNode, textBounds, fontFamily: requestState.fontFamily };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: TabTriggerPrepaintState): void {
@@ -224,6 +227,7 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
     const indicatorColor = this.context?.indicatorColor ?? DEFAULT_INDICATOR_COLOR;
     const indicatorHeight = this.context?.indicatorHeight ?? DEFAULT_INDICATOR_HEIGHT;
     const fontSize = this.context?.triggerFontSize ?? DEFAULT_TRIGGER_FONT_SIZE;
+    const fontFamily = prepaintState.fontFamily;
 
     let bgColor = isActive ? triggerActiveBg : triggerBg;
     let textColor = isActive ? triggerActiveText : triggerText;
@@ -270,7 +274,7 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
       { ...textColor, a: textColor.a * opacity },
       {
         fontSize,
-        fontFamily: "Inter",
+        fontFamily,
         fontWeight: 500,
       }
     );

@@ -451,6 +451,8 @@ type DropdownItemRequestState = {
   layoutId: LayoutId;
   labelSize: Size;
   shortcutSize: Size | null;
+  labelFontFamily: string;
+  shortcutFontFamily: string;
 };
 
 type DropdownItemPrepaintState = {
@@ -458,6 +460,8 @@ type DropdownItemPrepaintState = {
   hitTestNode: HitTestNode;
   labelBounds: Bounds;
   shortcutBounds: Bounds | null;
+  labelFontFamily: string;
+  shortcutFontFamily: string;
 };
 
 type DropdownMenuChildRequestState =
@@ -676,10 +680,13 @@ export class GladeDropdownItem
     const paddingX = this.context?.itemPaddingX ?? DEFAULT_ITEM_PADDING_X;
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const lineHeight = fontSize * 1.2;
+    const themeFonts = cx.getTheme().fonts;
+    const labelFontFamily = themeFonts.sans;
+    const shortcutFontFamily = themeFonts.monospaced;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily: labelFontFamily,
       fontWeight: 400,
       lineHeight,
     });
@@ -688,7 +695,7 @@ export class GladeDropdownItem
     if (this.shortcutText) {
       shortcutSize = cx.measureText(this.shortcutText, {
         fontSize: shortcutFontSize,
-        fontFamily: "Inter",
+        fontFamily: shortcutFontFamily,
         fontWeight: 500,
         lineHeight: shortcutFontSize * 1.2,
       });
@@ -715,7 +722,7 @@ export class GladeDropdownItem
 
     return {
       layoutId,
-      requestState: { layoutId, labelSize, shortcutSize },
+      requestState: { layoutId, labelSize, shortcutSize, labelFontFamily, shortcutFontFamily },
     };
   }
 
@@ -787,7 +794,14 @@ export class GladeDropdownItem
       };
     }
 
-    return { hitbox, hitTestNode, labelBounds, shortcutBounds };
+    return {
+      hitbox,
+      hitTestNode,
+      labelBounds,
+      shortcutBounds,
+      labelFontFamily: requestState.labelFontFamily,
+      shortcutFontFamily: requestState.shortcutFontFamily,
+    };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownItemPrepaintState): void {
@@ -808,6 +822,8 @@ export class GladeDropdownItem
     const shortcutTextColor = this.context?.shortcutText ?? DEFAULT_SHORTCUT_TEXT;
     const fontSize = this.context?.fontSize ?? DEFAULT_FONT_SIZE;
     const shortcutFontSize = this.context?.shortcutFontSize ?? DEFAULT_SHORTCUT_FONT_SIZE;
+    const labelFontFamily = prepaintState.labelFontFamily;
+    const shortcutFontFamily = prepaintState.shortcutFontFamily;
 
     const bgColor = isHighlighted && !isDisabled ? itemHoverBg : itemBg;
     const textColor = isDisabled ? itemDisabledText : isHighlighted ? itemHoverText : itemText;
@@ -821,14 +837,14 @@ export class GladeDropdownItem
 
     cx.paintGlyphs(this.labelText, prepaintState.labelBounds, textColor, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily: labelFontFamily,
       fontWeight: 400,
     });
 
     if (prepaintState.shortcutBounds && this.shortcutText) {
       cx.paintGlyphs(this.shortcutText, prepaintState.shortcutBounds, shortcutTextColor, {
         fontSize: shortcutFontSize,
-        fontFamily: "Inter",
+        fontFamily: shortcutFontFamily,
         fontWeight: 500,
       });
     }
@@ -846,6 +862,7 @@ export class GladeDropdownItem
 type DropdownCheckboxRequestState = {
   layoutId: LayoutId;
   labelSize: Size;
+  fontFamily: string;
 };
 
 type DropdownCheckboxPrepaintState = {
@@ -853,6 +870,7 @@ type DropdownCheckboxPrepaintState = {
   hitTestNode: HitTestNode;
   indicatorBounds: Bounds;
   labelBounds: Bounds;
+  fontFamily: string;
 };
 
 export class GladeDropdownCheckbox
@@ -912,10 +930,11 @@ export class GladeDropdownCheckbox
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const indicatorWidth = this.context?.indicatorWidth ?? DEFAULT_INDICATOR_WIDTH;
     const lineHeight = fontSize * 1.2;
+    const fontFamily = cx.getTheme().fonts.sans;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 400,
       lineHeight,
     });
@@ -935,7 +954,7 @@ export class GladeDropdownCheckbox
 
     return {
       layoutId,
-      requestState: { layoutId, labelSize },
+      requestState: { layoutId, labelSize, fontFamily },
     };
   }
 
@@ -999,7 +1018,13 @@ export class GladeDropdownCheckbox
       height: lineHeight,
     };
 
-    return { hitbox, hitTestNode, indicatorBounds, labelBounds };
+    return {
+      hitbox,
+      hitTestNode,
+      indicatorBounds,
+      labelBounds,
+      fontFamily: requestState.fontFamily,
+    };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownCheckboxPrepaintState): void {
@@ -1049,7 +1074,7 @@ export class GladeDropdownCheckbox
 
     cx.paintGlyphs(this.labelText, prepaintState.labelBounds, textColor, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily: prepaintState.fontFamily,
       fontWeight: 400,
     });
   }
@@ -1066,6 +1091,7 @@ export class GladeDropdownCheckbox
 type DropdownRadioRequestState = {
   layoutId: LayoutId;
   labelSize: Size;
+  fontFamily: string;
 };
 
 type DropdownRadioPrepaintState = {
@@ -1073,6 +1099,7 @@ type DropdownRadioPrepaintState = {
   hitTestNode: HitTestNode;
   indicatorBounds: Bounds;
   labelBounds: Bounds;
+  fontFamily: string;
 };
 
 export class GladeDropdownRadio
@@ -1126,10 +1153,11 @@ export class GladeDropdownRadio
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const indicatorWidth = this.context?.indicatorWidth ?? DEFAULT_INDICATOR_WIDTH;
     const lineHeight = fontSize * 1.2;
+    const fontFamily = cx.getTheme().fonts.sans;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 400,
       lineHeight,
     });
@@ -1149,7 +1177,7 @@ export class GladeDropdownRadio
 
     return {
       layoutId,
-      requestState: { layoutId, labelSize },
+      requestState: { layoutId, labelSize, fontFamily },
     };
   }
 
@@ -1212,7 +1240,13 @@ export class GladeDropdownRadio
       height: lineHeight,
     };
 
-    return { hitbox, hitTestNode, indicatorBounds, labelBounds };
+    return {
+      hitbox,
+      hitTestNode,
+      indicatorBounds,
+      labelBounds,
+      fontFamily: requestState.fontFamily,
+    };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownRadioPrepaintState): void {
@@ -1229,6 +1263,7 @@ export class GladeDropdownRadio
     const itemDisabledText = this.context?.itemDisabledText ?? DEFAULT_ITEM_DISABLED_TEXT;
     const checkColor = this.context?.checkColor ?? DEFAULT_CHECK_COLOR;
     const fontSize = this.context?.fontSize ?? DEFAULT_FONT_SIZE;
+    const fontFamily = prepaintState.fontFamily;
 
     const bgColor = isHighlighted && !isDisabled ? itemHoverBg : itemBg;
     const textColor = isDisabled ? itemDisabledText : isHighlighted ? itemHoverText : itemText;
@@ -1263,7 +1298,7 @@ export class GladeDropdownRadio
 
     cx.paintGlyphs(this.labelText, prepaintState.labelBounds, textColor, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 400,
     });
   }
@@ -1319,6 +1354,7 @@ type DropdownSubRequestState = {
   labelSize: Size;
   submenuContentRequestState: DropdownMenuContentRequestState | null;
   submenuContentElementId: GlobalElementId | null;
+  fontFamily: string;
 };
 
 type DropdownSubPrepaintState = {
@@ -1329,6 +1365,7 @@ type DropdownSubPrepaintState = {
   submenuContentPrepaintState: DropdownMenuContentPrepaintState | null;
   submenuContentBounds: Bounds | null;
   submenuContentElementId: GlobalElementId | null;
+  fontFamily: string;
 };
 
 export class GladeDropdownSub
@@ -1393,10 +1430,11 @@ export class GladeDropdownSub
     const paddingX = this.context?.itemPaddingX ?? DEFAULT_ITEM_PADDING_X;
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const lineHeight = fontSize * 1.2;
+    const fontFamily = cx.getTheme().fonts.sans;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 400,
       lineHeight,
     });
@@ -1475,7 +1513,13 @@ export class GladeDropdownSub
 
     return {
       layoutId,
-      requestState: { layoutId, labelSize, submenuContentRequestState, submenuContentElementId },
+      requestState: {
+        layoutId,
+        labelSize,
+        submenuContentRequestState,
+        submenuContentElementId,
+        fontFamily,
+      },
     };
   }
 
@@ -1619,6 +1663,7 @@ export class GladeDropdownSub
       submenuContentPrepaintState,
       submenuContentBounds,
       submenuContentElementId,
+      fontFamily: requestState.fontFamily,
     };
   }
 
@@ -1634,6 +1679,7 @@ export class GladeDropdownSub
     const itemHoverText = this.context?.itemHoverText ?? DEFAULT_ITEM_HOVER_TEXT;
     const itemDisabledText = this.context?.itemDisabledText ?? DEFAULT_ITEM_DISABLED_TEXT;
     const fontSize = this.context?.fontSize ?? DEFAULT_FONT_SIZE;
+    const fontFamily = prepaintState.fontFamily;
 
     const bgColor = isHighlighted && !isDisabled ? itemHoverBg : itemBg;
     const textColor = isDisabled ? itemDisabledText : isHighlighted ? itemHoverText : itemText;
@@ -1647,13 +1693,13 @@ export class GladeDropdownSub
 
     cx.paintGlyphs(this.labelText, prepaintState.labelBounds, textColor, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 400,
     });
 
     cx.paintGlyphs("›", prepaintState.chevronBounds, textColor, {
       fontSize: fontSize + 2,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 400,
     });
 
@@ -1748,11 +1794,13 @@ export class GladeDropdownSeparator
 type DropdownLabelRequestState = {
   layoutId: LayoutId;
   measureId: number;
+  fontFamily: string;
 };
 
 type DropdownLabelPrepaintState = {
   textBounds: Bounds;
   hitTestNode: HitTestNode | null;
+  fontFamily: string;
 };
 
 export class GladeDropdownLabel
@@ -1786,11 +1834,12 @@ export class GladeDropdownLabel
     const paddingX = this.context?.itemPaddingX ?? DEFAULT_ITEM_PADDING_X;
     const paddingY = (this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y) / 2;
     const lineHeight = fontSize * 1.2;
+    const fontFamily = cx.getTheme().fonts.sans;
 
     const measureId = cx.registerTextMeasure({
       text: this.labelText,
       fontSize,
-      fontFamily: "Inter",
+      fontFamily,
       fontWeight: 500,
       lineHeight,
       noWrap: true,
@@ -1808,13 +1857,13 @@ export class GladeDropdownLabel
       measureId
     );
 
-    return { layoutId, requestState: { layoutId, measureId } };
+    return { layoutId, requestState: { layoutId, measureId, fontFamily } };
   }
 
   prepaint(
     _cx: PrepaintContext,
     bounds: Bounds,
-    _requestState: DropdownLabelRequestState
+    requestState: DropdownLabelRequestState
   ): DropdownLabelPrepaintState {
     const paddingX = this.context?.itemPaddingX ?? DEFAULT_ITEM_PADDING_X;
     const paddingY = (this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y) / 2;
@@ -1826,7 +1875,7 @@ export class GladeDropdownLabel
       height: bounds.height - paddingY * 2 - 4,
     };
 
-    return { textBounds, hitTestNode: null };
+    return { textBounds, hitTestNode: null, fontFamily: requestState.fontFamily };
   }
 
   paint(cx: PaintContext, _bounds: Bounds, prepaintState: DropdownLabelPrepaintState): void {
@@ -1835,7 +1884,7 @@ export class GladeDropdownLabel
 
     cx.paintGlyphs(this.labelText, prepaintState.textBounds, labelTextColor, {
       fontSize,
-      fontFamily: "Inter",
+      fontFamily: prepaintState.fontFamily,
       fontWeight: 500,
     });
   }

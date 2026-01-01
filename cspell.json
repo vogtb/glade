@@ -50,6 +50,9 @@
     "bindgen",
     "serde",
     "cdylib",
-    "rlib"
+    "rlib",
+    "WGPUS",
+    "Unpremultiplied",
+    "Unconfigure"
   ]
 }

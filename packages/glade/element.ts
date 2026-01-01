@@ -29,6 +29,7 @@ import type { PathBuilder } from "./path.ts";
 import type { ImageTile } from "./image.ts";
 import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
 import { toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
+import type { Theme } from "./theme.ts";
 
 /**
  * Debug information attached to elements for inspector mode.
@@ -154,6 +155,11 @@ export interface RequestLayoutContext {
    * Allows virtual lists to know scroll position during layout.
    */
   getScrollOffset(handle: ScrollHandle): ScrollOffset;
+
+  /**
+   * Get the active theme.
+   */
+  getTheme(): Theme;
 }
 
 /**
@@ -666,6 +672,7 @@ export abstract class GladeContainerElement<
  */
 interface TextRequestLayoutState {
   measureId: number;
+  fontFamily: string;
 }
 
 /**
@@ -678,6 +685,7 @@ interface TextPrepaintState {
   hitTestNode?: HitTestNode;
   measureId: number;
   textColor: ColorObject;
+  fontFamily: string;
 }
 
 /**
@@ -690,7 +698,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   private textColor: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
   private hasCustomTextColor = false;
   private fontSize = 14;
-  private fontFamily = "Inter";
+  private fontFamily: string | null = null;
+  private resolvedFontFamily: string | null = null;
   private fontWeight = 400;
   private lineHeightValue: number | null = null;
   private maxWidthValue: number | null = null;
@@ -864,10 +873,13 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
     return this.underlineThickness + 2;
   }
 
-  private getLayoutWithWrapWidth(wrapWidth: number | undefined): CachedTextLayout {
+  private getLayoutWithWrapWidth(
+    wrapWidth: number | undefined,
+    fontFamily: string
+  ): CachedTextLayout {
     const lineHeight = this.getLineHeight();
     const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
-    const key = `${normalizedText}|${this.fontSize}|${lineHeight}|${this.fontFamily}|${wrapWidth ?? ""}|${this.whitespaceMode}`;
+    const key = `${normalizedText}|${this.fontSize}|${lineHeight}|${fontFamily}|${wrapWidth ?? ""}|${this.whitespaceMode}`;
 
     if (this.cachedLayout && this.cachedLayoutKey === key) {
       return this.cachedLayout;
@@ -877,7 +889,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       normalizedText,
       this.fontSize,
       lineHeight,
-      this.fontFamily,
+      fontFamily,
       wrapWidth
     );
     this.cachedLayoutKey = key;
@@ -885,6 +897,9 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TextRequestLayoutState> {
+    const theme = cx.getTheme();
+    const fontFamily = this.fontFamily ?? theme.fonts.sans;
+    this.resolvedFontFamily = fontFamily;
     const lineHeight = this.getLineHeight();
 
     // Normalize whitespace before measurement
@@ -899,7 +914,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
     const measureId = cx.registerTextMeasure({
       text: normalizedText,
       fontSize: this.fontSize,
-      fontFamily: this.fontFamily,
+      fontFamily,
       fontWeight: this.fontWeight,
       lineHeight,
       noWrap: effectiveNoWrap,
@@ -918,7 +933,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
     );
 
     // Pass measureId through state so paint can retrieve the computed wrap width
-    return { layoutId, requestState: { measureId } };
+    return { layoutId, requestState: { measureId, fontFamily } };
   }
 
   prepaint(
@@ -927,6 +942,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
     requestState: TextRequestLayoutState
   ): TextPrepaintState {
     const theme = cx.getWindow().getTheme();
+    const fontFamily = requestState.fontFamily ?? this.resolvedFontFamily ?? theme.fonts.sans;
     const resolvedTextColor = this.hasCustomTextColor ? this.textColor : theme.text;
     let hitbox: Hitbox | null = null;
 
@@ -939,7 +955,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       } else {
         wrapWidth = cx.getComputedWrapWidth?.(requestState.measureId);
       }
-      const layout = this.getLayoutWithWrapWidth(wrapWidth);
+      const layout = this.getLayoutWithWrapWidth(wrapWidth, fontFamily);
       const window = cx.getWindow();
       const manager = window.getCrossElementSelection();
       const key = manager.computeKeyForRegistration(this.textContent, bounds);
@@ -956,11 +972,13 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       hitTestNode: undefined,
       measureId: requestState.measureId,
       textColor: resolvedTextColor,
+      fontFamily,
     };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: TextPrepaintState): void {
     const lineHeight = this.getLineHeight();
+    const fontFamily = prepaintState.fontFamily;
 
     // Normalize whitespace before rendering
     const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
@@ -980,14 +998,14 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
     // Just render the text glyphs
     cx.paintGlyphs(normalizedText, bounds, prepaintState.textColor, {
       fontSize: this.fontSize,
-      fontFamily: this.fontFamily,
+      fontFamily,
       fontWeight: this.fontWeight,
       lineHeight,
       maxWidth: wrapWidth,
     });
 
     if (this.underlineEnabled) {
-      const layout = this.getLayoutWithWrapWidth(wrapWidth);
+      const layout = this.getLayoutWithWrapWidth(wrapWidth, fontFamily);
       const lastLine = layout.lines[layout.lines.length - 1];
       if (lastLine) {
         const underlineY = bounds.y + lastLine.y + this.fontSize * 1.1;

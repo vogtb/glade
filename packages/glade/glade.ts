@@ -29,7 +29,8 @@ export type {
   ScrollState,
 } from "./types";
 
-export type { Theme, ThemeConfig, ThemeOverrides } from "./theme";
+export type { Theme, ThemeConfig, ThemeOverrides, ThemeFonts } from "./theme";
+export { DEFAULT_THEME_FONTS } from "./theme";
 
 export {
   resolveTheme,

@@ -23,9 +23,7 @@ import { div, type GladeDiv } from "./div.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { Bounds } from "./types.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
-
-// TODO: clean up. This is bad.
-const DEFAULT_MONO_FONT_FAMILY = "JetBrains Mono";
+import type { ThemeFonts } from "./theme.ts";
 const GENERIC_FAMILY_NAMES = new Set([
   "ui-monospace",
   "monospace",
@@ -34,7 +32,7 @@ const GENERIC_FAMILY_NAMES = new Set([
   "system-ui",
 ]);
 
-function pickFontFamily(fontFamily: string): string {
+function pickFontFamily(fontFamily: string, fallback: string): string {
   const candidates = fontFamily
     .split(",")
     .map((candidate) => candidate.trim().replace(/^["'](.+)["']$/, "$1"))
@@ -46,7 +44,7 @@ function pickFontFamily(fontFamily: string): string {
     }
   }
 
-  return candidates[0] ?? "system-ui";
+  return candidates[0] ?? fallback;
 }
 
 export type MonoVariant = "code" | "pre";
@@ -81,17 +79,19 @@ type NormalizedMonoOptions = {
   scrollable: boolean;
 };
 
-function normalizeMonoOptions(options: MonoConfig): NormalizedMonoOptions {
+function normalizeMonoOptions(options: MonoConfig, fonts: ThemeFonts): NormalizedMonoOptions {
   const wrap = options.wrap ?? options.variant === "code";
   const tabSize = options.tabSize ?? 8;
   const selectable = options.selectable ?? true;
   const scrollable = options.scrollable ?? (options.variant === "pre" && !wrap);
+  const baseFamily = options.fontFamily ?? fonts.monospaced;
+  const fontFamily = pickFontFamily(baseFamily, fonts.monospaced);
 
   return {
     variant: options.variant,
     wrap,
     tabSize: tabSize > 0 ? tabSize : 1,
-    fontFamily: options.fontFamily ?? DEFAULT_MONO_FONT_FAMILY,
+    fontFamily,
     fontSize: options.fontSize,
     lineHeight: options.lineHeight,
     maxWidth: options.maxWidth,
@@ -158,9 +158,7 @@ function createMonoTextElement(
   options: NormalizedMonoOptions,
   whitespaceMode: "pre" | "pre-wrap"
 ): GladeTextElement {
-  const element = text(normalizedContent)
-    .font(pickFontFamily(options.fontFamily))
-    .whitespace(whitespaceMode);
+  const element = text(normalizedContent).font(options.fontFamily).whitespace(whitespaceMode);
 
   if (options.selectable) {
     element.selectable();
@@ -180,11 +178,10 @@ function createMonoTextElement(
 
 function createPreLines(normalizedContent: string, options: NormalizedMonoOptions): GladeDiv {
   const lines = normalizedContent.split("\n");
-  const family = pickFontFamily(options.fontFamily);
   const container = div().flex().flexCol().gap(0);
 
   for (const line of lines) {
-    const lineEl = text(line).font(family).whitespace("pre");
+    const lineEl = text(line).font(options.fontFamily).whitespace("pre");
     if (options.selectable) {
       lineEl.selectable();
     }
@@ -241,7 +238,7 @@ function hasHitTestNode(value: unknown): value is { hitTestNode?: HitTestNode | 
 export class MonoElement extends GladeElement<MonoRequestLayoutState, MonoPrepaintState> {
   private wrapValue: boolean | undefined;
   private tabSizeValue = 8;
-  private fontFamilyValue = DEFAULT_MONO_FONT_FAMILY;
+  private fontFamilyValue: string | undefined;
   private fontSizeValue: number | undefined;
   private lineHeightValue: number | undefined;
   private maxWidthValue: number | undefined;
@@ -326,7 +323,8 @@ export class MonoElement extends GladeElement<MonoRequestLayoutState, MonoPrepai
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<MonoRequestLayoutState> {
-    const child = this.buildChild();
+    const normalizedOptions = this.getNormalizedOptions(cx.getTheme().fonts);
+    const child = this.buildChild(normalizedOptions);
     const childElementId = cx.allocateChildId();
     const childCx: RequestLayoutContext = { ...cx, elementId: childElementId };
     const { layoutId, requestState } = child.requestLayout(childCx);
@@ -370,25 +368,27 @@ export class MonoElement extends GladeElement<MonoRequestLayoutState, MonoPrepai
     return this.hitTestNodeValue;
   }
 
-  private getNormalizedOptions(): NormalizedMonoOptions {
-    return normalizeMonoOptions({
-      variant: this.variantValue,
-      wrap: this.wrapValue,
-      tabSize: this.tabSizeValue,
-      fontFamily: this.fontFamilyValue,
-      fontSize: this.fontSizeValue,
-      lineHeight: this.lineHeightValue,
-      maxWidth: this.maxWidthValue,
-      selectable: this.selectableValue,
-      padding: this.paddingValue,
-      background: this.backgroundValue,
-      borderRadius: this.borderRadiusValue,
-      scrollable: this.scrollableValue,
-    });
+  private getNormalizedOptions(fonts: ThemeFonts): NormalizedMonoOptions {
+    return normalizeMonoOptions(
+      {
+        variant: this.variantValue,
+        wrap: this.wrapValue,
+        tabSize: this.tabSizeValue,
+        fontFamily: this.fontFamilyValue,
+        fontSize: this.fontSizeValue,
+        lineHeight: this.lineHeightValue,
+        maxWidth: this.maxWidthValue,
+        selectable: this.selectableValue,
+        padding: this.paddingValue,
+        background: this.backgroundValue,
+        borderRadius: this.borderRadiusValue,
+        scrollable: this.scrollableValue,
+      },
+      fonts
+    );
   }
 
-  private buildChild(): GladeElement<unknown, unknown> {
-    const normalizedOptions = this.getNormalizedOptions();
+  private buildChild(normalizedOptions: NormalizedMonoOptions): GladeElement<unknown, unknown> {
     const normalizedContent = normalizeContentForVariant(this.content, normalizedOptions);
 
     if (normalizedOptions.variant === "pre" && !normalizedOptions.wrap) {

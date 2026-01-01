@@ -21,6 +21,8 @@ export class SvgTessellator extends WasmSvgTessellator {
 }
 
 export function createSvgTessellator(): SvgTessellator {
+  const bytes = new TextEncoder().encode(wasmBase64).length;
+  console.log(`SVG embedded WASM binary is ${bytes / 1000} kb`);
   const wasmBytes = base64ToBytes(wasmBase64);
   const module = initSync({ module: wasmBytes });
   return new SvgTessellator(module);

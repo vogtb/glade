@@ -21,6 +21,8 @@ const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
  * Uses the embedded WASM binary - no network fetch required.
  */
 export function initShaper(): InitOutput {
+  const bytes = new TextEncoder().encode(wasmBase64).length;
+  console.log(`Shaper embedded WASM binary is ${bytes / 1000} kb`);
   const wasmBytes = base64ToBytes(wasmBase64);
   return initSync({ module: wasmBytes });
 }

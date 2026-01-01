@@ -65,7 +65,7 @@ import {
 } from "./text.ts";
 import type { FontStyle } from "@glade/shaper";
 import { GladeScene } from "./scene.ts";
-import { inputColors } from "./theme.ts";
+import { DEFAULT_THEME_FONTS, inputColors } from "./theme.ts";
 import type { Color } from "@glade/utils";
 
 export const TEXT_INPUT_CONTEXT = "glade:text-input";
@@ -99,6 +99,7 @@ export interface TextInputOptions {
 interface TextInputRequestState {
   layoutId: LayoutId;
   placeholderLayoutId: LayoutId | null;
+  fontFamily: string;
 }
 
 interface TextInputPrepaintState {
@@ -107,6 +108,7 @@ interface TextInputPrepaintState {
   bounds: Bounds;
   hitbox: Hitbox | null;
   hitTestNode: HitTestNode;
+  fontFamily: string;
   colors: {
     text: Color;
     placeholder: Color;
@@ -393,7 +395,8 @@ export function renderTextDecorations(
 export class GladeTextInput extends GladeElement<TextInputRequestState, TextInputPrepaintState> {
   private options: TextInputOptions;
   private controller: TextInputController;
-  private fontFamily = "Inter";
+  private fontFamily: string | null = null;
+  private resolvedFontFamily: string | null = null;
   private fontSize = 14;
   private fontWeight = 400;
   private lineHeight: number | null = null;
@@ -464,6 +467,10 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
   caretBlink(interval: number): this {
     this.caretBlinkInterval = interval;
     return this;
+  }
+
+  private effectiveFontFamily(): string {
+    return this.resolvedFontFamily ?? this.fontFamily ?? DEFAULT_THEME_FONTS.sans;
   }
 
   onSubmit(callback: (text: string) => void): this {
@@ -546,11 +553,12 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     );
     const local = { x: localX, y: localY };
     const maxWidth = this.contentMaxWidth();
+    const fontFamily = this.effectiveFontFamily();
     // Use cached layout for efficient hit testing
     const layout = this.controller.getLayout(
       this.fontSize,
       this.getLineHeight(),
-      this.fontFamily,
+      fontFamily,
       maxWidth
     );
     return hitTestWithLayout(layout, local);
@@ -572,11 +580,12 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     }
     const state = this.getState();
     const maxWidth = this.contentMaxWidth();
+    const fontFamily = this.effectiveFontFamily();
     // Use cached layout for efficient caret computation
     const layout = this.controller.getLayout(
       this.fontSize,
       this.getLineHeight(),
-      this.fontFamily,
+      fontFamily,
       maxWidth
     );
     const caret = computeCaretRectWithLayout(layout, state.selection.end, state.value.length);
@@ -625,6 +634,9 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     this.syncController(cx);
     const state = this.getState();
     const lineHeight = this.getLineHeight();
+    const themeFonts = cx.getTheme().fonts;
+    const fontFamily = this.fontFamily ?? themeFonts.sans;
+    this.resolvedFontFamily = fontFamily;
 
     // Height calculation: for multiline, we need to measure actual content height
     // For single-line, it's just one line of text
@@ -640,7 +652,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
         const layout = this.controller.getLayout(
           this.fontSize,
           lineHeight,
-          this.fontFamily,
+          fontFamily,
           this.controller.contentBounds.width
         );
         // Calculate height from actual line layout
@@ -681,6 +693,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       requestState: {
         layoutId,
         placeholderLayoutId,
+        fontFamily,
       },
     };
   }
@@ -690,6 +703,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     bounds: Bounds,
     requestState: TextInputRequestState
   ): TextInputPrepaintState {
+    this.resolvedFontFamily = requestState.fontFamily;
     const handlers = this.buildHandlers();
     this.controller.contentBounds = {
       x: bounds.x + this.padding.x,
@@ -728,6 +742,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       bounds,
       hitbox,
       hitTestNode,
+      fontFamily: this.effectiveFontFamily(),
       colors,
     };
   }
@@ -812,11 +827,12 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       return;
     }
     const maxWidth = this.contentMaxWidth();
+    const fontFamily = this.effectiveFontFamily();
     // Use cached layout for efficient caret computation
     const layout = this.controller.getLayout(
       this.fontSize,
       this.getLineHeight(),
-      this.fontFamily,
+      fontFamily,
       maxWidth
     );
     const caret = computeCaretRectWithLayout(layout, state.selection.end, state.value.length);
@@ -1129,6 +1145,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     const caretColor = colors.caret;
 
     const lineHeight = this.getLineHeight();
+    const fontFamily = prepaintState.fontFamily;
     const contentX = bounds.x + this.padding.x;
     const contentY = bounds.y + this.padding.y;
 
@@ -1147,7 +1164,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
 
     cx.paintGlyphs(textToRender, textBounds, isPlaceholder ? placeholderColor : textColor, {
       fontSize: this.fontSize,
-      fontFamily: this.fontFamily,
+      fontFamily,
       fontWeight: this.fontWeight,
       lineHeight,
       maxWidth,
@@ -1157,7 +1174,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     const layout = this.controller.getLayout(
       this.fontSize,
       this.getLineHeight(),
-      this.fontFamily,
+      fontFamily,
       maxWidth
     );
 
@@ -1166,7 +1183,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       y: contentY,
       fontSize: this.fontSize,
       lineHeight,
-      fontFamily: this.fontFamily,
+      fontFamily,
       maxWidth,
       selectionColor,
       compositionColor,

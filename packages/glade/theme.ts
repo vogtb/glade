@@ -1,8 +1,23 @@
 import type { ColorScheme } from "@glade/core";
 import { colors, toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
 
+export type ThemeFonts = {
+  system: string;
+  sans: string;
+  monospaced: string;
+  emoji: string;
+};
+
+export const DEFAULT_THEME_FONTS: ThemeFonts = {
+  system: "Inter",
+  sans: "Inter",
+  monospaced: "JetBrains Mono",
+  emoji: "Noto Color Emoji",
+};
+
 export type Theme = {
   scheme: ColorScheme;
+  fonts: ThemeFonts;
   background: ColorObject;
   backgroundHover: ColorObject;
   surface: ColorObject;
@@ -23,7 +38,7 @@ export type Theme = {
   success: ColorObject;
 };
 
-type ThemeColorKey = Exclude<keyof Theme, "scheme">;
+type ThemeColorKey = Exclude<keyof Theme, "scheme" | "fonts">;
 
 export type ThemeOverrides = Partial<Record<ThemeColorKey, Color>>;
 
@@ -37,10 +52,15 @@ export type ThemeConfig = {
    * Partial overrides applied on top of the base light/dark palette.
    */
   overrides?: ThemeOverrides;
+  /**
+   * Optional font family overrides applied on top of the defaults.
+   */
+  fonts?: Partial<ThemeFonts>;
 };
 
 const DARK_THEME: Theme = {
   scheme: "dark",
+  fonts: { ...DEFAULT_THEME_FONTS },
   background: rgb(colors.black.x900),
   backgroundHover: rgb(colors.black.x800),
   surface: rgb(colors.black.x800),
@@ -63,6 +83,7 @@ const DARK_THEME: Theme = {
 
 const LIGHT_THEME: Theme = {
   scheme: "light",
+  fonts: { ...DEFAULT_THEME_FONTS },
   background: rgb(colors.white.default),
   backgroundHover: rgb(colors.white.x200),
   surface: rgb(colors.gray.x50),
@@ -112,7 +133,7 @@ function normalizeThemeColors(theme: Theme): Theme {
 }
 
 function isTheme(value: Theme | ThemeConfig | undefined): value is Theme {
-  return Boolean(value && "scheme" in value && "background" in value);
+  return Boolean(value && "scheme" in value && "background" in value && "fonts" in value);
 }
 
 function applyOverrides(base: Theme, overrides?: ThemeOverrides): Theme {
@@ -129,6 +150,19 @@ function applyOverrides(base: Theme, overrides?: ThemeOverrides): Theme {
   return next;
 }
 
+function applyFontOverrides(base: Theme, fonts?: Partial<ThemeFonts>): Theme {
+  if (!fonts) {
+    return base;
+  }
+  const nextFonts: ThemeFonts = {
+    system: fonts.system ?? base.fonts.system,
+    sans: fonts.sans ?? base.fonts.sans,
+    monospaced: fonts.monospaced ?? base.fonts.monospaced,
+    emoji: fonts.emoji ?? base.fonts.emoji,
+  };
+  return { ...base, fonts: nextFonts };
+}
+
 export function resolveTheme(
   config: Theme | ThemeConfig | undefined,
   systemScheme: ColorScheme
@@ -140,7 +174,8 @@ export function resolveTheme(
   const schemeOverride = config?.scheme ?? "system";
   const targetScheme = schemeOverride === "system" ? systemScheme : schemeOverride;
   const base = targetScheme === "dark" ? DARK_THEME : LIGHT_THEME;
-  const normalizedBase = normalizeThemeColors({ ...base });
+  const withFonts = applyFontOverrides({ ...base, fonts: { ...base.fonts } }, config?.fonts);
+  const normalizedBase = normalizeThemeColors(withFonts);
   return applyOverrides(normalizedBase, config?.overrides);
 }
 
@@ -152,6 +187,7 @@ export class ThemeManager {
   private systemScheme: ColorScheme;
   private overrideScheme: ColorScheme | "system";
   private overrides: ThemeOverrides | undefined;
+  private fontOverrides: Partial<ThemeFonts> | undefined;
   private theme: Theme;
   private listeners = new Set<(theme: Theme) => void>();
 
@@ -160,10 +196,12 @@ export class ThemeManager {
     if (isTheme(config)) {
       this.overrideScheme = config.scheme;
       this.overrides = undefined;
+      this.fontOverrides = undefined;
       this.theme = config;
     } else {
       this.overrideScheme = config?.scheme ?? "system";
       this.overrides = config?.overrides;
+      this.fontOverrides = config?.fonts;
       this.theme = resolveTheme(config, this.systemScheme);
     }
   }
@@ -180,12 +218,14 @@ export class ThemeManager {
     this.theme = theme;
     this.overrideScheme = theme.scheme;
     this.overrides = undefined;
+    this.fontOverrides = undefined;
     this.notify();
   }
 
   setThemeConfig(config: ThemeConfig): void {
     this.overrideScheme = config.scheme ?? this.overrideScheme;
     this.overrides = config.overrides ?? this.overrides;
+    this.fontOverrides = config.fonts ?? this.fontOverrides;
     this.recompute();
   }
 
@@ -215,7 +255,7 @@ export class ThemeManager {
 
   private recompute(): void {
     const next = resolveTheme(
-      { scheme: this.overrideScheme, overrides: this.overrides },
+      { scheme: this.overrideScheme, overrides: this.overrides, fonts: this.fontOverrides },
       this.systemScheme
     );
     if (!themesEqual(this.theme, next)) {
