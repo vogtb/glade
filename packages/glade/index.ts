@@ -8,6 +8,8 @@
  * - GPU-native rendering via WebGPU
  * - Cross-platform support (browser and native)
  *
+ * TODO: we should name this glade.ts instead of index.ts
+ *
  * @module @glade/glade
  */
 
@@ -602,3 +604,5 @@ export {
 } from "./editor";
 
 export * from "./header";
+
+export * from "./button";
