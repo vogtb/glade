@@ -417,7 +417,7 @@ export class MainView implements GladeView {
       .flexRow()
       .w(cx.window.width)
       .h(cx.window.height)
-      .bg(theme.semantic.surface.default)
+      .bg(theme.semantic.window.background)
       .children(
         div()
           .flex()
@@ -425,7 +425,7 @@ export class MainView implements GladeView {
           .w(220)
           .hFull()
           .flexShrink0()
-          .bg(theme.semantic.surface.muted)
+          .bg(theme.semantic.window.background)
           .overflowHidden()
           .children(
             div()

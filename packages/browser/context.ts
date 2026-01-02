@@ -287,7 +287,7 @@ export async function createWebGPUContext(
 
     onKey(callback: KeyCallback): () => void {
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Tab" && hasKeyboardCapture) {
+        if (hasKeyboardCapture) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -299,6 +299,10 @@ export async function createWebGPUContext(
         });
       };
       const handleKeyUp = (e: KeyboardEvent) => {
+        if (hasKeyboardCapture) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         callback({
           key: getKeyCode(e),
           scancode: hashCode(e.code),
