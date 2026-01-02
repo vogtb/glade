@@ -79,17 +79,11 @@ export function withPerf<T extends (...args: unknown[]) => unknown>(label: strin
 
 export function timed<T extends (...args: unknown[]) => unknown>(
   fn: T,
-  log: (ms: number) => void
+  log: (t: ReturnType<T>, ms: number) => void
 ): ReturnType<T> {
   const start = performance.now();
-  try {
-    const result = fn();
-    const delta = performance.now() - start;
-    log(delta);
-    return result as ReturnType<T>;
-  } catch (e) {
-    const delta = performance.now() - start;
-    log(delta);
-    throw e;
-  }
+  const result = fn() as ReturnType<T>;
+  const delta = performance.now() - start;
+  log(result, delta);
+  return result;
 }

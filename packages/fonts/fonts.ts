@@ -1,5 +1,5 @@
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
-import { base64ToBytes, timed } from "@glade/utils";
+import { base64ToBytes, formatBytes, timed } from "@glade/utils";
 
 const INTER_VAR_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
 const JETBRAINS_MONO_REGULAR_BASE_64 = COMPTIME_embedAsBase64(
@@ -23,21 +23,28 @@ export class Font {
   }
 }
 
+const logFontInfo = (f: Font, ms: number) => {
+  console.log(
+    `[fonts] loaded ${f.name} duration=${ms.toFixed(2)}ms, size=${formatBytes(f.sizeBytes)}`
+  );
+};
+
 export const INTER_FONT = timed(
   () =>
     new Font({
       name: "Inter",
       base64Data: INTER_VAR_BASE_64,
     }),
-  (ms) => console.log(`[fonts] Inter font loaded in in ${ms.toFixed(2)}ms`)
+  logFontInfo
 );
+
 export const JETBRAINS_MONO = timed(
   () =>
     new Font({
       name: "JetBrains Mono",
       base64Data: JETBRAINS_MONO_REGULAR_BASE_64,
     }),
-  (ms) => console.log(`[fonts] Jetbrains Mono font loaded in in ${ms.toFixed(2)}ms`)
+  logFontInfo
 );
 
 export const NOTO_COLOR_EMOJI = timed(
@@ -46,5 +53,11 @@ export const NOTO_COLOR_EMOJI = timed(
       name: "Noto Color Emoji",
       base64Data: NOTO_COLOR_EMOJI_REGULAR,
     }),
-  (ms) => console.log(`[fonts] Noto Color Emoji font loaded in in ${ms.toFixed(2)}ms`)
+  logFontInfo
 );
+
+export const FONTS = {
+  Inter: INTER_FONT,
+  JetbrainsMono: JETBRAINS_MONO,
+  NotoColorEmoji: NOTO_COLOR_EMOJI,
+};

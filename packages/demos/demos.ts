@@ -8,7 +8,6 @@ import {
 import { GladeApp, type GladeContext } from "@glade/glade";
 import { MainView } from "./main.ts";
 import { base64ToBytes } from "@glade/utils";
-import { INTER_FONT, JETBRAINS_MONO, NOTO_COLOR_EMOJI } from "@glade/fonts";
 
 const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png");
 const flowerJpgBase64 = COMPTIME_embedAsBase64("../../assets/flower.jpg");
@@ -31,10 +30,6 @@ async function main() {
     { width: ctx.width, height: ctx.height, title: "Glade Example" },
     (cx: GladeContext) => cx.newView(() => mainView)
   );
-
-  window.registerFont(INTER_FONT);
-  window.registerFont(JETBRAINS_MONO);
-  window.registerFont(NOTO_COLOR_EMOJI);
 
   const pngData = base64ToBytes(demoPngBase64);
   const decodedPng = await platform.decodeImage(pngData);
