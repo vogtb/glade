@@ -15,14 +15,8 @@ export const IMAGES_DEMO: Demo = {
     }
 
     return [
-      text("Images").size(32),
-      SPACER_10PX,
-      text("PNG + JPG decoding with GPU filters, rounding, and effects.").size(16),
-      SPACER_10PX,
-      div().h(1).bg(colors.black.x600),
-      SPACER_10PX,
-
-      text("PNG Image Rendering").size(24),
+      text("PNG + JPG decoding with GPU filters, rounding, and effects."),
+      text("PNG Image Rendering"),
       SPACER_10PX,
       text("PNG decoding with GPU-accelerated rendering and effects"),
       SPACER_10PX,
@@ -71,11 +65,8 @@ export const IMAGES_DEMO: Demo = {
         ),
 
       SPACER_10PX,
-      div().h(1).bg(colors.black.x700),
-      SPACER_10PX,
 
-      text("JPEG Image Rendering").size(24),
-      SPACER_10PX,
+      text("JPEG Image Rendering"),
       text("JPEG decoding with GPU-accelerated rendering and effects"),
       SPACER_10PX,
       div()

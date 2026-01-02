@@ -53,6 +53,10 @@
     "rlib",
     "WGPUS",
     "Unpremultiplied",
-    "Unconfigure"
+    "Unconfigure",
+    "BGRA",
+    "premultiplication",
+    "unpremultiplies",
+    "unpremultiply"
   ]
 }
