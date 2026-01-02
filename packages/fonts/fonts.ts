@@ -10,22 +10,18 @@ const NOTO_COLOR_EMOJI_REGULAR = COMPTIME_embedAsBase64("../../assets/NotoColorE
 export class Font {
   readonly name: string;
   readonly base64Data: string;
-  readonly sizeBytes: number;
+  readonly bytes: Uint8Array;
 
   constructor({ name, base64Data }: { name: string; base64Data: string }) {
     this.name = name;
     this.base64Data = base64Data;
-    this.sizeBytes = new TextEncoder().encode(base64Data).length;
-  }
-
-  toBytes(): Uint8Array {
-    return base64ToBytes(this.base64Data);
+    this.bytes = base64ToBytes(base64Data);
   }
 }
 
 const logFontInfo = (f: Font, ms: number) => {
   console.log(
-    `[fonts] loaded ${f.name} duration=${ms.toFixed(2)}ms, size=${formatBytes(f.sizeBytes)}`
+    `[fonts] loaded ${f.name} duration=${ms.toFixed(2)}ms, size=${formatBytes(f.bytes.byteLength)}`
   );
 };
 

@@ -427,7 +427,7 @@ export class GladeWindow {
    * Register a font for text rendering.
    */
   registerFont(font: Font): void {
-    this.textSystem.registerFont(font.name, font.toBytes());
+    this.textSystem.registerFont(font);
   }
 
   /**

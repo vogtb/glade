@@ -51,6 +51,7 @@ import {
 import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import { DEFAULT_THEME_FONTS, type ThemeFonts } from "./theme.ts";
+import type { Font } from "@glade/fonts";
 
 let sharedTextShaper: TextShaper | null = null;
 
@@ -559,7 +560,9 @@ export class TextSystem {
    * In browser environments, the font is also registered with the CSS FontFace API
    * so that Canvas 2D can use it for rasterization.
    */
-  registerFont(name: string, data: Uint8Array): FontId {
+  registerFont(font: Font): FontId {
+    const name = font.name;
+    const data = font.bytes;
     const existing = this.fontFamilyToId.get(name);
     if (existing) {
       return existing;
@@ -578,7 +581,7 @@ export class TextSystem {
           (document.fonts as FontFaceSet & { add(font: FontFace): void }).add(loadedFace);
         })
         .catch((err) => {
-          console.warn(`Failed to load font "${name}" for browser:`, err);
+          console.warn(`[glade/text] failed to load font "${name}" for browser:`, err);
         });
     }
 

@@ -9,9 +9,12 @@ export function base64ToBytes(base64: string): Uint8Array {
 
 const BYTE_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"] as const;
 
+/**
+ * Takes the bytes and returns them in a nice human readable format.
+ */
 export function formatBytes(bytes: number): string {
   if (bytes === 0) {
-    return "0 B";
+    return "0B";
   }
 
   const sign = bytes < 0 ? "-" : "";
