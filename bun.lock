@@ -55,8 +55,17 @@
       "dependencies": {
         "@glade/comptime": "workspace:*",
         "@glade/core": "workspace:*",
+        "@glade/fonts": "workspace:*",
         "@glade/glade": "workspace:*",
         "@glade/platform": "workspace:*",
+        "@glade/utils": "workspace:*",
+      },
+    },
+    "packages/fonts": {
+      "name": "@glade/fonts",
+      "version": "0.0.1",
+      "dependencies": {
+        "@glade/comptime": "workspace:*",
         "@glade/utils": "workspace:*",
       },
     },
@@ -270,6 +279,8 @@
     "@glade/dawn": ["@glade/dawn@workspace:packages/dawn"],
 
     "@glade/demos": ["@glade/demos@workspace:packages/demos"],
+
+    "@glade/fonts": ["@glade/fonts@workspace:packages/fonts"],
 
     "@glade/glade": ["@glade/glade@workspace:packages/glade"],
 

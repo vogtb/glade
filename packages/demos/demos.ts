@@ -8,14 +8,8 @@ import {
 import { GladeApp, type GladeContext } from "@glade/glade";
 import { MainView } from "./main.ts";
 import { base64ToBytes } from "@glade/utils";
+import { INTER_FONT, JETBRAINS_MONO, NOTO_COLOR_EMOJI } from "@glade/fonts";
 
-const interFontBase64 = COMPTIME_embedAsBase64(
-  "../../assets/InterVariable.ttf"
-) as unknown as string;
-const jetBrainsMonoBase64 = COMPTIME_embedAsBase64(
-  "../../assets/JetBrainsMono-Regular.ttf"
-) as unknown as string;
-const notoEmojiBase64 = COMPTIME_embedAsBase64("../../assets/NotoColorEmoji-Regular.ttf");
 const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png");
 const flowerJpgBase64 = COMPTIME_embedAsBase64("../../assets/flower.jpg");
 
@@ -38,9 +32,9 @@ async function main() {
     (cx: GladeContext) => cx.newView(() => mainView)
   );
 
-  window.registerFont("Inter", base64ToBytes(interFontBase64));
-  window.registerFont("JetBrains Mono", base64ToBytes(jetBrainsMonoBase64));
-  window.registerFont("Noto Color Emoji", base64ToBytes(notoEmojiBase64));
+  window.registerFont(INTER_FONT.name, INTER_FONT.toBytes());
+  window.registerFont(JETBRAINS_MONO.name, JETBRAINS_MONO.toBytes());
+  window.registerFont(NOTO_COLOR_EMOJI.name, NOTO_COLOR_EMOJI.toBytes());
 
   const pngData = base64ToBytes(demoPngBase64);
   const decodedPng = await platform.decodeImage(pngData);

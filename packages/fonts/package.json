@@ -1,0 +1,18 @@
+{
+  "name": "@glade/fonts",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "fonts.ts",
+  "types": "fonts.ts",
+  "scripts": {
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules"
+  },
+  "dependencies": {
+    "@glade/comptime": "workspace:*",
+    "@glade/utils": "workspace:*"
+  }
+}
