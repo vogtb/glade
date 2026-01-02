@@ -9,6 +9,7 @@
  */
 
 import { base64ToBytes } from "@glade/utils";
+import { log } from "@glade/logging";
 import {
   initSync,
   TaffyLayoutEngine as WasmTaffyLayoutEngine,
@@ -35,7 +36,7 @@ export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
  */
 export function createLayoutEngine(): TaffyLayoutEngine {
   const kb = new TextEncoder().encode(wasmBase64).length / 1000;
-  console.log(`[layout] layout engine embedded WASM binary is ${kb} kb`);
+  log.info(`layout engine embedded WASM binary is ${kb} kb`);
   const wasmBytes = base64ToBytes(wasmBase64);
   const module = initSync({ module: wasmBytes });
   return new TaffyLayoutEngine(module);

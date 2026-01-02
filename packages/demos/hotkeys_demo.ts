@@ -17,6 +17,7 @@ import {
   type Theme,
 } from "@glade/glade";
 import type { Demo, DemoItem } from "./demo";
+import { log } from "@glade/logging";
 
 // Track demo state for hotkey actions
 let actionCounter = 0;
@@ -340,7 +341,7 @@ export const HOTKEYS_DEMO: Demo = {
             .outline()
             .onClick(() => {
               const allBindings = HotkeyDebugger.listAll();
-              console.log("All registered hotkeys:", allBindings);
+              log.info("all registered hotkeys:", allBindings);
               addNotification(`Listed ${allBindings.length} hotkeys in console`);
               cx.notify();
             }),
@@ -348,7 +349,7 @@ export const HOTKEYS_DEMO: Demo = {
             .outline()
             .onClick(() => {
               const conflicts = HotkeyDebugger.findConflicts();
-              console.log("Hotkey conflicts:", conflicts);
+              log.info("Hotkey conflicts:", conflicts);
               const conflictCount = conflicts.size;
               addNotification(
                 conflictCount > 0

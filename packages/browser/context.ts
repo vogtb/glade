@@ -214,8 +214,8 @@ export async function createWebGPUContext(
       canvas.width = newPhysicalWidth;
       canvas.height = newPhysicalHeight;
 
-      console.log(
-        `Canvas resized: buffer=${newPhysicalWidth}x${newPhysicalHeight}, logical=${newLogicalWidth}x${newLogicalHeight}`
+      log.info(
+        `canvas resized: buffer=${newPhysicalWidth}x${newPhysicalHeight}, logical=${newLogicalWidth}x${newLogicalHeight}`
       );
     }
   }

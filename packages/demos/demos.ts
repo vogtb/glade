@@ -8,6 +8,7 @@ import {
 import { GladeApp, type GladeContext } from "@glade/glade";
 import { MainView } from "./main.ts";
 import { base64ToBytes } from "@glade/utils";
+import { log } from "@glade/logging";
 
 const demoPngBase64 = COMPTIME_embedAsBase64("../../assets/image.png");
 const flowerJpgBase64 = COMPTIME_embedAsBase64("../../assets/flower.jpg");
@@ -52,6 +53,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  log.error(error);
   throw error;
 });

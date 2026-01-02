@@ -26,6 +26,18 @@ type Config = {
   includeCallsite: boolean;
 };
 
+type Logger = {
+  info: (message: string, data?: unknown) => void;
+  warn: (message: string, data?: unknown) => void;
+  debug: (message: string, data?: unknown) => void;
+  error: (message: string, data?: unknown) => void;
+  fatal: (message: string, data?: unknown) => void;
+};
+
+declare global {
+  const log: Logger;
+}
+
 const levelRank: Record<LogLevel, number> = {
   debug: 10,
   info: 20,
@@ -43,7 +55,9 @@ const defaultFormatter: Formatter = (record) => {
     ? `${record.callsite.moduleName}:${record.callsite.line}`
     : record.module;
 
-  return `[${moduleLabel}] ${record.level.toUpperCase()} ${record.message}${tail}`;
+  const timestamp = new Date(record.timestamp).toISOString();
+
+  return `${timestamp} [${moduleLabel}] ${record.level.toUpperCase()} ${record.message}${tail}`;
 };
 
 let config: Config = {
@@ -116,6 +130,35 @@ function moduleNameFromPath(filePath: string): string {
   return fileName;
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function normalizeData(data?: unknown): Record<string, unknown> | undefined {
+  if (data === undefined) {
+    return;
+  }
+
+  if (isPlainRecord(data)) {
+    return data;
+  }
+
+  if (data instanceof Map) {
+    return { value: Array.from(data.entries()) };
+  }
+
+  if (data instanceof Set) {
+    return { value: Array.from(data.values()) };
+  }
+
+  return { value: data };
+}
+
 function extractLocation(stackLine: string): RawLocation | undefined {
   let locationPart = stackLine.trim();
   const atIndex = locationPart.indexOf("at ");
@@ -139,14 +182,21 @@ function extractLocation(stackLine: string): RawLocation | undefined {
     return;
   }
 
-  const lineNumber = Number.parseInt(match[2], 10);
-  const columnNumber = Number.parseInt(match[3], 10);
+  const filePath = match[1];
+  const lineText = match[2];
+  const columnText = match[3];
+  if (!filePath || !lineText || !columnText) {
+    return;
+  }
+
+  const lineNumber = Number.parseInt(lineText, 10);
+  const columnNumber = Number.parseInt(columnText, 10);
   if (Number.isNaN(lineNumber) || Number.isNaN(columnNumber)) {
     return;
   }
 
   return {
-    filePath: match[1],
+    filePath,
     line: lineNumber,
     column: columnNumber,
   };
@@ -185,10 +235,15 @@ function callsiteFromStack(stack?: string): Callsite | undefined {
     return;
   }
 
+  const firstLocation = locations[0];
+  if (!firstLocation) {
+    return;
+  }
+
   const preferred =
     locations.find((location) => location.filePath.includes("/packages/")) ??
     locations.find((location) => location.filePath.includes("packages/")) ??
-    locations[0];
+    firstLocation;
 
   const filePath = preferred.filePath;
   const moduleName = moduleNameFromPath(filePath);
@@ -207,14 +262,20 @@ function callsiteFromStack(stack?: string): Callsite | undefined {
   };
 }
 
-function write(level: LogLevel, message: string, data?: Record<string, unknown>): void {
+function write(level: LogLevel, message: string, data?: unknown): void {
   if (!shouldLog(level)) {
     return;
   }
 
+  // NOTE: Parsing the error stack to get the callsite data is not very
+  // performant, and requires `--sourcemap=inline` when compiling / bundling
+  // with Bun. If we're ever using the default logger on a hot path, we'll
+  // definitely see performance degradation. If I don't find the callsite data
+  // useful in the logging, I may just remove it all together and use static
+  // const loggers in all files.
   const callsite = config.includeCallsite ? callsiteFromStack(new Error().stack) : undefined;
   const moduleName = callsite?.moduleName ?? config.moduleName;
-  const recordData = data;
+  const recordData = normalizeData(data);
 
   const record: LogRecord = {
     timestamp: Date.now(),
@@ -237,20 +298,25 @@ function write(level: LogLevel, message: string, data?: Record<string, unknown>)
   }
 }
 
-export const log = {
-  info(message: string, data?: Record<string, unknown>): void {
+export const log: Logger = {
+  info(message: string, data?: unknown): void {
     write("info", message, data);
   },
-  warn(message: string, data?: Record<string, unknown>): void {
+  warn(message: string, data?: unknown): void {
     write("warn", message, data);
   },
-  debug(message: string, data?: Record<string, unknown>): void {
+  debug(message: string, data?: unknown): void {
     write("debug", message, data);
   },
-  error(message: string, data?: Record<string, unknown>): void {
+  error(message: string, data?: unknown): void {
     write("error", message, data);
   },
-  fatal(message: string, data?: Record<string, unknown>): void {
+  fatal(message: string, data?: unknown): void {
     write("fatal", message, data);
   },
 };
+
+const globalScope: typeof globalThis & { log?: Logger } = globalThis;
+if (!globalScope.log) {
+  globalScope.log = log;
+}

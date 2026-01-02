@@ -16,6 +16,7 @@ import type { HitTestNode } from "./dispatch.ts";
 import type { TextSystem } from "./text.ts";
 import { DEFAULT_THEME_FONTS, type Theme } from "./theme.ts";
 import type { ColorObject } from "@glade/utils";
+import { log } from "@glade/logging";
 
 /**
  * Debug info attached to elements during render.
@@ -698,9 +699,9 @@ export class Inspector {
   logSelectedElement(): void {
     const info = this.getSelectedElement();
     if (info) {
-      console.log(this.formatElementInfo(info));
+      log.info(this.formatElementInfo(info));
     } else {
-      console.log("No element selected");
+      log.info("No element selected");
     }
   }
 

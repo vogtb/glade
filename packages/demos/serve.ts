@@ -1,3 +1,5 @@
+import { log } from "@glade/logging";
+
 const server = Bun.serve({
   port: 3000,
   async fetch(req) {
@@ -18,4 +20,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`server running at http://localhost:${server.port}`);
+log.info(`server running at http://localhost:${server.port}`);

@@ -13,6 +13,7 @@ import {
   objcSendReturnDouble,
   objcSendOneDouble,
 } from "./objc";
+import { log } from "@glade/logging";
 
 // CoreFoundation for CFString creation
 const coreFoundation = dlopen(
@@ -114,14 +115,14 @@ export function createMetalLayerForView(nsView: Pointer): Pointer {
   // Without this, macOS doesn't perform color management and colors may appear incorrect
   if (srgbNameCFString) {
     const srgbColorspace = coreGraphics.symbols.CGColorSpaceCreateWithName(srgbNameCFString);
-    console.log(`[macos/metal] metal layer cfString=${srgbNameCFString}`);
-    console.log(`[macos/metal] metal layer colorspace=${srgbColorspace}`);
+    log.info(`metal layer cfString=${srgbNameCFString}`);
+    log.info(`metal layer colorspace=${srgbColorspace}`);
     if (srgbColorspace) {
       objcSendOnePtr.symbols.objc_msgSend(resultLayer, selectors.setColorspace, srgbColorspace);
       coreGraphics.symbols.CGColorSpaceRelease(srgbColorspace);
     }
   } else {
-    console.log("Warning: srgbNameCFString is null, colorspace not set");
+    log.info("warning: srgbNameCFString is null, colorspace not set");
   }
 
   return resultLayer;

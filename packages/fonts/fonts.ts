@@ -1,5 +1,6 @@
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { base64ToBytes, formatBytes, timed } from "@glade/utils";
+import { log } from "@glade/logging";
 
 const INTER_VAR_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
 const JETBRAINS_MONO_REGULAR_BASE_64 = COMPTIME_embedAsBase64(
@@ -20,9 +21,7 @@ export class Font {
 }
 
 const logFontInfo = (f: Font, ms: number) => {
-  console.log(
-    `[fonts] loaded ${f.name} duration=${ms.toFixed(2)}ms, size=${formatBytes(f.bytes.byteLength)}`
-  );
+  log.info(`loaded ${f.name} duration=${ms.toFixed(2)}ms, size=${formatBytes(f.bytes.byteLength)}`);
 };
 
 export const INTER_FONT = timed(

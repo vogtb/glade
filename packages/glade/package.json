@@ -15,6 +15,7 @@
     "@glade/core": "workspace:*",
     "@glade/fonts": "workspace:*",
     "@glade/layout": "workspace:*",
+    "@glade/logging": "workspace:*",
     "@glade/shaper": "workspace:*",
     "@glade/svg": "workspace:*",
     "@glade/utils": "workspace:*"

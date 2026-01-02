@@ -13,6 +13,7 @@ import type { PathPipeline } from "./path.ts";
 import type { UnderlinePipeline } from "./underline.ts";
 import type { ImagePipeline, ImageInstance } from "./image.ts";
 import type { HostTexturePipeline } from "./host.ts";
+import { log } from "@glade/logging";
 
 /**
  * Renderer configuration.
@@ -270,7 +271,7 @@ export class GladeRenderer {
     const uniformDebug = GladeRenderer as unknown as { loggedUniform?: boolean };
     if (!uniformDebug.loggedUniform) {
       uniformDebug.loggedUniform = true;
-      console.log(`[glade/renderer] uniform data: viewport=${width}x${height}, scale=${scale}`);
+      log.info(`uniform data: viewport=${width}x${height}, scale=${scale}`);
     }
     this.device.queue.writeBuffer(this.uniformBuffer!, 0, data);
   }
@@ -303,9 +304,7 @@ export class GladeRenderer {
     const rendererDebug = GladeRenderer as unknown as { lastDebugKey?: string };
     if (rendererDebug.lastDebugKey !== debugKey) {
       rendererDebug.lastDebugKey = debugKey;
-      console.log(
-        `[glade/renderer] logical=${width}x${height}, fb=${fbWidth}x${fbHeight}, dpr=${dpr}`
-      );
+      log.info(`logical=${width}x${height}, fb=${fbWidth}x${fbHeight}, dpr=${dpr}`);
     }
 
     // Update viewport uniform with framebuffer size and scale factor

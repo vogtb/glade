@@ -12,6 +12,7 @@ import { initSync, TextShaper as WasmTextShaper, type InitOutput } from "../pkg/
 import type { FontId } from "../pkg/shaper";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { base64ToBytes } from "@glade/utils";
+import { log } from "@glade/logging";
 
 // Embed WASM as base64 at build time via Bun macro
 const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
@@ -22,7 +23,7 @@ const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
  */
 export function initShaper(): InitOutput {
   const bytes = new TextEncoder().encode(wasmBase64).length;
-  console.log(`Shaper embedded WASM binary is ${bytes / 1000} kb`);
+  log.info(`shaper embedded WASM binary is ${bytes / 1000} kb`);
   const wasmBytes = base64ToBytes(wasmBase64);
   return initSync({ module: wasmBytes });
 }
