@@ -58,6 +58,12 @@ import {
 } from "./dispatch.ts";
 import type { KeyEvent } from "@glade/core";
 import { ActionRegistry, Keymap, KeyDispatcher } from "./actions.ts";
+import {
+  HotkeyManager,
+  setGlobalHotkeyManager,
+  keyCodeToHotkey,
+  getModifierHotkeys,
+} from "./hotkeys.ts";
 import { coreModsToGladeMods, Key } from "./keyboard.ts";
 import { GladeScene } from "./scene.ts";
 import type { Styles, Cursor } from "./styles.ts";
@@ -258,6 +264,7 @@ export class GladeWindow {
   private actionRegistry = new ActionRegistry();
   private keymap = new Keymap();
   private keyDispatcher: KeyDispatcher;
+  private hotkeyManager: HotkeyManager;
 
   // Renderer
   private renderer: GladeRenderer;
@@ -381,6 +388,10 @@ export class GladeWindow {
 
     // Initialize key dispatcher
     this.keyDispatcher = new KeyDispatcher(this.keymap, this.actionRegistry);
+
+    // Initialize hotkey manager and set as global
+    this.hotkeyManager = new HotkeyManager(this.actionRegistry, this.keymap);
+    setGlobalHotkeyManager(this.hotkeyManager);
 
     // Initialize inspector
     this.inspector = new Inspector();
@@ -941,6 +952,13 @@ export class GladeWindow {
    */
   getTheme(): Theme {
     return this.getContext().getTheme();
+  }
+
+  /**
+   * Get the hotkey manager for this window.
+   */
+  getHotkeyManager(): HotkeyManager {
+    return this.hotkeyManager;
   }
 
   // ============ Drag and Drop ============
@@ -2264,6 +2282,18 @@ export class GladeWindow {
 
   private handleKeyEvent(event: KeyEvent): void {
     const cx = this.getContext();
+
+    // Update hotkey manager's pressed keys tracking
+    const hotkey = keyCodeToHotkey(event.key);
+    if (hotkey) {
+      const isPressed = event.action === 1; // KeyAction.Press
+      this.hotkeyManager.updatePressedKeys(hotkey, isPressed);
+    }
+    // Also track modifier keys
+    const modifiers = getModifierHotkeys(event.mods);
+    for (const mod of modifiers) {
+      this.hotkeyManager.updatePressedKeys(mod, event.action === 1);
+    }
 
     // Handle Tab navigation
     if (event.action === 1) {

@@ -46,6 +46,7 @@ import { CHECKBOX_DEMO } from "./checkbox_demo";
 import { DEBUG_MODE_DEMO } from "./debug_mode_demo";
 import { DROPDOWN_DEMO } from "./dropdown_demo";
 import { THEME_DEMO } from "./theme_demo";
+import { HOTKEYS_DEMO } from "./hotkeys_demo";
 
 const DEMOS: Demo[] = [
   TEXT_DEMO,
@@ -81,6 +82,7 @@ const DEMOS: Demo[] = [
   CHECKBOX_DEMO,
   DROPDOWN_DEMO,
   THEME_DEMO,
+  HOTKEYS_DEMO,
 ];
 
 export class MainView implements GladeView {

@@ -31,6 +31,7 @@
       "dependencies": {
         "@glade/core": "workspace:*",
         "@glade/glade": "workspace:*",
+        "@glade/logging": "workspace:*",
         "@glade/utils": "workspace:*",
       },
     },
@@ -45,8 +46,8 @@
     "packages/dawn": {
       "name": "@glade/dawn",
       "version": "0.0.1",
-      "devDependencies": {
-        "@types/bun": "latest",
+      "dependencies": {
+        "@glade/logging": "workspace:*",
       },
     },
     "packages/demos": {
@@ -96,6 +97,14 @@
         "@glade/utils": "workspace:*",
       },
     },
+    "packages/logging": {
+      "name": "@glade/logging",
+      "version": "0.0.1",
+      "dependencies": {
+        "@glade/comptime": "workspace:*",
+        "@glade/utils": "workspace:*",
+      },
+    },
     "packages/macos": {
       "name": "@glade/macos",
       "version": "0.0.1",
@@ -104,6 +113,7 @@
         "@glade/dawn": "workspace:*",
         "@glade/glade": "workspace:*",
         "@glade/glfw": "workspace:*",
+        "@glade/logging": "workspace:*",
         "@glade/utils": "workspace:*",
       },
       "devDependencies": {
@@ -288,6 +298,8 @@
     "@glade/glfw": ["@glade/glfw@workspace:packages/glfw"],
 
     "@glade/layout": ["@glade/layout@workspace:packages/layout"],
+
+    "@glade/logging": ["@glade/logging@workspace:packages/logging"],
 
     "@glade/macos": ["@glade/macos@workspace:packages/macos"],
 

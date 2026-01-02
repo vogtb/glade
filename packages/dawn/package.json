@@ -11,7 +11,7 @@
     "clean": "rm -rf dist",
     "nuke": "rm -rf node_modules"
   },
-  "devDependencies": {
-    "@types/bun": "latest"
+  "dependencies": {
+    "@glade/logging": "workspace:*"
   }
 }

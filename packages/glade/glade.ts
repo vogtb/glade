@@ -382,6 +382,21 @@ export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab";
 
 export type { Action, KeyBinding } from "./actions";
 
+// Hotkeys utilities
+export {
+  Hotkey,
+  type HotkeyCombo,
+  type HotkeyHandler,
+  type HotkeyOptions,
+  type HotkeyDisposable,
+  HotkeyManager,
+  hotkey,
+  hotkeys,
+  isHotkeyPressed,
+  formatHotkey,
+  HotkeyDebugger,
+} from "./hotkeys";
+
 export {
   ActionRegistry,
   Keymap,

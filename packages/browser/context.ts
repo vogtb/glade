@@ -19,6 +19,7 @@ import {
 } from "@glade/core/events";
 import { hashCode } from "@glade/utils";
 import { createClipboard } from "./clipboard.ts";
+import { log } from "@glade/logging";
 
 export interface BrowserContextOptions extends ContextOptions {
   canvas?: HTMLCanvasElement;
@@ -85,9 +86,8 @@ export async function createWebGPUContext(
     canvas.style.height = `${logicalHeight}px`;
   }
 
-  // Debug: log canvas setup
-  console.log(
-    `Canvas setup: buffer=${canvas.width}x${canvas.height}, logical=${logicalWidth}x${logicalHeight}, dpr=${dpr}, fullscreen=${isFullscreen}`
+  log.info(
+    `canvas setup: buffer=${canvas.width}x${canvas.height}, logical=${logicalWidth}x${logicalHeight}, dpr=${dpr}, fullscreen=${isFullscreen}`
   );
 
   if (!options.canvas) {

@@ -57,6 +57,7 @@
     "BGRA",
     "premultiplication",
     "unpremultiplies",
-    "unpremultiply"
+    "unpremultiply",
+    "callsite"
   ]
 }
