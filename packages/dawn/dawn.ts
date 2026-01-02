@@ -3,7 +3,8 @@ import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
 // @ts-expect-error - Bun-specific import attribute
 import DAWN_PATH from "../../vendor/libwebgpu_dawn.dylib" with { type: "file" };
 
-console.log(`using embedded libwebgpu_dawn.dylib at DAWN_PATH=${DAWN_PATH}`);
+console.log(`[dawn] using embedded libwebgpu_dawn.dylib`);
+console.log(`[dawn] DAWN_PATH=${DAWN_PATH}`);
 
 // WebGPU handle types (opaque pointers)
 export type WGPUInstance = Pointer;

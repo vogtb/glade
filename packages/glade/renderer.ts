@@ -270,7 +270,7 @@ export class GladeRenderer {
     const uniformDebug = GladeRenderer as unknown as { loggedUniform?: boolean };
     if (!uniformDebug.loggedUniform) {
       uniformDebug.loggedUniform = true;
-      console.log(`Uniform data: viewport=${width}x${height}, scale=${scale}`);
+      console.log(`[glade/renderer] uniform data: viewport=${width}x${height}, scale=${scale}`);
     }
     this.device.queue.writeBuffer(this.uniformBuffer!, 0, data);
   }
@@ -303,7 +303,9 @@ export class GladeRenderer {
     const rendererDebug = GladeRenderer as unknown as { lastDebugKey?: string };
     if (rendererDebug.lastDebugKey !== debugKey) {
       rendererDebug.lastDebugKey = debugKey;
-      console.log(`Renderer: logical=${width}x${height}, fb=${fbWidth}x${fbHeight}, dpr=${dpr}`);
+      console.log(
+        `[glade/renderer] logical=${width}x${height}, fb=${fbWidth}x${fbHeight}, dpr=${dpr}`
+      );
     }
 
     // Update viewport uniform with framebuffer size and scale factor

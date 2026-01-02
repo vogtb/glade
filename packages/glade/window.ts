@@ -100,6 +100,7 @@ import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 import { CrossElementSelectionManager } from "./select.ts";
 import { toColorObject, type Color } from "@glade/utils";
+import { Font } from "@glade/fonts";
 import { GladeFps, computeFpsBounds, type FpsCorner, type FpsConfig } from "./fps.ts";
 
 function normalizeMouseButton(button: number, mods: Modifiers): number {
@@ -425,8 +426,8 @@ export class GladeWindow {
   /**
    * Register a font for text rendering.
    */
-  registerFont(name: string, data: Uint8Array): void {
-    this.textSystem.registerFont(name, data);
+  registerFont(font: Font): void {
+    this.textSystem.registerFont(font.name, font.toBytes());
   }
 
   /**

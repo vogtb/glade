@@ -32,9 +32,9 @@ async function main() {
     (cx: GladeContext) => cx.newView(() => mainView)
   );
 
-  window.registerFont(INTER_FONT.name, INTER_FONT.toBytes());
-  window.registerFont(JETBRAINS_MONO.name, JETBRAINS_MONO.toBytes());
-  window.registerFont(NOTO_COLOR_EMOJI.name, NOTO_COLOR_EMOJI.toBytes());
+  window.registerFont(INTER_FONT);
+  window.registerFont(JETBRAINS_MONO);
+  window.registerFont(NOTO_COLOR_EMOJI);
 
   const pngData = base64ToBytes(demoPngBase64);
   const decodedPng = await platform.decodeImage(pngData);

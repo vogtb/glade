@@ -3,7 +3,8 @@ import { dlopen, FFIType, ptr, JSCallback, type Pointer } from "bun:ffi";
 // @ts-expect-error - Bun-specific import attribute
 import GLFW_PATH from "../../vendor/libglfw.dylib" with { type: "file" };
 
-console.log(`using embedded libglfw.dylib at GLFW_PATH=${GLFW_PATH}`);
+console.log(`[glfw] using embedded libglfw.dylib`);
+console.log(`[glfw] GLFW_PATH=${GLFW_PATH}`);
 
 const lib = dlopen(GLFW_PATH, {
   glfwInit: { args: [], returns: FFIType.i32 },

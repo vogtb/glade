@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@glade/core": "workspace:*",
+    "@glade/fonts": "workspace:*",
     "@glade/layout": "workspace:*",
     "@glade/shaper": "workspace:*",
     "@glade/svg": "workspace:*",

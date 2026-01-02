@@ -114,9 +114,8 @@ export function createMetalLayerForView(nsView: Pointer): Pointer {
   // Without this, macOS doesn't perform color management and colors may appear incorrect
   if (srgbNameCFString) {
     const srgbColorspace = coreGraphics.symbols.CGColorSpaceCreateWithName(srgbNameCFString);
-    console.log(
-      `Metal layer colorspace: cfString=${srgbNameCFString}, colorspace=${srgbColorspace}`
-    );
+    console.log(`[macos/metal] metal layer cfString=${srgbNameCFString}`);
+    console.log(`[macos/metal] metal layer colorspace=${srgbColorspace}`);
     if (srgbColorspace) {
       objcSendOnePtr.symbols.objc_msgSend(resultLayer, selectors.setColorspace, srgbColorspace);
       coreGraphics.symbols.CGColorSpaceRelease(srgbColorspace);
