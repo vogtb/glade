@@ -499,13 +499,13 @@ export async function createWebGPUContext(
 
 /**
  * Render loop for browser WebGPU context.
- * Time values are normalized to seconds to match darwin behavior.
+ * Time values are normalized to seconds to match macos behavior.
  */
 export function runWebGPURenderLoop(ctx: BrowserWebGPUContext, callback: RenderCallback): void {
   let lastTime = 0;
 
   function frame(timeMs: number) {
-    // Convert milliseconds to seconds to match darwin
+    // Convert milliseconds to seconds to match macos
     const time = timeMs / 1000;
     const deltaTime = lastTime ? time - lastTime : 0;
     lastTime = time;

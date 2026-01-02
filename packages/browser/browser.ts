@@ -1,7 +1,7 @@
 /**
  * Browser bindings are not really that complex as we're depending on the
  * standard WegGPU JS APIs, not our own custom implementations of
- * them like on darwin.
+ * them like on macos.
  */
 
 export {

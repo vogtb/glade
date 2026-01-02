@@ -9,8 +9,8 @@ export {
   // Color scheme
   createColorSchemeProvider,
   // Types
-  type DarwinWebGPUContext,
-  type DarwinContextOptions,
-  type DarwinGladePlatformInstance,
-} from "@glade/darwin";
+  type MacOSWebGPUContext,
+  type MacOSContextOptions,
+  type MacOSGladePlatformInstance,
+} from "@glade/macos";
 export * from "@glade/core";

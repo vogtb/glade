@@ -42,20 +42,6 @@
       "name": "@glade/core",
       "version": "0.0.1",
     },
-    "packages/darwin": {
-      "name": "@glade/darwin",
-      "version": "0.0.1",
-      "dependencies": {
-        "@glade/core": "workspace:*",
-        "@glade/dawn": "workspace:*",
-        "@glade/glade": "workspace:*",
-        "@glade/glfw": "workspace:*",
-        "@glade/utils": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "latest",
-      },
-    },
     "packages/dawn": {
       "name": "@glade/dawn",
       "version": "0.0.1",
@@ -100,13 +86,27 @@
         "@glade/utils": "workspace:*",
       },
     },
+    "packages/macos": {
+      "name": "@glade/macos",
+      "version": "0.0.1",
+      "dependencies": {
+        "@glade/core": "workspace:*",
+        "@glade/dawn": "workspace:*",
+        "@glade/glade": "workspace:*",
+        "@glade/glfw": "workspace:*",
+        "@glade/utils": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+    },
     "packages/platform": {
       "name": "@glade/platform",
       "version": "0.0.1",
       "dependencies": {
         "@glade/browser": "workspace:*",
         "@glade/core": "workspace:*",
-        "@glade/darwin": "workspace:*",
+        "@glade/macos": "workspace:*",
       },
     },
     "packages/shaper": {
@@ -267,8 +267,6 @@
 
     "@glade/core": ["@glade/core@workspace:packages/core"],
 
-    "@glade/darwin": ["@glade/darwin@workspace:packages/darwin"],
-
     "@glade/dawn": ["@glade/dawn@workspace:packages/dawn"],
 
     "@glade/demos": ["@glade/demos@workspace:packages/demos"],
@@ -278,6 +276,8 @@
     "@glade/glfw": ["@glade/glfw@workspace:packages/glfw"],
 
     "@glade/layout": ["@glade/layout@workspace:packages/layout"],
+
+    "@glade/macos": ["@glade/macos@workspace:packages/macos"],
 
     "@glade/platform": ["@glade/platform@workspace:packages/platform"],
 
@@ -737,7 +737,7 @@
 
     "tinyglobby": ["tinyglobby@0.2.15", "", { "dependencies": { "fdir": "^6.5.0", "picomatch": "^4.0.3" } }, "sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ=="],
 
-    "ts-api-utils": ["ts-api-utils@2.3.0", "", { "peerDependencies": { "typescript": ">=4.8.4" } }, "sha512-6eg3Y9SF7SsAvGzRHQvvc1skDAhwI4YQ32ui1scxD1Ccr0G5qIIbUBT3pFTKX8kmWIQClHobtUdNuaBgwdfdWg=="],
+    "ts-api-utils": ["ts-api-utils@2.4.0", "", { "peerDependencies": { "typescript": ">=4.8.4" } }, "sha512-3TaVTaAv2gTiMB35i3FiGJaRfwb3Pyn/j3m/bfAvGe8FB7CF6u+LMYqYlDh7reQf7UNvoTvdfAqHGmPGOSsPmA=="],
 
     "tslib": ["tslib@2.8.1", "", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 

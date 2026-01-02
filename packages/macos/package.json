@@ -1,9 +1,9 @@
 {
-  "name": "@glade/darwin",
+  "name": "@glade/macos",
   "version": "0.0.1",
   "type": "module",
-  "main": "darwin.ts",
-  "types": "darwin.ts",
+  "main": "macos.ts",
+  "types": "macos.ts",
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",

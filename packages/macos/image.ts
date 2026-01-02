@@ -1,5 +1,5 @@
 /**
- * Pure TypeScript image decoders for Darwin platform.
+ * Pure TypeScript image decoders for MacOS platform.
  *
  * These decoders work without Web APIs and are used when running
  * natively via Bun/Dawn where browser image decoding APIs aren't available.

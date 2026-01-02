@@ -112,12 +112,12 @@ class CursorCache {
   }
 }
 
-export interface DarwinContextOptions extends ContextOptions {
+export interface MacOSContextOptions extends ContextOptions {
   title?: string;
 }
 
 // WebGPU context interface
-export interface DarwinWebGPUContext extends WebGPUContext {
+export interface MacOSWebGPUContext extends WebGPUContext {
   window: GLFWwindow;
   // Logical window size (in screen coordinates, e.g., 800x600)
   windowWidth: number;
@@ -136,8 +136,8 @@ export interface DarwinWebGPUContext extends WebGPUContext {
  * This is an async function because WebGPU adapter/device creation is asynchronous.
  */
 export async function createWebGPUContext(
-  options: DarwinContextOptions = {}
-): Promise<DarwinWebGPUContext> {
+  options: MacOSContextOptions = {}
+): Promise<MacOSWebGPUContext> {
   const width = options.width ?? 800;
   const height = options.height ?? 600;
   const title = options.title ?? "glade";
@@ -312,7 +312,7 @@ export async function createWebGPUContext(
     imeHandle = handle;
   }
 
-  const ctx: DarwinWebGPUContext = {
+  const ctx: MacOSWebGPUContext = {
     gpu,
     adapter: adapter as unknown as GPUAdapter,
     device: wrappedDevice as unknown as GPUDevice,
@@ -589,7 +589,7 @@ export async function createWebGPUContext(
  * Time values are in seconds.
  * Uses a timed loop to yield to the host event loop between frames.
  */
-export function runWebGPURenderLoop(ctx: DarwinWebGPUContext, callback: RenderCallback): void {
+export function runWebGPURenderLoop(ctx: MacOSWebGPUContext, callback: RenderCallback): void {
   let lastTime = glfw.getTime();
 
   function frame(): void {

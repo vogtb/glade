@@ -1,5 +1,5 @@
 /**
- * Glade platform implementation for Darwin (macOS via GLFW/Dawn).
+ * Glade platform implementation for MacOS (macOS via GLFW/Dawn).
  *
  * Bridges a WebGPUContext to Glade's GladePlatform interface.
  */
@@ -10,10 +10,10 @@ import { coreModsToGladeMods } from "@glade/glade";
 import { decodePNG, decodeJPEG } from "./image";
 
 /**
- * Darwin platform implementation for Glade.
+ * MacOS platform implementation for Glade.
  */
-class DarwinGladePlatform implements GladePlatform {
-  readonly runtime = "darwin" as const;
+class MacOSGladePlatform implements GladePlatform {
+  readonly runtime = "macos" as const;
   readonly clipboard: Clipboard;
 
   private ctx: WebGPUContext;
@@ -42,7 +42,7 @@ class DarwinGladePlatform implements GladePlatform {
     height: number;
     title?: string;
   }): GladeRenderTarget {
-    return new DarwinRenderTarget(this.ctx);
+    return new MacOSRenderTarget(this.ctx);
   }
 
   now(): number {
@@ -98,19 +98,19 @@ function isJPEG(data: Uint8Array): boolean {
 /**
  * Extended context type with window dimensions.
  */
-interface DarwinWebGPUContextExt extends WebGPUContext {
+interface MacOSWebGPUContextExt extends WebGPUContext {
   windowWidth?: number;
   windowHeight?: number;
 }
 
 /**
- * Render target for Darwin/GLFW.
+ * Render target for MacOS/GLFW.
  *
  * Note: GLFW only allows one callback per event type per window.
  * We use a single shared cursor position tracker and dispatch to multiple listeners.
  */
-class DarwinRenderTarget implements GladeRenderTarget {
-  private ctx: DarwinWebGPUContextExt;
+class MacOSRenderTarget implements GladeRenderTarget {
+  private ctx: MacOSWebGPUContextExt;
 
   private cursorX = 0;
   private cursorY = 0;
@@ -133,7 +133,7 @@ class DarwinRenderTarget implements GladeRenderTarget {
   > = [];
 
   constructor(ctx: WebGPUContext) {
-    this.ctx = ctx as DarwinWebGPUContextExt;
+    this.ctx = ctx as MacOSWebGPUContextExt;
   }
 
   private ensureCursorTracking(): void {
@@ -384,13 +384,13 @@ class DarwinRenderTarget implements GladeRenderTarget {
 /**
  * Extended platform interface with tick method for render loop integration.
  */
-export interface DarwinGladePlatformInstance extends GladePlatform {
+export interface MacOSGladePlatformInstance extends GladePlatform {
   tick(time: number): void;
 }
 
 /**
  * Create a Glade platform from an existing WebGPU context.
  */
-export function createGladePlatform(ctx: WebGPUContext): DarwinGladePlatformInstance {
-  return new DarwinGladePlatform(ctx);
+export function createGladePlatform(ctx: WebGPUContext): MacOSGladePlatformInstance {
+  return new MacOSGladePlatform(ctx);
 }

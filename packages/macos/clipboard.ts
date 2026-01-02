@@ -1,7 +1,7 @@
 import type { Clipboard } from "@glade/core";
 import { glfw, type GLFWwindow } from "@glade/glfw";
 
-class DarwinClipboard implements Clipboard {
+class MacOSClipboard implements Clipboard {
   private window: GLFWwindow;
 
   constructor(window: GLFWwindow) {
@@ -31,5 +31,5 @@ class DarwinClipboard implements Clipboard {
 }
 
 export function createClipboard(window: GLFWwindow): Clipboard {
-  return new DarwinClipboard(window);
+  return new MacOSClipboard(window);
 }

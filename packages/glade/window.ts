@@ -135,7 +135,7 @@ export interface DecodedImageData {
  * This abstracts browser vs native differences.
  */
 export interface GladePlatform {
-  readonly runtime: "browser" | "darwin";
+  readonly runtime: "browser" | "macos";
   readonly clipboard: Clipboard;
 
   requestAdapter(): Promise<GPUAdapter | null>;

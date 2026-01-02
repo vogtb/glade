@@ -4,7 +4,7 @@
   "type": "module",
   "exports": {
     ".": {
-      "bun": "./platform.darwin.ts",
+      "bun": "./platform.macos.ts",
       "browser": "./platform.browser.ts",
       "default": "./platform.browser.ts"
     }
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@glade/browser": "workspace:*",
-    "@glade/darwin": "workspace:*",
+    "@glade/macos": "workspace:*",
     "@glade/core": "workspace:*"
   }
 }

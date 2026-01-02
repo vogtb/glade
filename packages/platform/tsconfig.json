@@ -18,5 +18,5 @@
     "noUnusedParameters": false,
     "types": ["@types/bun", "@webgpu/types"]
   },
-  "include": ["./platform.darwin.ts"]
+  "include": ["./platform.macos.ts"]
 }
