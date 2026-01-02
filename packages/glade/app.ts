@@ -21,14 +21,14 @@ import {
 import type { GladeEffect, GladeContext, GladeEntityContext, GladeViewContext } from "./context.ts";
 import type { GladeView } from "./element.ts";
 import { GladeWindow, type WindowOptions, type GladePlatform } from "./window.ts";
-import { ThemeManager, type ThemeConfig, type Theme, type ThemeOverrides } from "./theme.ts";
+import { ThemeManager, type Theme } from "./theme.ts";
 
 /**
  * Options for creating a GladeApp.
  */
 export interface GladeAppOptions {
   platform: GladePlatform;
-  theme?: ThemeConfig | Theme;
+  theme?: Theme;
   colorSchemeProvider?: ColorSchemeProvider;
 }
 
@@ -498,26 +498,13 @@ export class GladeApp {
     return this.themeManager.getSystemScheme();
   }
 
-  setTheme(config: Theme | ThemeConfig): void {
-    if (this.isFullTheme(config)) {
-      this.themeManager.setTheme(config);
-    } else {
-      this.themeManager.setThemeConfig(config);
-    }
+  setTheme(config: Theme): void {
+    this.themeManager.setTheme(config);
     this.markAllWindowsDirty();
-  }
-
-  private isFullTheme(config: Theme | ThemeConfig): config is Theme {
-    return "semantic" in config && "components" in config && "fonts" in config;
   }
 
   setThemeScheme(scheme: ColorScheme | "system"): void {
     this.themeManager.setThemeScheme(scheme);
-    this.markAllWindowsDirty();
-  }
-
-  setThemeOverrides(overrides: ThemeOverrides): void {
-    this.themeManager.setThemeOverrides(overrides);
     this.markAllWindowsDirty();
   }
 
@@ -557,16 +544,12 @@ class GladeAppContext implements GladeContext {
     return this.app.getSystemColorScheme();
   }
 
-  setTheme(config: Theme | ThemeConfig): void {
-    this.app.setTheme(config);
+  setTheme(theme: Theme): void {
+    this.app.setTheme(theme);
   }
 
   setThemeScheme(scheme: ColorScheme | "system"): void {
     this.app.setThemeScheme(scheme);
-  }
-
-  setThemeOverrides(overrides: ThemeOverrides): void {
-    this.app.setThemeOverrides(overrides);
   }
 
   newEntity<T>(initializer: (cx: GladeEntityContext<T>) => T): GladeHandle<T> {

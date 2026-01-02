@@ -29,10 +29,8 @@ export type {
   ScrollState,
 } from "./types";
 
-export type { Theme, ThemeConfig, ThemeOverrides, ThemeFonts } from "./theme";
-export { DEFAULT_THEME_FONTS } from "./theme";
-
-export { resolveTheme, ThemeManager } from "./theme";
+export type { Theme, ThemeFonts } from "./theme";
+export { DEFAULT_THEME_FONTS, createDefaultTheme, resolveTheme, ThemeManager } from "./theme";
 
 export {
   boundsContains,

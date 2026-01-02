@@ -6,7 +6,7 @@
  */
 
 import type { EntityId, FocusId, WindowId, GladeTask, ScrollOffset, Bounds } from "./types.ts";
-import type { Theme, ThemeConfig, ThemeOverrides } from "./theme.ts";
+import type { Theme } from "./theme.ts";
 import type { ColorScheme } from "@glade/core";
 import type {
   GladeHandle,
@@ -72,17 +72,12 @@ export interface GladeContext extends GladeReadContext {
   /**
    * Override the active theme using a full theme or a theme config.
    */
-  setTheme(config: Theme | ThemeConfig): void;
+  setTheme(theme: Theme): void;
 
   /**
    * Override only the scheme (light/dark/system).
    */
   setThemeScheme(scheme: ColorScheme | "system"): void;
-
-  /**
-   * Override theme tokens while keeping the current scheme.
-   */
-  setThemeOverrides(overrides: ThemeOverrides): void;
 
   // Entity management
 

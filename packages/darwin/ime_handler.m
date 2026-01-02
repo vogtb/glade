@@ -1,3 +1,10 @@
+// NOTE: This Objective-C shim is required for IME support because the
+// NSTextInputClient methods return NSRange/NSRect by value. The macOS text
+// system calls these selectors with a struct-return ABI that Bun FFI/objc.ts
+// cannot express today (no struct return support). We cannot "return a pointer"
+// or serialize the struct because the caller expects a by-value struct in the
+// exact method signature. Until Bun FFI gains struct return support, this
+// native file must exist.
 #import <Cocoa/Cocoa.h>
 
 typedef void (*ImeComposingCallback)(const char *text, int selectionStart, int selectionEnd, void *userData);

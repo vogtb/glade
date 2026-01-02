@@ -27,6 +27,11 @@ const COMPONENT_WIDTH = BAR_GRAPH_WIDTH + TEXT_GAP + TEXT_COLUMN_WIDTH + TEXT_RI
 const COMPONENT_HEIGHT = 24;
 const MAX_FRAMES = 80;
 const MAX_FPS = 120;
+// Update the FPS number every N milliseconds, or else it blurs and is hard to
+// read. Eg 120, 118, 119, 113 all blur and it's hard to read at any given
+// moment what the actual value is. The bar graph gives enough info, that we
+// can update this every 200ms (5x a second) and still get a sense of timing.
+const MS_INTERVAL_FOR_TEXT_UPDATE = 200;
 
 export type FpsCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
@@ -46,6 +51,8 @@ export class GladeFps {
   private frameTimes: number[] = [];
   private lastFrameTime: number | null = null;
   private currentFps = 0;
+  private lastFpsUpdateTime = 0;
+  private latestFps = 0;
 
   private bgColor: ColorObject = rgb(0x000000);
   private borderColor: ColorObject = rgb(gray.x600);
@@ -76,7 +83,12 @@ export class GladeFps {
           this.frameTimes.shift();
         }
 
-        this.currentFps = Math.round(potentialFps);
+        this.latestFps = Math.round(potentialFps);
+
+        if (now - this.lastFpsUpdateTime >= MS_INTERVAL_FOR_TEXT_UPDATE) {
+          this.currentFps = this.latestFps;
+          this.lastFpsUpdateTime = now;
+        }
       }
     }
     this.lastFrameTime = now;
