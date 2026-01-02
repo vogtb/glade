@@ -58,6 +58,7 @@
     "premultiplication",
     "unpremultiplies",
     "unpremultiply",
-    "callsite"
+    "callsite",
+    "bunx"
   ]
 }

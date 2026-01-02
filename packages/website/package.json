@@ -4,11 +4,19 @@
   "type": "module",
   "main": "website.ts",
   "types": "website.ts",
+  "dependencies": {
+    "@glade/demos": "workspace:*",
+    "@glade/platform": "workspace:*",
+    "@glade/glade": "workspace:*",
+    "@glade/logging": "workspace:*"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "deploy": "wrangler pages publish dist --project-name=glade --commit-dirty=true",
-    "preview": "vite preview",
+    "dev": "bun run ./dev.ts",
+    "build": "bun run build.js && bun run build.css",
+    "build.js": "bun build ./src/main.tsx --outdir=./dist --outfile=main.js --sourcemap=inline --root=..",
+    "build.css": "bunx -p @tailwindcss/cli tailwindcss -i ./src/main.css -o ./dist/website/src/main.css",
+    "deploy": "bun run build && wrangler pages publish dist --project-name=glade --commit-dirty=true",
+    "preview": "bun run ./serve.ts",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",

@@ -2,6 +2,10 @@
   "name": "@glade/demos",
   "version": "0.0.1",
   "type": "module",
+  "exports": {
+    ".": "./demos.ts",
+    "./library": "./library.ts"
+  },
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",

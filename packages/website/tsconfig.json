@@ -16,7 +16,8 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedParameters": false,
+    "types": ["@webgpu/types"]
   },
   "include": ["./**/*.ts", "./**/*.tsx"]
 }

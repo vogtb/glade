@@ -1,8 +1,15 @@
+import { ALL_DEMOS, type Demo, type DemoState } from "@glade/demos/library";
 import {
-  createListState,
+  createWebGPUContext,
+  createGladePlatform,
+  createColorSchemeProvider,
+  runWebGPURenderLoop,
+  type BrowserWebGPUContext,
+} from "@glade/platform";
+import {
+  GladeApp,
   div,
-  h1,
-  text,
+  createListState,
   TextInputController,
   type GladeView,
   type GladeViewContext,
@@ -10,16 +17,14 @@ import {
   type ImageTile,
   type ListState,
   type ScrollHandle,
-  type Theme,
+  type GladeWindow,
+  type WindowId,
 } from "@glade/glade";
-import { ALL_DEMOS, type Demo, type DemoState } from "./library.ts";
 
-export class MainView implements GladeView {
-  private readonly demos: Demo[] = ALL_DEMOS;
-  private selectedDemo: Demo;
-  private selectedDemoName: string;
-  private navScrollHandle: ScrollHandle | null = null;
-  private contentScrollHandle: ScrollHandle | null = null;
+class DemoView implements GladeView {
+  private activeDemo: Demo;
+  private scrollHandle: ScrollHandle | null = null;
+
   private textInputHandle: FocusHandle | null = null;
   private textInputController: TextInputController | null = null;
   private textInputStatus = "Click the field to focus, then type to insert characters.";
@@ -76,19 +81,43 @@ export class MainView implements GladeView {
   private useSystemTheme = true;
   private preferDarkMode = true;
 
-  private fpsEnabled = false;
-
-  constructor() {
-    this.selectedDemoName = this.demos[0]?.name ?? "Demo";
-    this.selectedDemo = this.demos[0]!;
+  constructor(initialDemo: Demo) {
+    this.activeDemo = initialDemo;
   }
 
-  setImageTiles(pngTile: ImageTile, jpgTile: ImageTile): void {
-    this.pngImageTile = pngTile;
-    this.jpgImageTile = jpgTile;
+  setDemo(demo: Demo): void {
+    this.activeDemo = demo;
   }
 
-  private ensureDemoState(cx: GladeViewContext<this>): DemoState {
+  setImageTiles(png: ImageTile, jpg: ImageTile): void {
+    this.pngImageTile = png;
+    this.jpgImageTile = jpg;
+  }
+
+  render(cx: GladeViewContext<this>) {
+    const theme = cx.getTheme();
+    const state = this.ensureState(cx);
+    const items = this.activeDemo.renderElement(cx, state);
+
+    if (!this.scrollHandle) {
+      this.scrollHandle = cx.newScrollHandle(cx.windowId);
+    }
+
+    return div()
+      .flex()
+      .flexCol()
+      .w(cx.window.width)
+      .h(cx.window.height)
+      .p(12)
+      .gap(8)
+      .bg(theme.semantic.window.background)
+      .overflowScroll()
+      .scrollbarAlways()
+      .trackScroll(this.scrollHandle)
+      .children(...items);
+  }
+
+  private ensureState(cx: GladeViewContext<this>): DemoState {
     if (!this.textInputHandle) {
       this.textInputHandle = cx.focusHandle();
     }
@@ -320,105 +349,77 @@ export class MainView implements GladeView {
 
     this.focusActionsRegistered = true;
   }
+}
 
-  setTextInputStatus(status: string) {
-    this.textInputStatus = status;
+export class DemoRenderer {
+  private app: GladeApp;
+  private view: DemoView;
+  private ctx: BrowserWebGPUContext;
+  private gladeWindow: GladeWindow;
+  private windowId: WindowId;
+
+  static async create(
+    canvas: HTMLCanvasElement,
+    width: number,
+    height: number
+  ): Promise<DemoRenderer> {
+    const ctx = await createWebGPUContext({ canvas, width, height });
+    const platform = createGladePlatform(ctx);
+    const colorSchemeProvider = createColorSchemeProvider();
+
+    const app = new GladeApp({ platform, colorSchemeProvider });
+    await app.initialize();
+
+    const initialDemo = ALL_DEMOS[0];
+    if (!initialDemo) {
+      throw new Error("No demos available");
+    }
+
+    const view = new DemoView(initialDemo);
+
+    const gladeWindow = await app.openWindow({ width, height, title: "Demo" }, (cx) =>
+      cx.newView(() => view)
+    );
+
+    app.run();
+
+    const tick = Reflect.get(platform, "tick");
+    if (typeof tick === "function") {
+      runWebGPURenderLoop(ctx, (time: number) => {
+        Reflect.apply(tick, platform, [time * 1000]);
+      });
+    }
+
+    return new DemoRenderer(app, view, ctx, gladeWindow);
   }
 
-  render(cx: GladeViewContext<this>) {
-    const theme = cx.getTheme();
-
-    if (!this.navScrollHandle) {
-      this.navScrollHandle = cx.newScrollHandle(cx.windowId);
-    }
-    if (!this.contentScrollHandle) {
-      this.contentScrollHandle = cx.newScrollHandle(cx.windowId);
-    }
-
-    // Enable FPS overlay once
-    if (!this.fpsEnabled) {
-      cx.window.showFps();
-      this.fpsEnabled = true;
-    }
-
-    return div()
-      .flex()
-      .flexRow()
-      .w(cx.window.width)
-      .h(cx.window.height)
-      .bg(theme.semantic.window.background)
-      .children(
-        div()
-          .flex()
-          .flexCol()
-          .w(220)
-          .hFull()
-          .flexShrink0()
-          .bg(theme.semantic.window.background)
-          .overflowHidden()
-          .children(
-            div()
-              .flex()
-              .flexCol()
-              .flexGrow()
-              .hMax(cx.window.height)
-              .overflowScroll()
-              .scrollbarAlways()
-              .trackScroll(this.navScrollHandle!)
-              .children(...this.demos.map((demo) => this.renderDemoButton(cx, theme, demo)))
-          ),
-        div().flex().flexCol().flexShrink().w(10).bg(theme.semantic.window.background),
-        div()
-          .flex()
-          .flexCol()
-          .flex1()
-          .bg(theme.semantic.window.background)
-          .overflowHidden()
-          .child(this.renderActiveDemo(cx, theme))
-      );
+  private constructor(
+    app: GladeApp,
+    view: DemoView,
+    ctx: BrowserWebGPUContext,
+    gladeWindow: GladeWindow
+  ) {
+    this.app = app;
+    this.view = view;
+    this.ctx = ctx;
+    this.gladeWindow = gladeWindow;
+    this.windowId = gladeWindow.id;
   }
 
-  private renderActiveDemo(cx: GladeViewContext<this>, theme: Theme) {
-    const state = this.ensureDemoState(cx);
-    const items = this.selectedDemo.renderElement(cx, state);
-
-    return div()
-      .flex()
-      .flexCol()
-      .flex1()
-      .p(12)
-      .gap(8)
-      .overflowScroll()
-      .scrollbarAlways()
-      .trackScroll(this.contentScrollHandle!)
-      .children(
-        div().child(h1(this.selectedDemoName).color(theme.semantic.text.default)),
-        ...items
-      );
+  showDemo(name: string): void {
+    const demo = ALL_DEMOS.find((d) => d.name === name);
+    if (demo) {
+      this.view.setDemo(demo);
+      this.app.markWindowDirty(this.windowId);
+    }
   }
 
-  private renderDemoButton(cx: GladeViewContext<this>, theme: Theme, demo: Demo) {
-    const isSelected = demo.name === this.selectedDemoName;
-    const accent = theme.components.dialog.primaryButton;
-    const baseBg = isSelected ? accent.background : theme.semantic.window.background;
-    const hoverBg = isSelected ? accent.hover.background : theme.semantic.surface.hover;
-    const textColor = isSelected ? accent.foreground : theme.semantic.text.default;
+  getAvailableDemos(): string[] {
+    return ALL_DEMOS.map((d) => d.name);
+  }
 
-    return div()
-      .flex()
-      .flexCol()
-      .h(20)
-      .px(6)
-      .cursorPointer()
-      .bg(baseBg)
-      .hover((state) => state.bg(hoverBg))
-      .onClick(
-        cx.listener((view, _event, _window, entityCx) => {
-          view.selectedDemoName = demo.name;
-          view.selectedDemo = demo;
-          entityCx.notify();
-        })
-      )
-      .child(text(demo.name).size(12).lineHeight(20).color(textColor));
+  destroy(): void {
+    this.app.stop();
+    this.ctx.destroy();
   }
 }

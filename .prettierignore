@@ -1,5 +1,7 @@
 node_modules
 dist
+dist/**
+**/dist
 *.d.ts
 bun.lockb
 vendor
