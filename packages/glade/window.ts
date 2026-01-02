@@ -320,7 +320,7 @@ export class GladeWindow {
     // Initialize renderer with pipelines (4x MSAA for smooth edges)
     const theme = this.getContext().getTheme();
     this.renderer = new GladeRenderer(device, format, {
-      clearColor: theme.background,
+      clearColor: theme.semantic.window.background,
       msaaSampleCount: 4,
     });
     const sampleCount = this.renderer.getSampleCount();
@@ -1185,7 +1185,7 @@ export class GladeWindow {
 
     const theme = this.getTheme();
     this.textSystem.setThemeFonts(theme.fonts);
-    this.renderer.setClearColor(theme.background);
+    this.renderer.setClearColor(theme.semantic.window.background);
 
     this.scene.clear();
     this.layoutEngine.clear();
@@ -1275,7 +1275,7 @@ export class GladeWindow {
     if (this.crossElementSelection) {
       // Compute visual order before painting (needed for getSelectionRanges)
       this.crossElementSelection.computeVisualOrder();
-      const selectionColor = this.getTheme().selectionBackground;
+      const selectionColor = this.getTheme().components.text.selection.background;
       this.crossElementSelection.paintSelectionHighlights(this.scene, selectionColor);
     }
 

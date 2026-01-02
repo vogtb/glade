@@ -20,7 +20,6 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
-import { checkboxColors } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 const DEFAULT_DISABLED_OPACITY = 0.5;
@@ -45,6 +44,9 @@ type CheckboxPrepaintState = {
     uncheckedBg: ColorObject;
     border: ColorObject;
     check: ColorObject;
+    hoverBg: ColorObject;
+    hoverBorder: ColorObject;
+    disabledOpacity: number;
   };
 };
 
@@ -243,12 +245,15 @@ export class GladeCheckbox extends GladeElement<CheckboxRequestState, CheckboxPr
     };
 
     const theme = cx.getWindow().getTheme();
-    const defaults = checkboxColors(theme);
+    const checkboxTheme = theme.components.checkbox;
     const colors = {
-      checkedBg: this.checkedBgColor ?? defaults.checkedBg,
-      uncheckedBg: this.uncheckedBgColor ?? defaults.uncheckedBg,
-      border: this.borderColorValue ?? defaults.border,
-      check: this.checkColorValue ?? defaults.check,
+      checkedBg: this.checkedBgColor ?? checkboxTheme.checked.background,
+      uncheckedBg: this.uncheckedBgColor ?? checkboxTheme.background,
+      border: this.borderColorValue ?? checkboxTheme.border,
+      check: this.checkColorValue ?? checkboxTheme.checkmark,
+      hoverBg: checkboxTheme.hover.background,
+      hoverBorder: checkboxTheme.hover.border,
+      disabledOpacity: checkboxTheme.disabled.opacity ?? DEFAULT_DISABLED_OPACITY,
     };
 
     return { hitbox, hitTestNode, colors };
@@ -263,18 +268,23 @@ export class GladeCheckbox extends GladeElement<CheckboxRequestState, CheckboxPr
     // Determine background color
     let bgColor = isCheckedOrIndeterminate ? colors.checkedBg : colors.uncheckedBg;
     let borderColor = colors.border;
-    let opacity = this.disabledValue ? DEFAULT_DISABLED_OPACITY : 1;
+    let opacity = this.disabledValue ? colors.disabledOpacity : 1;
 
     // Apply hover styles
-    if (isHovered && !this.disabledValue && this.hoverStyles) {
-      if (this.hoverStyles.backgroundColor) {
-        bgColor = this.hoverStyles.backgroundColor;
+    if (isHovered && !this.disabledValue) {
+      const hoverStyles = this.hoverStyles;
+      if (hoverStyles?.backgroundColor) {
+        bgColor = hoverStyles.backgroundColor;
+      } else {
+        bgColor = colors.hoverBg;
       }
-      if (this.hoverStyles.borderColor) {
-        borderColor = this.hoverStyles.borderColor;
+      if (hoverStyles?.borderColor) {
+        borderColor = hoverStyles.borderColor;
+      } else {
+        borderColor = colors.hoverBorder;
       }
-      if (this.hoverStyles.opacity !== undefined) {
-        opacity = this.hoverStyles.opacity;
+      if (hoverStyles?.opacity !== undefined) {
+        opacity = hoverStyles.opacity;
       }
     }
 

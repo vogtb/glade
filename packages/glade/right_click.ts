@@ -41,7 +41,6 @@ import {
   type DropdownAlign,
   type MenuItemElement,
 } from "./menu.ts";
-import { menuColors } from "./theme.ts";
 import type { Theme } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
@@ -261,28 +260,29 @@ export class GladeRightClickMenu extends GladeContainerElement<
   }
 
   private buildMenuContext(theme: Theme): DropdownMenuContext {
-    const base = menuColors(theme);
+    const menu = theme.components.menu;
+    const item = menu.item;
     return buildRootMenuContext(
       this.menuId,
       this.menuItems,
       this.disabledValue,
       this.onOpenChangeHandler,
       {
-        menuBg: this.menuBgColor ?? base.menuBg,
-        menuBorder: this.menuBorderColor ?? base.menuBorder,
+        menuBg: this.menuBgColor ?? menu.background,
+        menuBorder: this.menuBorderColor ?? menu.border,
         menuBorderRadius: this.menuBorderRadiusValue,
         menuPadding: this.menuPaddingValue,
-        itemBg: this.itemBgColor ?? base.itemBg,
-        itemHoverBg: this.itemHoverBgColor ?? base.itemHoverBg,
-        itemText: this.itemTextColor ?? base.itemText,
-        itemHoverText: this.itemHoverTextColor ?? base.itemHoverText,
-        itemDisabledText: this.itemDisabledTextColor ?? base.itemDisabledText,
-        labelText: this.labelTextColor ?? base.labelText,
-        separatorColor: this.separatorColorValue ?? base.separatorColor,
-        destructiveText: this.destructiveTextColor ?? base.destructiveText,
-        destructiveHoverBg: this.destructiveHoverBgColor ?? base.destructiveHoverBg,
-        shortcutText: this.shortcutTextColor ?? base.shortcutText,
-        checkColor: this.checkColorValue ?? base.checkColor,
+        itemBg: this.itemBgColor ?? item.background,
+        itemHoverBg: this.itemHoverBgColor ?? item.hover.background,
+        itemText: this.itemTextColor ?? item.foreground,
+        itemHoverText: this.itemHoverTextColor ?? item.hover.foreground,
+        itemDisabledText: this.itemDisabledTextColor ?? item.disabled.foreground,
+        labelText: this.labelTextColor ?? item.labelForeground,
+        separatorColor: this.separatorColorValue ?? menu.separator,
+        destructiveText: this.destructiveTextColor ?? item.destructiveForeground,
+        destructiveHoverBg: this.destructiveHoverBgColor ?? item.destructiveHoverBackground,
+        shortcutText: this.shortcutTextColor ?? item.shortcutForeground,
+        checkColor: this.checkColorValue ?? menu.checkmark,
         fontSize: this.fontSizeValue,
         labelFontSize: this.labelFontSizeValue,
         shortcutFontSize: this.shortcutFontSizeValue,

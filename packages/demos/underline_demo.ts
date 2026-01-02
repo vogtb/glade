@@ -12,25 +12,25 @@ export const UNDERLINE_DEMO: Demo = {
       SPACER_10PX,
       text("Hyperlink")
         .size(16)
-        .color(theme.text)
-        .underlined({ style: "solid", color: theme.primary, thickness: 1 }),
+        .color(theme.semantic.text.default)
+        .underlined({ style: "solid", color: theme.components.link.foreground, thickness: 1 }),
       SPACER_10PX,
       text("Important")
         .size(16)
-        .color(theme.text)
-        .underlined({ style: "solid", color: theme.success, thickness: 2 }),
+        .color(theme.semantic.text.default)
+        .underlined({ style: "solid", color: theme.semantic.status.success, thickness: 2 }),
       SPACER_10PX,
-      text("Speling Error").size(16).color(theme.text).underlined({
+      text("Speling Error").size(16).color(theme.semantic.text.default).underlined({
         style: "wavy",
-        color: theme.danger,
+        color: theme.semantic.status.danger,
         thickness: 1.5,
         wavelength: 4,
         amplitude: 1.5,
       }),
       SPACER_10PX,
-      text("Grammer Issue").size(16).color(theme.text).underlined({
+      text("Grammer Issue").size(16).color(theme.semantic.text.default).underlined({
         style: "wavy",
-        color: theme.primary,
+        color: theme.components.link.foreground,
         thickness: 1.5,
         wavelength: 5,
         amplitude: 1.5,
@@ -40,16 +40,20 @@ export const UNDERLINE_DEMO: Demo = {
       SPACER_10PX,
       text("Title Text")
         .size(24)
-        .color(theme.text)
-        .underlined({ style: "solid", color: theme.primary, thickness: 2 }),
+        .color(theme.semantic.text.default)
+        .underlined({ style: "solid", color: theme.components.link.foreground, thickness: 2 }),
       SPACER_10PX,
-      text("Code Identifier").font("JetBrains Mono").size(18).color(theme.text).underlined({
-        style: "wavy",
-        color: theme.warning,
-        thickness: 2,
-        wavelength: 6,
-        amplitude: 2,
-      }),
+      text("Code Identifier")
+        .font("JetBrains Mono")
+        .size(18)
+        .color(theme.semantic.text.default)
+        .underlined({
+          style: "wavy",
+          color: theme.semantic.status.warning,
+          thickness: 2,
+          wavelength: 6,
+          amplitude: 2,
+        }),
     ];
   },
 };

@@ -1,5 +1,4 @@
 import { div, text, textInput } from "@glade/glade";
-import { rgb } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";
 
@@ -28,7 +27,7 @@ export const INPUTS_DEMO: Demo = {
       SPACER_10PX,
       div()
         .border(1)
-        .borderColor(theme.border)
+        .borderColor(theme.semantic.border.default)
         .rounded(4)
         .child(
           textInput("", {
@@ -36,8 +35,8 @@ export const INPUTS_DEMO: Demo = {
             focusHandle: inputHandle,
             placeholder: "Type multi-line text...",
             multiline: true,
-            selectionColor: { ...rgb(0x6366f1), a: 0.35 },
-            compositionColor: rgb(0x22c55e),
+            selectionColor: theme.components.input.selection.background,
+            compositionColor: theme.components.input.composition,
             onChange: (_: string) => {
               demoState.setTextInputStatus("Editing…");
               cx.notify();

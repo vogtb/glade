@@ -71,53 +71,66 @@ export function buttonColors(theme: Theme): Record<
 
   const withAlpha = (c: ColorObject, a: number): ColorObject => ({ ...c, a });
 
+  const primaryButton = theme.components.dialog.primaryButton;
+  const destructiveButton = theme.components.dialog.destructiveButton;
+
+  const primaryBg = primaryButton.background;
+  const primaryHover = primaryButton.hover.background ?? lighten(primaryBg, 0.05);
+  const primaryActive = darken(primaryHover, 0.05);
+  const primaryText = primaryButton.foreground;
+
+  const destructiveBg = destructiveButton.background;
+  const destructiveHover = destructiveButton.hover.background ?? lighten(destructiveBg, 0.05);
+  const destructiveActive = darken(destructiveHover, 0.05);
+  const destructiveText = destructiveButton.foreground;
+
   return {
     default: {
-      bg: theme.primary,
-      bgHover: darken(theme.primary, 0.1),
-      bgActive: darken(theme.primary, 0.15),
-      text: theme.primaryForeground,
+      bg: primaryBg,
+      bgHover: primaryHover,
+      bgActive: primaryActive,
+      text: primaryText,
       border: null,
     },
     destructive: {
-      bg: theme.danger,
-      bgHover: darken(theme.danger, 0.1),
-      bgActive: darken(theme.danger, 0.15),
-      text: theme.primaryForeground,
+      bg: destructiveBg,
+      bgHover: destructiveHover,
+      bgActive: destructiveActive,
+      text: destructiveText,
       border: null,
     },
     outline: {
       bg: transparent,
-      bgHover: withAlpha(theme.text, 0.05),
-      bgActive: withAlpha(theme.text, 0.1),
-      text: theme.text,
-      border: theme.border,
+      bgHover: withAlpha(theme.semantic.text.default, 0.05),
+      bgActive: withAlpha(theme.semantic.text.default, 0.1),
+      text: theme.semantic.text.default,
+      border: theme.semantic.border.default,
     },
     secondary: {
-      bg: theme.surfaceMuted,
+      bg: theme.semantic.surface.muted,
       bgHover:
         theme.scheme === "dark"
-          ? lighten(theme.surfaceMuted, 0.05)
-          : darken(theme.surfaceMuted, 0.05),
+          ? lighten(theme.semantic.surface.muted, 0.05)
+          : darken(theme.semantic.surface.muted, 0.05),
       bgActive:
         theme.scheme === "dark"
-          ? lighten(theme.surfaceMuted, 0.1)
-          : darken(theme.surfaceMuted, 0.1),
-      text: theme.text,
+          ? lighten(theme.semantic.surface.muted, 0.1)
+          : darken(theme.semantic.surface.muted, 0.1),
+      text: theme.semantic.text.default,
       border: null,
     },
     ghost: {
       bg: transparent,
-      bgHover: withAlpha(theme.text, 0.05),
-      bgActive: withAlpha(theme.text, 0.1),
-      text: theme.text,
+      bgHover: withAlpha(theme.semantic.text.default, 0.05),
+      bgActive: withAlpha(theme.semantic.text.default, 0.1),
+      text: theme.semantic.text.default,
       border: null,
     },
     link: {
       bg: transparent,
       bgHover: transparent,
       bgActive: transparent,
-      text: theme.primary,
+      text: theme.components.link.foreground,
       border: null,
     },
   };

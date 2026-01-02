@@ -32,17 +32,7 @@ export type {
 export type { Theme, ThemeConfig, ThemeOverrides, ThemeFonts } from "./theme";
 export { DEFAULT_THEME_FONTS } from "./theme";
 
-export {
-  resolveTheme,
-  ThemeManager,
-  menuColors,
-  inputColors,
-  checkboxColors,
-  radioColors,
-  switchColors,
-  linkColors,
-  tabColors,
-} from "./theme";
+export { resolveTheme, ThemeManager } from "./theme";
 
 export {
   boundsContains,

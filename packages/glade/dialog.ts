@@ -41,27 +41,11 @@ import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { GladeContext } from "./context.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import type { Theme } from "./theme.ts";
 
 // ============================================================================
-// Default Colors and Sizes
+// Sizes
 // ============================================================================
-
-const DEFAULT_BACKDROP_COLOR: ColorObject = { r: 0, g: 0, b: 0, a: 0.74 };
-const DEFAULT_DIALOG_BG: ColorObject = { r: 0.12, g: 0.12, b: 0.14, a: 1 };
-const DEFAULT_DIALOG_BORDER: ColorObject = { r: 0.25, g: 0.25, b: 0.28, a: 1 };
-const DEFAULT_TITLE_COLOR: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
-const DEFAULT_DESCRIPTION_COLOR: ColorObject = { r: 0.6, g: 0.6, b: 0.65, a: 1 };
-const DEFAULT_SEPARATOR_COLOR: ColorObject = { r: 0.2, g: 0.2, b: 0.22, a: 1 };
-const DEFAULT_BUTTON_BG: ColorObject = { r: 0.2, g: 0.2, b: 0.22, a: 1 };
-const DEFAULT_BUTTON_HOVER_BG: ColorObject = { r: 0.28, g: 0.28, b: 0.3, a: 1 };
-const DEFAULT_BUTTON_TEXT: ColorObject = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
-const DEFAULT_PRIMARY_BUTTON_BG: ColorObject = { r: 0.2, g: 0.4, b: 0.8, a: 1 };
-const DEFAULT_PRIMARY_BUTTON_HOVER_BG: ColorObject = { r: 0.25, g: 0.5, b: 0.9, a: 1 };
-const DEFAULT_PRIMARY_BUTTON_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
-const DEFAULT_DESTRUCTIVE_BUTTON_BG: ColorObject = { r: 0.7, g: 0.2, b: 0.2, a: 1 };
-const DEFAULT_DESTRUCTIVE_BUTTON_HOVER_BG: ColorObject = { r: 0.8, g: 0.25, b: 0.25, a: 1 };
-const DEFAULT_DESTRUCTIVE_BUTTON_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
-
 const DEFAULT_DIALOG_PADDING = 24;
 const DEFAULT_DIALOG_BORDER_RADIUS = 8;
 const DEFAULT_DIALOG_BORDER_WIDTH = 1;
@@ -111,7 +95,7 @@ export interface DialogConfig {
 export const DEFAULT_DIALOG_CONFIG: DialogConfig = {
   closeOnBackdropClick: true,
   closeOnEscape: true,
-  backdropColor: DEFAULT_BACKDROP_COLOR,
+  backdropColor: { r: 0, g: 0, b: 0, a: 0 },
   windowMargin: 32,
 };
 
@@ -559,8 +543,12 @@ export class GladeDialogHeader extends GladeElement<
   }
 
   paint(cx: PaintContext, _bounds: Bounds, prepaintState: DialogHeaderPrepaintState): void {
-    const titleColor = this.context?.titleColor ?? DEFAULT_TITLE_COLOR;
-    const descriptionColor = this.context?.descriptionColor ?? DEFAULT_DESCRIPTION_COLOR;
+    const context = this.context;
+    if (!context) {
+      return;
+    }
+    const titleColor = context.titleColor;
+    const descriptionColor = context.descriptionColor;
     const titleFontSize = DEFAULT_TITLE_FONT_SIZE;
     const descriptionFontSize = DEFAULT_DESCRIPTION_FONT_SIZE;
     const fontFamily = prepaintState.fontFamily;
@@ -871,22 +859,26 @@ export class GladeDialogFooter extends GladeElement<
   }
 
   paint(cx: PaintContext, _bounds: Bounds, prepaintState: DialogFooterPrepaintState): void {
-    const fontSize = this.context?.buttonFontSize ?? DEFAULT_BUTTON_FONT_SIZE;
+    const context = this.context;
+    if (!context) {
+      return;
+    }
+
+    const fontSize = context.buttonFontSize ?? DEFAULT_BUTTON_FONT_SIZE;
     const lineHeight = fontSize * 1.2; // Match the default in paintGlyphs
-    const borderRadius = this.context?.buttonBorderRadius ?? DEFAULT_BUTTON_BORDER_RADIUS;
+    const borderRadius = context.buttonBorderRadius ?? DEFAULT_BUTTON_BORDER_RADIUS;
 
-    const buttonBg = this.context?.buttonBg ?? DEFAULT_BUTTON_BG;
-    const buttonHoverBg = this.context?.buttonHoverBg ?? DEFAULT_BUTTON_HOVER_BG;
-    const buttonText = this.context?.buttonText ?? DEFAULT_BUTTON_TEXT;
+    const buttonBg = context.buttonBg;
+    const buttonHoverBg = context.buttonHoverBg;
+    const buttonText = context.buttonText;
 
-    const primaryBg = this.context?.primaryButtonBg ?? DEFAULT_PRIMARY_BUTTON_BG;
-    const primaryHoverBg = this.context?.primaryButtonHoverBg ?? DEFAULT_PRIMARY_BUTTON_HOVER_BG;
-    const primaryText = this.context?.primaryButtonText ?? DEFAULT_PRIMARY_BUTTON_TEXT;
+    const primaryBg = context.primaryButtonBg;
+    const primaryHoverBg = context.primaryButtonHoverBg;
+    const primaryText = context.primaryButtonText;
 
-    const destructiveBg = this.context?.destructiveButtonBg ?? DEFAULT_DESTRUCTIVE_BUTTON_BG;
-    const destructiveHoverBg =
-      this.context?.destructiveButtonHoverBg ?? DEFAULT_DESTRUCTIVE_BUTTON_HOVER_BG;
-    const destructiveText = this.context?.destructiveButtonText ?? DEFAULT_DESTRUCTIVE_BUTTON_TEXT;
+    const destructiveBg = context.destructiveButtonBg;
+    const destructiveHoverBg = context.destructiveButtonHoverBg;
+    const destructiveText = context.destructiveButtonText;
     const fontFamily = prepaintState.fontFamily;
 
     // Paint cancel button
@@ -1214,9 +1206,14 @@ export class GladeDialogContent extends GladeElement<
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DialogContentPrepaintState): void {
-    const dialogBg = this.context?.dialogBg ?? DEFAULT_DIALOG_BG;
-    const dialogBorder = this.context?.dialogBorder ?? DEFAULT_DIALOG_BORDER;
-    const dialogBorderRadius = this.context?.dialogBorderRadius ?? DEFAULT_DIALOG_BORDER_RADIUS;
+    const context = this.context;
+    if (!context) {
+      return;
+    }
+
+    const dialogBg = context.dialogBg;
+    const dialogBorder = context.dialogBorder;
+    const dialogBorderRadius = context.dialogBorderRadius ?? DEFAULT_DIALOG_BORDER_RADIUS;
 
     // Paint dialog background
     cx.paintRect(bounds, {
@@ -1289,12 +1286,12 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
   // Config
   private closeOnBackdropClickValue = true;
   private closeOnEscapeValue = true;
-  private backdropColorValue = DEFAULT_BACKDROP_COLOR;
+  private backdropColorValue: ColorObject | null = null;
   private windowMarginValue = 32;
 
   // Styling
-  private dialogBgColor = DEFAULT_DIALOG_BG;
-  private dialogBorderColor = DEFAULT_DIALOG_BORDER;
+  private dialogBgColor: ColorObject | null = null;
+  private dialogBorderColor: ColorObject | null = null;
   private dialogBorderRadiusValue = DEFAULT_DIALOG_BORDER_RADIUS;
   private dialogPaddingValue = DEFAULT_DIALOG_PADDING;
 
@@ -1396,25 +1393,26 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
     return this;
   }
 
-  private buildContentContext(): DialogContentContext {
+  private buildContentContext(theme: Theme): DialogContentContext {
+    const dialog = theme.components.dialog;
     return {
       onOpenChange: this.onOpenChangeHandler,
-      dialogBg: this.dialogBgColor,
-      dialogBorder: this.dialogBorderColor,
+      dialogBg: this.dialogBgColor ?? dialog.background,
+      dialogBorder: this.dialogBorderColor ?? dialog.border,
       dialogBorderRadius: this.dialogBorderRadiusValue,
       dialogPadding: this.dialogPaddingValue,
-      titleColor: DEFAULT_TITLE_COLOR,
-      descriptionColor: DEFAULT_DESCRIPTION_COLOR,
-      separatorColor: DEFAULT_SEPARATOR_COLOR,
-      buttonBg: DEFAULT_BUTTON_BG,
-      buttonHoverBg: DEFAULT_BUTTON_HOVER_BG,
-      buttonText: DEFAULT_BUTTON_TEXT,
-      primaryButtonBg: DEFAULT_PRIMARY_BUTTON_BG,
-      primaryButtonHoverBg: DEFAULT_PRIMARY_BUTTON_HOVER_BG,
-      primaryButtonText: DEFAULT_PRIMARY_BUTTON_TEXT,
-      destructiveButtonBg: DEFAULT_DESTRUCTIVE_BUTTON_BG,
-      destructiveButtonHoverBg: DEFAULT_DESTRUCTIVE_BUTTON_HOVER_BG,
-      destructiveButtonText: DEFAULT_DESTRUCTIVE_BUTTON_TEXT,
+      titleColor: dialog.title.foreground,
+      descriptionColor: dialog.description.foreground,
+      separatorColor: dialog.separator,
+      buttonBg: dialog.button.background,
+      buttonHoverBg: dialog.button.hover.background,
+      buttonText: dialog.button.foreground,
+      primaryButtonBg: dialog.primaryButton.background,
+      primaryButtonHoverBg: dialog.primaryButton.hover.background,
+      primaryButtonText: dialog.primaryButton.foreground,
+      destructiveButtonBg: dialog.destructiveButton.background,
+      destructiveButtonHoverBg: dialog.destructiveButton.hover.background,
+      destructiveButtonText: dialog.destructiveButton.foreground,
       buttonFontSize: DEFAULT_BUTTON_FONT_SIZE,
       buttonPaddingX: DEFAULT_BUTTON_PADDING_X,
       buttonPaddingY: DEFAULT_BUTTON_PADDING_Y,
@@ -1422,11 +1420,12 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
     };
   }
 
-  private buildDialogConfig(): DialogConfig {
+  private buildDialogConfig(theme: Theme): DialogConfig {
+    const dialog = theme.components.dialog;
     return {
       closeOnBackdropClick: this.closeOnBackdropClickValue,
       closeOnEscape: this.closeOnEscapeValue,
-      backdropColor: this.backdropColorValue,
+      backdropColor: this.backdropColorValue ?? dialog.backdrop,
       windowMargin: this.windowMarginValue,
     };
   }
@@ -1532,10 +1531,12 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
       children: triggerHitTestNode?.children ?? [],
     };
 
+    const theme = cx.getWindow().getTheme();
+
     // Register with DialogManager if open
     if (this.openValue && this.contentBuilder) {
       const contentBuilder = this.contentBuilder;
-      const contentContext = this.buildContentContext();
+      const contentContext = this.buildContentContext(theme);
 
       cx.registerDialog({
         id: this.dialogId,
@@ -1547,7 +1548,7 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
           }
           return content;
         },
-        config: this.buildDialogConfig(),
+        config: this.buildDialogConfig(theme),
         open: true,
         onClose: onOpenChange ? () => onOpenChange(false) : null,
       });

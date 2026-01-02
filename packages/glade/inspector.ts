@@ -62,7 +62,7 @@ export interface InspectorState {
 /**
  * Colors used for inspector visualization.
  */
-export const INSPECTOR_COLORS: {
+type InspectorPalette = {
   bounds: ColorObject;
   boundsHover: ColorObject;
   boundsSelected: ColorObject;
@@ -73,7 +73,9 @@ export const INSPECTOR_COLORS: {
   textShadow: ColorObject;
   panelBg: ColorObject;
   panelBorder: ColorObject;
-} = {
+};
+
+export const INSPECTOR_COLORS: InspectorPalette = {
   bounds: { r: 0.2, g: 0.6, b: 1.0, a: 0.8 },
   boundsHover: { r: 1.0, g: 0.4, b: 0.2, a: 0.9 },
   boundsSelected: { r: 0.2, g: 1.0, b: 0.4, a: 1.0 },
@@ -272,6 +274,25 @@ export class Inspector {
     return this.elementRegistry.get(this.state.hoveredElementId) ?? null;
   }
 
+  private resolveColors(theme?: Theme): InspectorPalette {
+    if (!theme) {
+      return INSPECTOR_COLORS;
+    }
+    const inspector = theme.components.inspector;
+    return {
+      bounds: inspector.bounds,
+      boundsHover: inspector.boundsHover,
+      boundsSelected: inspector.boundsSelected,
+      padding: inspector.padding,
+      margin: inspector.margin,
+      content: inspector.content,
+      text: inspector.text,
+      textShadow: inspector.textShadow,
+      panelBg: inspector.panel.background,
+      panelBorder: inspector.panel.border,
+    };
+  }
+
   /**
    * Render inspector overlay onto the scene.
    */
@@ -286,19 +307,20 @@ export class Inspector {
       return;
     }
 
+    const colors = this.resolveColors(theme);
     scene.pushLayer();
 
     if (this.state.showBounds) {
-      this.renderBoundsOutlines(scene);
+      this.renderBoundsOutlines(scene, colors);
     }
 
     if (this.state.highlightHover && this.state.hoveredElementId) {
-      this.renderHoverHighlight(scene);
+      this.renderHoverHighlight(scene, colors);
     }
 
     if (this.state.selectedElementId) {
-      this.renderSelectionHighlight(scene);
-      this.renderInfoPanel(scene, viewportWidth, viewportHeight, textSystem, theme);
+      this.renderSelectionHighlight(scene, colors);
+      this.renderInfoPanel(scene, viewportWidth, viewportHeight, textSystem, theme, colors);
     }
 
     if (this.state.showIds) {
@@ -311,7 +333,7 @@ export class Inspector {
   /**
    * Render bounds outlines for all elements.
    */
-  private renderBoundsOutlines(scene: GladeScene): void {
+  private renderBoundsOutlines(scene: GladeScene, colors: InspectorPalette): void {
     for (const info of this.flatElementList) {
       const { bounds, elementId } = info;
 
@@ -328,7 +350,7 @@ export class Inspector {
         color: { r: 0, g: 0, b: 0, a: 0 },
         cornerRadius: 0,
         borderWidth: 1,
-        borderColor: INSPECTOR_COLORS.bounds,
+        borderColor: colors.bounds,
       });
     }
   }
@@ -336,7 +358,7 @@ export class Inspector {
   /**
    * Render hover highlight.
    */
-  private renderHoverHighlight(scene: GladeScene): void {
+  private renderHoverHighlight(scene: GladeScene, colors: InspectorPalette): void {
     const info = this.getHoveredElement();
     if (!info) {
       return;
@@ -349,17 +371,17 @@ export class Inspector {
       y: bounds.y,
       width: bounds.width,
       height: bounds.height,
-      color: { ...INSPECTOR_COLORS.content, a: 0.15 },
+      color: { ...colors.content, a: 0.15 },
       cornerRadius: 0,
       borderWidth: 2,
-      borderColor: INSPECTOR_COLORS.boundsHover,
+      borderColor: colors.boundsHover,
     });
   }
 
   /**
    * Render selection highlight.
    */
-  private renderSelectionHighlight(scene: GladeScene): void {
+  private renderSelectionHighlight(scene: GladeScene, colors: InspectorPalette): void {
     const info = this.getSelectedElement();
     if (!info) {
       return;
@@ -372,21 +394,26 @@ export class Inspector {
       y: bounds.y,
       width: bounds.width,
       height: bounds.height,
-      color: { ...INSPECTOR_COLORS.content, a: 0.2 },
+      color: { ...colors.content, a: 0.2 },
       cornerRadius: 0,
       borderWidth: 2,
-      borderColor: INSPECTOR_COLORS.boundsSelected,
+      borderColor: colors.boundsSelected,
     });
 
     if (this.state.showSpacing) {
-      this.renderSpacingGuides(scene, bounds, styles);
+      this.renderSpacingGuides(scene, bounds, styles, colors);
     }
   }
 
   /**
    * Render padding/margin guides for selected element.
    */
-  private renderSpacingGuides(scene: GladeScene, bounds: Bounds, styles: Partial<Styles>): void {
+  private renderSpacingGuides(
+    scene: GladeScene,
+    bounds: Bounds,
+    styles: Partial<Styles>,
+    colors: InspectorPalette
+  ): void {
     const pt = styles.paddingTop ?? 0;
     const pr = styles.paddingRight ?? 0;
     const pb = styles.paddingBottom ?? 0;
@@ -398,7 +425,7 @@ export class Inspector {
         y: bounds.y,
         width: bounds.width,
         height: pt,
-        color: INSPECTOR_COLORS.padding,
+        color: colors.padding,
         cornerRadius: 0,
         borderWidth: 0,
         borderColor: { r: 0, g: 0, b: 0, a: 0 },
@@ -410,7 +437,7 @@ export class Inspector {
         y: bounds.y + bounds.height - pb,
         width: bounds.width,
         height: pb,
-        color: INSPECTOR_COLORS.padding,
+        color: colors.padding,
         cornerRadius: 0,
         borderWidth: 0,
         borderColor: { r: 0, g: 0, b: 0, a: 0 },
@@ -422,7 +449,7 @@ export class Inspector {
         y: bounds.y + pt,
         width: pl,
         height: bounds.height - pt - pb,
-        color: INSPECTOR_COLORS.padding,
+        color: colors.padding,
         cornerRadius: 0,
         borderWidth: 0,
         borderColor: { r: 0, g: 0, b: 0, a: 0 },
@@ -434,7 +461,7 @@ export class Inspector {
         y: bounds.y + pt,
         width: pr,
         height: bounds.height - pt - pb,
-        color: INSPECTOR_COLORS.padding,
+        color: colors.padding,
         cornerRadius: 0,
         borderWidth: 0,
         borderColor: { r: 0, g: 0, b: 0, a: 0 },
@@ -459,7 +486,8 @@ export class Inspector {
     viewportWidth: number,
     viewportHeight: number,
     textSystem?: TextSystem,
-    theme?: Theme
+    theme?: Theme,
+    colors?: InspectorPalette
   ): void {
     const info = this.getSelectedElement();
     if (!info) {
@@ -493,27 +521,29 @@ export class Inspector {
         break;
     }
 
-    scene.addShadow({
-      x: panelX,
-      y: panelY + 4,
-      width: panelWidth,
-      height: panelHeight,
-      cornerRadius: 8,
-      color: { r: 0, g: 0, b: 0, a: 0.4 },
-      blur: 16,
-      offsetX: 0,
-      offsetY: 4,
-    });
+    if (colors) {
+      scene.addShadow({
+        x: panelX,
+        y: panelY + 4,
+        width: panelWidth,
+        height: panelHeight,
+        cornerRadius: 8,
+        color: colors.textShadow,
+        blur: 16,
+        offsetX: 0,
+        offsetY: 4,
+      });
+    }
 
     scene.addRect({
       x: panelX,
       y: panelY,
       width: panelWidth,
       height: panelHeight,
-      color: INSPECTOR_COLORS.panelBg,
+      color: colors ? colors.panelBg : INSPECTOR_COLORS.panelBg,
       cornerRadius: 8,
       borderWidth: 1,
-      borderColor: INSPECTOR_COLORS.panelBorder,
+      borderColor: colors ? colors.panelBorder : INSPECTOR_COLORS.panelBorder,
     });
 
     const headerHeight = 32;
@@ -522,7 +552,7 @@ export class Inspector {
       y: panelY,
       width: panelWidth,
       height: headerHeight,
-      color: { r: 0.15, g: 0.15, b: 0.2, a: 1 },
+      color: colors ? colors.panelBg : INSPECTOR_COLORS.panelBg,
       cornerRadius: 8,
       borderWidth: 0,
       borderColor: { r: 0, g: 0, b: 0, a: 0 },
@@ -533,7 +563,7 @@ export class Inspector {
       y: panelY + headerHeight - 8,
       width: panelWidth,
       height: 8,
-      color: { r: 0.15, g: 0.15, b: 0.2, a: 1 },
+      color: colors ? colors.panelBg : INSPECTOR_COLORS.panelBg,
       cornerRadius: 0,
       borderWidth: 0,
       borderColor: { r: 0, g: 0, b: 0, a: 0 },
@@ -544,7 +574,7 @@ export class Inspector {
       y: panelY + headerHeight,
       width: panelWidth,
       height: 1,
-      color: INSPECTOR_COLORS.panelBorder,
+      color: colors ? colors.panelBorder : INSPECTOR_COLORS.panelBorder,
       cornerRadius: 0,
       borderWidth: 0,
       borderColor: { r: 0, g: 0, b: 0, a: 0 },
@@ -567,7 +597,7 @@ export class Inspector {
       panelY + 10,
       14,
       18,
-      INSPECTOR_COLORS.text,
+      colors ? colors.text : INSPECTOR_COLORS.text,
       fontFamily
     );
     for (const glyph of headerGlyphs) {
@@ -603,7 +633,7 @@ export class Inspector {
         contentY,
         fontSize,
         lineHeight,
-        { r: 0.8, g: 0.8, b: 0.9, a: 1 },
+        colors ? colors.text : INSPECTOR_COLORS.text,
         fontFamily
       );
       for (const glyph of glyphs) {

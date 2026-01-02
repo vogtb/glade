@@ -19,25 +19,7 @@ import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler, KeyHandler, MouseHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
-
-// ============================================================================ //
-// Defaults                                                                     //
-// ============================================================================ //
-
-export const DEFAULT_MENU_BG: ColorObject = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
-export const DEFAULT_MENU_BORDER: ColorObject = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
-export const DEFAULT_ITEM_BG: ColorObject = { r: 0, g: 0, b: 0, a: 0 };
-export const DEFAULT_ITEM_HOVER_BG: ColorObject = { r: 0.2, g: 0.4, b: 0.8, a: 1 };
-export const DEFAULT_ITEM_TEXT: ColorObject = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
-export const DEFAULT_ITEM_HOVER_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
-export const DEFAULT_ITEM_DISABLED_TEXT: ColorObject = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
-export const DEFAULT_LABEL_TEXT: ColorObject = { r: 0.6, g: 0.6, b: 0.6, a: 1 };
-export const DEFAULT_SEPARATOR_COLOR: ColorObject = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
-export const DEFAULT_DESTRUCTIVE_TEXT: ColorObject = { r: 0.9, g: 0.3, b: 0.3, a: 1 };
-export const DEFAULT_DESTRUCTIVE_HOVER_BG: ColorObject = { r: 0.8, g: 0.2, b: 0.2, a: 1 };
-export const DEFAULT_SHORTCUT_TEXT: ColorObject = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
-export const DEFAULT_CHECK_COLOR: ColorObject = { r: 0.9, g: 0.9, b: 0.9, a: 1 };
+import type { ColorObject } from "@glade/utils";
 
 export const DEFAULT_FONT_SIZE = 14;
 export const DEFAULT_LABEL_FONT_SIZE = 12;
@@ -805,23 +787,23 @@ export class GladeDropdownItem
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownItemPrepaintState): void {
+    const context = this.context;
+    if (!context) {
+      return;
+    }
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.isCurrentlyFocused();
     const isHighlighted = isHovered || isFocused;
-    const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
+    const isDisabled = this.disabledValue || context.disabled;
 
-    const itemBg = this.context?.itemBg ?? DEFAULT_ITEM_BG;
-    const itemHoverBg = this.destructiveValue
-      ? (this.context?.destructiveHoverBg ?? DEFAULT_DESTRUCTIVE_HOVER_BG)
-      : (this.context?.itemHoverBg ?? DEFAULT_ITEM_HOVER_BG);
-    const itemText = this.destructiveValue
-      ? (this.context?.destructiveText ?? DEFAULT_DESTRUCTIVE_TEXT)
-      : (this.context?.itemText ?? DEFAULT_ITEM_TEXT);
-    const itemHoverText = this.context?.itemHoverText ?? DEFAULT_ITEM_HOVER_TEXT;
-    const itemDisabledText = this.context?.itemDisabledText ?? DEFAULT_ITEM_DISABLED_TEXT;
-    const shortcutTextColor = this.context?.shortcutText ?? DEFAULT_SHORTCUT_TEXT;
-    const fontSize = this.context?.fontSize ?? DEFAULT_FONT_SIZE;
-    const shortcutFontSize = this.context?.shortcutFontSize ?? DEFAULT_SHORTCUT_FONT_SIZE;
+    const itemBg = context.itemBg;
+    const itemHoverBg = this.destructiveValue ? context.destructiveHoverBg : context.itemHoverBg;
+    const itemText = this.destructiveValue ? context.destructiveText : context.itemText;
+    const itemHoverText = context.itemHoverText;
+    const itemDisabledText = context.itemDisabledText;
+    const shortcutTextColor = context.shortcutText;
+    const fontSize = context.fontSize ?? DEFAULT_FONT_SIZE;
+    const shortcutFontSize = context.shortcutFontSize ?? DEFAULT_SHORTCUT_FONT_SIZE;
     const labelFontFamily = prepaintState.labelFontFamily;
     const shortcutFontFamily = prepaintState.shortcutFontFamily;
 
@@ -1028,18 +1010,22 @@ export class GladeDropdownCheckbox
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownCheckboxPrepaintState): void {
+    const context = this.context;
+    if (!context) {
+      return;
+    }
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.isCurrentlyFocused();
     const isHighlighted = isHovered || isFocused;
-    const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
+    const isDisabled = this.disabledValue || context.disabled;
 
-    const itemBg = this.context?.itemBg ?? DEFAULT_ITEM_BG;
-    const itemHoverBg = this.context?.itemHoverBg ?? DEFAULT_ITEM_HOVER_BG;
-    const itemText = this.context?.itemText ?? DEFAULT_ITEM_TEXT;
-    const itemHoverText = this.context?.itemHoverText ?? DEFAULT_ITEM_HOVER_TEXT;
-    const itemDisabledText = this.context?.itemDisabledText ?? DEFAULT_ITEM_DISABLED_TEXT;
-    const checkColor = this.context?.checkColor ?? DEFAULT_CHECK_COLOR;
-    const fontSize = this.context?.fontSize ?? DEFAULT_FONT_SIZE;
+    const itemBg = context.itemBg;
+    const itemHoverBg = context.itemHoverBg;
+    const itemText = context.itemText;
+    const itemHoverText = context.itemHoverText;
+    const itemDisabledText = context.itemDisabledText;
+    const checkColor = context.checkColor;
+    const fontSize = context.fontSize ?? DEFAULT_FONT_SIZE;
 
     const bgColor = isHighlighted && !isDisabled ? itemHoverBg : itemBg;
     const textColor = isDisabled ? itemDisabledText : isHighlighted ? itemHoverText : itemText;
@@ -1250,19 +1236,23 @@ export class GladeDropdownRadio
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownRadioPrepaintState): void {
+    const context = this.context;
+    if (!context) {
+      return;
+    }
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.isCurrentlyFocused();
     const isHighlighted = isHovered || isFocused;
-    const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
+    const isDisabled = this.disabledValue || context.disabled;
     const isSelected = this.isSelected();
 
-    const itemBg = this.context?.itemBg ?? DEFAULT_ITEM_BG;
-    const itemHoverBg = this.context?.itemHoverBg ?? DEFAULT_ITEM_HOVER_BG;
-    const itemText = this.context?.itemText ?? DEFAULT_ITEM_TEXT;
-    const itemHoverText = this.context?.itemHoverText ?? DEFAULT_ITEM_HOVER_TEXT;
-    const itemDisabledText = this.context?.itemDisabledText ?? DEFAULT_ITEM_DISABLED_TEXT;
-    const checkColor = this.context?.checkColor ?? DEFAULT_CHECK_COLOR;
-    const fontSize = this.context?.fontSize ?? DEFAULT_FONT_SIZE;
+    const itemBg = context.itemBg;
+    const itemHoverBg = context.itemHoverBg;
+    const itemText = context.itemText;
+    const itemHoverText = context.itemHoverText;
+    const itemDisabledText = context.itemDisabledText;
+    const checkColor = context.checkColor;
+    const fontSize = context.fontSize ?? DEFAULT_FONT_SIZE;
     const fontFamily = prepaintState.fontFamily;
 
     const bgColor = isHighlighted && !isDisabled ? itemHoverBg : itemBg;
@@ -1668,17 +1658,21 @@ export class GladeDropdownSub
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownSubPrepaintState): void {
+    const context = this.context;
+    if (!context) {
+      return;
+    }
     const isHovered = cx.isHitboxHovered(prepaintState.hitbox);
     const isFocused = this.isCurrentlyFocused();
     const isHighlighted = this.isSubmenuOpen() ? true : isHovered || isFocused;
-    const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
+    const isDisabled = this.disabledValue || context.disabled;
 
-    const itemBg = this.context?.itemBg ?? DEFAULT_ITEM_BG;
-    const itemHoverBg = this.context?.itemHoverBg ?? DEFAULT_ITEM_HOVER_BG;
-    const itemText = this.context?.itemText ?? DEFAULT_ITEM_TEXT;
-    const itemHoverText = this.context?.itemHoverText ?? DEFAULT_ITEM_HOVER_TEXT;
-    const itemDisabledText = this.context?.itemDisabledText ?? DEFAULT_ITEM_DISABLED_TEXT;
-    const fontSize = this.context?.fontSize ?? DEFAULT_FONT_SIZE;
+    const itemBg = context.itemBg;
+    const itemHoverBg = context.itemHoverBg;
+    const itemText = context.itemText;
+    const itemHoverText = context.itemHoverText;
+    const itemDisabledText = context.itemDisabledText;
+    const fontSize = context.fontSize ?? DEFAULT_FONT_SIZE;
     const fontFamily = prepaintState.fontFamily;
 
     const bgColor = isHighlighted && !isDisabled ? itemHoverBg : itemBg;
@@ -1778,7 +1772,11 @@ export class GladeDropdownSeparator
   }
 
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: DropdownSeparatorPrepaintState): void {
-    const separatorColor = this.context?.separatorColor ?? DEFAULT_SEPARATOR_COLOR;
+    const context = this.context;
+    if (!context) {
+      return;
+    }
+    const separatorColor = context.separatorColor;
     cx.paintRect(bounds, { backgroundColor: separatorColor });
   }
 
@@ -1879,8 +1877,12 @@ export class GladeDropdownLabel
   }
 
   paint(cx: PaintContext, _bounds: Bounds, prepaintState: DropdownLabelPrepaintState): void {
-    const labelTextColor = this.context?.labelText ?? DEFAULT_LABEL_TEXT;
-    const fontSize = this.context?.labelFontSize ?? DEFAULT_LABEL_FONT_SIZE;
+    const context = this.context;
+    if (!context) {
+      return;
+    }
+    const labelTextColor = context.labelText;
+    const fontSize = context.labelFontSize ?? DEFAULT_LABEL_FONT_SIZE;
 
     cx.paintGlyphs(this.labelText, prepaintState.textBounds, labelTextColor, {
       fontSize,
@@ -2254,9 +2256,13 @@ export class GladeDropdownMenuContent extends GladeContainerElement<
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: DropdownMenuContentPrepaintState): void {
-    const menuBg = this.context?.menuBg ?? DEFAULT_MENU_BG;
-    const menuBorder = this.context?.menuBorder ?? DEFAULT_MENU_BORDER;
-    const menuBorderRadius = this.context?.menuBorderRadius ?? DEFAULT_MENU_BORDER_RADIUS;
+    const context = this.context;
+    if (!context) {
+      return;
+    }
+    const menuBg = context.menuBg;
+    const menuBorder = context.menuBorder;
+    const menuBorderRadius = context.menuBorderRadius ?? DEFAULT_MENU_BORDER_RADIUS;
 
     cx.paintRect(bounds, {
       backgroundColor: menuBg,
@@ -2300,21 +2306,21 @@ export function buildRootMenuContext(
   disabled: boolean,
   onOpenChange: DropdownOpenChangeHandler | null,
   style: {
-    menuBg: Color;
-    menuBorder: Color;
+    menuBg: ColorObject;
+    menuBorder: ColorObject;
     menuBorderRadius: number;
     menuPadding: number;
-    itemBg: Color;
-    itemHoverBg: Color;
-    itemText: Color;
-    itemHoverText: Color;
-    itemDisabledText: Color;
-    labelText: Color;
-    separatorColor: Color;
-    destructiveText: Color;
-    destructiveHoverBg: Color;
-    shortcutText: Color;
-    checkColor: Color;
+    itemBg: ColorObject;
+    itemHoverBg: ColorObject;
+    itemText: ColorObject;
+    itemHoverText: ColorObject;
+    itemDisabledText: ColorObject;
+    labelText: ColorObject;
+    separatorColor: ColorObject;
+    destructiveText: ColorObject;
+    destructiveHoverBg: ColorObject;
+    shortcutText: ColorObject;
+    checkColor: ColorObject;
     fontSize: number;
     labelFontSize: number;
     shortcutFontSize: number;
@@ -2363,21 +2369,21 @@ export function buildRootMenuContext(
     parentContext: null,
     radioValue: undefined,
     onRadioChange: undefined,
-    menuBg: toColorObject(style.menuBg),
-    menuBorder: toColorObject(style.menuBorder),
+    menuBg: style.menuBg,
+    menuBorder: style.menuBorder,
     menuBorderRadius: style.menuBorderRadius,
     menuPadding: style.menuPadding,
-    itemBg: toColorObject(style.itemBg),
-    itemHoverBg: toColorObject(style.itemHoverBg),
-    itemText: toColorObject(style.itemText),
-    itemHoverText: toColorObject(style.itemHoverText),
-    itemDisabledText: toColorObject(style.itemDisabledText),
-    labelText: toColorObject(style.labelText),
-    separatorColor: toColorObject(style.separatorColor),
-    destructiveText: toColorObject(style.destructiveText),
-    destructiveHoverBg: toColorObject(style.destructiveHoverBg),
-    shortcutText: toColorObject(style.shortcutText),
-    checkColor: toColorObject(style.checkColor),
+    itemBg: style.itemBg,
+    itemHoverBg: style.itemHoverBg,
+    itemText: style.itemText,
+    itemHoverText: style.itemHoverText,
+    itemDisabledText: style.itemDisabledText,
+    labelText: style.labelText,
+    separatorColor: style.separatorColor,
+    destructiveText: style.destructiveText,
+    destructiveHoverBg: style.destructiveHoverBg,
+    shortcutText: style.shortcutText,
+    checkColor: style.checkColor,
     fontSize: style.fontSize,
     labelFontSize: style.labelFontSize,
     shortcutFontSize: style.shortcutFontSize,

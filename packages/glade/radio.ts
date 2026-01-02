@@ -24,17 +24,9 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
-import { radioColors } from "./theme.ts";
 import type { Theme } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
-/**
- * Default colors for radio states.
- */
-const DEFAULT_UNCHECKED_BG: ColorObject = { r: 0.15, g: 0.15, b: 0.15, a: 1 };
-const DEFAULT_CHECKED_BG: ColorObject = { r: 0.4, g: 0.6, b: 1, a: 1 };
-const DEFAULT_BORDER_COLOR: ColorObject = { r: 0.3, g: 0.3, b: 0.3, a: 1 };
-const DEFAULT_INDICATOR_COLOR: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
 const DEFAULT_DISABLED_OPACITY = 0.5;
 const DEFAULT_SIZE = 18;
 
@@ -56,6 +48,8 @@ type RadioGroupContext = {
   checkedBg: ColorObject;
   borderColor: ColorObject;
   indicatorColor: ColorObject;
+  hoverBorder: ColorObject;
+  disabledOpacity: number;
 };
 
 // ============================================================================
@@ -201,27 +195,33 @@ export class GladeRadioGroupItem extends GladeElement<
     const isFocused = this.focusHandleRef ? cx.isFocused(this.focusHandleRef) : false;
     const isChecked = this.groupContext?.value === this.itemValue;
     const isDisabled = this.disabledValue || (this.groupContext?.disabled ?? false);
-
-    const uncheckedBg = this.groupContext?.uncheckedBg ?? DEFAULT_UNCHECKED_BG;
-    const checkedBg = this.groupContext?.checkedBg ?? DEFAULT_CHECKED_BG;
-    const borderColor = this.groupContext?.borderColor ?? DEFAULT_BORDER_COLOR;
-    const indicatorColor = this.groupContext?.indicatorColor ?? DEFAULT_INDICATOR_COLOR;
+    const context = this.groupContext;
+    if (!context) {
+      return;
+    }
+    const uncheckedBg = context.uncheckedBg;
+    const checkedBg = context.checkedBg;
+    const borderColor = context.borderColor;
+    const indicatorColor = context.indicatorColor;
 
     // Determine colors
     let bgColor = isChecked ? checkedBg : uncheckedBg;
     let currentBorderColor = borderColor;
-    let opacity = isDisabled ? DEFAULT_DISABLED_OPACITY : 1;
+    let opacity = isDisabled ? context.disabledOpacity : 1;
 
     // Apply hover styles
-    if (isHovered && !isDisabled && this.hoverStyles) {
-      if (this.hoverStyles.backgroundColor) {
-        bgColor = this.hoverStyles.backgroundColor;
+    if (isHovered && !isDisabled) {
+      const hoverStyles = this.hoverStyles;
+      if (hoverStyles?.backgroundColor) {
+        bgColor = hoverStyles.backgroundColor;
       }
-      if (this.hoverStyles.borderColor) {
-        currentBorderColor = this.hoverStyles.borderColor;
+      if (hoverStyles?.borderColor) {
+        currentBorderColor = hoverStyles.borderColor;
+      } else {
+        currentBorderColor = context.hoverBorder;
       }
-      if (this.hoverStyles.opacity !== undefined) {
-        opacity = this.hoverStyles.opacity;
+      if (hoverStyles?.opacity !== undefined) {
+        opacity = hoverStyles.opacity;
       }
     }
 
@@ -311,6 +311,7 @@ type RadioGroupPrepaintState = {
   childPrepaintStates: unknown[];
   childBounds: Bounds[];
   hitTestNode: HitTestNode;
+  context: RadioGroupContext;
 };
 
 /**
@@ -460,29 +461,24 @@ export class GladeRadioGroup extends GladeContainerElement<
   /**
    * Build the context to pass to child items.
    */
-  private buildContext(theme?: Theme): RadioGroupContext {
-    const defaults = theme
-      ? radioColors(theme)
-      : {
-          uncheckedBg: DEFAULT_UNCHECKED_BG,
-          checkedBg: DEFAULT_CHECKED_BG,
-          border: DEFAULT_BORDER_COLOR,
-          indicator: DEFAULT_INDICATOR_COLOR,
-        };
+  private buildContext(theme: Theme): RadioGroupContext {
+    const radioTheme = theme.components.radio;
     return {
       value: this.valueState,
       onValueChange: this.onValueChangeHandler,
       disabled: this.disabledValue,
       size: this.itemSizeValue,
-      uncheckedBg: this.uncheckedBgColor ?? defaults.uncheckedBg,
-      checkedBg: this.checkedBgColor ?? defaults.checkedBg,
-      borderColor: this.borderColorValue ?? defaults.border,
-      indicatorColor: this.indicatorColorValue ?? defaults.indicator,
+      uncheckedBg: this.uncheckedBgColor ?? radioTheme.background,
+      checkedBg: this.checkedBgColor ?? radioTheme.checked.background,
+      borderColor: this.borderColorValue ?? radioTheme.border,
+      indicatorColor: this.indicatorColorValue ?? radioTheme.indicator,
+      hoverBorder: radioTheme.hover.border,
+      disabledOpacity: radioTheme.disabled.opacity ?? DEFAULT_DISABLED_OPACITY,
     };
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<RadioGroupRequestState> {
-    const context = this.buildContext();
+    const context = this.buildContext(cx.getTheme());
     const childLayoutIds: LayoutId[] = [];
     const childElementIds: GlobalElementId[] = [];
     const childRequestStates: unknown[] = [];
@@ -588,12 +584,13 @@ export class GladeRadioGroup extends GladeContainerElement<
       childPrepaintStates,
       childBounds: adjustedChildBounds,
       hitTestNode,
+      context,
     };
   }
 
   paint(cx: PaintContext, bounds: Bounds, prepaintState: RadioGroupPrepaintState): void {
     const { childElementIds, childPrepaintStates, childBounds } = prepaintState;
-    const context = this.buildContext();
+    const context = prepaintState.context;
 
     // Paint background if specified
     if (this.styles.backgroundColor) {

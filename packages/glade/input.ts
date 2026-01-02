@@ -65,8 +65,8 @@ import {
 } from "./text.ts";
 import type { FontStyle } from "@glade/shaper";
 import { GladeScene } from "./scene.ts";
-import { DEFAULT_THEME_FONTS, inputColors } from "./theme.ts";
-import type { Color } from "@glade/utils";
+import { DEFAULT_THEME_FONTS } from "./theme.ts";
+import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 export const TEXT_INPUT_CONTEXT = "glade:text-input";
 
@@ -110,11 +110,11 @@ interface TextInputPrepaintState {
   hitTestNode: HitTestNode;
   fontFamily: string;
   colors: {
-    text: Color;
-    placeholder: Color;
-    selection: Color;
-    composition: Color;
-    caret: Color;
+    text: ColorObject;
+    placeholder: ColorObject;
+    selection: ColorObject;
+    composition: ColorObject;
+    caret: ColorObject;
   };
 }
 
@@ -727,13 +727,17 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     };
 
     const theme = cx.getWindow().getTheme();
-    const defaults = inputColors(theme);
+    const inputTheme = theme.components.input;
     const colors = {
-      text: defaults.text,
-      placeholder: defaults.placeholder,
-      selection: this.options.selectionColor ?? defaults.selection,
-      composition: this.options.compositionColor ?? defaults.composition,
-      caret: this.options.caretColor ?? defaults.caret,
+      text: inputTheme.foreground,
+      placeholder: inputTheme.placeholder,
+      selection: this.options.selectionColor
+        ? toColorObject(this.options.selectionColor)
+        : inputTheme.selection.background,
+      composition: this.options.compositionColor
+        ? toColorObject(this.options.compositionColor)
+        : inputTheme.composition,
+      caret: this.options.caretColor ? toColorObject(this.options.caretColor) : inputTheme.caret,
     };
 
     return {

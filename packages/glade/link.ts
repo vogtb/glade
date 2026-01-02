@@ -16,7 +16,6 @@ import type { LayoutId } from "./layout.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import { linkColors } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 /**
@@ -175,10 +174,10 @@ export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState>
     };
 
     const theme = cx.getWindow().getTheme();
-    const palette = linkColors(theme);
+    const palette = theme.components.link;
     const colors = {
-      default: this.colorValue ?? palette.default,
-      hover: this.hoverColorValue ?? palette.hover,
+      default: this.colorValue ?? palette.foreground,
+      hover: this.hoverColorValue ?? palette.hover.foreground,
     };
 
     return {

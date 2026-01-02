@@ -415,7 +415,7 @@ export class MainView implements GladeView {
       .flexRow()
       .w(cx.window.width)
       .h(cx.window.height)
-      .bg(theme.surface)
+      .bg(theme.semantic.surface.default)
       .children(
         div()
           .flex()
@@ -423,7 +423,7 @@ export class MainView implements GladeView {
           .w(220)
           .hFull()
           .flexShrink0()
-          .bg(theme.surfaceMuted)
+          .bg(theme.semantic.surface.muted)
           .overflowHidden()
           .children(
             div()
@@ -436,12 +436,12 @@ export class MainView implements GladeView {
               .trackScroll(this.navScrollHandle!)
               .children(...this.demos.map((demo) => this.renderDemoButton(cx, theme, demo)))
           ),
-        div().flex().flexCol().flexShrink().w(10).bg(theme.background),
+        div().flex().flexCol().flexShrink().w(10).bg(theme.semantic.window.background),
         div()
           .flex()
           .flexCol()
           .flex1()
-          .bg(theme.background)
+          .bg(theme.semantic.window.background)
           .overflowHidden()
           .child(this.renderActiveDemo(cx, theme))
       );
@@ -460,14 +460,18 @@ export class MainView implements GladeView {
       .overflowScroll()
       .scrollbarAlways()
       .trackScroll(this.contentScrollHandle!)
-      .children(div().child(h1(this.selectedDemoName).color(theme.text)), ...items);
+      .children(
+        div().child(h1(this.selectedDemoName).color(theme.semantic.text.default)),
+        ...items
+      );
   }
 
   private renderDemoButton(cx: GladeViewContext<this>, theme: Theme, demo: Demo) {
     const isSelected = demo.name === this.selectedDemoName;
-    const baseBg = isSelected ? theme.primary : theme.background;
-    const hoverBg = isSelected ? theme.primary : theme.backgroundHover;
-    const textColor = isSelected ? theme.primaryForeground : theme.text;
+    const accent = theme.components.dialog.primaryButton;
+    const baseBg = isSelected ? accent.background : theme.semantic.window.background;
+    const hoverBg = isSelected ? accent.hover.background : theme.semantic.surface.hover;
+    const textColor = isSelected ? accent.foreground : theme.semantic.text.default;
 
     return div()
       .flex()

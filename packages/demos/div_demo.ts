@@ -12,7 +12,7 @@ export const DIV_DEMO: Demo = {
       .p(20)
       .border(2)
       .borderColor(colors.gray.x700)
-      .bg(cx.getTheme().surfaceMuted)
+      .bg(cx.getTheme().semantic.surface.muted)
       .rounded(4)
       .child(text("p=20, border 2px, rounded 2px")),
     SPACER_10PX,
@@ -21,7 +21,7 @@ export const DIV_DEMO: Demo = {
       .m(20)
       .border(4)
       .borderColor(colors.gray.x700)
-      .bg(cx.getTheme().surfaceMuted)
+      .bg(cx.getTheme().semantic.surface.muted)
       .rounded(10)
       .child(text("p=20, m=20, border 4px, rounded 10px")),
     SPACER_10PX,
@@ -30,7 +30,7 @@ export const DIV_DEMO: Demo = {
         .p(10)
         .border(2)
         .borderColor(colors.gray.x700)
-        .bg(cx.getTheme().surfaceMuted)
+        .bg(cx.getTheme().semantic.surface.muted)
         .rounded(4)
         .w(200)
         .h(110)

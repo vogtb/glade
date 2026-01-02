@@ -25,20 +25,9 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
-import { tabColors } from "./theme.ts";
 import type { Theme } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
-/**
- * Default colors for tabs.
- */
-const DEFAULT_TRIGGER_BG: ColorObject = { r: 0.1, g: 0.1, b: 0.1, a: 1 };
-const DEFAULT_TRIGGER_ACTIVE_BG: ColorObject = { r: 0.2, g: 0.2, b: 0.2, a: 1 };
-const DEFAULT_TRIGGER_TEXT: ColorObject = { r: 0.7, g: 0.7, b: 0.7, a: 1 };
-const DEFAULT_TRIGGER_ACTIVE_TEXT: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
-const DEFAULT_INDICATOR_COLOR: ColorObject = { r: 0.4, g: 0.6, b: 1, a: 1 };
-const DEFAULT_BORDER_COLOR: ColorObject = { r: 0.25, g: 0.25, b: 0.25, a: 1 };
-const DEFAULT_CONTENT_BG: ColorObject = { r: 0.12, g: 0.12, b: 0.12, a: 1 };
 const DEFAULT_DISABLED_OPACITY = 0.5;
 
 const DEFAULT_TRIGGER_FONT_SIZE = 14;
@@ -61,9 +50,13 @@ type TabsContext = {
   disabled: boolean;
   triggerBg: ColorObject;
   triggerActiveBg: ColorObject;
+  triggerHoverBg: ColorObject;
   triggerText: ColorObject;
   triggerActiveText: ColorObject;
+  triggerHoverText: ColorObject;
+  triggerDisabledText: ColorObject;
   indicatorColor: ColorObject;
+  indicatorHover: ColorObject;
   triggerFontSize: number;
   triggerPaddingX: number;
   triggerPaddingY: number;
@@ -219,39 +212,42 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
     const isFocused = this.focusHandleRef ? cx.isFocused(this.focusHandleRef) : false;
     const isActive = this.context?.value === this.tabValue;
     const isDisabled = this.disabledValue || (this.context?.disabled ?? false);
+    const context = this.context;
+    if (!context) {
+      return;
+    }
 
-    const triggerBg = this.context?.triggerBg ?? DEFAULT_TRIGGER_BG;
-    const triggerActiveBg = this.context?.triggerActiveBg ?? DEFAULT_TRIGGER_ACTIVE_BG;
-    const triggerText = this.context?.triggerText ?? DEFAULT_TRIGGER_TEXT;
-    const triggerActiveText = this.context?.triggerActiveText ?? DEFAULT_TRIGGER_ACTIVE_TEXT;
-    const indicatorColor = this.context?.indicatorColor ?? DEFAULT_INDICATOR_COLOR;
-    const indicatorHeight = this.context?.indicatorHeight ?? DEFAULT_INDICATOR_HEIGHT;
-    const fontSize = this.context?.triggerFontSize ?? DEFAULT_TRIGGER_FONT_SIZE;
+    const triggerBg = context.triggerBg;
+    const triggerActiveBg = context.triggerActiveBg;
+    const triggerHoverBg = context.triggerHoverBg;
+    const triggerText = context.triggerText;
+    const triggerActiveText = context.triggerActiveText;
+    const triggerHoverText = context.triggerHoverText;
+    const triggerDisabledText = context.triggerDisabledText;
+    const indicatorColor = context.indicatorColor;
+    const indicatorHover = context.indicatorHover;
+    const indicatorHeight = context.indicatorHeight ?? DEFAULT_INDICATOR_HEIGHT;
+    const fontSize = context.triggerFontSize ?? DEFAULT_TRIGGER_FONT_SIZE;
     const fontFamily = prepaintState.fontFamily;
 
     let bgColor = isActive ? triggerActiveBg : triggerBg;
     let textColor = isActive ? triggerActiveText : triggerText;
     let opacity = isDisabled ? DEFAULT_DISABLED_OPACITY : 1;
 
+    if (isDisabled) {
+      textColor = triggerDisabledText;
+    }
+
     // Apply hover styles
     if (isHovered && !isDisabled) {
-      if (!isActive) {
-        // Subtle hover effect for inactive tabs
-        bgColor = {
-          r: triggerBg.r + 0.05,
-          g: triggerBg.g + 0.05,
-          b: triggerBg.b + 0.05,
-          a: triggerBg.a,
-        };
-        textColor = triggerActiveText;
+      if (this.hoverStyles?.backgroundColor) {
+        bgColor = this.hoverStyles.backgroundColor;
+      } else {
+        bgColor = isActive ? triggerActiveBg : triggerHoverBg;
       }
-      if (this.hoverStyles) {
-        if (this.hoverStyles.backgroundColor) {
-          bgColor = this.hoverStyles.backgroundColor;
-        }
-        if (this.hoverStyles.opacity !== undefined) {
-          opacity = this.hoverStyles.opacity;
-        }
+      textColor = triggerHoverText;
+      if (this.hoverStyles?.opacity !== undefined) {
+        opacity = this.hoverStyles.opacity;
       }
     }
 
@@ -287,8 +283,9 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
         width: bounds.width,
         height: indicatorHeight,
       };
+      const indicator = isHovered ? indicatorHover : indicatorColor;
       cx.paintRect(indicatorBounds, {
-        backgroundColor: { ...indicatorColor, a: indicatorColor.a * opacity },
+        backgroundColor: { ...indicator, a: indicator.a * opacity },
       });
     }
   }
@@ -427,9 +424,13 @@ type TabsPrepaintState = {
 type ResolvedTabsColors = {
   triggerBg: ColorObject;
   triggerActiveBg: ColorObject;
+  triggerHoverBg: ColorObject;
   triggerText: ColorObject;
   triggerActiveText: ColorObject;
+  triggerHoverText: ColorObject;
+  triggerDisabledText: ColorObject;
   indicator: ColorObject;
+  indicatorHover: ColorObject;
   border: ColorObject;
   contentBg: ColorObject;
 };
@@ -654,9 +655,13 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
       disabled: this.disabledValue,
       triggerBg: colors.triggerBg,
       triggerActiveBg: colors.triggerActiveBg,
+      triggerHoverBg: colors.triggerHoverBg,
       triggerText: colors.triggerText,
       triggerActiveText: colors.triggerActiveText,
+      triggerHoverText: colors.triggerHoverText,
+      triggerDisabledText: colors.triggerDisabledText,
       indicatorColor: colors.indicator,
+      indicatorHover: colors.indicatorHover,
       triggerFontSize: this.triggerFontSizeValue,
       triggerPaddingX: this.triggerPaddingXValue,
       triggerPaddingY: this.triggerPaddingYValue,
@@ -664,28 +669,21 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
     };
   }
 
-  private resolveColors(theme?: Theme): ResolvedTabsColors {
-    const palette = theme
-      ? tabColors(theme)
-      : { indicator: DEFAULT_INDICATOR_COLOR, border: DEFAULT_BORDER_COLOR };
-    const triggerBg = this.triggerBgColor ?? (theme ? theme.surfaceMuted : DEFAULT_TRIGGER_BG);
-    const triggerActiveBg =
-      this.triggerActiveBgColor ?? (theme ? theme.surface : DEFAULT_TRIGGER_ACTIVE_BG);
-    const triggerText = this.triggerTextColor ?? (theme ? theme.textMuted : DEFAULT_TRIGGER_TEXT);
-    const triggerActiveText =
-      this.triggerActiveTextColor ?? (theme ? theme.text : DEFAULT_TRIGGER_ACTIVE_TEXT);
-    const indicator = this.indicatorColorValue ?? palette.indicator;
-    const border = this.borderColorValue ?? palette.border;
-    const contentBg = this.contentBgColor ?? (theme ? theme.surface : DEFAULT_CONTENT_BG);
-
+  private resolveColors(theme: Theme): ResolvedTabsColors {
+    const tabsTheme = theme.components.tabs;
+    const trigger = tabsTheme.trigger;
     return {
-      triggerBg,
-      triggerActiveBg,
-      triggerText,
-      triggerActiveText,
-      indicator,
-      border,
-      contentBg,
+      triggerBg: this.triggerBgColor ?? trigger.background,
+      triggerActiveBg: this.triggerActiveBgColor ?? trigger.active.background,
+      triggerHoverBg: trigger.hover.background,
+      triggerText: this.triggerTextColor ?? trigger.foreground,
+      triggerActiveText: this.triggerActiveTextColor ?? trigger.active.foreground,
+      triggerHoverText: trigger.active.foreground,
+      triggerDisabledText: trigger.disabled.foreground,
+      indicator: this.indicatorColorValue ?? tabsTheme.indicator,
+      indicatorHover: tabsTheme.indicatorHover,
+      border: this.borderColorValue ?? tabsTheme.border,
+      contentBg: this.contentBgColor ?? tabsTheme.content.background,
     };
   }
 
@@ -706,7 +704,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TabsRequestState> {
-    const colors = this.resolveColors();
+    const colors = this.resolveColors(cx.getTheme());
     const context = this.buildContext(colors);
 
     // Create trigger elements from tab items

@@ -323,7 +323,7 @@ export class SvgElement extends GladeElement<SvgRequestState, SvgPrepaintState> 
 
   prepaint(cx: PrepaintContext, _bounds: Bounds, requestState: SvgRequestState): SvgPrepaintState {
     const theme = cx.getWindow().getTheme();
-    const tintColor = this.hasCustomTint ? this.tintColor : theme.text;
+    const tintColor = this.hasCustomTint ? this.tintColor : theme.components.icon.foreground;
     return { cachedPaths: requestState.cachedPaths, tintColor };
   }
 

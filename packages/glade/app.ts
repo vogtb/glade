@@ -499,7 +499,7 @@ export class GladeApp {
   }
 
   setTheme(config: Theme | ThemeConfig): void {
-    if ("background" in config) {
+    if (this.isFullTheme(config)) {
       this.themeManager.setTheme(config);
     } else {
       this.themeManager.setThemeConfig(config);
@@ -507,13 +507,17 @@ export class GladeApp {
     this.markAllWindowsDirty();
   }
 
+  private isFullTheme(config: Theme | ThemeConfig): config is Theme {
+    return "semantic" in config && "components" in config && "fonts" in config;
+  }
+
   setThemeScheme(scheme: ColorScheme | "system"): void {
-    this.themeManager.setOverrideScheme(scheme);
+    this.themeManager.setThemeScheme(scheme);
     this.markAllWindowsDirty();
   }
 
   setThemeOverrides(overrides: ThemeOverrides): void {
-    this.themeManager.setOverrides(overrides);
+    this.themeManager.setThemeOverrides(overrides);
     this.markAllWindowsDirty();
   }
 

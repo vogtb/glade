@@ -22,7 +22,6 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { FocusHandle } from "./entity.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
-import { switchColors } from "./theme.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 const DEFAULT_DISABLED_OPACITY = 0.5;
@@ -49,6 +48,10 @@ type SwitchPrepaintState = {
     uncheckedTrack: ColorObject;
     checkedTrack: ColorObject;
     thumb: ColorObject;
+    hoverTrack: ColorObject;
+    hoverThumb: ColorObject;
+    disabledThumb: ColorObject;
+    disabledOpacity: number;
   };
 };
 
@@ -232,11 +235,15 @@ export class GladeSwitch extends GladeElement<SwitchRequestState, SwitchPrepaint
     };
 
     const theme = cx.getWindow().getTheme();
-    const defaults = switchColors(theme);
+    const switchTheme = theme.components.switch;
     const colors = {
-      uncheckedTrack: this.uncheckedTrackColor ?? defaults.trackOff,
-      checkedTrack: this.checkedTrackColor ?? defaults.trackOn,
-      thumb: this.thumbColorValue ?? defaults.thumb,
+      uncheckedTrack: this.uncheckedTrackColor ?? switchTheme.track.background,
+      checkedTrack: this.checkedTrackColor ?? switchTheme.track.checkedBackground,
+      hoverTrack: switchTheme.track.hoverBackground,
+      thumb: this.thumbColorValue ?? switchTheme.thumb.background,
+      hoverThumb: switchTheme.thumb.hoverBackground,
+      disabledThumb: switchTheme.thumb.disabledBackground,
+      disabledOpacity: switchTheme.disabled.opacity ?? DEFAULT_DISABLED_OPACITY,
     };
 
     return { hitbox, hitTestNode, colors };
@@ -249,16 +256,20 @@ export class GladeSwitch extends GladeElement<SwitchRequestState, SwitchPrepaint
 
     // Determine track color
     let trackColor = this.checkedValue ? colors.checkedTrack : colors.uncheckedTrack;
-    const thumbColor = colors.thumb;
-    let opacity = this.disabledValue ? DEFAULT_DISABLED_OPACITY : 1;
+    let thumbColor = this.disabledValue ? colors.disabledThumb : colors.thumb;
+    let opacity = this.disabledValue ? colors.disabledOpacity : 1;
 
     // Apply hover styles
-    if (isHovered && !this.disabledValue && this.hoverStyles) {
-      if (this.hoverStyles.backgroundColor) {
-        trackColor = this.hoverStyles.backgroundColor;
+    if (isHovered && !this.disabledValue) {
+      const hoverStyles = this.hoverStyles;
+      if (hoverStyles?.backgroundColor) {
+        trackColor = hoverStyles.backgroundColor;
+      } else {
+        trackColor = colors.hoverTrack;
       }
-      if (this.hoverStyles.opacity !== undefined) {
-        opacity = this.hoverStyles.opacity;
+      thumbColor = colors.hoverThumb;
+      if (hoverStyles?.opacity !== undefined) {
+        opacity = hoverStyles.opacity;
       }
     }
 

@@ -943,7 +943,9 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   ): TextPrepaintState {
     const theme = cx.getWindow().getTheme();
     const fontFamily = requestState.fontFamily ?? this.resolvedFontFamily ?? theme.fonts.sans;
-    const resolvedTextColor = this.hasCustomTextColor ? this.textColor : theme.text;
+    const resolvedTextColor = this.hasCustomTextColor
+      ? this.textColor
+      : theme.components.text.foreground;
     let hitbox: Hitbox | null = null;
 
     // Register with cross-element selection manager if selectable
