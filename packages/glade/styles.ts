@@ -132,6 +132,16 @@ export type TrackSize =
 export type GridTemplate = number | TrackSize[];
 
 /**
+ * Object-fit behavior for images.
+ * - fill: Stretch to fill bounds (may distort aspect ratio)
+ * - contain: Scale to fit within bounds, preserve aspect ratio
+ * - cover: Scale to cover bounds, preserve aspect ratio, crop edges
+ * - scale-down: Like contain but never scales up larger than natural size
+ * - none: Display at natural size, may overflow
+ */
+export type ObjectFit = "fill" | "contain" | "cover" | "scale-down" | "none";
+
+/**
  * Complete style definition for a Glade element.
  */
 export interface Styles {
@@ -170,6 +180,9 @@ export interface Styles {
   maxWidth?: number | string;
   minHeight?: number | string;
   maxHeight?: number | string;
+
+  // Aspect ratio (width / height) - used by layout engine
+  aspectRatio?: number;
 
   // Percentage-based sizing (0-100)
   widthPercent?: number;

@@ -463,16 +463,19 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     color = vec4<f32>(gray, gray, gray, color.a);
   }
 
-  // Apply rounded corners using SDF
-  let point = in.position.xy - in.rect_origin;
-  let half_size = in.half_size;
-  let local_pos = point - half_size;
-  let radius = min(in.corner_radius, min(half_size.x, half_size.y));
-  let dist = quad_sdf(local_pos, half_size, radius);
-  let alpha = 1.0 - smoothstep(-0.5, 0.5, dist);
+  // Apply rounded corners using SDF (only if corner_radius > 0)
+  var alpha = 1.0;
+  if in.corner_radius > 0.0 {
+    let point = in.position.xy - in.rect_origin;
+    let half_size = in.half_size;
+    let local_pos = point - half_size;
+    let radius = min(in.corner_radius, min(half_size.x, half_size.y));
+    let dist = quad_sdf(local_pos, half_size, radius);
+    alpha = 1.0 - smoothstep(-0.5, 0.5, dist);
 
-  if alpha <= 0.0 {
-    discard;
+    if alpha <= 0.0 {
+      discard;
+    }
   }
 
   // Apply opacity

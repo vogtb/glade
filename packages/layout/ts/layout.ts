@@ -180,6 +180,9 @@ export function convertGridTemplate(template: GridTemplate): GridTemplateInput {
 
 /**
  * Convert a GridPlacement to WASM input format.
+ *
+ * TODO: I think we should actually unify these types... Same for many parallel
+ * types in this package.
  */
 export function convertGridPlacement(placement: GridPlacement): GridPlacementInput {
   if (placement === "auto") {
@@ -285,6 +288,9 @@ export interface StyleInput {
 
   // Border (for layout)
   borderWidth?: number;
+
+  // Aspect ratio (width / height)
+  aspectRatio?: number;
 }
 
 /**
@@ -358,5 +364,6 @@ export function styleToWasm(style: StyleInput): Record<string, unknown> {
     overflow_x: style.overflowX,
     overflow_y: style.overflowY,
     border_width: style.borderWidth,
+    aspect_ratio: style.aspectRatio,
   };
 }

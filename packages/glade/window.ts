@@ -544,12 +544,12 @@ export class GladeWindow {
   }
 
   /**
-   * Measure callback invoked by Taffy during layout.
+   * Measure callback invoked by Taffy during layout for text elements.
    */
   private measureTextCallback(
     measureId: number,
     knownWidth: number,
-    _knownHeight: number,
+    knownHeight: number,
     availableWidth: number,
     _availableHeight: number
   ): { width: number; height: number } {
@@ -1465,7 +1465,7 @@ export class GladeWindow {
     this.deferredDrawQueue = [];
     // Clear cross-element selection registry
     this.crossElementSelection?.beginFrame();
-    // Clear measure registry for new frame
+    // Clear text measure registry for new frame
     this.measureRegistry.clear();
     this.nextMeasureId = 1;
   }

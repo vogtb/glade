@@ -12,7 +12,7 @@
 
 import type { Bounds, ContentMask, ScrollOffset, TransformationMatrix, FocusId } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
-import type { Styles, Cursor, WhitespaceMode } from "./styles.ts";
+import type { Styles, Cursor, WhitespaceMode, ObjectFit } from "./styles.ts";
 import type { HitTestNode, EventHandlers } from "./dispatch.ts";
 import type { GladeViewContext, GladeContext } from "./context.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
@@ -1056,80 +1056,166 @@ export function text(content: string): GladeTextElement {
 /**
  * Image element for rendering decoded images.
  * Images are automatically cached and deduplicated by content.
+ *
+ * Provides a Tailwind-like sizing API consistent with GladeDiv:
+ * - .w(), .wFull(), .wMin(), .wMax() for width control
+ * - .h(), .hFull(), .hMin(), .hMax() for height control
+ * - .size() for setting both dimensions
+ *
+ * Supports object-fit modes for controlling how images fill their bounds:
+ * - scale-down (default): Shrink to fit, never enlarge, preserve aspect ratio
+ * - contain: Scale to fit within bounds, preserve aspect ratio
+ * - cover: Scale to cover bounds, crop edges, preserve aspect ratio
+ * - fill: Stretch to fill bounds, may distort aspect ratio
+ * - none: Display at natural size
+ *
+ * Uses Taffy's native aspect-ratio support for efficient layout computation.
  */
 export class GladeImageElement extends GladeElement<NoState, NoState> {
+  private styles: Partial<Styles> = {};
+  private objectFitValue: ObjectFit = "scale-down";
   private cornerRadiusValue = 0;
   private opacityValue = 1;
   private grayscaleValue = false;
-  private displayWidth?: number;
-  private displayHeight?: number;
+  private readonly aspectRatio: number;
 
   constructor(private image: DecodedImage) {
     super();
+    this.aspectRatio = image.width / image.height;
   }
 
-  /**
-   * Set the corner radius for rounded image corners.
-   */
+  // ============ Sizing Methods (Tailwind-like, consistent with GladeDiv) ============
+
+  /** Set width */
+  w(v: number | string): this {
+    this.styles.width = v;
+    return this;
+  }
+
+  /** Set width to 100% */
+  wFull(): this {
+    this.styles.width = "100%";
+    return this;
+  }
+
+  /** Set minimum width */
+  wMin(v: number): this {
+    this.styles.minWidth = v;
+    return this;
+  }
+
+  /** Set maximum width */
+  wMax(v: number): this {
+    this.styles.maxWidth = v;
+    return this;
+  }
+
+  /** Set height */
+  h(v: number | string): this {
+    this.styles.height = v;
+    return this;
+  }
+
+  /** Set height to 100% */
+  hFull(): this {
+    this.styles.height = "100%";
+    return this;
+  }
+
+  /** Set minimum height */
+  hMin(v: number): this {
+    this.styles.minHeight = v;
+    return this;
+  }
+
+  /** Set maximum height */
+  hMax(v: number): this {
+    this.styles.maxHeight = v;
+    return this;
+  }
+
+  /** Set both width and height */
+  size(w: number, h: number): this {
+    this.styles.width = w;
+    this.styles.height = h;
+    return this;
+  }
+
+  // ============ Object Fit ============
+
+  /** Set object-fit behavior */
+  objectFit(fit: ObjectFit): this {
+    this.objectFitValue = fit;
+    return this;
+  }
+
+  /** Shorthand for objectFit("contain") */
+  contain(): this {
+    this.objectFitValue = "contain";
+    return this;
+  }
+
+  /** Shorthand for objectFit("cover") */
+  cover(): this {
+    this.objectFitValue = "cover";
+    return this;
+  }
+
+  /** Shorthand for objectFit("fill") */
+  fill(): this {
+    this.objectFitValue = "fill";
+    return this;
+  }
+
+  // ============ Visual Effects ============
+
+  /** Set the corner radius for rounded image corners */
   rounded(radius: number): this {
     this.cornerRadiusValue = radius;
     return this;
   }
 
-  /**
-   * Set the opacity (0-1).
-   */
+  /** Set the opacity (0-1) */
   opacity(value: number): this {
     this.opacityValue = value;
     return this;
   }
 
-  /**
-   * Enable grayscale rendering.
-   */
+  /** Enable grayscale rendering */
   grayscale(enabled = true): this {
     this.grayscaleValue = enabled;
     return this;
   }
 
-  /**
-   * Set the display width. If not set, uses the image's natural width.
-   */
-  width(w: number): this {
-    this.displayWidth = w;
-    return this;
-  }
-
-  /**
-   * Set the display height. If not set, uses the image's natural height.
-   */
-  height(h: number): this {
-    this.displayHeight = h;
-    return this;
-  }
-
-  /**
-   * Set both width and height.
-   */
-  size(w: number, h: number): this {
-    this.displayWidth = w;
-    this.displayHeight = h;
-    return this;
-  }
+  // ============ Lifecycle ============
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
-    const width = this.displayWidth ?? this.image.width;
-    const height = this.displayHeight ?? this.image.height;
+    const hasExplicitWidth = this.styles.width !== undefined;
+    const hasExplicitHeight = this.styles.height !== undefined;
 
-    const layoutId = cx.requestLayout(
-      {
-        width,
-        height,
-      },
-      []
-    );
+    const layoutStyles: Partial<Styles> = {
+      ...this.styles,
+      // Default maxWidth: 100% unless explicitly set - prevents overflow
+      maxWidth: this.styles.maxWidth ?? "100%",
+    };
 
-    return { layoutId, requestState: undefined };
+    // Only use aspectRatio when we need Taffy to calculate a missing dimension
+    // If both dimensions are set, we want the exact box size (object-fit handles rendering)
+    if (hasExplicitWidth && hasExplicitHeight) {
+      // Both dimensions set - use exact box, no aspect ratio
+    } else if (hasExplicitWidth || hasExplicitHeight) {
+      // One dimension set - use aspect ratio to calculate the other
+      layoutStyles.aspectRatio = this.aspectRatio;
+    } else {
+      // Neither dimension set - use natural width with aspect ratio
+      layoutStyles.width = this.image.width;
+      layoutStyles.aspectRatio = this.aspectRatio;
+    }
+
+    return {
+      layoutId: cx.requestLayout(layoutStyles, []),
+      requestState: undefined,
+    };
   }
 
   prepaint(_cx: PrepaintContext, _bounds: Bounds, _requestState: NoState): NoState {
@@ -1138,11 +1224,131 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
 
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: NoState): void {
     const tile = cx.getImageTile(this.image);
-    cx.paintImage(tile, bounds, {
-      cornerRadius: this.cornerRadiusValue,
-      opacity: this.opacityValue,
-      grayscale: this.grayscaleValue,
-    });
+
+    // Calculate render bounds based on objectFit
+    const renderBounds = this.calculateObjectFitBounds(bounds, this.image.width, this.image.height);
+
+    // For cover mode (or any mode where render bounds exceed element bounds),
+    // we need to clip to the element bounds with corner radius
+    const needsClipping =
+      this.objectFitValue === "cover" ||
+      renderBounds.width > bounds.width ||
+      renderBounds.height > bounds.height;
+
+    if (needsClipping && this.cornerRadiusValue > 0) {
+      // Clip to element bounds with corner radius, then paint image without corner radius
+      cx.withContentMask({ bounds, cornerRadius: this.cornerRadiusValue }, () => {
+        cx.paintImage(tile, renderBounds, {
+          cornerRadius: 0,
+          opacity: this.opacityValue,
+          grayscale: this.grayscaleValue,
+        });
+      });
+    } else {
+      // No clipping needed - apply corner radius directly to image
+      cx.paintImage(tile, renderBounds, {
+        cornerRadius: this.cornerRadiusValue,
+        opacity: this.opacityValue,
+        grayscale: this.grayscaleValue,
+      });
+    }
+  }
+
+  private calculateObjectFitBounds(
+    elementBounds: Bounds,
+    imageWidth: number,
+    imageHeight: number
+  ): Bounds {
+    const { x, y, width: boxWidth, height: boxHeight } = elementBounds;
+    const imageAspect = imageWidth / imageHeight;
+    const boxAspect = boxWidth / boxHeight;
+
+    switch (this.objectFitValue) {
+      case "fill":
+        // Stretch to fill, may distort
+        return elementBounds;
+
+      case "none":
+        // Natural size, centered
+        return {
+          x: x + (boxWidth - imageWidth) / 2,
+          y: y + (boxHeight - imageHeight) / 2,
+          width: imageWidth,
+          height: imageHeight,
+        };
+
+      case "contain": {
+        // Fit within bounds, preserve aspect ratio
+        let renderWidth: number;
+        let renderHeight: number;
+        if (imageAspect > boxAspect) {
+          // Image is wider than box
+          renderWidth = boxWidth;
+          renderHeight = boxWidth / imageAspect;
+        } else {
+          // Image is taller than box
+          renderHeight = boxHeight;
+          renderWidth = boxHeight * imageAspect;
+        }
+        return {
+          x: x + (boxWidth - renderWidth) / 2,
+          y: y + (boxHeight - renderHeight) / 2,
+          width: renderWidth,
+          height: renderHeight,
+        };
+      }
+
+      case "cover": {
+        // Cover bounds, preserve aspect ratio, crop edges
+        let renderWidth: number;
+        let renderHeight: number;
+        if (imageAspect > boxAspect) {
+          // Image is wider than box - fit height, crop width
+          renderHeight = boxHeight;
+          renderWidth = boxHeight * imageAspect;
+        } else {
+          // Image is taller than box - fit width, crop height
+          renderWidth = boxWidth;
+          renderHeight = boxWidth / imageAspect;
+        }
+        return {
+          x: x + (boxWidth - renderWidth) / 2,
+          y: y + (boxHeight - renderHeight) / 2,
+          width: renderWidth,
+          height: renderHeight,
+        };
+      }
+
+      case "scale-down":
+      default: {
+        // Like contain, but never scale up
+        if (imageWidth <= boxWidth && imageHeight <= boxHeight) {
+          // Image fits naturally, center it
+          return {
+            x: x + (boxWidth - imageWidth) / 2,
+            y: y + (boxHeight - imageHeight) / 2,
+            width: imageWidth,
+            height: imageHeight,
+          };
+        }
+        // Scale down like contain
+        let renderWidth: number;
+        let renderHeight: number;
+        if (imageAspect > boxAspect) {
+          renderWidth = boxWidth;
+          renderHeight = boxWidth / imageAspect;
+        } else {
+          renderHeight = boxHeight;
+          renderWidth = boxHeight * imageAspect;
+        }
+        return {
+          x: x + (boxWidth - renderWidth) / 2,
+          y: y + (boxHeight - renderHeight) / 2,
+          width: renderWidth,
+          height: renderHeight,
+        };
+      }
+    }
   }
 
   hitTest(_bounds: Bounds, _childBounds: Bounds[]): HitTestNode | null {

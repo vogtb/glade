@@ -2897,20 +2897,11 @@ export const WEBGPU_DEMO: Demo = {
           state.setSelectedWebGPUDemo(demo.id);
           cx.notify();
         })
-        .children(
-          text(demo.label)
-            .weight(isSelected ? 600 : HEIGHT)
-            .color(colors.white.default),
-          text(demo.desc).size(11).color(colors.black.x400)
-        );
+        .children(text(demo.label).weight(isSelected ? 600 : HEIGHT), text(demo.desc));
     };
 
     return [
-      text("WebGPU Demos").size(28),
-      SPACER_10PX,
-      text("Custom WebGPU rendering embedded within Glade UI layout").size(16),
-      SPACER_10PX,
-      div().h(1).bg(colors.black.x600),
+      text("Custom WebGPU rendering embedded within Glade UI layout"),
       SPACER_10PX,
 
       div()
@@ -2927,9 +2918,7 @@ export const WEBGPU_DEMO: Demo = {
               text(currentDemo?.label ?? "")
                 .size(16)
                 .weight(600),
-              text(currentDemo?.desc ?? "")
-                .size(13)
-                .color(colors.black.x400)
+              text(currentDemo?.desc ?? "").size(13)
             ),
           div()
             .flex()
@@ -2946,8 +2935,6 @@ export const WEBGPU_DEMO: Demo = {
         ),
 
       SPACER_10PX,
-      div().h(1).bg(colors.black.x700),
-      SPACER_10PX,
 
       div()
         .flex()
@@ -2957,16 +2944,10 @@ export const WEBGPU_DEMO: Demo = {
         .bg(colors.black.x900)
         .rounded(8)
         .children(
-          text("How it works").size(16).weight(600).color(colors.white.default),
-          text("Each demo implements the WebGPUHost interface and renders to its own texture.")
-            .size(13)
-            .color(colors.black.x300),
-          text("Glade samples these textures during its render pass, enabling full compositing.")
-            .size(13)
-            .color(colors.black.x300),
+          text("How it works"),
+          text("Each demo implements the WebGPUHost interface and renders to its own texture."),
+          text("Glade samples these textures during its render pass, enabling full compositing."),
           text("Mouse coordinates are automatically transformed to local demo space.")
-            .size(13)
-            .color(colors.black.x300)
         ),
     ];
   },

@@ -91,6 +91,7 @@ export type {
   Cursor,
   ShadowPreset,
   BorderStyle,
+  ObjectFit,
 } from "./styles";
 
 export {

@@ -10,6 +10,7 @@ import {
 } from "@glade/glade";
 import { rgb } from "@glade/utils";
 import type { Demo, DemoItem, DemoState } from "./demo";
+import { SPACER_10PX } from "./common";
 
 function focusButton(
   cx: Parameters<Demo["renderElement"]>[0],
@@ -101,9 +102,9 @@ export const FOCUS_DEMO: Demo = {
         .gap(16)
         .keyContext("focus-demo")
         .children(
-          text("Keyboard traversal across toolbars, groups, and modal dialogs.").size(16),
-          div().h(1).bg({ r: 0.3, g: 0.32, b: 0.38, a: 0.6 }),
-          text("• Tab/Shift+Tab respects custom tab indexes and focus groups.").size(13),
+          text("Keyboard traversal across toolbars, groups, and modal dialogs."),
+          SPACER_10PX,
+          text("• Tab/Shift+Tab respects custom tab indexes and focus groups."),
           text(
             "• Right arrow in the toolbar uses focusNextSibling(); Home jumps to the first child."
           ).size(13),

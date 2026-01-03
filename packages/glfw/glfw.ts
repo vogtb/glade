@@ -2,7 +2,7 @@ import { dlopen, FFIType, ptr, JSCallback, type Pointer } from "bun:ffi";
 import { log } from "@glade/logging";
 
 // @ts-expect-error - Bun-specific import attribute
-import GLFW_PATH from "../../vendor/libglfw.dylib" with { type: "file" };
+import GLFW_PATH from "../../libs/libglfw.dylib" with { type: "file" };
 
 log.info(`using embedded libglfw.dylib`);
 log.info(`GLFW_PATH=${GLFW_PATH}`);

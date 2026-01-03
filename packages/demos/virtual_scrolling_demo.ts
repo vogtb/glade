@@ -6,9 +6,7 @@ import { SPACER_10PX } from "./common";
 export const VIRTUAL_SCROLLING_DEMO: Demo = {
   name: "Virtual Scrolling",
   renderElement: (cx, state): DemoItem[] => [
-    text("Efficient rendering of large lists with fixed and variable height items").size(16),
-    SPACER_10PX,
-    div().h(1).bg(colors.black.x600),
+    text("Efficient rendering of large lists with fixed and variable height items"),
     SPACER_10PX,
     div()
       .flex()

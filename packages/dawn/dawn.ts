@@ -2,7 +2,7 @@ import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
 import { log } from "@glade/logging";
 
 // @ts-expect-error - Bun-specific import attribute
-import DAWN_PATH from "../../vendor/libwebgpu_dawn.dylib" with { type: "file" };
+import DAWN_PATH from "../../libs/libwebgpu_dawn.dylib" with { type: "file" };
 
 log.info("using embedded libwebgpu_dawn.dylib");
 log.info(`DAWN_PATH=${DAWN_PATH}`);

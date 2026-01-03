@@ -198,6 +198,9 @@ pub struct StyleInput {
 
     // Border (for layout purposes - affects content box)
     pub border_width: Option<f32>,
+
+    // Aspect ratio (width / height)
+    pub aspect_ratio: Option<f32>,
 }
 
 // ============ Grid Type Conversions ============
@@ -511,6 +514,11 @@ impl StyleInput {
                 bottom: LengthPercentage::length(bw),
                 left: LengthPercentage::length(bw),
             };
+        }
+
+        // Aspect ratio
+        if let Some(ar) = self.aspect_ratio {
+            style.aspect_ratio = Some(ar);
         }
 
         // CSS Grid Container Properties

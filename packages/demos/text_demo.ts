@@ -3,6 +3,41 @@ import { colors, rgb } from "@glade/utils";
 import type { Demo, DemoItem } from "./demo";
 import { SPACER_10PX } from "./common";
 
+const DEMO_SENTENCES = [
+  {
+    value: "Humongous Apple",
+    weight: 600,
+  },
+  {
+    value: "41 Sunset Avenue",
+    weight: 400,
+  },
+  {
+    value: "We Found River Man!",
+    weight: 100,
+  },
+  {
+    value: "The 100th Lunch",
+    weight: 600,
+  },
+  {
+    value: "Silhouette Ford",
+    weight: 200,
+  },
+  {
+    value: "Part Chandelier",
+    weight: 700,
+  },
+  {
+    value: "Sphinx Lightly",
+    weight: 800,
+  },
+  {
+    value: "Fjord Inspection",
+    weight: 900,
+  },
+];
+
 export const TEXT_DEMO: Demo = {
   name: "Text",
   renderElement: (_cx, _state): DemoItem[] => [
@@ -15,13 +50,7 @@ export const TEXT_DEMO: Demo = {
     text("abcdefghijklmnopqrstuvwxyz"),
     text("0123456789 !@#$%^&*()_+-=[]{}|;':\",./<>?"),
     SPACER_10PX,
-    ...[
-      "Humongous Apple",
-      "41 Sunset Avenue",
-      "Gorilla Lake",
-      "We Found River Man!",
-      "The 100th Lunch",
-    ].map((t) => text(t).size(36).lineHeight(48)),
+    ...DEMO_SENTENCES.map((t) => text(t.value).size(36).lineHeight(48)),
     SPACER_10PX,
     ...[55, 44, 33, 28, 26, 24, 22, 16, 14, 12, 11, 10, 8].map((size) =>
       div().child(text(`Font Size ${size}`).size(size))
@@ -64,7 +93,7 @@ export const TEXT_DEMO: Demo = {
           .color({ ...rgb(colors.white.default), a: alpha })
       )
     ),
-    div(),
-    div(),
+    SPACER_10PX,
+    ...DEMO_SENTENCES.map((s) => text(s.value).weight(s.weight).size(72).lineHeight(88)),
   ],
 };

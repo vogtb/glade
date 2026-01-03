@@ -335,6 +335,29 @@ export class GladeLayoutEngine {
 
     if (style.borderWidth !== undefined) result.borderWidth = style.borderWidth;
 
+    // Aspect ratio
+    if (style.aspectRatio !== undefined) result.aspectRatio = style.aspectRatio;
+
+    // Handle percentage-based width/height/maxWidth/maxHeight strings
+    if (typeof style.width === "string" && style.width.endsWith("%")) {
+      result.widthPercent = parseFloat(style.width);
+    }
+    if (typeof style.height === "string" && style.height.endsWith("%")) {
+      result.heightPercent = parseFloat(style.height);
+    }
+    if (typeof style.maxWidth === "string" && style.maxWidth.endsWith("%")) {
+      result.maxWidthPercent = parseFloat(style.maxWidth);
+    }
+    if (typeof style.maxHeight === "string" && style.maxHeight.endsWith("%")) {
+      result.maxHeightPercent = parseFloat(style.maxHeight);
+    }
+    if (typeof style.minWidth === "string" && style.minWidth.endsWith("%")) {
+      result.minWidthPercent = parseFloat(style.minWidth);
+    }
+    if (typeof style.minHeight === "string" && style.minHeight.endsWith("%")) {
+      result.minHeightPercent = parseFloat(style.minHeight);
+    }
+
     return result;
   }
 }

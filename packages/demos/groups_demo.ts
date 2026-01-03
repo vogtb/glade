@@ -32,9 +32,7 @@ function groupButton(
 export const GROUPS_DEMO: Demo = {
   name: "Groups",
   renderElement: (_cx, _state): DemoItem[] => [
-    text("Coordinated hover and active effects across related elements").size(16),
-    SPACER_10PX,
-    div().h(1).bg(colors.black.x600),
+    text("Coordinated hover and active effects across related elements"),
     SPACER_10PX,
     text("Hover or click any button in a group to see coordinated effects"),
     SPACER_10PX,
