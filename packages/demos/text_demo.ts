@@ -6,7 +6,9 @@ import { SPACER_10PX } from "./common";
 export const TEXT_DEMO: Demo = {
   name: "Text",
   renderElement: (_cx, _state): DemoItem[] => [
-    text("GPU-accelerated text rendering with cosmic-text shaping").size(16),
+    text("GPU-accelerated text rendering with cosmic-text shaping"),
+    SPACER_10PX,
+    text("Font fallback. 🐠 When no glyph exists for a font, we fallback to other fonts. 🐠"),
     SPACER_10PX,
     text("The quick brown fox jumps over the lazy dog."),
     text("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
