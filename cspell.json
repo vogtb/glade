@@ -59,6 +59,7 @@
     "unpremultiplies",
     "unpremultiply",
     "callsite",
-    "bunx"
+    "bunx",
+    "Titlebar"
   ]
 }

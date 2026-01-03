@@ -56,7 +56,8 @@ import {
   type WGPUSurface,
 } from "@glade/dawn";
 import { createMetalLayerForView } from "./metal.ts";
-import { attachIme, type ImeHandle } from "./ime.ts";
+import { attachIme, attachTitlebarDrag, type ImeHandle, type TitlebarDragHandle } from "./ime.ts";
+import { applyTitleBarStyle, type MacOSTitleBarStyle } from "./window_style.ts";
 
 // Map CursorStyle to GLFW cursor shape constants
 function cursorStyleToGLFWShape(style: CursorStyle): number {
@@ -114,6 +115,8 @@ class CursorCache {
 
 export interface MacOSContextOptions extends ContextOptions {
   title?: string;
+  // "transparent" draws content under the title bar; leave space for traffic lights if needed.
+  titleBarStyle?: MacOSTitleBarStyle;
 }
 
 // WebGPU context interface
@@ -141,6 +144,7 @@ export async function createWebGPUContext(
   const width = options.width ?? 800;
   const height = options.height ?? 600;
   const title = options.title ?? "glade";
+  const titleBarStyle = options.titleBarStyle ?? "standard";
 
   if (!glfw.init()) {
     throw new Error("Failed to initialize GLFW");
@@ -165,6 +169,11 @@ export async function createWebGPUContext(
     glfw.destroyWindow(window);
     glfw.terminate();
     throw new Error("Failed to get Cocoa view from GLFW window");
+  }
+
+  const nsWindowPtr = glfw.getCocoaWindow(window);
+  if (nsWindowPtr) {
+    applyTitleBarStyle(nsWindowPtr, titleBarStyle);
   }
 
   const clipboard = createClipboard(window);
@@ -244,6 +253,7 @@ export async function createWebGPUContext(
 
   // IME handler (optional)
   let imeHandle: ImeHandle | null = null;
+  let titlebarDragHandle: TitlebarDragHandle | null = null;
   const compositionStartListeners: CompositionCallback[] = [];
   const compositionUpdateListeners: CompositionCallback[] = [];
   const compositionEndListeners: CompositionCallback[] = [];
@@ -288,7 +298,6 @@ export async function createWebGPUContext(
   cleanups.push(charCleanup);
 
   // Try to attach native IME handler (optional)
-  const nsWindowPtr = glfw.getCocoaWindow(window);
   if (nsWindowPtr) {
     const handle = attachIme(nsWindowPtr, {
       onComposing: (text, selectionStart, selectionEnd) => {
@@ -310,6 +319,10 @@ export async function createWebGPUContext(
       },
     });
     imeHandle = handle;
+  }
+
+  if (nsWindowPtr && titleBarStyle === "transparent") {
+    titlebarDragHandle = attachTitlebarDrag(nsWindowPtr);
   }
 
   const ctx: MacOSWebGPUContext = {
@@ -381,6 +394,10 @@ export async function createWebGPUContext(
       if (imeHandle) {
         imeHandle.detach();
         imeHandle = null;
+      }
+      if (titlebarDragHandle) {
+        titlebarDragHandle.detach();
+        titlebarDragHandle = null;
       }
       for (const cleanup of cleanups) {
         cleanup();

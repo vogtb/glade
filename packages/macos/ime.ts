@@ -1,5 +1,4 @@
 import { dlopen, FFIType, JSCallback, type Pointer } from "bun:ffi";
-import fs from "fs";
 // @ts-expect-error - Bun-specific import attribute for embedded dylib
 import IME_HANDLER_PATH from "../../libs/ime_handler.dylib" with { type: "file" };
 
@@ -18,6 +17,10 @@ export interface ImeCallbacks {
   onCancel?: CancelCallback;
 }
 
+export interface TitlebarDragHandle {
+  detach(): void;
+}
+
 type ImeLib = {
   symbols: {
     ime_attach: (
@@ -29,37 +32,45 @@ type ImeLib = {
     ) => Pointer;
     ime_detach: (handle: Pointer) => void;
     ime_make_first_responder: (handle: Pointer) => void;
+    titlebar_drag_attach: (nsWindow: Pointer) => Pointer;
+    titlebar_drag_detach: (handle: Pointer) => void;
   };
 };
 
-/**
- * Attempts to load the IME bridge dylib and attach to the given NSWindow.
- */
-export function attachIme(nsWindow: Pointer, callbacks: ImeCallbacks): ImeHandle | null {
-  const libPath = IME_HANDLER_PATH;
+let cachedLib: ImeLib | null = null;
 
-  // If the IME bridge isn't present, fail silently.
-  if (!fs.existsSync(libPath)) {
-    console.warn(`IME handler dylib not found at ${libPath}, IME disabled`);
-    return null;
+function loadImeLib(): ImeLib | null {
+  if (cachedLib) {
+    return cachedLib;
   }
-
-  let lib: ImeLib;
   try {
-    lib = dlopen(libPath, {
+    cachedLib = dlopen(IME_HANDLER_PATH, {
       ime_attach: {
         args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr],
         returns: FFIType.ptr,
       },
       ime_detach: { args: [FFIType.ptr], returns: FFIType.void },
       ime_make_first_responder: { args: [FFIType.ptr], returns: FFIType.void },
+      titlebar_drag_attach: { args: [FFIType.ptr], returns: FFIType.ptr },
+      titlebar_drag_detach: { args: [FFIType.ptr], returns: FFIType.void },
     }) as unknown as ImeLib;
   } catch (err) {
-    console.warn("Failed to load IME handler dylib; IME disabled", err);
+    console.warn("Failed to load IME/titlebar helper dylib; IME and titlebar drag disabled", err);
+    return null;
+  }
+  return cachedLib;
+}
+
+/**
+ * Attempts to load the IME bridge dylib and attach to the given NSWindow.
+ */
+export function attachIme(nsWindow: Pointer, callbacks: ImeCallbacks): ImeHandle | null {
+  const lib = loadImeLib();
+  if (!lib) {
     return null;
   }
 
-  const nullPtr = 0 as unknown as Pointer;
+  const nullPtr = null as unknown as Pointer;
 
   const composingCb = callbacks.onComposing
     ? new JSCallback(
@@ -119,6 +130,25 @@ export function attachIme(nsWindow: Pointer, callbacks: ImeCallbacks): ImeHandle
     },
     makeFirstResponder() {
       lib.symbols.ime_make_first_responder(handlerPtr);
+    },
+  };
+}
+
+export function attachTitlebarDrag(nsWindow: Pointer): TitlebarDragHandle | null {
+  const lib = loadImeLib();
+  if (!lib) {
+    return null;
+  }
+
+  const nullPtr = null as unknown as Pointer;
+  const handlePtr = lib.symbols.titlebar_drag_attach(nsWindow);
+  if (!handlePtr || handlePtr === nullPtr) {
+    return null;
+  }
+
+  return {
+    detach() {
+      lib.symbols.titlebar_drag_detach(handlePtr);
     },
   };
 }

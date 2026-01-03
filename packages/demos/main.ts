@@ -327,6 +327,8 @@ export class MainView implements GladeView {
 
   render(cx: GladeViewContext<this>) {
     const theme = cx.getTheme();
+    // Reserve space for the transparent macOS title bar.
+    const titleBarInset = 28;
 
     if (!this.navScrollHandle) {
       this.navScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -346,6 +348,7 @@ export class MainView implements GladeView {
       .flexRow()
       .w(cx.window.width)
       .h(cx.window.height)
+      .pt(titleBarInset)
       .bg(theme.semantic.window.background)
       .children(
         div()

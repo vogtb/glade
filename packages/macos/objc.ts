@@ -39,6 +39,14 @@ export const objcSendOneDouble = dlopen(LIBOBJC_DYLIB_PATH, {
   objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.f64], returns: FFIType.ptr },
 });
 
+export const objcSendReturnU64 = dlopen(LIBOBJC_DYLIB_PATH, {
+  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.u64 },
+});
+
+export const objcSendOneU64 = dlopen(LIBOBJC_DYLIB_PATH, {
+  objc_msgSend: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64], returns: FFIType.ptr },
+});
+
 /**
  * Get an Objective-C class by name.
  */

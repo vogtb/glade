@@ -156,6 +156,26 @@ typedef void (*ImeCancelCallback)(void *userData);
 
 @end
 
+@interface TitleBarDragView : NSView
+@end
+
+@implementation TitleBarDragView
+
+- (BOOL)mouseDownCanMoveWindow {
+  return YES;
+}
+
+- (BOOL)acceptsFirstMouse:(NSEvent *)event {
+  (void)event;
+  return YES;
+}
+
+- (void)mouseDown:(NSEvent *)event {
+  [self.window performWindowDragWithEvent:event];
+}
+
+@end
+
 /**
  * Attach an IME handler to an NSWindow. Returns a retained pointer to the handler.
  */
@@ -178,6 +198,46 @@ void *ime_attach(void *nsWindowPtr,
   [window.contentView addSubview:handler];
   [window makeFirstResponder:handler];
   return (__bridge_retained void *)handler;
+}
+
+/**
+ * Attach a draggable title bar overlay to an NSWindow. Returns a retained pointer to the view.
+ */
+void *titlebar_drag_attach(void *nsWindowPtr) {
+  if (nsWindowPtr == NULL) {
+    return NULL;
+  }
+  NSWindow *window = (__bridge NSWindow *)nsWindowPtr;
+  NSView *contentView = window.contentView;
+  if (contentView == nil) {
+    return NULL;
+  }
+
+  NSRect contentBounds = contentView.bounds;
+  NSRect frame = window.frame;
+  NSRect layoutRect = window.contentLayoutRect;
+  CGFloat titleBarHeight = NSHeight(frame) - NSMaxY(layoutRect);
+  if (titleBarHeight <= 0) {
+    titleBarHeight = 28;
+  }
+  NSRect dragFrame = NSMakeRect(0, NSHeight(contentBounds) - titleBarHeight, NSWidth(contentBounds), titleBarHeight);
+  TitleBarDragView *dragView = [[TitleBarDragView alloc] initWithFrame:dragFrame];
+  [dragView setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
+  [contentView addSubview:dragView positioned:NSWindowAbove relativeTo:nil];
+  return (__bridge_retained void *)dragView;
+}
+
+/**
+ * Detach and release the draggable title bar overlay.
+ */
+void titlebar_drag_detach(void *dragViewPtr) {
+  if (dragViewPtr == NULL) {
+    return;
+  }
+  TitleBarDragView *dragView = (__bridge_transfer TitleBarDragView *)dragViewPtr;
+  if (dragView.superview) {
+    [dragView removeFromSuperview];
+  }
 }
 
 /**

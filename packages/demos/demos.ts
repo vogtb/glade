@@ -18,6 +18,7 @@ async function main() {
     width: 960,
     height: 540,
     title: "Glade Example",
+    titleBarStyle: "transparent",
   });
 
   const platform = createGladePlatform(ctx);
