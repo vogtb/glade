@@ -115,6 +115,7 @@ export interface RequestLayoutContext {
     fontSize: number;
     fontFamily: string;
     fontWeight: number;
+    fontStyle: "normal" | "italic" | "oblique";
     lineHeight: number;
     noWrap: boolean;
     maxWidth: number | null;
@@ -376,6 +377,7 @@ export interface PaintContext {
       fontSize: number;
       fontFamily: string;
       fontWeight: number;
+      fontStyle?: "normal" | "italic" | "oblique";
       lineHeight?: number;
       maxWidth?: number;
     }
@@ -713,6 +715,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   private fontFamily: string | null = null;
   private resolvedFontFamily: string | null = null;
   private fontWeight = 400;
+  private fontStyle: "normal" | "italic" | "oblique" = "normal";
   private lineHeightValue: number | null = null;
   private maxWidthValue: number | null = null;
   private noWrapValue = false;
@@ -756,6 +759,30 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
 
   weight(v: number): this {
     this.fontWeight = v;
+    return this;
+  }
+
+  /**
+   * Set the font to italic style.
+   */
+  italic(): this {
+    this.fontStyle = "italic";
+    return this;
+  }
+
+  /**
+   * Set the font to oblique style.
+   */
+  oblique(): this {
+    this.fontStyle = "oblique";
+    return this;
+  }
+
+  /**
+   * Set font style explicitly.
+   */
+  style(s: "normal" | "italic" | "oblique"): this {
+    this.fontStyle = s;
     return this;
   }
 
@@ -910,7 +937,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<TextRequestLayoutState> {
     const theme = cx.getTheme();
-    const fontFamily = this.fontFamily ?? theme.fonts.sans;
+    const fontFamily = this.fontFamily ?? theme.fonts.sans.name;
     this.resolvedFontFamily = fontFamily;
     const lineHeight = this.getLineHeight();
 
@@ -928,6 +955,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       fontSize: this.fontSize,
       fontFamily,
       fontWeight: this.fontWeight,
+      fontStyle: this.fontStyle,
       lineHeight,
       noWrap: effectiveNoWrap,
       maxWidth: this.maxWidthValue,
@@ -954,7 +982,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
     requestState: TextRequestLayoutState
   ): TextPrepaintState {
     const theme = cx.getWindow().getTheme();
-    const fontFamily = requestState.fontFamily ?? this.resolvedFontFamily ?? theme.fonts.sans;
+    const fontFamily = requestState.fontFamily ?? this.resolvedFontFamily ?? theme.fonts.sans.name;
     const resolvedTextColor = this.hasCustomTextColor
       ? this.textColor
       : theme.components.text.foreground;
@@ -1014,6 +1042,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       fontSize: this.fontSize,
       fontFamily,
       fontWeight: this.fontWeight,
+      fontStyle: this.fontStyle,
       lineHeight,
       maxWidth: wrapWidth,
     });

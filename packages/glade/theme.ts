@@ -1,18 +1,19 @@
 import type { ColorScheme } from "@glade/core";
 import { colors, rgb, type ColorObject } from "@glade/utils";
+import { type FontFamily, FONT_FAMILIES } from "@glade/fonts";
 
 export type ThemeFonts = {
-  system: string;
-  sans: string;
-  monospaced: string;
-  emoji: string;
+  system: FontFamily;
+  sans: FontFamily;
+  monospaced: FontFamily;
+  emoji: FontFamily;
 };
 
 export const DEFAULT_THEME_FONTS: ThemeFonts = {
-  system: "Inter",
-  sans: "Inter",
-  monospaced: "JetBrains Mono",
-  emoji: "Noto Color Emoji",
+  system: FONT_FAMILIES.Inter,
+  sans: FONT_FAMILIES.Inter,
+  monospaced: FONT_FAMILIES.JetBrainsMono,
+  emoji: FONT_FAMILIES.NotoColorEmoji,
 };
 
 type ThemePalette = {
@@ -472,6 +473,7 @@ function setAlpha(colorValue: ColorObject, alpha: number): ColorObject {
 }
 
 function cloneFonts(fonts: ThemeFonts): ThemeFonts {
+  // FontFamily objects are immutable, so we can safely share references
   return {
     system: fonts.system,
     sans: fonts.sans,
@@ -591,7 +593,7 @@ function buildTheme(palette: ThemePalette, fonts: ThemeFonts): Theme {
       foreground: semantic.text.default,
       mutedForeground: semantic.text.muted,
       font: {
-        family: fonts.sans,
+        family: fonts.sans.name,
       },
       size: HEADING_SIZES,
       weight: HEADING_WEIGHTS,

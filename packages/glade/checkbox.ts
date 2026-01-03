@@ -334,7 +334,7 @@ export class GladeCheckbox extends GladeElement<CheckboxRequestState, CheckboxPr
   ): void {
     // Use a font size that fits well within the checkbox
     const fontSize = this.sizeValue * 0.7;
-    const fontFamily = cx.getWindow().getTheme().fonts.sans;
+    const fontFamily = cx.getWindow().getTheme().fonts.sans.name;
 
     // Position the checkmark centered in the checkbox
     // Small padding from edges, vertically offset to appear centered

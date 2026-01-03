@@ -663,8 +663,8 @@ export class GladeDropdownItem
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const lineHeight = fontSize * 1.2;
     const themeFonts = cx.getTheme().fonts;
-    const labelFontFamily = themeFonts.sans;
-    const shortcutFontFamily = themeFonts.monospaced;
+    const labelFontFamily = themeFonts.sans.name;
+    const shortcutFontFamily = themeFonts.monospaced.name;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
@@ -912,7 +912,7 @@ export class GladeDropdownCheckbox
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const indicatorWidth = this.context?.indicatorWidth ?? DEFAULT_INDICATOR_WIDTH;
     const lineHeight = fontSize * 1.2;
-    const fontFamily = cx.getTheme().fonts.sans;
+    const fontFamily = cx.getTheme().fonts.sans.name;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
@@ -1139,7 +1139,7 @@ export class GladeDropdownRadio
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const indicatorWidth = this.context?.indicatorWidth ?? DEFAULT_INDICATOR_WIDTH;
     const lineHeight = fontSize * 1.2;
-    const fontFamily = cx.getTheme().fonts.sans;
+    const fontFamily = cx.getTheme().fonts.sans.name;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
@@ -1420,7 +1420,7 @@ export class GladeDropdownSub
     const paddingX = this.context?.itemPaddingX ?? DEFAULT_ITEM_PADDING_X;
     const paddingY = this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y;
     const lineHeight = fontSize * 1.2;
-    const fontFamily = cx.getTheme().fonts.sans;
+    const fontFamily = cx.getTheme().fonts.sans.name;
 
     const labelSize = cx.measureText(this.labelText, {
       fontSize,
@@ -1832,13 +1832,14 @@ export class GladeDropdownLabel
     const paddingX = this.context?.itemPaddingX ?? DEFAULT_ITEM_PADDING_X;
     const paddingY = (this.context?.itemPaddingY ?? DEFAULT_ITEM_PADDING_Y) / 2;
     const lineHeight = fontSize * 1.2;
-    const fontFamily = cx.getTheme().fonts.sans;
+    const fontFamily = cx.getTheme().fonts.sans.name;
 
     const measureId = cx.registerTextMeasure({
       text: this.labelText,
       fontSize,
       fontFamily,
       fontWeight: 500,
+      fontStyle: "normal",
       lineHeight,
       noWrap: true,
       maxWidth: null,

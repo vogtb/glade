@@ -589,7 +589,7 @@ export class Inspector {
     const fontSize = 12;
     const lineHeight = 16;
     const textPadding = 12;
-    const fontFamily = theme?.fonts.sans ?? DEFAULT_THEME_FONTS.sans;
+    const fontFamily = theme?.fonts.sans.name ?? DEFAULT_THEME_FONTS.sans.name;
 
     // Header title
     const headerGlyphs = textSystem.prepareGlyphInstances(

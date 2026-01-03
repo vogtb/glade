@@ -470,7 +470,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
   }
 
   private effectiveFontFamily(): string {
-    return this.resolvedFontFamily ?? this.fontFamily ?? DEFAULT_THEME_FONTS.sans;
+    return this.resolvedFontFamily ?? this.fontFamily ?? DEFAULT_THEME_FONTS.sans.name;
   }
 
   onSubmit(callback: (text: string) => void): this {
@@ -635,7 +635,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     const state = this.getState();
     const lineHeight = this.getLineHeight();
     const themeFonts = cx.getTheme().fonts;
-    const fontFamily = this.fontFamily ?? themeFonts.sans;
+    const fontFamily = this.fontFamily ?? themeFonts.sans.name;
     this.resolvedFontFamily = fontFamily;
 
     // Height calculation: for multiline, we need to measure actual content height

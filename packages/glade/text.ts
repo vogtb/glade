@@ -51,7 +51,7 @@ import {
 import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import { DEFAULT_THEME_FONTS, type ThemeFonts } from "./theme.ts";
-import type { Font } from "@glade/fonts";
+import type { FontFamily } from "@glade/fonts";
 
 let sharedTextShaper: TextShaper | null = null;
 
@@ -117,6 +117,8 @@ export interface GlyphCacheKey {
   char?: string;
   /** Font weight for variable fonts (e.g., 400 for regular, 700 for bold) */
   weight?: number;
+  /** Font style (normal, italic, oblique) */
+  style?: "normal" | "italic" | "oblique";
 }
 
 /**
@@ -264,10 +266,11 @@ export class GlyphAtlas {
    */
   private makeCacheKey(key: GlyphCacheKey): string {
     const weight = key.weight ?? 400;
+    const style = key.style ?? "normal";
     if (key.char !== undefined) {
-      return `${key.fontId}:${key.char}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}`;
+      return `${key.fontId}:${key.char}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}:${style}`;
     }
-    return `${key.fontId}:${key.glyphId}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}`;
+    return `${key.fontId}:${key.glyphId}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}:${style}`;
   }
 
   /**
@@ -572,31 +575,39 @@ export class TextSystem {
   }
 
   /**
-   * Register a font from raw data.
-   * The name is used to reference the font when rendering text.
-   * The internal font family name and weight are automatically extracted
-   * so that fonts with different weights (e.g., "JetBrains Mono SemiBold")
-   * are correctly matched during text shaping.
+   * Register a font family with all its variants (upright and italic).
    *
-   * In browser environments, the font is also registered with the CSS FontFace API
-   * so that Canvas 2D can use it for rasterization.
+   * Both upright and italic variants are loaded into cosmic-text's fontdb,
+   * which automatically matches the correct variant based on FontStyle.style.
+   * The internal font family name and weight are automatically extracted
+   * so that fonts with different weights are correctly matched during shaping.
+   *
+   * In browser environments, fonts are also registered with the CSS FontFace API
+   * so that Canvas 2D can use them for rasterization.
    */
-  registerFont(font: Font): FontId {
-    const name = font.name;
-    const data = font.bytes;
+  registerFontFamily(family: FontFamily): void {
+    const name = family.name;
     const existing = this.fontFamilyToId.get(name);
     if (existing) {
-      return existing;
+      return;
     }
 
-    const fontId = this.shaper.registerFontWithName(name, data);
-    this.fonts.set(fontId.id, { family: name, data });
+    // Register upright variant
+    const fontId = this.shaper.registerFontWithName(name, family.upright.bytes);
+    this.fonts.set(fontId.id, { family: name, data: family.upright.bytes });
     this.fontFamilyToId.set(name, fontId);
+
+    // Register italic variant if present
+    // cosmic-text will recognize them as the same family with different styles
+    // based on the internal font metadata
+    if (family.italic) {
+      this.shaper.registerFontWithName(name, family.italic.bytes);
+    }
 
     // In browser environments, register with CSS FontFace API for Canvas 2D rendering
     if (typeof FontFace !== "undefined" && typeof document !== "undefined") {
-      const fontFace = new FontFace(name, data);
-      fontFace
+      const uprightFace = new FontFace(name, family.upright.bytes);
+      uprightFace
         .load()
         .then((loadedFace) => {
           (document.fonts as FontFaceSet & { add(font: FontFace): void }).add(loadedFace);
@@ -604,9 +615,19 @@ export class TextSystem {
         .catch((err) => {
           console.warn(`[glade/text] failed to load font "${name}" for browser:`, err);
         });
-    }
 
-    return fontId;
+      if (family.italic) {
+        const italicFace = new FontFace(name, family.italic.bytes, { style: "italic" });
+        italicFace
+          .load()
+          .then((loadedFace) => {
+            (document.fonts as FontFaceSet & { add(font: FontFace): void }).add(loadedFace);
+          })
+          .catch((err) => {
+            console.warn(`[glade/text] failed to load italic font "${name}" for browser:`, err);
+          });
+      }
+    }
   }
 
   /**
@@ -627,27 +648,27 @@ export class TextSystem {
     const fonts = this.themeFonts;
     push(primaryFamily);
 
-    if (primaryFamily === fonts.system) {
-      push(fonts.sans);
-      push(fonts.monospaced);
-      push(fonts.emoji);
-    } else if (primaryFamily === fonts.sans) {
-      push(fonts.system);
-      push(fonts.monospaced);
-      push(fonts.emoji);
-    } else if (primaryFamily === fonts.monospaced) {
-      push(fonts.system);
-      push(fonts.sans);
-      push(fonts.emoji);
-    } else if (primaryFamily === fonts.emoji) {
-      push(fonts.system);
-      push(fonts.sans);
-      push(fonts.monospaced);
+    if (primaryFamily === fonts.system.name) {
+      push(fonts.sans.name);
+      push(fonts.monospaced.name);
+      push(fonts.emoji.name);
+    } else if (primaryFamily === fonts.sans.name) {
+      push(fonts.system.name);
+      push(fonts.monospaced.name);
+      push(fonts.emoji.name);
+    } else if (primaryFamily === fonts.monospaced.name) {
+      push(fonts.system.name);
+      push(fonts.sans.name);
+      push(fonts.emoji.name);
+    } else if (primaryFamily === fonts.emoji.name) {
+      push(fonts.system.name);
+      push(fonts.sans.name);
+      push(fonts.monospaced.name);
     } else {
-      push(fonts.system);
-      push(fonts.sans);
-      push(fonts.monospaced);
-      push(fonts.emoji);
+      push(fonts.system.name);
+      push(fonts.sans.name);
+      push(fonts.monospaced.name);
+      push(fonts.emoji.name);
     }
 
     return families;
@@ -657,9 +678,10 @@ export class TextSystem {
     char: string,
     fontSize: number,
     lineHeight: number,
-    family: string
+    family: string,
+    style?: FontStyle
   ): ShapedGlyph | null {
-    const shaped = this.shaper.shapeLine(char, fontSize, lineHeight, { family });
+    const shaped = this.shaper.shapeLine(char, fontSize, lineHeight, { ...style, family });
     const fallbackGlyph = shaped.glyphs[0];
     if (!fallbackGlyph) {
       return null;
@@ -946,7 +968,8 @@ export class TextSystem {
               char,
               fontSize,
               lineHeight,
-              fallbackFamily
+              fallbackFamily,
+              effectiveStyle
             );
             if (!fallbackGlyph) {
               continue;
@@ -963,6 +986,7 @@ export class TextSystem {
               subpixelX,
               subpixelY,
               weight: effectiveStyle.weight,
+              style: effectiveStyle.style,
             },
             fallbackFamily,
             char,

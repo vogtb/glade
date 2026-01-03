@@ -22,7 +22,7 @@ import type { GladeEffect, GladeContext, GladeEntityContext, GladeViewContext } 
 import type { GladeView } from "./element.ts";
 import { GladeWindow, type WindowOptions, type GladePlatform } from "./window.ts";
 import { ThemeManager, type Theme } from "./theme.ts";
-import { FONTS } from "@glade/fonts";
+import { FONT_FAMILIES } from "@glade/fonts";
 
 /**
  * Options for creating a GladeApp.
@@ -132,9 +132,9 @@ export class GladeApp {
     this.windows.set(windowId, window);
     this.markWindowDirty(windowId);
 
-    window.registerFont(FONTS.Inter);
-    window.registerFont(FONTS.NotoColorEmoji);
-    window.registerFont(FONTS.JetbrainsMono);
+    window.registerFontFamily(FONT_FAMILIES.Inter);
+    window.registerFontFamily(FONT_FAMILIES.NotoColorEmoji);
+    window.registerFontFamily(FONT_FAMILIES.JetBrainsMono);
 
     return window;
   }

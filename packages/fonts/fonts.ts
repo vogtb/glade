@@ -3,56 +3,93 @@ import { base64ToBytes, formatBytes, timed } from "@glade/utils";
 import { log } from "@glade/logging";
 
 const INTER_VAR_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
+const INTER_VAR_ITALIC_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable-Italic.ttf");
 const JETBRAINS_MONO_REGULAR_BASE_64 = COMPTIME_embedAsBase64(
   "../../assets/JetBrainsMono-Regular.ttf"
 );
 const NOTO_COLOR_EMOJI_REGULAR = COMPTIME_embedAsBase64("../../assets/NotoColorEmoji-Regular.ttf");
 
-export class Font {
-  readonly name: string;
+/**
+ * A single font variant (e.g., upright or italic).
+ */
+export class FontVariant {
   readonly base64Data: string;
   readonly bytes: Uint8Array;
 
-  constructor({ name, base64Data }: { name: string; base64Data: string }) {
-    this.name = name;
+  constructor({ base64Data }: { base64Data: string }) {
     this.base64Data = base64Data;
     this.bytes = base64ToBytes(base64Data);
   }
 }
 
-const logFontInfo = (f: Font, ms: number) => {
-  log.info(`loaded ${f.name} duration=${ms.toFixed(2)}ms, size=${formatBytes(f.bytes.byteLength)}`);
+/**
+ * A font family containing upright and optional italic variants.
+ *
+ * For fonts like Inter that have separate upright and italic font files,
+ * both variants should be provided. For fonts that support italic via
+ * a variation axis (like some variable fonts), or that don't need italic,
+ * the italic variant can be omitted.
+ */
+export class FontFamily {
+  readonly name: string;
+  readonly upright: FontVariant;
+  readonly italic: FontVariant | null;
+
+  constructor(options: { name: string; upright: FontVariant; italic?: FontVariant }) {
+    this.name = options.name;
+    this.upright = options.upright;
+    this.italic = options.italic ?? null;
+  }
+
+  /**
+   * Check if this family has a separate italic variant.
+   */
+  hasItalic(): boolean {
+    return this.italic !== null;
+  }
+}
+
+const logFontFamilyInfo = (f: FontFamily, ms: number) => {
+  const uprightSize = formatBytes(f.upright.bytes.byteLength);
+  const italicSize = f.italic ? formatBytes(f.italic.bytes.byteLength) : null;
+  const sizeInfo = italicSize
+    ? `upright=${uprightSize}, italic=${italicSize}`
+    : `size=${uprightSize}`;
+  log.info(`loaded ${f.name} duration=${ms.toFixed(2)}ms, ${sizeInfo}`);
 };
 
-export const INTER_FONT = timed(
+export const INTER_FAMILY = timed(
   () =>
-    new Font({
+    new FontFamily({
       name: "Inter",
-      base64Data: INTER_VAR_BASE_64,
+      upright: new FontVariant({ base64Data: INTER_VAR_BASE_64 }),
+      italic: new FontVariant({ base64Data: INTER_VAR_ITALIC_BASE_64 }),
     }),
-  logFontInfo
+  logFontFamilyInfo
 );
 
-export const JETBRAINS_MONO = timed(
+export const JETBRAINS_MONO_FAMILY = timed(
   () =>
-    new Font({
+    new FontFamily({
       name: "JetBrains Mono",
-      base64Data: JETBRAINS_MONO_REGULAR_BASE_64,
+      upright: new FontVariant({ base64Data: JETBRAINS_MONO_REGULAR_BASE_64 }),
+      // JetBrains Mono doesn't have a separate italic file; cosmic-text will synthesize
     }),
-  logFontInfo
+  logFontFamilyInfo
 );
 
-export const NOTO_COLOR_EMOJI = timed(
+export const NOTO_COLOR_EMOJI_FAMILY = timed(
   () =>
-    new Font({
+    new FontFamily({
       name: "Noto Color Emoji",
-      base64Data: NOTO_COLOR_EMOJI_REGULAR,
+      upright: new FontVariant({ base64Data: NOTO_COLOR_EMOJI_REGULAR }),
+      // Emoji fonts don't have italic variants
     }),
-  logFontInfo
+  logFontFamilyInfo
 );
 
-export const FONTS = {
-  Inter: INTER_FONT,
-  JetbrainsMono: JETBRAINS_MONO,
-  NotoColorEmoji: NOTO_COLOR_EMOJI,
+export const FONT_FAMILIES = {
+  Inter: INTER_FAMILY,
+  JetBrainsMono: JETBRAINS_MONO_FAMILY,
+  NotoColorEmoji: NOTO_COLOR_EMOJI_FAMILY,
 };

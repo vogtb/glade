@@ -112,7 +112,7 @@ import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
 import { CrossElementSelectionManager } from "./select.ts";
 import { toColorObject, type Color } from "@glade/utils";
-import { Font } from "@glade/fonts";
+import type { FontFamily } from "@glade/fonts";
 import { GladeFps, computeFpsBounds, type FpsCorner, type FpsConfig } from "./fps.ts";
 
 function normalizeMouseButton(button: number, mods: Modifiers): number {
@@ -304,6 +304,7 @@ export class GladeWindow {
       fontSize: number;
       fontFamily: string;
       fontWeight: number;
+      fontStyle: "normal" | "italic" | "oblique";
       lineHeight: number;
       noWrap: boolean;
       maxWidth: number | null;
@@ -442,10 +443,11 @@ export class GladeWindow {
   }
 
   /**
-   * Register a font for text rendering.
+   * Register a font family for text rendering.
+   * This loads both upright and italic variants if available.
    */
-  registerFont(font: Font): void {
-    this.textSystem.registerFont(font);
+  registerFontFamily(family: FontFamily): void {
+    this.textSystem.registerFontFamily(family);
   }
 
   /**
@@ -533,6 +535,7 @@ export class GladeWindow {
     fontSize: number;
     fontFamily: string;
     fontWeight: number;
+    fontStyle: "normal" | "italic" | "oblique";
     lineHeight: number;
     noWrap: boolean;
     maxWidth: number | null;
@@ -571,7 +574,7 @@ export class GladeWindow {
     // sizing passes. We only wrap when availableWidth is finite AND the text's
     // natural width exceeds it.
     let effectiveMaxWidth: number | undefined;
-    const fontStyle = { family: data.fontFamily, weight: data.fontWeight };
+    const fontStyle = { family: data.fontFamily, weight: data.fontWeight, style: data.fontStyle };
 
     if (data.noWrap) {
       // No wrapping - use infinite width
@@ -2431,6 +2434,7 @@ export class GladeWindow {
         fontSize: number;
         fontFamily: string;
         fontWeight: number;
+        fontStyle: "normal" | "italic" | "oblique";
         lineHeight: number;
         noWrap: boolean;
         maxWidth: number | null;
@@ -2733,12 +2737,14 @@ export class GladeWindow {
           fontSize: number;
           fontFamily: string;
           fontWeight: number;
+          fontStyle?: "normal" | "italic" | "oblique";
           lineHeight?: number;
           maxWidth?: number;
         }
       ): void => {
         const lineHeight = options.lineHeight ?? options.fontSize * 1.2;
         const maxWidth = options.maxWidth ?? undefined;
+        const fontStyle = options.fontStyle ?? "normal";
         const glyphs = this.textSystem.prepareGlyphInstances(
           text,
           bounds.x,
@@ -2747,7 +2753,7 @@ export class GladeWindow {
           lineHeight,
           color,
           options.fontFamily,
-          { family: options.fontFamily, weight: options.fontWeight },
+          { family: options.fontFamily, weight: options.fontWeight, style: fontStyle },
           maxWidth
         );
         for (const glyph of glyphs) {

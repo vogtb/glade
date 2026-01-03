@@ -129,13 +129,14 @@ export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState>
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<LinkRequestState> {
     const theme = cx.getTheme();
-    const fontFamily = this.fontFamilyValue ?? theme.fonts.sans;
+    const fontFamily = this.fontFamilyValue ?? theme.fonts.sans.name;
     const lineHeight = this.fontSizeValue * 1.2;
     const measureId = cx.registerTextMeasure({
       text: this.textContent,
       fontSize: this.fontSizeValue,
       fontFamily,
       fontWeight: this.fontWeightValue,
+      fontStyle: "normal",
       lineHeight,
       noWrap: true,
       maxWidth: null,

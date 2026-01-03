@@ -138,13 +138,14 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
     const paddingX = this.context?.triggerPaddingX ?? DEFAULT_TRIGGER_PADDING_X;
     const paddingY = this.context?.triggerPaddingY ?? DEFAULT_TRIGGER_PADDING_Y;
     const lineHeight = fontSize * 1.2;
-    const fontFamily = cx.getTheme().fonts.sans;
+    const fontFamily = cx.getTheme().fonts.sans.name;
 
     const measureId = cx.registerTextMeasure({
       text: this.labelText,
       fontSize,
       fontFamily,
       fontWeight: 500,
+      fontStyle: "normal",
       lineHeight,
       noWrap: true,
       maxWidth: null,

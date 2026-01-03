@@ -81,6 +81,13 @@ export const TEXT_DEMO: Demo = {
       div().child(text(`Font Weight ${weight}`).size(22).weight(weight))
     ),
     SPACER_10PX,
+    text("Normal style text").size(22),
+    text("Italic style text").size(22).italic(),
+    text("Bold italic text").size(22).weight(700).italic(),
+    ...[100, 200, 300, 400, 500, 600, 700, 800].map((weight) =>
+      div().child(text(`Italic Weight ${weight}`).size(22).weight(weight).italic())
+    ),
+    SPACER_10PX,
     text("It does colors too!").size(16),
     div(),
     ...[

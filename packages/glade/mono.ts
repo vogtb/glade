@@ -84,8 +84,8 @@ function normalizeMonoOptions(options: MonoConfig, fonts: ThemeFonts): Normalize
   const tabSize = options.tabSize ?? 8;
   const selectable = options.selectable ?? true;
   const scrollable = options.scrollable ?? (options.variant === "pre" && !wrap);
-  const baseFamily = options.fontFamily ?? fonts.monospaced;
-  const fontFamily = pickFontFamily(baseFamily, fonts.monospaced);
+  const baseFamily = options.fontFamily ?? fonts.monospaced.name;
+  const fontFamily = pickFontFamily(baseFamily, fonts.monospaced.name);
 
   return {
     variant: options.variant,

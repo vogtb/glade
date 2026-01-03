@@ -105,7 +105,7 @@ export class GladeFps {
    * Paint the FPS overlay at the given bounds.
    */
   paint(cx: PaintContext, bounds: Bounds): void {
-    const fontFamily = cx.getWindow().getTheme().fonts.monospaced;
+    const fontFamily = cx.getWindow().getTheme().fonts.monospaced.name;
     const contentBounds = {
       x: bounds.x + 1,
       y: bounds.y + 1,

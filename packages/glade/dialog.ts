@@ -418,7 +418,7 @@ export class GladeDialogHeader extends GladeElement<
     const headerGap = DEFAULT_HEADER_GAP;
     const closeButtonSize = 24;
     const closeIconFontSize = 18;
-    const fontFamily = cx.getTheme().fonts.sans;
+    const fontFamily = cx.getTheme().fonts.sans.name;
 
     let totalHeight = 0;
     let maxWidth = 0;
@@ -703,7 +703,7 @@ export class GladeDialogFooter extends GladeElement<
     const paddingX = this.context?.buttonPaddingX ?? DEFAULT_BUTTON_PADDING_X;
     const paddingY = this.context?.buttonPaddingY ?? DEFAULT_BUTTON_PADDING_Y;
     const gap = DEFAULT_FOOTER_GAP;
-    const fontFamily = cx.getTheme().fonts.sans;
+    const fontFamily = cx.getTheme().fonts.sans.name;
 
     let totalWidth = 0;
     let maxHeight = 0;
