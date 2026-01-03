@@ -4,7 +4,7 @@ import { getSelector, objcSendReturnU64, objcSendOneU64, objcSendOneBool } from 
 const NSWindowStyleMaskTitled = 1n << 0n;
 const NSWindowStyleMaskFullSizeContentView = 1n << 15n;
 const NSWindowTitleVisibilityVisible = 0n;
-const NSWindowTitleVisibilityHidden = 1n;
+const _NSWindowTitleVisibilityHidden = 1n;
 
 const selectors = {
   styleMask: getSelector("styleMask"),
@@ -26,7 +26,7 @@ export function applyTitleBarStyle(nsWindow: Pointer, style: MacOSTitleBarStyle)
     objcSendOneU64.symbols.objc_msgSend(
       nsWindow,
       selectors.setTitleVisibility,
-      NSWindowTitleVisibilityHidden
+      NSWindowTitleVisibilityVisible
     );
     objcSendOneBool.symbols.objc_msgSend(nsWindow, selectors.setTitlebarAppearsTransparent, 1);
     objcSendOneBool.symbols.objc_msgSend(nsWindow, selectors.setMovableByWindowBackground, 1);
