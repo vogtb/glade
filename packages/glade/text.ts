@@ -100,7 +100,8 @@ type GlyphRasterizer = (
   fontFamily: string,
   fontId: FontId | undefined,
   glyphChar: string,
-  cosmicFontId: number | undefined
+  cosmicFontId: number | undefined,
+  weight: number | undefined
 ) => RasterizedGlyphData | null;
 
 /**
@@ -114,6 +115,8 @@ export interface GlyphCacheKey {
   subpixelY: number;
   /** Character string for browser-based rasterization cache key disambiguation */
   char?: string;
+  /** Font weight for variable fonts (e.g., 400 for regular, 700 for bold) */
+  weight?: number;
 }
 
 /**
@@ -257,12 +260,14 @@ export class GlyphAtlas {
   /**
    * Create a cache key string from glyph parameters.
    * Includes character when present (browser rasterization) for correct caching.
+   * Includes weight for variable font support.
    */
   private makeCacheKey(key: GlyphCacheKey): string {
+    const weight = key.weight ?? 400;
     if (key.char !== undefined) {
-      return `${key.fontId}:${key.char}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}`;
+      return `${key.fontId}:${key.char}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}`;
     }
-    return `${key.fontId}:${key.glyphId}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}`;
+    return `${key.fontId}:${key.glyphId}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}`;
   }
 
   /**
@@ -322,7 +327,8 @@ export class GlyphAtlas {
         fontFamily,
         fontId,
         glyphChar,
-        cosmicFontId
+        cosmicFontId,
+        key.weight
       );
     }
 
@@ -495,40 +501,55 @@ export class TextSystem {
     this.atlas = new GlyphAtlas(device, atlasConfig);
 
     // Set up WASM-based rasterizer for native environments (no OffscreenCanvas)
-    this.atlas.setRasterizer((glyphId, fontSize, _fontFamily, fontId, glyphChar, cosmicFontId) => {
-      // Use cosmic font ID if available (handles font fallback correctly)
-      // Otherwise fall back to our registered font ID
-      let rasterized: RasterizedGlyphData | null = null;
-      if (cosmicFontId !== undefined) {
-        rasterized = this.shaper.rasterizeGlyphByCosmicId(cosmicFontId, glyphId, fontSize);
-      }
-      if (!rasterized && fontId) {
-        rasterized = this.shaper.rasterizeGlyph(fontId, glyphId, fontSize);
-      }
-      if (!rasterized && fontId) {
-        const fontMeta = this.fonts.get(fontId.id);
-        const family = fontMeta?.family;
-        if (family) {
-          const reshaped = this.shaper.shapeLine(glyphChar, fontSize, fontSize, { family });
-          const fallbackGlyph = reshaped.glyphs[0];
-          if (fallbackGlyph) {
-            rasterized = this.shaper.rasterizeGlyph(fontId, fallbackGlyph.glyphId, fontSize);
+    this.atlas.setRasterizer(
+      (glyphId, fontSize, _fontFamily, fontId, glyphChar, cosmicFontId, weight) => {
+        // Use cosmic font ID if available (handles font fallback correctly)
+        // Otherwise fall back to our registered font ID
+        let rasterized: RasterizedGlyphData | null = null;
+        if (cosmicFontId !== undefined) {
+          rasterized = this.shaper.rasterizeGlyphByCosmicId(
+            cosmicFontId,
+            glyphId,
+            fontSize,
+            weight
+          );
+        }
+        if (!rasterized && fontId) {
+          rasterized = this.shaper.rasterizeGlyph(fontId, glyphId, fontSize, weight);
+        }
+        if (!rasterized && fontId) {
+          const fontMeta = this.fonts.get(fontId.id);
+          const family = fontMeta?.family;
+          if (family) {
+            const reshaped = this.shaper.shapeLine(glyphChar, fontSize, fontSize, {
+              family,
+              weight,
+            });
+            const fallbackGlyph = reshaped.glyphs[0];
+            if (fallbackGlyph) {
+              rasterized = this.shaper.rasterizeGlyph(
+                fontId,
+                fallbackGlyph.glyphId,
+                fontSize,
+                weight
+              );
+            }
           }
         }
+        if (!rasterized) {
+          return null;
+        }
+        return {
+          width: rasterized.width,
+          height: rasterized.height,
+          bearingX: rasterized.bearingX,
+          bearingY: rasterized.bearingY,
+          advance: rasterized.advance,
+          pixels: rasterized.pixels,
+          isColor: rasterized.isColor ?? false,
+        };
       }
-      if (!rasterized) {
-        return null;
-      }
-      return {
-        width: rasterized.width,
-        height: rasterized.height,
-        bearingX: rasterized.bearingX,
-        bearingY: rasterized.bearingY,
-        advance: rasterized.advance,
-        pixels: rasterized.pixels,
-        isColor: rasterized.isColor ?? false,
-      };
-    });
+    );
   }
 
   /**
@@ -941,6 +962,7 @@ export class TextSystem {
               fontSize: rasterFontSize,
               subpixelX,
               subpixelY,
+              weight: effectiveStyle.weight,
             },
             fallbackFamily,
             char,

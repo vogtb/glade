@@ -13,8 +13,16 @@ const DEMO_SENTENCES = [
     weight: 400,
   },
   {
+    value: "Parts Per Billion",
+    weight: 800,
+  },
+  {
     value: "We Found River Man!",
     weight: 100,
+  },
+  {
+    value: "Terraform Dust",
+    weight: 400,
   },
   {
     value: "The 100th Lunch",
@@ -34,6 +42,15 @@ const DEMO_SENTENCES = [
   },
   {
     value: "Fjord Inspection",
+    weight: 200,
+  },
+
+  {
+    value: "Regolith Storm",
+    weight: 700,
+  },
+  {
+    value: "Transnational Soletta",
     weight: 900,
   },
 ];
@@ -94,6 +111,6 @@ export const TEXT_DEMO: Demo = {
       )
     ),
     SPACER_10PX,
-    ...DEMO_SENTENCES.map((s) => text(s.value).weight(s.weight).size(72).lineHeight(88)),
+    ...DEMO_SENTENCES.map((s) => div().pb(30).child(text(s.value).weight(s.weight).size(72))),
   ],
 };

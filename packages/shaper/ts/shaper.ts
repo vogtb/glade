@@ -327,12 +327,18 @@ export class TextShaper {
   }
 
   /**
-   * Rasterize a glyph at the given font size.
+   * Rasterize a glyph at the given font size and weight.
+   * The weight parameter is used for variable fonts (e.g., 400 for regular, 700 for bold).
    * Returns the rasterized glyph with alpha coverage values.
    */
-  rasterizeGlyph(fontId: FontId, glyphId: number, fontSize: number): RasterizedGlyph | null {
+  rasterizeGlyph(
+    fontId: FontId,
+    glyphId: number,
+    fontSize: number,
+    weight?: number
+  ): RasterizedGlyph | null {
     try {
-      const result = this.inner.rasterize_glyph(fontId.id, glyphId, fontSize) as {
+      const result = this.inner.rasterize_glyph(fontId.id, glyphId, fontSize, weight) as {
         width: number;
         height: number;
         bearing_x: number;
@@ -358,18 +364,21 @@ export class TextShaper {
   /**
    * Rasterize a glyph using cosmic-text's internal font ID.
    * This is used when shaping falls back to a different font than requested.
+   * The weight parameter is used for variable fonts (e.g., 400 for regular, 700 for bold).
    */
   rasterizeGlyphByCosmicId(
     cosmicFontId: number,
     glyphId: number,
-    fontSize: number
+    fontSize: number,
+    weight?: number
   ): RasterizedGlyph | null {
     try {
       // WASM expects BigInt for u64 parameters
       const result = this.inner.rasterize_glyph_by_cosmic_id(
         BigInt(cosmicFontId),
         glyphId,
-        fontSize
+        fontSize,
+        weight
       ) as {
         width: number;
         height: number;

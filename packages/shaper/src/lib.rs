@@ -420,7 +420,8 @@ impl TextShaper {
             .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
     }
 
-    /// Rasterize a glyph at the given font size.
+    /// Rasterize a glyph at the given font size and weight.
+    /// The weight parameter is used for variable fonts (e.g., 400 for regular, 700 for bold).
     /// Returns the rasterized glyph with alpha coverage values.
     #[wasm_bindgen]
     pub fn rasterize_glyph(
@@ -428,6 +429,7 @@ impl TextShaper {
         font_id: u32,
         glyph_id: u32,
         font_size: f32,
+        weight: Option<u16>,
     ) -> Result<JsValue, JsValue> {
         // Get the font data for this font ID (clone to avoid borrow issues)
         let font_data = match self.font_data.get(&font_id) {
@@ -437,7 +439,7 @@ impl TextShaper {
             }
         };
 
-        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size)
+        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size, weight)
     }
 
     /// Rasterize a glyph using cosmic-text's internal font ID.
@@ -448,6 +450,7 @@ impl TextShaper {
         cosmic_font_id: u64,
         glyph_id: u32,
         font_size: f32,
+        weight: Option<u16>,
     ) -> Result<JsValue, JsValue> {
         // Get the font data for this cosmic font ID
         let font_data = match self.cosmic_font_data.get(&cosmic_font_id) {
@@ -472,7 +475,7 @@ impl TextShaper {
             }
         };
 
-        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size)
+        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size, weight)
     }
 
     fn rasterize_glyph_with_data(
@@ -480,6 +483,7 @@ impl TextShaper {
         font_data: &[u8],
         glyph_id: u32,
         font_size: f32,
+        weight: Option<u16>,
     ) -> Result<JsValue, JsValue> {
         // Create a swash FontRef from the font data
         let font = match FontRef::from_index(font_data, 0) {
@@ -489,13 +493,15 @@ impl TextShaper {
             }
         };
 
-        // Create a scaler for this font at the given size
-        let mut scaler = self
-            .scale_context
-            .builder(font)
-            .size(font_size)
-            .hint(true)
-            .build();
+        // Create a scaler for this font at the given size.
+        // For variable fonts, apply the weight variation if specified.
+        let mut builder = self.scale_context.builder(font).size(font_size).hint(true);
+
+        if let Some(w) = weight {
+            builder = builder.variations(&[("wght", w as f32)]);
+        }
+
+        let mut scaler = builder.build();
 
         // Render the glyph. Prefer full color output so color emoji stay intact,
         // but fall back to alpha-only coverage when color data is unavailable.
