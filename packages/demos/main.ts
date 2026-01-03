@@ -16,6 +16,8 @@ import { ALL_DEMOS, type Demo, type DemoState } from "./library.ts";
 
 export class MainView implements GladeView {
   private readonly demos: Demo[] = ALL_DEMOS;
+  private readonly showTitlebar: boolean;
+  private readonly titleBarHeight = 26;
   private selectedDemo: Demo;
   private selectedDemoName: string;
   private navScrollHandle: ScrollHandle | null = null;
@@ -78,7 +80,8 @@ export class MainView implements GladeView {
 
   private fpsEnabled = false;
 
-  constructor() {
+  constructor(options?: { showTitlebar: boolean }) {
+    this.showTitlebar = options?.showTitlebar ?? false;
     this.selectedDemoName = this.demos[0]?.name ?? "Demo";
     this.selectedDemo = this.demos[0]!;
   }
@@ -327,7 +330,7 @@ export class MainView implements GladeView {
 
   render(cx: GladeViewContext<this>) {
     const theme = cx.getTheme();
-    const titleBarHeight = 26;
+    const titleBarHeight = this.showTitlebar ? this.titleBarHeight : 0;
 
     if (!this.navScrollHandle) {
       this.navScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -349,18 +352,20 @@ export class MainView implements GladeView {
       .h(cx.window.height)
       .bg(theme.semantic.window.background)
       .children(
-        div()
-          .flex()
-          .flexRow()
-          .h(titleBarHeight)
-          .hMin(titleBarHeight)
-          .wFull()
-          .flexShrink0()
-          .px(8)
-          .itemsCenter()
-          .justifyEnd()
-          .bg(theme.semantic.window.background)
-          .child(text("Titlebar Area").size(11).color(theme.semantic.text.muted)),
+        this.showTitlebar
+          ? div()
+              .flex()
+              .flexRow()
+              .h(titleBarHeight)
+              .hMin(titleBarHeight)
+              .wFull()
+              .flexShrink0()
+              .px(8)
+              .itemsCenter()
+              .justifyEnd()
+              .bg(theme.semantic.window.background)
+              .child(text("Titlebar Area").size(11).color(theme.semantic.text.muted))
+          : null,
         div()
           .flex()
           .flexRow()

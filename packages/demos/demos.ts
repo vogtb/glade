@@ -27,7 +27,7 @@ async function main() {
   const app = new GladeApp({ platform, colorSchemeProvider });
   await app.initialize();
 
-  const mainView = new MainView();
+  const mainView = new MainView({ showTitlebar: platform.runtime === "macos" });
   const window = await app.openWindow(
     { width: ctx.width, height: ctx.height, title: "Glade Example" },
     (cx: GladeContext) => cx.newView(() => mainView)
