@@ -14,13 +14,13 @@ const selectors = {
   setMovableByWindowBackground: getSelector("setMovableByWindowBackground:"),
 };
 
-export type MacOSTitleBarStyle = "standard" | "transparent";
+export type MacOSTitleBarStyle = "standard" | "transparent" | "controlled";
 
 export function applyTitleBarStyle(nsWindow: Pointer, style: MacOSTitleBarStyle): void {
   const rawMask = objcSendReturnU64.symbols.objc_msgSend(nsWindow, selectors.styleMask);
   const currentMask = typeof rawMask === "bigint" ? rawMask : BigInt(rawMask);
 
-  if (style === "transparent") {
+  if (style === "transparent" || style === "controlled") {
     const nextMask = currentMask | NSWindowStyleMaskFullSizeContentView | NSWindowStyleMaskTitled;
     objcSendOneU64.symbols.objc_msgSend(nsWindow, selectors.setStyleMask, nextMask);
     objcSendOneU64.symbols.objc_msgSend(

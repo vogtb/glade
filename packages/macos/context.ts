@@ -56,7 +56,14 @@ import {
   type WGPUSurface,
 } from "@glade/dawn";
 import { createMetalLayerForView } from "./metal.ts";
-import { attachIme, attachTitlebarDrag, type ImeHandle, type TitlebarDragHandle } from "./ime.ts";
+import {
+  attachIme,
+  attachTitlebarDrag,
+  attachTitlebarDragMonitor,
+  type ImeHandle,
+  type TitlebarDragHandle,
+  type TitlebarDragMonitorHandle,
+} from "./ime.ts";
 import { applyTitleBarStyle, type MacOSTitleBarStyle } from "./window_style.ts";
 
 // Map CursorStyle to GLFW cursor shape constants
@@ -254,6 +261,7 @@ export async function createWebGPUContext(
   // IME handler (optional)
   let imeHandle: ImeHandle | null = null;
   let titlebarDragHandle: TitlebarDragHandle | null = null;
+  let titlebarDragMonitorHandle: TitlebarDragMonitorHandle | null = null;
   const compositionStartListeners: CompositionCallback[] = [];
   const compositionUpdateListeners: CompositionCallback[] = [];
   const compositionEndListeners: CompositionCallback[] = [];
@@ -321,8 +329,12 @@ export async function createWebGPUContext(
     imeHandle = handle;
   }
 
-  if (nsWindowPtr && titleBarStyle === "transparent") {
-    titlebarDragHandle = attachTitlebarDrag(nsWindowPtr);
+  if (nsWindowPtr) {
+    if (titleBarStyle === "transparent") {
+      titlebarDragHandle = attachTitlebarDrag(nsWindowPtr);
+    } else if (titleBarStyle === "controlled") {
+      titlebarDragMonitorHandle = attachTitlebarDragMonitor(nsWindowPtr);
+    }
   }
 
   const ctx: MacOSWebGPUContext = {
@@ -398,6 +410,10 @@ export async function createWebGPUContext(
       if (titlebarDragHandle) {
         titlebarDragHandle.detach();
         titlebarDragHandle = null;
+      }
+      if (titlebarDragMonitorHandle) {
+        titlebarDragMonitorHandle.detach();
+        titlebarDragMonitorHandle = null;
       }
       for (const cleanup of cleanups) {
         cleanup();

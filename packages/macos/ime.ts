@@ -21,6 +21,10 @@ export interface TitlebarDragHandle {
   detach(): void;
 }
 
+export interface TitlebarDragMonitorHandle {
+  detach(): void;
+}
+
 type ImeLib = {
   symbols: {
     ime_attach: (
@@ -34,6 +38,8 @@ type ImeLib = {
     ime_make_first_responder: (handle: Pointer) => void;
     titlebar_drag_attach: (nsWindow: Pointer) => Pointer;
     titlebar_drag_detach: (handle: Pointer) => void;
+    titlebar_drag_monitor_attach: (nsWindow: Pointer) => Pointer;
+    titlebar_drag_monitor_detach: (handle: Pointer) => void;
   };
 };
 
@@ -53,6 +59,8 @@ function loadImeLib(): ImeLib | null {
       ime_make_first_responder: { args: [FFIType.ptr], returns: FFIType.void },
       titlebar_drag_attach: { args: [FFIType.ptr], returns: FFIType.ptr },
       titlebar_drag_detach: { args: [FFIType.ptr], returns: FFIType.void },
+      titlebar_drag_monitor_attach: { args: [FFIType.ptr], returns: FFIType.ptr },
+      titlebar_drag_monitor_detach: { args: [FFIType.ptr], returns: FFIType.void },
     }) as unknown as ImeLib;
   } catch (err) {
     console.warn("Failed to load IME/titlebar helper dylib; IME and titlebar drag disabled", err);
@@ -149,6 +157,25 @@ export function attachTitlebarDrag(nsWindow: Pointer): TitlebarDragHandle | null
   return {
     detach() {
       lib.symbols.titlebar_drag_detach(handlePtr);
+    },
+  };
+}
+
+export function attachTitlebarDragMonitor(nsWindow: Pointer): TitlebarDragMonitorHandle | null {
+  const lib = loadImeLib();
+  if (!lib) {
+    return null;
+  }
+
+  const nullPtr = null as unknown as Pointer;
+  const handlePtr = lib.symbols.titlebar_drag_monitor_attach(nsWindow);
+  if (!handlePtr || handlePtr === nullPtr) {
+    return null;
+  }
+
+  return {
+    detach() {
+      lib.symbols.titlebar_drag_monitor_detach(handlePtr);
     },
   };
 }

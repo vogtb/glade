@@ -327,8 +327,7 @@ export class MainView implements GladeView {
 
   render(cx: GladeViewContext<this>) {
     const theme = cx.getTheme();
-    // Reserve space for the transparent macOS title bar.
-    const titleBarInset = 28;
+    const titleBarHeight = 26;
 
     if (!this.navScrollHandle) {
       this.navScrollHandle = cx.newScrollHandle(cx.windowId);
@@ -345,39 +344,58 @@ export class MainView implements GladeView {
 
     return div()
       .flex()
-      .flexRow()
+      .flexCol()
       .w(cx.window.width)
       .h(cx.window.height)
-      .pt(titleBarInset)
       .bg(theme.semantic.window.background)
       .children(
         div()
           .flex()
-          .flexCol()
-          .w(220)
-          .hFull()
+          .flexRow()
+          .h(titleBarHeight)
+          .hMin(titleBarHeight)
+          .wFull()
           .flexShrink0()
+          .px(8)
+          .itemsCenter()
+          .justifyEnd()
           .bg(theme.semantic.window.background)
-          .overflowHidden()
+          .child(text("Titlebar Area").size(11).color(theme.semantic.text.muted)),
+        div()
+          .flex()
+          .flexRow()
+          .flex1()
+          .h(cx.window.height - titleBarHeight)
           .children(
             div()
               .flex()
               .flexCol()
-              .flexGrow()
-              .hMax(cx.window.height)
-              .overflowScroll()
-              .scrollbarAlways()
-              .trackScroll(this.navScrollHandle!)
-              .children(...this.demos.map((demo) => this.renderDemoButton(cx, theme, demo)))
-          ),
-        div().flex().flexCol().flexShrink().w(10).bg(theme.semantic.window.background),
-        div()
-          .flex()
-          .flexCol()
-          .flex1()
-          .bg(theme.semantic.window.background)
-          .overflowHidden()
-          .child(this.renderActiveDemo(cx, theme))
+              .w(220)
+              .hFull()
+              .flexShrink0()
+              .bg(theme.semantic.window.background)
+              .overflowHidden()
+              .children(
+                div()
+                  .flex()
+                  .flexCol()
+                  .flexGrow()
+                  .hFull()
+                  .overflowScroll()
+                  .scrollbarAlways()
+                  .trackScroll(this.navScrollHandle!)
+                  .children(...this.demos.map((demo) => this.renderDemoButton(cx, theme, demo)))
+              ),
+            div().flex().flexCol().flexShrink().w(10).bg(theme.semantic.window.background),
+            div()
+              .flex()
+              .flexCol()
+              .flex1()
+              .hFull()
+              .bg(theme.semantic.window.background)
+              .overflowHidden()
+              .child(this.renderActiveDemo(cx, theme))
+          )
       );
   }
 
@@ -388,7 +406,7 @@ export class MainView implements GladeView {
     return div()
       .flex()
       .flexCol()
-      .flex1()
+      .hFull()
       .p(12)
       .gap(8)
       .overflowScroll()

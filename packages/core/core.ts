@@ -46,5 +46,5 @@ export interface ContextOptions {
   // window title (only used on native platforms)
   title?: string;
   // macOS-only title bar style (ignored on browser)
-  titleBarStyle?: "standard" | "transparent";
+  titleBarStyle?: "standard" | "transparent" | "controlled";
 }
