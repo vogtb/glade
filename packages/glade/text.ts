@@ -2132,8 +2132,11 @@ function clearComposition(state: TextInputState): void {
 
 function applyValueChange(state: TextInputState, start: number, end: number, text: string): void {
   pushHistory(state);
-  const nextValue = `${state.value.slice(0, start)}${text}${state.value.slice(end)}`;
-  const caret = start + text.length;
+  // Normalize range in case of backward selection (end < start)
+  const rangeStart = Math.min(start, end);
+  const rangeEnd = Math.max(start, end);
+  const nextValue = `${state.value.slice(0, rangeStart)}${text}${state.value.slice(rangeEnd)}`;
+  const caret = rangeStart + text.length;
   state.value = nextValue;
   state.selection = { start: caret, end: caret };
   clearComposition(state);
@@ -2207,7 +2210,7 @@ export function moveLeft(state: TextInputState, extendSelection: boolean): void 
   const caret = extendSelection ? state.selection.end : state.selection.start;
   const prev = findPrevGrapheme(state.value, caret);
   const anchor = extendSelection ? state.selection.start : prev;
-  const focus = extendSelection ? prev : prev;
+  const focus = prev;
   state.selection = { start: anchor, end: focus };
   state.preferredCaretX = null;
 }
@@ -2219,10 +2222,10 @@ export function moveRight(state: TextInputState, extendSelection: boolean): void
     state.preferredCaretX = null;
     return;
   }
-  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const caret = extendSelection ? state.selection.end : state.selection.start;
   const next = findNextGrapheme(state.value, caret);
   const anchor = extendSelection ? state.selection.start : next;
-  const focus = extendSelection ? next : next;
+  const focus = next;
   state.selection = { start: anchor, end: focus };
   state.preferredCaretX = null;
 }
@@ -2236,7 +2239,7 @@ export function moveWordLeft(state: TextInputState, extendSelection: boolean): v
 }
 
 export function moveWordRight(state: TextInputState, extendSelection: boolean): void {
-  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const caret = extendSelection ? state.selection.end : state.selection.start;
   const target = findWordBoundaryRight(state.value, caret);
   const anchor = extendSelection ? state.selection.start : target;
   state.selection = { start: anchor, end: target };
@@ -2291,7 +2294,7 @@ export function selectionMoveRight(state: SelectableState, extendSelection: bool
     state.preferredCaretX = null;
     return;
   }
-  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const caret = extendSelection ? state.selection.end : state.selection.start;
   const next = findNextGrapheme(state.text, caret);
   const anchor = extendSelection ? state.selection.start : next;
   state.selection = { start: anchor, end: next };
@@ -2313,7 +2316,7 @@ export function selectionMoveWordLeft(state: SelectableState, extendSelection: b
  * Move selection to next word boundary.
  */
 export function selectionMoveWordRight(state: SelectableState, extendSelection: boolean): void {
-  const caret = extendSelection ? state.selection.end : state.selection.end;
+  const caret = extendSelection ? state.selection.end : state.selection.start;
   const target = findWordBoundaryRight(state.text, caret);
   const anchor = extendSelection ? state.selection.start : target;
   state.selection = { start: anchor, end: target };
