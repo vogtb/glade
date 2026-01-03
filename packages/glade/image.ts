@@ -220,6 +220,98 @@ export class ImageAtlas {
   }
 }
 
+// ============ Content-Addressable Image Cache ============
+
+/**
+ * Cache key derived from content hash of image bytes.
+ */
+export type ImageCacheKey = string & { readonly __imageCacheKeyBrand: unique symbol };
+
+/**
+ * FNV-1a hash for fast content-based deduplication.
+ * Returns a hex string suitable for use as a cache key.
+ */
+export function hashBytes(data: Uint8Array): ImageCacheKey {
+  // FNV-1a 32-bit hash
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < data.length; i++) {
+    hash ^= data[i]!;
+    // Multiply by FNV prime 0x01000193
+    hash = (hash * 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0") as ImageCacheKey;
+}
+
+/**
+ * Image cache using object identity.
+ *
+ * Wraps an ImageAtlas and caches tiles by DecodedImage object reference.
+ * The same DecodedImage object will always return the same tile.
+ * This avoids expensive per-frame hashing while still providing deduplication
+ * when the same image object is reused across renders.
+ */
+export class ImageCache {
+  private cache = new WeakMap<DecodedImage, ImageTile>();
+
+  constructor(private atlas: ImageAtlas) {}
+
+  /**
+   * Get or insert an image into the cache.
+   * If this exact DecodedImage object has been seen before, returns the cached tile.
+   * Otherwise, uploads the image and caches the tile.
+   *
+   * Uses object identity (not content hash) for O(1) lookup performance.
+   */
+  getOrInsert(image: DecodedImage): ImageTile {
+    const cached = this.cache.get(image);
+    if (cached) {
+      return cached;
+    }
+
+    const tile = this.atlas.uploadImage(image);
+    this.cache.set(image, tile);
+    return tile;
+  }
+
+  /**
+   * Check if an image is already cached.
+   */
+  has(image: DecodedImage): boolean {
+    return this.cache.has(image);
+  }
+
+  /**
+   * Get a cached tile by image, if it exists.
+   */
+  get(image: DecodedImage): ImageTile | undefined {
+    return this.cache.get(image);
+  }
+
+  /**
+   * Clear the cache by creating a new WeakMap.
+   * Note: With WeakMap, entries are automatically garbage collected
+   * when DecodedImage objects are no longer referenced elsewhere.
+   */
+  clear(): void {
+    this.cache = new WeakMap();
+  }
+
+  /**
+   * Get the underlying atlas for direct access (e.g., for rendering pipeline).
+   */
+  getAtlas(): ImageAtlas {
+    return this.atlas;
+  }
+
+  /**
+   * Destroy the cache and underlying atlas.
+   */
+  destroy(): void {
+    this.cache = new WeakMap();
+    this.atlas.destroy();
+  }
+}
+
 /**
  * WGSL shader for image/polychrome sprite rendering.
  * Supports rounded corners, opacity, grayscale, clipping, and transforms.

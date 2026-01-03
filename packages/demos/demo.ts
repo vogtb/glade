@@ -3,7 +3,6 @@ import type {
   GladeView,
   GladeViewContext,
   FocusHandle,
-  ImageTile,
   ListState,
   ScrollHandle,
   TextInputController,
@@ -48,9 +47,6 @@ export type DemoState = {
   setSelectedWebGPUDemo: (
     demo: "hexagon" | "metaball" | "particle" | "raymarch" | "terrain" | "galaxy"
   ) => void;
-
-  pngImageTile: ImageTile | null;
-  jpgImageTile: ImageTile | null;
 
   checkboxChecked: boolean;
   checkboxIndeterminate: boolean;

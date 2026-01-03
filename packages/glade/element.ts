@@ -26,7 +26,7 @@ import type { DialogRegistration } from "./dialog.ts";
 import type { DeferredDrawEntry } from "./deferred.ts";
 import type { TabStopConfig } from "./tab.ts";
 import type { PathBuilder } from "./path.ts";
-import type { ImageTile } from "./image.ts";
+import type { ImageTile, DecodedImage } from "./image.ts";
 import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
 import { toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
 import type { Theme } from "./theme.ts";
@@ -289,6 +289,12 @@ export interface PrepaintContext {
     availableWidth: number,
     availableHeight: number
   ): Bounds;
+
+  /**
+   * Get an image tile from the cache, uploading if necessary.
+   * Content-addressable: identical images share the same tile.
+   */
+  getImageTile(image: DecodedImage): ImageTile;
 }
 
 /**
@@ -509,6 +515,12 @@ export interface PaintContext {
    * Get the window instance.
    */
   getWindow(): _GladeWindow;
+
+  /**
+   * Get an image tile from the cache, uploading if necessary.
+   * Content-addressable: identical images share the same tile.
+   */
+  getImageTile(image: DecodedImage): ImageTile;
 }
 
 // ============ Element Base Classes ============
@@ -1042,8 +1054,8 @@ export function text(content: string): GladeTextElement {
 // ============ Image Element ============
 
 /**
- * Image element for rendering pre-uploaded images.
- * Images must be uploaded to the atlas first via window.uploadImage().
+ * Image element for rendering decoded images.
+ * Images are automatically cached and deduplicated by content.
  */
 export class GladeImageElement extends GladeElement<NoState, NoState> {
   private cornerRadiusValue = 0;
@@ -1052,7 +1064,7 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
   private displayWidth?: number;
   private displayHeight?: number;
 
-  constructor(private tile: ImageTile) {
+  constructor(private image: DecodedImage) {
     super();
   }
 
@@ -1106,8 +1118,8 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
-    const width = this.displayWidth ?? this.tile.width;
-    const height = this.displayHeight ?? this.tile.height;
+    const width = this.displayWidth ?? this.image.width;
+    const height = this.displayHeight ?? this.image.height;
 
     const layoutId = cx.requestLayout(
       {
@@ -1125,7 +1137,8 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
   }
 
   paint(cx: PaintContext, bounds: Bounds, _prepaintState: NoState): void {
-    cx.paintImage(this.tile, bounds, {
+    const tile = cx.getImageTile(this.image);
+    cx.paintImage(tile, bounds, {
       cornerRadius: this.cornerRadiusValue,
       opacity: this.opacityValue,
       grayscale: this.grayscaleValue,
@@ -1138,8 +1151,9 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
 }
 
 /**
- * Factory function to create an image element from a tile.
+ * Factory function to create an image element from decoded image data.
+ * The image is automatically cached and deduplicated by content.
  */
-export function img(tile: ImageTile): GladeImageElement {
-  return new GladeImageElement(tile);
+export function img(image: DecodedImage): GladeImageElement {
+  return new GladeImageElement(image);
 }

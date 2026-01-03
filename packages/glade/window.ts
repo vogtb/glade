@@ -100,7 +100,13 @@ import { TextSystem, TextPipeline } from "./text.ts";
 import { PathPipeline } from "./path.ts";
 import type { PathBuilder } from "./path.ts";
 import { UnderlinePipeline } from "./underline.ts";
-import { ImageAtlas, ImagePipeline, type ImageTile, type DecodedImage } from "./image.ts";
+import {
+  ImageAtlas,
+  ImageCache,
+  ImagePipeline,
+  type ImageTile,
+  type DecodedImage,
+} from "./image.ts";
 import { HostTexturePipeline } from "./host.ts";
 import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
@@ -269,7 +275,7 @@ export class GladeWindow {
   // Renderer
   private renderer: GladeRenderer;
   private textSystem: TextSystem;
-  private imageAtlas: ImageAtlas;
+  private imageCache: ImageCache;
   private hostTexturePipeline: HostTexturePipeline;
   private didRenderThisFrame = false;
 
@@ -377,9 +383,10 @@ export class GladeWindow {
     );
     this.renderer.setUnderlinePipeline(underlinePipeline);
 
-    // Initialize image atlas and pipeline
-    this.imageAtlas = new ImageAtlas(device);
-    const imagePipeline = new ImagePipeline(device, format, this.imageAtlas, 10000, sampleCount);
+    // Initialize image cache (wraps atlas) and pipeline
+    const imageAtlas = new ImageAtlas(device);
+    this.imageCache = new ImageCache(imageAtlas);
+    const imagePipeline = new ImagePipeline(device, format, imageAtlas, 10000, sampleCount);
     this.renderer.setImagePipeline(imagePipeline);
 
     // Initialize host texture pipeline at startup (not lazily) to ensure GPU validation completes
@@ -442,17 +449,26 @@ export class GladeWindow {
   }
 
   /**
-   * Upload an image to the atlas and return its tile for rendering.
+   * Get an image tile from the cache, uploading if necessary.
+   * Content-addressable: identical images share the same tile.
    */
-  uploadImage(image: DecodedImage): ImageTile {
-    return this.imageAtlas.uploadImage(image);
+  getImageTile(image: DecodedImage): ImageTile {
+    return this.imageCache.getOrInsert(image);
   }
 
   /**
-   * Get the image atlas for direct access.
+   * Decode image bytes (PNG, JPEG, etc.) into a DecodedImage.
+   * The decoded image can then be passed to getImageTile() or img().
    */
-  getImageAtlas(): ImageAtlas {
-    return this.imageAtlas;
+  decodeImage(data: Uint8Array): Promise<DecodedImage> {
+    return this.platform.decodeImage(data);
+  }
+
+  /**
+   * Get the image cache for direct access.
+   */
+  getImageCache(): ImageCache {
+    return this.imageCache;
   }
 
   /**
@@ -2575,6 +2591,10 @@ export class GladeWindow {
         );
         return layoutEngine.layoutBounds(floatingLayoutId);
       },
+
+      getImageTile: (image: DecodedImage): ImageTile => {
+        return this.imageCache.getOrInsert(image);
+      },
     };
   }
 
@@ -2784,7 +2804,7 @@ export class GladeWindow {
           grayscale?: boolean;
         }
       ): void => {
-        const atlasSize = this.imageAtlas.getSize();
+        const atlasSize = this.imageCache.getAtlas().getSize();
         scene.addImage({
           x: bounds.x,
           y: bounds.y,
@@ -2891,6 +2911,10 @@ export class GladeWindow {
 
       getWindow: (): GladeWindow => {
         return this;
+      },
+
+      getImageTile: (image: DecodedImage): ImageTile => {
+        return this.imageCache.getOrInsert(image);
       },
     };
   }

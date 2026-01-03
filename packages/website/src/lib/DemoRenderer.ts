@@ -14,7 +14,6 @@ import {
   type GladeView,
   type GladeViewContext,
   type FocusHandle,
-  type ImageTile,
   type ListState,
   type ScrollHandle,
   type GladeWindow,
@@ -61,9 +60,6 @@ class DemoView implements GladeView {
     | "terrain"
     | "galaxy" = "hexagon";
 
-  private pngImageTile: ImageTile | null = null;
-  private jpgImageTile: ImageTile | null = null;
-
   private checkboxChecked = false;
   private checkboxIndeterminate = false;
 
@@ -87,11 +83,6 @@ class DemoView implements GladeView {
 
   setDemo(demo: Demo): void {
     this.activeDemo = demo;
-  }
-
-  setImageTiles(png: ImageTile, jpg: ImageTile): void {
-    this.pngImageTile = png;
-    this.jpgImageTile = jpg;
   }
 
   render(cx: GladeViewContext<this>) {
@@ -226,9 +217,6 @@ class DemoView implements GladeView {
       ) => {
         this.selectedWebGPUDemo = demo;
       },
-
-      pngImageTile: this.pngImageTile,
-      jpgImageTile: this.jpgImageTile,
 
       checkboxChecked: this.checkboxChecked,
       checkboxIndeterminate: this.checkboxIndeterminate,
