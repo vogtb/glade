@@ -63,7 +63,7 @@ import {
   type ImeHandle,
   type TitlebarDragHandle,
   type TitlebarDragMonitorHandle,
-} from "./ime.ts";
+} from "./helpers.ts";
 import { applyTitleBarStyle, type MacOSTitleBarStyle } from "./window_style.ts";
 
 // Map CursorStyle to GLFW cursor shape constants

@@ -34,10 +34,6 @@ type Logger = {
   fatal: (message: string, data?: unknown) => void;
 };
 
-declare global {
-  const log: Logger;
-}
-
 const levelRank: Record<LogLevel, number> = {
   debug: 10,
   info: 20,

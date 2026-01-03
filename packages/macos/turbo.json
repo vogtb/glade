@@ -3,10 +3,10 @@
   "extends": ["//"],
   "tasks": {
     "build.debug": {
-      "outputs": ["../../libs/ime_handler.dylib"]
+      "outputs": ["../../libs/libgladehelpers.dylib"]
     },
     "build.release": {
-      "outputs": ["../../libs/ime_handler.dylib"]
+      "outputs": ["../../libs/libgladehelpers.dylib"]
     }
   }
 }

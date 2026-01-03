@@ -8,8 +8,8 @@
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "build.debug": "clang -ObjC -fobjc-arc -framework Cocoa -shared ime_handler.m -o ../../libs/ime_handler.dylib",
-    "build.release": "clang -ObjC -fobjc-arc -framework Cocoa -shared ime_handler.m -o ../../libs/ime_handler.dylib",
+    "build.debug": "clang -ObjC -fobjc-arc -framework Cocoa -shared ime.m window.m -o ../../libs/libgladehelpers.dylib",
+    "build.release": "clang -ObjC -fobjc-arc -framework Cocoa -shared ime.m window.m -o ../../libs/libgladehelpers.dylib",
     "clean": "rm -rf dist",
     "nuke": "rm -rf node_modules"
   },
