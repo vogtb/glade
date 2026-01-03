@@ -15,8 +15,7 @@ import type { Demo, DemoItem } from "./demo";
 export const DROPDOWN_DEMO: Demo = {
   name: "Dropdown Menu",
   renderElement: (cx, state): DemoItem[] => [
-    text("Dropdown Menu").size(32),
-    text("Displays a menu triggered by a button with items, separators, and labels").size(16),
+    text("Displays a menu triggered by a button with items, separators, and labels"),
     divider().color(colors.gray.x500),
 
     // Status display
@@ -28,7 +27,7 @@ export const DROPDOWN_DEMO: Demo = {
       .children(text("Last Action:"), text(state.dropdownLastAction).weight(600)),
 
     // Basic Dropdown
-    text("Basic Dropdown").size(20),
+    text("Basic Dropdown"),
     text("Click the button to open a simple dropdown menu"),
     dropdown()
       .open(state.dropdownOpen)
@@ -70,7 +69,7 @@ export const DROPDOWN_DEMO: Demo = {
       ),
 
     // Dropdown with Labels
-    text("Dropdown with Labels").size(20),
+    text("Dropdown with Labels"),
     text("Group items with section labels"),
     dropdown()
       .open(state.dropdown2Open)
@@ -122,7 +121,7 @@ export const DROPDOWN_DEMO: Demo = {
       ),
 
     // Destructive Actions
-    text("Destructive Actions").size(20),
+    text("Destructive Actions"),
     text("Items with destructive styling for dangerous actions"),
     dropdown()
       .open(state.dropdown3Open)
@@ -166,7 +165,7 @@ export const DROPDOWN_DEMO: Demo = {
       ),
 
     // Nested Submenus
-    text("Nested Submenus").size(20),
+    text("Nested Submenus"),
     text("Hover over submenu items to reveal nested menus"),
     dropdown()
       .id("file-menu-dropdown")
@@ -253,5 +252,6 @@ export const DROPDOWN_DEMO: Demo = {
           cx.notify();
         })
       ),
+    div().pt(600),
   ],
 };
