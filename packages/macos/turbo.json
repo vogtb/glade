@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build.debug": {
+      "outputs": ["../../libs/ime_handler.dylib"]
+    },
+    "build.release": {
+      "outputs": ["../../libs/ime_handler.dylib"]
+    }
+  }
+}
