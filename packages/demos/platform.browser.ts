@@ -1,8 +1,5 @@
 import { FontFamily, FontVariant } from "@glade/glade";
-import {
-  type BrowserGladePlatformOptions,
-  createGladePlatform,
-} from "@glade/glade/platform.browser";
+import { createGladePlatform, type GladePlatformOptions } from "@glade/glade/platform";
 
 const FONT_BASE_URL = "/fonts";
 
@@ -37,7 +34,7 @@ export type DemosPlatformResult = {
 };
 
 export async function createDemosPlatform(
-  options: BrowserGladePlatformOptions
+  options: GladePlatformOptions
 ): Promise<DemosPlatformResult> {
   const platform = await createGladePlatform(options);
   const fonts = await loadFonts();

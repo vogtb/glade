@@ -1,6 +1,6 @@
 import { type FontFamily } from "@glade/glade";
 import { FONT_FAMILIES } from "@glade/glade/fonts";
-import { createGladePlatform, type MacOSGladePlatformOptions } from "@glade/glade/platform.macos";
+import { createGladePlatform, type GladePlatformOptions } from "@glade/glade/platform";
 
 export type DemosPlatformResult = {
   platform: Awaited<ReturnType<typeof createGladePlatform>>;
@@ -8,7 +8,7 @@ export type DemosPlatformResult = {
 };
 
 export async function createDemosPlatform(
-  options: MacOSGladePlatformOptions
+  options: GladePlatformOptions
 ): Promise<DemosPlatformResult> {
   const platform = await createGladePlatform(options);
   const fonts = Object.values(FONT_FAMILIES);

@@ -14,8 +14,6 @@
       "browser": "./platform.browser.ts",
       "default": "./platform.browser.ts"
     },
-    "./platform.browser": "./platform.browser.ts",
-    "./platform.macos": "./platform.macos.ts",
     "./fonts": "./fonts.ts",
     "./comptime": "./comptime.ts"
   },
