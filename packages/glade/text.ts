@@ -52,7 +52,7 @@ import { clamp, type Color, type ColorObject, toColorObject } from "@glade/utils
 
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
-import { DEFAULT_THEME_FONTS, type ThemeFonts } from "./theme.ts";
+import type { ThemeFonts } from "./theme.ts";
 
 let sharedTextShaper: TextShaper | null = null;
 
@@ -494,7 +494,7 @@ export class TextSystem {
   private fonts: Map<number, { family: string; data: Uint8Array }> = new Map();
   private fontFamilyToId: Map<string, FontId> = new Map();
   private _devicePixelRatio = 1;
-  private themeFonts: ThemeFonts = { ...DEFAULT_THEME_FONTS };
+  private themeFonts!: ThemeFonts;
 
   constructor(device: GPUDevice, atlasConfig?: Partial<GlyphAtlasConfig>) {
     this.shaper = createTextShaper();

@@ -56,7 +56,9 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/comptime": "workspace:*",
+        "@glade/fonts": "workspace:*",
         "@glade/glade": "workspace:*",
+        "@glade/platform": "workspace:*",
       },
     },
     "packages/fonts": {
@@ -157,6 +159,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/demos": "workspace:*",
+        "@glade/fonts": "workspace:*",
         "@glade/glade": "workspace:*",
         "@glade/logging": "workspace:*",
         "@glade/platform": "workspace:*",

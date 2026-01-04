@@ -1,4 +1,5 @@
 import { ALL_DEMOS, type Demo, type DemoState } from "@glade/demos/library";
+import { FontFamily, FontVariant } from "@glade/fonts";
 import {
   createListState,
   div,
@@ -13,6 +14,33 @@ import {
   type WindowId,
 } from "@glade/glade";
 import { type BrowserGladePlatformInstance, createGladePlatform } from "@glade/platform";
+
+const FONT_BASE_URL = "/fonts";
+
+async function loadFonts(): Promise<FontFamily[]> {
+  const [inter, interItalic, jetbrains, emoji] = await Promise.all([
+    fetch(`${FONT_BASE_URL}/InterVariable.ttf`).then((r) => r.arrayBuffer()),
+    fetch(`${FONT_BASE_URL}/InterVariable-Italic.ttf`).then((r) => r.arrayBuffer()),
+    fetch(`${FONT_BASE_URL}/JetBrainsMono-Regular.ttf`).then((r) => r.arrayBuffer()),
+    fetch(`${FONT_BASE_URL}/NotoColorEmoji-Regular.ttf`).then((r) => r.arrayBuffer()),
+  ]);
+
+  return [
+    new FontFamily({
+      name: "Inter",
+      upright: FontVariant.fromBytes(new Uint8Array(inter)),
+      italic: FontVariant.fromBytes(new Uint8Array(interItalic)),
+    }),
+    new FontFamily({
+      name: "JetBrains Mono",
+      upright: FontVariant.fromBytes(new Uint8Array(jetbrains)),
+    }),
+    new FontFamily({
+      name: "Noto Color Emoji",
+      upright: FontVariant.fromBytes(new Uint8Array(emoji)),
+    }),
+  ];
+}
 
 class DemoView implements GladeView {
   private activeDemo: Demo;
@@ -410,8 +438,9 @@ export class DemoRenderer {
     height: number
   ): Promise<DemoRenderer> {
     const platform = await createGladePlatform({ canvas, width, height });
+    const fonts = await loadFonts();
 
-    const app = new GladeApp({ platform });
+    const app = new GladeApp({ platform, fonts });
     await app.initialize();
 
     const initialDemo = ALL_DEMOS[0];

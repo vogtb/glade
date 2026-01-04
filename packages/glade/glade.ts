@@ -15,7 +15,7 @@
 
 // Core types
 export type { Theme, ThemeFonts } from "./theme";
-export { createDefaultTheme, DEFAULT_THEME_FONTS, resolveTheme, ThemeManager } from "./theme";
+export { createDefaultTheme, createThemeFonts, resolveTheme, ThemeManager } from "./theme";
 export type {
   Bounds,
   ContentMask,

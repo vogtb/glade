@@ -64,7 +64,6 @@ import {
   updatePointerSelection,
   valueWithComposition,
 } from "./text.ts";
-import { DEFAULT_THEME_FONTS } from "./theme.ts";
 import type { Bounds } from "./types.ts";
 import type { GladeWindow } from "./window.ts";
 
@@ -470,7 +469,10 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
   }
 
   private effectiveFontFamily(): string {
-    return this.resolvedFontFamily ?? this.fontFamily ?? DEFAULT_THEME_FONTS.sans.name;
+    // resolvedFontFamily is set during prepaint from the theme
+    // fontFamily is the explicit override
+    // "Inter" is a fallback - in practice, resolvedFontFamily should always be set
+    return this.resolvedFontFamily ?? this.fontFamily ?? "Inter";
   }
 
   onSubmit(callback: (text: string) => void): this {

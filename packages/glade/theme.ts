@@ -1,5 +1,5 @@
 import type { ColorScheme } from "@glade/core";
-import { FONT_FAMILIES, type FontFamily } from "@glade/fonts";
+import type { FontFamily } from "@glade/fonts";
 import { type ColorObject, colors, rgb } from "@glade/utils";
 
 export type ThemeFonts = {
@@ -9,12 +9,30 @@ export type ThemeFonts = {
   emoji: FontFamily;
 };
 
-export const DEFAULT_THEME_FONTS: ThemeFonts = {
-  system: FONT_FAMILIES.Inter,
-  sans: FONT_FAMILIES.Inter,
-  monospaced: FONT_FAMILIES.JetBrainsMono,
-  emoji: FONT_FAMILIES.NotoColorEmoji,
-};
+/**
+ * Create theme fonts from a list of loaded font families.
+ * Expects fonts named "Inter", "JetBrains Mono", and "Noto Color Emoji".
+ */
+export function createThemeFonts(fonts: FontFamily[]): ThemeFonts {
+  const findFont = (name: string) => fonts.find((f) => f.name === name);
+  const inter = findFont("Inter");
+  const mono = findFont("JetBrains Mono");
+  const emoji = findFont("Noto Color Emoji");
+
+  if (!inter || !mono || !emoji) {
+    const missing = [!inter && "Inter", !mono && "JetBrains Mono", !emoji && "Noto Color Emoji"]
+      .filter(Boolean)
+      .join(", ");
+    throw new Error(`Required fonts not found: ${missing}`);
+  }
+
+  return {
+    system: inter,
+    sans: inter,
+    monospaced: mono,
+    emoji: emoji,
+  };
+}
 
 type ThemePalette = {
   scheme: ColorScheme;
@@ -1028,27 +1046,33 @@ function buildTheme(palette: ThemePalette, fonts: ThemeFonts): Theme {
   };
 }
 
-export function createDefaultTheme(scheme: ColorScheme): Theme {
+export function createDefaultTheme(scheme: ColorScheme, fonts: ThemeFonts): Theme {
   const palette = createBasePalette(scheme);
-  return buildTheme(palette, cloneFonts(DEFAULT_THEME_FONTS));
+  return buildTheme(palette, cloneFonts(fonts));
 }
 
-export function resolveTheme(theme: Theme | undefined, systemScheme: ColorScheme): Theme {
+export function resolveTheme(
+  theme: Theme | undefined,
+  systemScheme: ColorScheme,
+  fonts: ThemeFonts
+): Theme {
   if (theme) {
     return theme;
   }
-  return createDefaultTheme(systemScheme);
+  return createDefaultTheme(systemScheme, fonts);
 }
 
 export class ThemeManager {
   private systemScheme: ColorScheme;
   private mode: ColorScheme | "system";
   private theme: Theme;
+  private fonts: ThemeFonts;
   private listeners = new Set<(theme: Theme) => void>();
 
-  constructor(systemScheme: ColorScheme, theme?: Theme) {
+  constructor(systemScheme: ColorScheme, fonts: ThemeFonts, theme?: Theme) {
     this.systemScheme = systemScheme;
-    this.theme = resolveTheme(theme, this.systemScheme);
+    this.fonts = fonts;
+    this.theme = resolveTheme(theme, this.systemScheme, this.fonts);
     this.mode = theme ? theme.scheme : "system";
   }
 
@@ -1069,7 +1093,7 @@ export class ThemeManager {
   setThemeScheme(scheme: ColorScheme | "system"): void {
     this.mode = scheme;
     const targetScheme = scheme === "system" ? this.systemScheme : scheme;
-    const next = createDefaultTheme(targetScheme);
+    const next = createDefaultTheme(targetScheme, this.fonts);
     this.theme = next;
     this.notify();
   }
@@ -1077,7 +1101,7 @@ export class ThemeManager {
   setSystemScheme(scheme: ColorScheme): void {
     this.systemScheme = scheme;
     if (this.mode === "system") {
-      const next = createDefaultTheme(scheme);
+      const next = createDefaultTheme(scheme, this.fonts);
       this.theme = next;
       this.notify();
     }

@@ -8,14 +8,15 @@
  * 3. paint - emit GPU primitives
  */
 
-import type {
-  CharEvent,
-  Clipboard,
-  ColorSchemeProvider,
-  CompositionEvent,
-  KeyEvent,
-  RenderCallback,
-  TextInputEvent,
+import {
+  type CharEvent,
+  type Clipboard,
+  type ColorSchemeProvider,
+  type CompositionEvent,
+  coreModsToGladeMods,
+  type KeyEvent,
+  type RenderCallback,
+  type TextInputEvent,
 } from "@glade/core";
 import type { FontFamily } from "@glade/fonts";
 import { type Color, toColorObject } from "@glade/utils";
@@ -27,8 +28,6 @@ import {
   KeyDispatcher,
   Keymap,
 } from "./actions.ts";
-// Note: PopoverManager and DialogManager imports removed
-// Overlays now render via deferred children
 import { AnchoredElement } from "./anchored.ts";
 import type { GladeContext, GladeViewContext } from "./context.ts";
 import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
@@ -89,7 +88,7 @@ import {
   type ImageTile,
 } from "./image.ts";
 import { type ElementDebugInfo, Inspector, type InspectorState } from "./inspector.ts";
-import { coreModsToGladeMods, Key } from "./keyboard.ts";
+import { Key } from "./keyboard.ts";
 import { GladeLayoutEngine, type LayoutId } from "./layout.ts";
 import type { PathBuilder } from "./path.ts";
 import { PathPipeline } from "./path.ts";

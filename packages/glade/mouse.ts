@@ -6,23 +6,9 @@
 
 import type { CursorMoveEvent, MouseButton, MouseButtonEvent } from "@glade/core";
 
-import type { Modifiers } from "./dispatch.ts";
 import type { Bounds, Point } from "./types.ts";
 
 export { MouseButton } from "@glade/core";
-
-/**
- * Convert core MouseButtonEvent to Glade modifiers.
- */
-// TODO: Share modifier decoding across input helpers to avoid duplicate logic.
-export function coreModsToGladeMods(mods: number): Modifiers {
-  return {
-    shift: (mods & 0x01) !== 0,
-    ctrl: (mods & 0x02) !== 0,
-    alt: (mods & 0x04) !== 0,
-    meta: (mods & 0x08) !== 0,
-  };
-}
 
 /**
  * Mouse button state tracker.

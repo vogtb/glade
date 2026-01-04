@@ -16,7 +16,7 @@ import type { GlobalElementId } from "./element.ts";
 import type { GladeScene } from "./scene.ts";
 import type { Styles } from "./styles.ts";
 import type { TextSystem } from "./text.ts";
-import { DEFAULT_THEME_FONTS, type Theme } from "./theme.ts";
+import type { Theme } from "./theme.ts";
 import type { Bounds, Point } from "./types.ts";
 
 /**
@@ -590,7 +590,7 @@ export class Inspector {
     const fontSize = 12;
     const lineHeight = 16;
     const textPadding = 12;
-    const fontFamily = theme?.fonts.sans.name ?? DEFAULT_THEME_FONTS.sans.name;
+    const fontFamily = theme?.fonts.sans.name ?? "Inter";
 
     // Header title
     const headerGlyphs = textSystem.prepareGlyphInstances(

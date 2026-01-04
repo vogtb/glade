@@ -6,7 +6,7 @@
  */
 
 import type { ColorScheme, ColorSchemeProvider } from "@glade/core";
-import { FONT_FAMILIES } from "@glade/fonts";
+import type { FontFamily } from "@glade/fonts";
 
 import type { GladeContext, GladeEffect, GladeEntityContext, GladeViewContext } from "./context.ts";
 import type { GladeView } from "./element.ts";
@@ -20,7 +20,7 @@ import {
   type SubscriberCallback,
   SubscriberHandle,
 } from "./entity.ts";
-import { type Theme, ThemeManager } from "./theme.ts";
+import { createThemeFonts, type Theme, ThemeManager } from "./theme.ts";
 import type { Bounds, EntityId, FocusId, GladeTask, ScrollOffset, WindowId } from "./types.ts";
 import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts";
 
@@ -29,6 +29,7 @@ import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts
  */
 export interface GladeAppOptions {
   platform: GladePlatform;
+  fonts: FontFamily[];
   theme?: Theme;
 }
 
@@ -37,6 +38,7 @@ export interface GladeAppOptions {
  */
 export class GladeApp {
   private platform: GladePlatform;
+  private fonts: FontFamily[];
   private device: GPUDevice | null = null;
   private format: GPUTextureFormat;
   private colorSchemeProvider: ColorSchemeProvider;
@@ -71,9 +73,11 @@ export class GladeApp {
 
   constructor(options: GladeAppOptions) {
     this.platform = options.platform;
+    this.fonts = options.fonts;
     this.format = this.platform.getPreferredCanvasFormat();
     this.colorSchemeProvider = this.platform.colorSchemeProvider;
-    this.themeManager = new ThemeManager(this.colorSchemeProvider.get(), options.theme);
+    const themeFonts = createThemeFonts(this.fonts);
+    this.themeManager = new ThemeManager(this.colorSchemeProvider.get(), themeFonts, options.theme);
   }
 
   /**
@@ -130,9 +134,9 @@ export class GladeApp {
     this.windows.set(windowId, window);
     this.markWindowDirty(windowId);
 
-    window.registerFontFamily(FONT_FAMILIES.Inter);
-    window.registerFontFamily(FONT_FAMILIES.NotoColorEmoji);
-    window.registerFontFamily(FONT_FAMILIES.JetBrainsMono);
+    for (const font of this.fonts) {
+      window.registerFontFamily(font);
+    }
 
     return window;
   }
@@ -634,8 +638,9 @@ class GladeAppContext implements GladeContext {
     this.app.scrollBy(handle, deltaX, deltaY);
   }
 
+  // TODO: remove.
   spawn<T>(_future: Promise<T>): GladeTask<T> {
-    throw new Error("TODO: implement spawn");
+    throw new Error("unimplemented");
   }
 
   markWindowDirty(windowId: WindowId): void {

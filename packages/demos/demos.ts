@@ -1,17 +1,17 @@
+import { createDemosPlatform } from "@glade/demos/platform";
 import { GladeApp, type GladeContext, log } from "@glade/glade";
-import { createGladePlatform } from "@glade/glade/platform";
 
 import { MainView } from "./main.ts";
 
 async function main() {
-  const platform = await createGladePlatform({
+  const { platform, fonts } = await createDemosPlatform({
     width: 960,
     height: 540,
     title: "Glade Example",
     titleBarStyle: "controlled",
   });
 
-  const app = new GladeApp({ platform });
+  const app = new GladeApp({ platform, fonts });
   await app.initialize();
 
   const mainView = new MainView({ showTitlebar: platform.runtime === "macos" });

@@ -6,9 +6,10 @@
   "types": "website.ts",
   "dependencies": {
     "@glade/demos": "workspace:*",
-    "@glade/platform": "workspace:*",
+    "@glade/fonts": "workspace:*",
     "@glade/glade": "workspace:*",
-    "@glade/logging": "workspace:*"
+    "@glade/logging": "workspace:*",
+    "@glade/platform": "workspace:*"
   },
   "scripts": {
     "dev": "bun run ./dev.ts",

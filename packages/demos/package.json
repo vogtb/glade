@@ -4,23 +4,29 @@
   "type": "module",
   "exports": {
     ".": "./demos.ts",
-    "./library": "./library.ts"
+    "./library": "./library.ts",
+    "./platform": {
+      "bun": "./platform.macos.ts",
+      "browser": "./platform.browser.ts",
+      "default": "./platform.browser.ts"
+    }
   },
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "dev:demos:native": "bun ./demos.ts",
-    "dev:demos:web": "bun build ./demos.ts --outdir=./dist --minify --sourcemap=inline && bun ./serve.ts",
+    "dev:demos:web": "bun build ./demos.ts --target=browser --outdir=./dist --minify --sourcemap=inline && bun ./serve.ts",
     "build:demos:native": "bun build ./demos.ts --compile --sourcemap=inline --outfile=./dist/demos",
-    "build:demos:web": "bun build ./demos.ts --outdir=./dist --minify",
+    "build:demos:web": "bun build ./demos.ts --target=browser --outdir=./dist --minify",
     "run:demos:native": "bun build ./demos.ts --compile --sourcemap=inline --outfile=./dist/demos && ./dist/demos",
-    "run:demos:web": "bun build ./demos.ts --outdir=./dist --minify --sourcemap=inline && open 'http://localhost:3000/index.html' && bun ./serve.ts",
+    "run:demos:web": "bun build ./demos.ts --target=browser --outdir=./dist --minify --sourcemap=inline && open 'http://localhost:3000/index.html' && bun ./serve.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "nuke": "rm -rf node_modules"
   },
   "dependencies": {
     "@glade/comptime": "workspace:*",
+    "@glade/fonts": "workspace:*",
     "@glade/glade": "workspace:*"
   }
 }
