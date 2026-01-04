@@ -1,6 +1,5 @@
 import { colors, div, type GladeDiv, rgb, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 function groupButton(
@@ -33,9 +32,9 @@ export const GROUPS_DEMO: Demo = {
   name: "Groups",
   renderElement: (_cx, _state): DemoItem[] => [
     text("Coordinated hover and active effects across related elements"),
-    SPACER_10PX,
+    div().p(10),
     text("Hover or click any button in a group to see coordinated effects"),
-    SPACER_10PX,
+    div().p(10),
     div()
       .flex()
       .flexRow()
@@ -47,7 +46,7 @@ export const GROUPS_DEMO: Demo = {
         groupButton("Two", "group-a", 0x3730a3, 0x4338ca, 0x6366f1),
         groupButton("Three", "group-a", 0x3730a3, 0x4338ca, 0x6366f1)
       ),
-    SPACER_10PX,
+    div().p(10),
     div()
       .flex()
       .flexRow()
@@ -59,7 +58,7 @@ export const GROUPS_DEMO: Demo = {
         groupButton("Beta", "group-b", 0x166534, 0x15803d, 0x22c55e),
         groupButton("Gamma", "group-b", 0x166534, 0x15803d, 0x22c55e)
       ),
-    SPACER_10PX,
+    div().p(10),
     div()
       .flex()
       .flexRow()

@@ -1,6 +1,5 @@
 import { colors, div, switchToggle, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const THEME_DEMO: Demo = {
@@ -11,7 +10,7 @@ export const THEME_DEMO: Demo = {
 
     return [
       text("Control the application color scheme"),
-      SPACER_10PX,
+      div().p(10),
 
       // Current theme info
       text("Current Theme"),

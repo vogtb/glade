@@ -12,6 +12,7 @@ import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
 import type { ClickHandler, HitTestNode } from "./dispatch.ts";
 import {
+  type AnyGladeElement,
   GladeContainerElement,
   GladeElement,
   type GlobalElementId,
@@ -323,7 +324,7 @@ export class GladeTab {
   private tabValue: string;
   private labelText: string;
 
-  private contentElement: GladeElement<any, any> | null = null;
+  private contentElement: AnyGladeElement | null = null;
   private disabledValue: boolean = false;
 
   constructor(value: string, label: string) {
@@ -349,7 +350,7 @@ export class GladeTab {
    * Set the content element to display when this tab is active.
    */
 
-  content(element: GladeElement<any, any>): this {
+  content(element: AnyGladeElement): this {
     this.contentElement = element;
     return this;
   }
@@ -358,7 +359,7 @@ export class GladeTab {
    * Get the content element.
    */
 
-  getContent(): GladeElement<any, any> | null {
+  getContent(): AnyGladeElement | null {
     return this.contentElement;
   }
 
@@ -693,7 +694,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
    * Get the currently active tab's content element.
    */
 
-  private getActiveContent(): GladeElement<any, any> | null {
+  private getActiveContent(): AnyGladeElement | null {
     if (this.valueState === null) {
       return null;
     }
@@ -872,7 +873,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
 
       const contentCx = cx.withElementId(contentElementId);
 
-      contentPrepaintState = (activeContent as GladeElement<any, any>).prepaint(
+      contentPrepaintState = (activeContent as AnyGladeElement).prepaint(
         contentCx,
         contentBounds,
         contentRequestState
@@ -986,11 +987,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
     if (activeContent && contentElementId && contentBounds) {
       const contentCx = cx.withElementId(contentElementId);
 
-      (activeContent as GladeElement<any, any>).paint(
-        contentCx,
-        contentBounds,
-        contentPrepaintState
-      );
+      (activeContent as AnyGladeElement).paint(contentCx, contentBounds, contentPrepaintState);
     }
   }
 

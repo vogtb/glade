@@ -1,6 +1,5 @@
 import { colors, div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const GRID_DEMO: Demo = {
@@ -10,7 +9,7 @@ export const GRID_DEMO: Demo = {
       text("Taffy-powered CSS Grid with Tailwind-like API").size(16),
 
       // Example 1: Simple 3-column grid
-      SPACER_10PX,
+      div().p(10),
       text("Simple 3-Column Grid").size(18),
       text(".grid().gridCols(3).gap(8)").font("JetBrains Mono").size(12),
       div()
@@ -63,7 +62,7 @@ export const GRID_DEMO: Demo = {
         ),
 
       // Example 2: Column spans
-      SPACER_10PX,
+      div().p(10),
       text("Column Spans").size(18),
       text(".colSpan(2) and .colSpanFull()").font("JetBrains Mono").size(12),
       div()
@@ -112,7 +111,7 @@ export const GRID_DEMO: Demo = {
         ),
 
       // Example 3: 4-column grid with varied content
-      SPACER_10PX,
+      div().p(10),
       text("4-Column Responsive Grid").size(18),
       text(".gridCols(4).gap(12)").font("JetBrains Mono").size(12),
       div()
@@ -179,7 +178,7 @@ export const GRID_DEMO: Demo = {
         ),
 
       // Example 4: Grid area placement
-      SPACER_10PX,
+      div().p(10),
       text("Explicit Grid Placement").size(18),
       text(".gridCell(col, row) and .gridArea()").font("JetBrains Mono").size(12),
       div()

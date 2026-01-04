@@ -1,6 +1,5 @@
 import { div, text, textInput } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const INPUTS_DEMO: Demo = {
@@ -21,11 +20,11 @@ export const INPUTS_DEMO: Demo = {
 
     return [
       text("Demonstrates IME composition, selection, clipboard, and caret rendering.").size(16),
-      SPACER_10PX,
+      div().p(10),
       text(
         "Click to focus, type with IME, use Cmd/Ctrl+C/V/X for clipboard, and drag-select (double click for words, triple for lines)."
       ),
-      SPACER_10PX,
+      div().p(10),
       div()
         .border(1)
         .borderColor(theme.semantic.border.default)
@@ -55,7 +54,7 @@ export const INPUTS_DEMO: Demo = {
             .pad(4)
             .caretBlink(0.7)
         ),
-      SPACER_10PX,
+      div().p(10),
       div()
         .flex()
         .flexRow()
@@ -65,13 +64,13 @@ export const INPUTS_DEMO: Demo = {
           text(`Length: ${inputState.value.length}`),
           text(`Selection: ${selectionLength} chars`)
         ),
-      SPACER_10PX,
+      div().p(10),
       text(
         compositionText.length > 0
           ? `Composing: "${compositionText}" (${compositionText.length} chars)`
           : "Composition: none"
       ),
-      SPACER_10PX,
+      div().p(10),
       text(`Status: ${demoState.textInputStatus}`),
     ];
   },

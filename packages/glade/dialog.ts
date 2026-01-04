@@ -32,6 +32,7 @@ import type { GladeContext } from "./context.ts";
 import { deferred, DeferredElement } from "./deferred.ts";
 import type { ClickHandler, HitTestNode, KeyHandler } from "./dispatch.ts";
 import { div, GladeDiv } from "./div.ts";
+import type { AnyGladeElement } from "./element.ts";
 import {
   GladeContainerElement,
   GladeElement,
@@ -107,7 +108,7 @@ export const DEFAULT_DIALOG_CONFIG: DialogConfig = {
  * Builder function for creating dialog content.
  */
 
-export type DialogBuilder = (cx: GladeContext) => GladeElement<any, any>;
+export type DialogBuilder = (cx: GladeContext) => AnyGladeElement;
 
 /**
  * Dialog registration for the manager.
@@ -135,7 +136,7 @@ export interface ActiveDialog {
   registration: DialogRegistration;
   /** The dialog element once built. */
 
-  element: GladeElement<any, any> | null;
+  element: AnyGladeElement | null;
   /** Computed dialog bounds. */
   bounds: Bounds | null;
 }
@@ -994,7 +995,7 @@ export class GladeDialogContent extends GladeElement<
 > {
   private headerElement: GladeDialogHeader | null = null;
 
-  private bodyElement: GladeElement<any, any> | null = null;
+  private bodyElement: AnyGladeElement | null = null;
   private footerElement: GladeDialogFooter | null = null;
   private context: DialogContentContext | null = null;
 
@@ -1014,7 +1015,7 @@ export class GladeDialogContent extends GladeElement<
    * Set the body content.
    */
 
-  body(body: GladeElement<any, any>): this {
+  body(body: AnyGladeElement): this {
     this.bodyElement = body;
     return this;
   }
@@ -1292,7 +1293,7 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
   private openValue = false;
   private onOpenChangeHandler: DialogOpenChangeHandler | null = null;
 
-  private triggerElement: GladeElement<any, any> | null = null;
+  private triggerElement: AnyGladeElement | null = null;
   private contentBuilder: DialogBuilder | null = null;
 
   // Config
@@ -1332,7 +1333,7 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
    * Set the trigger element that opens the dialog.
    */
 
-  trigger(element: GladeElement<any, any>): this {
+  trigger(element: AnyGladeElement): this {
     this.triggerElement = element;
     return this;
   }

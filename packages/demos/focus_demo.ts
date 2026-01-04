@@ -10,7 +10,6 @@ import {
   text,
 } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem, DemoState } from "./demo";
 
 function focusButton(
@@ -104,7 +103,7 @@ export const FOCUS_DEMO: Demo = {
         .keyContext("focus-demo")
         .children(
           text("Keyboard traversal across toolbars, groups, and modal dialogs."),
-          SPACER_10PX,
+          div().p(10),
           text("• Tab/Shift+Tab respects custom tab indexes and focus groups."),
           text(
             "• Right arrow in the toolbar uses focusNextSibling(); Home jumps to the first child."

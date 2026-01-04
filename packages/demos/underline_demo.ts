@@ -1,6 +1,5 @@
-import { text } from "@glade/glade";
+import { div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const UNDERLINE_DEMO: Demo = {
@@ -10,17 +9,17 @@ export const UNDERLINE_DEMO: Demo = {
 
     return [
       text("Solid and wavy underlines for text decoration").size(16),
-      SPACER_10PX,
+      div().p(10),
       text("Hyperlink")
         .size(16)
         .color(theme.semantic.text.default)
         .underlined({ style: "solid", color: theme.components.link.foreground, thickness: 1 }),
-      SPACER_10PX,
+      div().p(10),
       text("Important")
         .size(16)
         .color(theme.semantic.text.default)
         .underlined({ style: "solid", color: theme.semantic.status.success, thickness: 2 }),
-      SPACER_10PX,
+      div().p(10),
       text("Speling Error").size(16).color(theme.semantic.text.default).underlined({
         style: "wavy",
         color: theme.semantic.status.danger,
@@ -28,7 +27,7 @@ export const UNDERLINE_DEMO: Demo = {
         wavelength: 4,
         amplitude: 1.5,
       }),
-      SPACER_10PX,
+      div().p(10),
       text("Grammer Issue").size(16).color(theme.semantic.text.default).underlined({
         style: "wavy",
         color: theme.components.link.foreground,
@@ -36,14 +35,14 @@ export const UNDERLINE_DEMO: Demo = {
         wavelength: 5,
         amplitude: 1.5,
       }),
-      SPACER_10PX,
+      div().p(10),
       text("Larger Text").size(18),
-      SPACER_10PX,
+      div().p(10),
       text("Title Text")
         .size(24)
         .color(theme.semantic.text.default)
         .underlined({ style: "solid", color: theme.components.link.foreground, thickness: 2 }),
-      SPACER_10PX,
+      div().p(10),
       text("Code Identifier")
         .font("JetBrains Mono")
         .size(18)

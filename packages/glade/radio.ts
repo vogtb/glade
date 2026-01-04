@@ -11,6 +11,7 @@ import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
 import type { ClickHandler, HitTestNode } from "./dispatch.ts";
 import {
+  type AnyGladeElement,
   GladeContainerElement,
   GladeElement,
   type GlobalElementId,
@@ -554,7 +555,7 @@ export class GladeRadioGroup extends GladeContainerElement<
 
       const childCx = cx.withElementId(childId);
 
-      const prepaintState = (child as GladeElement<any, any>).prepaint(
+      const prepaintState = (child as AnyGladeElement).prepaint(
         childCx,
         childBound,
         childRequestState
@@ -612,7 +613,7 @@ export class GladeRadioGroup extends GladeContainerElement<
 
       const childCx = cx.withElementId(childId);
 
-      (child as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
+      (child as AnyGladeElement).paint(childCx, childBound, childPrepaintState);
     }
   }
 

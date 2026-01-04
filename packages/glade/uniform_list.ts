@@ -14,6 +14,7 @@ import { type Color, toColorObject } from "@glade/utils";
 import type { GladeContext } from "./context.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import {
+  type AnyGladeElement,
   GladeElement,
   type GlobalElementId,
   type PaintContext,
@@ -49,7 +50,7 @@ export type UniformListRenderItem<T> = (
   item: T,
   props: UniformListItemProps,
   cx: GladeContext
-) => GladeElement<any, any>;
+) => AnyGladeElement;
 
 /**
  * State passed from requestLayout to prepaint.
@@ -299,7 +300,7 @@ export class UniformList<T> extends GladeElement<
         elementId: childId,
       };
 
-      const result = (element as GladeElement<any, any>).requestLayout(childCx);
+      const result = (element as AnyGladeElement).requestLayout(childCx);
       itemLayoutIds.push(result.layoutId);
       itemRequestStates.push({ element, requestState: result.requestState });
     }
@@ -398,7 +399,7 @@ export class UniformList<T> extends GladeElement<
 
       const childCx = cx.withElementId(childId);
 
-      const prepaintState = (element as GladeElement<any, any>).prepaint(
+      const prepaintState = (element as AnyGladeElement).prepaint(
         childCx,
         itemBound,
         childRequestState
@@ -458,7 +459,7 @@ export class UniformList<T> extends GladeElement<
 
           const childCx = cx.withElementId(childId);
 
-          (element as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
+          (element as AnyGladeElement).paint(childCx, childBound, childPrepaintState);
         }
       }
     );

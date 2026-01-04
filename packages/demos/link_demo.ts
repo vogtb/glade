@@ -1,13 +1,12 @@
 import { colors, div, link, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const LINK_DEMO: Demo = {
   name: "Link",
   renderElement: (_cx, _state): DemoItem[] => [
     text("Clickable text links that open URLs in the browser"),
-    SPACER_10PX,
+    div().p(10),
 
     // Basic links
     text("Basic Links"),

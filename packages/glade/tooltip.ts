@@ -6,7 +6,7 @@
  */
 
 import type { GladeContext } from "./context.ts";
-import type { GladeElement } from "./element.ts";
+import type { AnyGladeElement, GladeElement } from "./element.ts";
 import type { HitboxId } from "./hitbox.ts";
 import type { Bounds, Point } from "./types.ts";
 
@@ -44,7 +44,7 @@ export const DEFAULT_TOOLTIP_CONFIG: TooltipConfig = {
  * Called when tooltip should be displayed.
  */
 
-export type TooltipBuilder = (cx: GladeContext) => GladeElement<any, any>;
+export type TooltipBuilder = (cx: GladeContext) => AnyGladeElement;
 
 /**
  * Tooltip registration for an element.

@@ -12,6 +12,7 @@ import { type Color, toColorObject } from "@glade/utils";
 import type { GladeContext } from "./context.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import {
+  type AnyGladeElement,
   GladeElement,
   type GlobalElementId,
   type PaintContext,
@@ -78,7 +79,7 @@ export type ListRenderItem<T> = (
   item: T,
   props: ListItemProps,
   cx: GladeContext
-) => GladeElement<any, any>;
+) => AnyGladeElement;
 
 /**
  * Cached item height info.
@@ -383,7 +384,7 @@ interface ListRequestState {
   renderedItems: Array<{
     index: number;
 
-    element: GladeElement<any, any>;
+    element: AnyGladeElement;
 
     requestState: any;
     layoutId: LayoutId;
@@ -397,7 +398,7 @@ interface ListRequestState {
 interface ListPrepaintState {
   visibleRange: { start: number; end: number };
 
-  renderedItems: Array<{ index: number; element: GladeElement<any, any>; prepaintState: any }>;
+  renderedItems: Array<{ index: number; element: AnyGladeElement; prepaintState: any }>;
   itemElementIds: GlobalElementId[];
   itemBounds: Bounds[];
   hitbox: Hitbox | null;
@@ -629,7 +630,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
     const renderedItems: Array<{
       index: number;
 
-      element: GladeElement<any, any>;
+      element: AnyGladeElement;
 
       requestState: any;
       layoutId: LayoutId;
@@ -655,7 +656,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
 
       const childCx = { ...cx, elementId: childId };
 
-      const result = (element as GladeElement<any, any>).requestLayout(childCx);
+      const result = (element as AnyGladeElement).requestLayout(childCx);
       renderedItems.push({
         index: i,
         element,
@@ -741,7 +742,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
     const prepaintedItems: Array<{
       index: number;
 
-      element: GladeElement<any, any>;
+      element: AnyGladeElement;
 
       prepaintState: any;
     }> = [];
@@ -780,7 +781,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
 
       const childCx = cx.withElementId(childId);
 
-      const prepaintState = (element as GladeElement<any, any>).prepaint(
+      const prepaintState = (element as AnyGladeElement).prepaint(
         childCx,
         itemBound,
         childRequestState
@@ -1012,7 +1013,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
 
           const childCx = cx.withElementId(childId);
 
-          (element as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
+          (element as AnyGladeElement).paint(childCx, childBound, childPrepaintState);
         }
         this.paintScrollbars(cx, prepaintState);
       }

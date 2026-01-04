@@ -11,7 +11,6 @@ import {
   type WebGPUHostInput,
 } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 type WebGPUDemoId = "hexagon" | "metaball" | "particle" | "raymarch" | "terrain" | "galaxy";
@@ -2910,7 +2909,7 @@ export const WEBGPU_DEMO: Demo = {
 
     return [
       text("Custom WebGPU rendering embedded within Glade UI layout"),
-      SPACER_10PX,
+      div().p(10),
 
       div()
         .flex()
@@ -2942,7 +2941,7 @@ export const WEBGPU_DEMO: Demo = {
             )
         ),
 
-      SPACER_10PX,
+      div().p(10),
 
       div()
         .flex()

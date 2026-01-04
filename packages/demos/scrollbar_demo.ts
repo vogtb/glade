@@ -1,6 +1,5 @@
 import { colors, div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 const sampleItems = Array.from({ length: 30 }, (_, i) => `Item ${i + 1}: Sample content line`);
@@ -9,13 +8,13 @@ export const SCROLLBAR_DEMO: Demo = {
   name: "Scrollbars",
   renderElement: (_cx, state): DemoItem[] => [
     text("Draggable scrollbars with visual scroll position indication").size(16),
-    SPACER_10PX,
+    div().p(10),
     text("Interactions:"),
     text("- Scroll with mouse wheel or trackpad").size(12),
     text("- Drag the scrollbar thumb to scroll").size(12),
     text("- Click the track to jump to that position").size(12),
     text("- Hover over scrollbar for highlight effect").size(12),
-    SPACER_10PX,
+    div().p(10),
     div()
       .flex()
       .flexRow()

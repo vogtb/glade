@@ -1,6 +1,5 @@
 import { colors, div, rgb, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const CLIPBOARD_DEMO: Demo = {
@@ -89,15 +88,15 @@ export const CLIPBOARD_DEMO: Demo = {
 
     return [
       text("Cross-platform copy/paste powered by platform clipboards."),
-      SPACER_10PX,
+      div().p(10),
 
       text("Capabilities").size(13),
       text(capabilityText).size(12).color(colors.black.x400),
-      SPACER_10PX,
+      div().p(10),
 
       text("Sample to copy").size(13),
       text(state.clipboardSample).size(16),
-      SPACER_10PX,
+      div().p(10),
 
       div()
         .flex()
@@ -132,10 +131,10 @@ export const CLIPBOARD_DEMO: Demo = {
             .child(text("Paste from system").color(colors.white.default))
         ),
 
-      SPACER_10PX,
+      div().p(10),
       text("Last clipboard text").size(13),
       text(lastText).size(15),
-      SPACER_10PX,
+      div().p(10),
       text(state.clipboardStatus).size(13).color(colors.black.x400),
     ];
   },

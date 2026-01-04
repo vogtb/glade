@@ -1,13 +1,12 @@
 import { colors, div, list, text, uniformList } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const VIRTUAL_SCROLLING_DEMO: Demo = {
   name: "Virtual Scrolling",
   renderElement: (cx, state): DemoItem[] => [
     text("Efficient rendering of large lists with fixed and variable height items"),
-    SPACER_10PX,
+    div().p(10),
     div()
       .flex()
       .flexRow()

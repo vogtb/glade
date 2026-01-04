@@ -1,6 +1,5 @@
 import { colors, div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const BORDER_DEMO: Demo = {
@@ -9,7 +8,7 @@ export const BORDER_DEMO: Demo = {
     text("Border widths, colors, and radius options.").size(16),
 
     // Border widths
-    SPACER_10PX,
+    div().p(10),
     text("Border Widths").size(18).weight(600),
     div()
       .flex()
@@ -59,7 +58,7 @@ export const BORDER_DEMO: Demo = {
       ),
 
     // Border colors
-    SPACER_10PX,
+    div().p(10),
     text("Border Colors").size(18).weight(600),
     div()
       .flex()
@@ -109,7 +108,7 @@ export const BORDER_DEMO: Demo = {
       ),
 
     // Border radius
-    SPACER_10PX,
+    div().p(10),
     text("Border Radius").size(18).weight(600),
     div()
       .flex()
@@ -164,7 +163,7 @@ export const BORDER_DEMO: Demo = {
       ),
 
     // Combined border + radius
-    SPACER_10PX,
+    div().p(10),
     text("Border + Radius Combined").size(18).weight(600),
     div()
       .flex()

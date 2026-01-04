@@ -1,6 +1,5 @@
 import { code, div, pre, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 const INLINE_SAMPLE =
@@ -42,17 +41,17 @@ export const CODE_DEMO: Demo = {
             code(INLINE_SAMPLE),
             text("→ whitespace collapses and wraps").size(13)
           ),
-        SPACER_10PX,
+        div().p(10),
         text("Preformatted block (no wrap, scrollable)").size(16),
-        SPACER_10PX,
+        div().p(10),
         pre(PRE_SAMPLE).padding(12).rounded(8).wrap(false).scrollable(true),
-        SPACER_10PX,
+        div().p(10),
         text("Wrapped preformatted text (tabSize: 4)").size(16),
-        SPACER_10PX,
+        div().p(10),
         pre(WRAPPED_PRE_SAMPLE).wrap(true).tabSize(4).padding(12).rounded(8),
-        SPACER_10PX,
+        div().p(10),
         text("Custom font override (JetBrains Mono)").size(16),
-        SPACER_10PX,
+        div().p(10),
         div()
           .flex()
           .flexCol()

@@ -70,7 +70,7 @@ export interface RequestLayoutResult<R> {
  * Analogous to a React component or GPUI View.
  */
 export interface GladeView {
-  render(cx: GladeViewContext<this>): GladeElement<any, any>;
+  render(cx: GladeViewContext<this>): AnyGladeElement;
 }
 
 /**
@@ -78,7 +78,7 @@ export interface GladeView {
  * Similar to GPUI's RenderOnce.
  */
 export interface GladeRenderOnce {
-  render(cx: GladeViewContext<never>): GladeElement<any, any>;
+  render(cx: GladeViewContext<never>): AnyGladeElement;
 }
 
 // ============ Phase Contexts ============
@@ -231,7 +231,7 @@ export interface PrepaintContext {
     hitboxId: HitboxId,
     bounds: Bounds,
 
-    builder: (cx: GladeContext) => GladeElement<any, any>,
+    builder: (cx: GladeContext) => AnyGladeElement,
     config: TooltipConfig
   ): void;
 
@@ -615,6 +615,12 @@ export abstract class GladeElement<RequestLayoutState = NoState, PrepaintState =
 }
 
 /**
+ * Many uses of GladeElement don't depend on state, so we don't need to keep
+ * specifying types everywhere.
+ */
+export type AnyGladeElement = GladeElement<any, any>;
+
+/**
  * An element that can contain children.
  */
 export abstract class GladeContainerElement<
@@ -623,14 +629,14 @@ export abstract class GladeContainerElement<
 > extends GladeElement<RequestLayoutState, PrepaintState> {
   // TODO: we should definitely be able to type the children
 
-  protected _children: GladeElement<any, any>[] = [];
+  protected _children: AnyGladeElement[] = [];
   protected childLayoutIds: LayoutId[] = [];
 
   /**
    * Add a child element.
    */
 
-  child(element: GladeElement<any, any> | string | number): this {
+  child(element: AnyGladeElement | string | number): this {
     if (typeof element === "string" || typeof element === "number") {
       this._children.push(new GladeTextElement(String(element)));
     } else {
@@ -643,7 +649,7 @@ export abstract class GladeContainerElement<
    * Add multiple children.
    */
 
-  children(...elements: Array<GladeElement<any, any> | string | number | null | undefined>): this {
+  children(...elements: Array<AnyGladeElement | string | number | null | undefined>): this {
     for (const el of elements) {
       if (el != null) {
         this.child(el);
@@ -656,7 +662,7 @@ export abstract class GladeContainerElement<
    * Add multiple children (nullable-friendly).
    */
 
-  children_(...elements: Array<GladeElement<any, any> | string | number | null | undefined>): this {
+  children_(...elements: Array<AnyGladeElement | string | number | null | undefined>): this {
     for (const el of elements) {
       if (el != null) {
         this.child(el);
@@ -669,7 +675,7 @@ export abstract class GladeContainerElement<
    * Get the child elements.
    */
 
-  getChildren(): readonly GladeElement<any, any>[] {
+  getChildren(): readonly AnyGladeElement[] {
     return this._children;
   }
 }

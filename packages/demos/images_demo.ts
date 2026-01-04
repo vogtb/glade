@@ -1,7 +1,6 @@
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { base64ToBytes, colors, type DecodedImage, div, img, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 const DEMO_PNG_BASE64 = COMPTIME_embedAsBase64("../../assets/image.png");
@@ -32,7 +31,7 @@ export const IMAGES_DEMO: Demo = {
 
       return [
         text("Images").size(32),
-        SPACER_10PX,
+        div().p(10),
         text("Loading images...").color(colors.black.x400),
       ];
     }
@@ -43,15 +42,15 @@ export const IMAGES_DEMO: Demo = {
     return [
       text("PNG + JPG decoding with GPU filters, rounding, and effects."),
       text("PNG Image Rendering"),
-      SPACER_10PX,
+      div().p(10),
       text("PNG decoding with GPU-accelerated rendering and effects"),
-      SPACER_10PX,
+      div().p(10),
       div()
         .flex()
         .flexCol()
         .gap(4)
         .children(img(pngImage), text("Native size (auto-constrained to parent)")),
-      SPACER_10PX,
+      div().p(10),
       div()
         .flex()
         .flexRow()
@@ -90,17 +89,17 @@ export const IMAGES_DEMO: Demo = {
             .children(img(pngImage).size(100, 100).cover().rounded(50), text("Circle (cover)"))
         ),
 
-      SPACER_10PX,
+      div().p(10),
 
       text("JPEG Image Rendering"),
       text("JPEG decoding with GPU-accelerated rendering and effects"),
-      SPACER_10PX,
+      div().p(10),
       div()
         .flex()
         .flexCol()
         .gap(4)
         .children(img(jpgImage), text("Native size (auto-constrained to parent)")),
-      SPACER_10PX,
+      div().p(10),
       div()
         .flex()
         .flexRow()

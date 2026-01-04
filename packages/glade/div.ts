@@ -19,8 +19,8 @@ import type {
 } from "./dispatch.ts";
 import type { CanDropPredicate, DropHandler } from "./drag.ts";
 import {
+  type AnyGladeElement,
   GladeContainerElement,
-  GladeElement,
   type GlobalElementId,
   type PaintContext,
   type PrepaintContext,
@@ -1193,7 +1193,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
       const childCx = cx.withElementId(childId);
 
-      const prepaintState = (child as GladeElement<any, any>).prepaint(
+      const prepaintState = (child as AnyGladeElement).prepaint(
         childCx,
         childBound,
         childRequestState
@@ -1515,7 +1515,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
           const childCx = cx.withElementId(childId);
 
-          (child as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
+          (child as AnyGladeElement).paint(childCx, childBound, childPrepaintState);
         }
       };
 

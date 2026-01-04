@@ -1,6 +1,5 @@
 import { colors, div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const PADDING_DEMO: Demo = {
@@ -9,7 +8,7 @@ export const PADDING_DEMO: Demo = {
     text("Padding creates space inside an element.").size(16),
 
     // Uniform padding
-    SPACER_10PX,
+    div().p(10),
     text("Uniform Padding (p)").size(18).weight(600),
     div()
       .flex()
@@ -35,7 +34,7 @@ export const PADDING_DEMO: Demo = {
       ),
 
     // Horizontal padding
-    SPACER_10PX,
+    div().p(10),
     text("Horizontal Padding (px)").size(18).weight(600),
     div()
       .flex()
@@ -60,7 +59,7 @@ export const PADDING_DEMO: Demo = {
       ),
 
     // Vertical padding
-    SPACER_10PX,
+    div().p(10),
     text("Vertical Padding (py)").size(18).weight(600),
     div()
       .flex()
@@ -85,7 +84,7 @@ export const PADDING_DEMO: Demo = {
       ),
 
     // Individual padding
-    SPACER_10PX,
+    div().p(10),
     text("Individual Padding (pt, pr, pb, pl)").size(18).weight(600),
     div()
       .flex()
@@ -123,7 +122,7 @@ export const PADDING_DEMO: Demo = {
       ),
 
     // Mixed padding
-    SPACER_10PX,
+    div().p(10),
     text("Asymmetric Padding").size(18).weight(600),
     div()
       .flex()

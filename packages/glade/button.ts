@@ -12,7 +12,7 @@ import { toColorObject } from "@glade/utils";
 
 import { GladeDiv } from "./div.ts";
 import type { PrepaintContext, RequestLayoutContext } from "./element.ts";
-import type { GladeElement } from "./element.ts";
+import type { AnyGladeElement } from "./element.ts";
 import { GladeTextElement, text } from "./element.ts";
 import { StyleBuilder } from "./styles.ts";
 import type { Theme } from "./theme.ts";
@@ -205,7 +205,7 @@ export class GladeButton extends GladeDiv {
 
   /** Override the child method to track children. */
 
-  override child(element: GladeElement<any, any> | string | number): this {
+  override child(element: AnyGladeElement | string | number): this {
     return super.child(element);
   }
 

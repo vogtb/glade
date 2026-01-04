@@ -1,7 +1,6 @@
 import type { Bounds, PrepaintContext } from "@glade/glade";
-import { canvas, text } from "@glade/glade";
+import { canvas, div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 type CanvasBarsState = {
@@ -17,7 +16,7 @@ export const CANVAS_DEMO: Demo = {
   name: "Canvas",
   renderElement: (_cx, _state): DemoItem[] => [
     text("Direct access to low-level paint APIs without defining a custom element."),
-    SPACER_10PX,
+    div().p(10),
     text("Bars via canvas()").size(18),
     canvas<CanvasBarsState>({
       styles: { width: "100%", height: 260 },

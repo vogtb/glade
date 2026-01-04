@@ -1,13 +1,12 @@
 import { colors, div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const DIV_DEMO: Demo = {
   name: "Div",
   renderElement: (cx, _state): DemoItem[] => [
     text("They're basically like an HTML <div />").size(16),
-    SPACER_10PX,
+    div().p(10),
     div()
       .p(20)
       .border(2)
@@ -15,7 +14,7 @@ export const DIV_DEMO: Demo = {
       .bg(cx.getTheme().semantic.surface.muted)
       .rounded(4)
       .child(text("p=20, border 2px, rounded 2px")),
-    SPACER_10PX,
+    div().p(10),
     div()
       .p(20)
       .m(20)
@@ -24,7 +23,7 @@ export const DIV_DEMO: Demo = {
       .bg(cx.getTheme().semantic.surface.muted)
       .rounded(10)
       .child(text("p=20, m=20, border 4px, rounded 10px")),
-    SPACER_10PX,
+    div().p(10),
     div().child(
       div()
         .p(10)

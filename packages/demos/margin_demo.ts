@@ -1,6 +1,5 @@
 import { colors, div, text } from "@glade/glade";
 
-import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";
 
 export const MARGIN_DEMO: Demo = {
@@ -9,7 +8,7 @@ export const MARGIN_DEMO: Demo = {
     text("Margin creates space outside an element.").size(16),
 
     // Uniform margin
-    SPACER_10PX,
+    div().p(10),
     text("Uniform Margin (m)").size(18).weight(600),
     div()
       .flex()
@@ -75,7 +74,7 @@ export const MARGIN_DEMO: Demo = {
       ),
 
     // Horizontal margin
-    SPACER_10PX,
+    div().p(10),
     text("Horizontal Margin (mx)").size(18).weight(600),
     div()
       .flex()
@@ -127,7 +126,7 @@ export const MARGIN_DEMO: Demo = {
       ),
 
     // Vertical margin
-    SPACER_10PX,
+    div().p(10),
     text("Vertical Margin (my)").size(18).weight(600),
     div()
       .flex()
@@ -179,7 +178,7 @@ export const MARGIN_DEMO: Demo = {
       ),
 
     // Individual margins
-    SPACER_10PX,
+    div().p(10),
     text("Individual Margins (mt, mr, mb, ml)").size(18).weight(600),
     div()
       .flex()

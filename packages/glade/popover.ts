@@ -14,7 +14,7 @@
 
 import type { Corner } from "./anchored.ts";
 import type { GladeContext } from "./context.ts";
-import type { GladeElement } from "./element.ts";
+import type { AnyGladeElement } from "./element.ts";
 import type { HitboxId } from "./hitbox.ts";
 import type { Bounds, Point, Size } from "./types.ts";
 
@@ -50,7 +50,7 @@ export const DEFAULT_POPOVER_CONFIG: PopoverConfig = {
  * Builder function for creating popover content.
  */
 
-export type PopoverBuilder = (cx: GladeContext) => GladeElement<any, any>;
+export type PopoverBuilder = (cx: GladeContext) => AnyGladeElement;
 
 /**
  * Popover registration for an element.
@@ -82,7 +82,7 @@ export interface ActivePopover {
   bounds: Bounds | null;
   /** The popover element. */
 
-  element: GladeElement<any, any> | null;
+  element: AnyGladeElement | null;
   /** Anchor corner used for positioning. */
   anchorCorner: Corner;
   /** Computed anchor position. */
