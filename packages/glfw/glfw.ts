@@ -29,6 +29,7 @@ const lib = dlopen(GLFW_PATH, {
   glfwSwapInterval: { args: [FFIType.i32], returns: FFIType.void },
   glfwSetClipboardString: { args: [FFIType.ptr, FFIType.cstring], returns: FFIType.void },
   glfwGetClipboardString: { args: [FFIType.ptr], returns: FFIType.cstring },
+  glfwSetWindowTitle: { args: [FFIType.ptr, FFIType.cstring], returns: FFIType.void },
   // Native window access (macOS)
   glfwGetCocoaWindow: { args: [FFIType.ptr], returns: FFIType.ptr },
   glfwGetCocoaView: { args: [FFIType.ptr], returns: FFIType.ptr },
@@ -328,5 +329,10 @@ export const glfw = {
       return null;
     }
     return value.toString();
+  },
+
+  setWindowTitle(window: GLFWwindow, title: string): void {
+    const titleBuffer = Buffer.from(title + "\0");
+    lib.symbols.glfwSetWindowTitle(window, ptr(titleBuffer));
   },
 };

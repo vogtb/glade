@@ -22,6 +22,7 @@ export interface WebGPUContext extends EventTarget {
   width: number;
   height: number;
   destroy(): void;
+  setTitle(title: string): void;
 }
 
 /**

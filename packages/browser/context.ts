@@ -499,6 +499,10 @@ export async function createWebGPUContext(
     setCursor(style: CursorStyle): void {
       canvas.style.cursor = style;
     },
+
+    setTitle(title: string): void {
+      document.title = title;
+    },
   };
 }
 

@@ -165,7 +165,9 @@ export interface GladePlatform {
 }
 
 /**
- * Platform-specific render target.
+ * Platform-specific render target, which is essentially the window, but it
+ * may not be in the future. It's also confusing to call it a window, when
+ * it's really an abstraction of the things a window provides.
  */
 export interface GladeRenderTarget {
   readonly width: number;
@@ -203,6 +205,7 @@ export interface GladeRenderTarget {
   onTextInput?(callback: (event: import("@glade/core").TextInputEvent) => void): () => void;
 
   setCursor?(style: CursorStyle): void;
+  setTitle?(title: string): void;
 
   onClose?(callback: () => void): () => void;
   onFocus?(callback: (focused: boolean) => void): () => void;
@@ -436,6 +439,13 @@ export class GladeWindow {
    */
   openUrl(url: string): void {
     this.platform.openUrl(url);
+  }
+
+  /**
+   * Set the window title.
+   */
+  setTitle(title: string): void {
+    this.renderTarget.setTitle?.(title);
   }
 
   /**

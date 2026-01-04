@@ -646,6 +646,10 @@ export async function createWebGPUContext(
         glfw.setCursor(window, cursor);
       }
     },
+
+    setTitle(title: string): void {
+      glfw.setWindowTitle(window, title);
+    },
   };
 
   return ctx;

@@ -35,6 +35,7 @@ import { TABLE_DEMO } from "./table_demo.ts";
 import { TEXT_DEMO } from "./text_demo.ts";
 import { TEXT_SELECTION_DEMO } from "./text_selection_demo.ts";
 import { THEME_DEMO } from "./theme_demo.ts";
+import { TITLE_DEMO } from "./title_demo.ts";
 import { TOOLTIP_DEMO } from "./tooltip_demo.ts";
 import { UNDERLINE_DEMO } from "./underline_demo.ts";
 import { VIRTUAL_SCROLLING_DEMO } from "./virtual_scrolling_demo.ts";
@@ -75,6 +76,7 @@ export const ALL_DEMOS: Demo[] = [
   TEXT_DEMO,
   TEXT_SELECTION_DEMO,
   THEME_DEMO,
+  TITLE_DEMO,
   TOOLTIP_DEMO,
   UNDERLINE_DEMO,
   VIRTUAL_SCROLLING_DEMO,
@@ -116,6 +118,7 @@ export {
   TEXT_DEMO,
   TEXT_SELECTION_DEMO,
   THEME_DEMO,
+  TITLE_DEMO,
   TOOLTIP_DEMO,
   UNDERLINE_DEMO,
   VIRTUAL_SCROLLING_DEMO,

@@ -309,6 +309,10 @@ class MacOSRenderTarget implements GladeRenderTarget {
     this.ctx.setCursor(style);
   }
 
+  setTitle(title: string): void {
+    this.ctx.setTitle(title);
+  }
+
   onResize(callback: (width: number, height: number) => void): () => void {
     return this.ctx.onResize((event) => {
       // onResize gives framebuffer size, convert to logical
