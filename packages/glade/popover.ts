@@ -13,10 +13,12 @@
  */
 
 import type { Corner } from "./anchored.ts";
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import type { AnyGladeElement } from "./element.ts";
 import type { HitboxId } from "./hitbox.ts";
-import type { Bounds, Point, Size } from "./types.ts";
+import type { Point } from "./point.ts";
+import type { Size } from "./size.ts";
 
 export type PopoverSide = "top" | "bottom" | "left" | "right";
 export type PopoverAlign = "start" | "center" | "end";

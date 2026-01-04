@@ -1,6 +1,7 @@
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
 import { AnchoredElement } from "./anchored.ts";
+import type { Bounds } from "./bounds.ts";
 import { DeferredElement, type DeferredRequestLayoutState } from "./deferred.ts";
 import type { ClickHandler, HitTestNode } from "./dispatch.ts";
 import { GladeDiv } from "./div.ts";
@@ -48,7 +49,6 @@ import {
   resetDropdownState,
 } from "./menu.ts";
 import type { Theme } from "./theme.ts";
-import { type Bounds } from "./types.ts";
 
 type DropdownRequestState = {
   layoutId: LayoutId;

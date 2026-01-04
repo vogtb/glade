@@ -7,8 +7,8 @@
 
 import type { GladeContext, GladeEntityContext, GladeReadContext } from "./context.ts";
 import type { GladeView } from "./element.ts";
+import type { EntityId, FocusId, ScrollHandleId, WindowId } from "./id.ts";
 import type { ScrollOffset } from "./scroll.ts";
-import type { EntityId, FocusId, ScrollHandleId, WindowId } from "./types.ts";
 
 /**
  * A handle to an entity owned by GladeApp.

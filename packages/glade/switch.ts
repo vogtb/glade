@@ -9,6 +9,7 @@
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { ClickHandler, HitTestNode } from "./dispatch.ts";
 import {
   GladeElement,
@@ -23,7 +24,6 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
-import type { Bounds } from "./types.ts";
 
 const DEFAULT_DISABLED_OPACITY = 0.5;
 

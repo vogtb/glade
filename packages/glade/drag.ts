@@ -5,10 +5,12 @@
  * Inspired by GPUI's drag/drop system.
  */
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import type { GladeElement } from "./element.ts";
 import type { HitboxId } from "./hitbox.ts";
-import type { Bounds, Point, WindowId } from "./types.ts";
+import type { WindowId } from "./id.ts";
+import type { Point } from "./point.ts";
 import type { GladeWindow } from "./window.ts";
 
 /**

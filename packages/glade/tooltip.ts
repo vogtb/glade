@@ -5,10 +5,11 @@
  * Inspired by GPUI's tooltip system.
  */
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import type { AnyGladeElement, GladeElement } from "./element.ts";
 import type { HitboxId } from "./hitbox.ts";
-import type { Bounds, Point } from "./types.ts";
+import type { Point } from "./point.ts";
 
 /**
  * Position preference for tooltip placement.

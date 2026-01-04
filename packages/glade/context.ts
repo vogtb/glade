@@ -17,9 +17,9 @@ import type {
   ScrollHandle,
   SubscriberHandle,
 } from "./entity.ts";
+import type { EntityId, FocusId, WindowId } from "./id.ts";
 import type { ScrollOffset } from "./scroll.ts";
 import type { Theme } from "./theme.ts";
-import type { EntityId, FocusId, WindowId } from "./types.ts";
 import type { GladeWindow } from "./window.ts";
 
 /**

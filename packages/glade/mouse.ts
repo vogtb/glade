@@ -7,7 +7,7 @@
 import type { CursorMoveEvent, MouseButton, MouseButtonEvent } from "@glade/core";
 
 import type { Bounds } from "./bounds.ts";
-import type { Point } from "./types.ts";
+import type { Point } from "./point.ts";
 
 /**
  * Mouse button state tracker.

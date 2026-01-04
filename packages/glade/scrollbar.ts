@@ -7,7 +7,8 @@
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
-import { type Bounds, type ScrollHandleId } from "./types.ts";
+import type { Bounds } from "./bounds.ts";
+import type { ScrollHandleId } from "./id.ts";
 
 /**
  * When to show scrollbars.

@@ -6,6 +6,7 @@
  * which flattens cells into a single grid.
  */
 
+import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import { GladeDiv } from "./div.ts";
 import {
@@ -21,7 +22,6 @@ import { HitboxBehavior } from "./hitbox.ts";
 import type { LayoutId } from "./layout.ts";
 import type { GridTemplate, Styles, TrackSize } from "./styles.ts";
 import { overflowClipsContent } from "./styles.ts";
-import type { Bounds } from "./types.ts";
 
 type TableSectionKind = "head" | "body" | "foot";
 

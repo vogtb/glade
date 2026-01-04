@@ -4,7 +4,8 @@
  * Handles tab order, focus groups, and keyboard navigation for UI elements.
  */
 
-import type { Bounds, FocusId } from "./types.ts";
+import type { Bounds } from "./bounds.ts";
+import type { FocusId } from "./id.ts";
 
 /**
  * Configuration for a tab stop.

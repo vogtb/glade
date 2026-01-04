@@ -16,8 +16,8 @@ import {
   type TaffyLayoutEngine,
 } from "@glade/layout";
 
+import type { Bounds } from "./bounds.ts";
 import type { Styles } from "./styles.ts";
-import type { Bounds } from "./types.ts";
 
 declare const __layoutIdBrand: unique symbol;
 export type LayoutId = number & { [__layoutIdBrand]: true };

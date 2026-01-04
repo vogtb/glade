@@ -6,6 +6,7 @@
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import {
   GladeElement,
@@ -17,7 +18,6 @@ import {
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { LayoutId } from "./layout.ts";
-import type { Bounds } from "./types.ts";
 
 /**
  * Default link color (blue).

@@ -7,6 +7,7 @@
 
 import type { ColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { ClickHandler, HitTestNode, KeyHandler, MouseHandler } from "./dispatch.ts";
 import {
   GladeContainerElement,
@@ -19,8 +20,9 @@ import {
 } from "./element.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
+import type { WindowId } from "./id.ts";
 import type { LayoutId } from "./layout.ts";
-import { type Bounds, type Size, type WindowId } from "./types.ts";
+import type { Size } from "./size.ts";
 
 export const DEFAULT_FONT_SIZE = 14;
 export const DEFAULT_LABEL_FONT_SIZE = 12;

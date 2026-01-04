@@ -18,7 +18,7 @@ import type { GladeScene } from "./scene.ts";
 import type { Styles } from "./styles.ts";
 import type { TextSystem } from "./text.ts";
 import type { Theme } from "./theme.ts";
-import type { Point } from "./types.ts";
+import type { Point } from "./point.ts";
 import type { Bounds } from "./bounds.ts";
 
 /**

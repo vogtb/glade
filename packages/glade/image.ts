@@ -9,7 +9,7 @@ import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
 
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { ClipBounds } from "./scene.ts";
-import type { TransformationMatrix } from "./types.ts";
+import type { TransformationMatrix } from "./transform.ts";
 
 /**
  * Unique identifier for an image in the atlas.
@@ -290,7 +290,7 @@ export class ImageCache {
 
   /**
    * Clear the cache by creating a new WeakMap.
-   * Note: With WeakMap, entries are automatically garbage collected
+   * With WeakMap, entries are automatically garbage collected
    * when DecodedImage objects are no longer referenced elsewhere.
    */
   clear(): void {

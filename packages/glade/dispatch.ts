@@ -1,7 +1,9 @@
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import type { CanDropPredicate, DragPayload, DropHandler } from "./drag.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
-import type { Bounds, FocusId, Point } from "./types.ts";
+import type { FocusId } from "./id.ts";
+import type { Point } from "./point.ts";
 import type { GladeWindow } from "./window.ts";
 
 /**

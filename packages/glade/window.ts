@@ -60,6 +60,7 @@ import type {
   PrepaintContext,
   RequestLayoutContext,
 } from "./element.ts";
+import type { ContentMask } from "./element.ts";
 import type { GladeViewHandle, ScrollHandle } from "./entity.ts";
 import { FocusHandle } from "./entity.ts";
 import { computeFpsBounds, type FpsConfig, type FpsCorner, GladeFps } from "./fps.ts";
@@ -81,6 +82,7 @@ import {
   keyCodeToHotkey,
   setGlobalHotkeyManager,
 } from "./hotkeys.ts";
+import type { EntityId, FocusId, ScrollHandleId, WindowId } from "./id.ts";
 import {
   type DecodedImage,
   ImageAtlas,
@@ -93,6 +95,7 @@ import { Key } from "./keyboard.ts";
 import { GladeLayoutEngine, type LayoutId } from "./layout.ts";
 import type { PathBuilder } from "./path.ts";
 import { PathPipeline } from "./path.ts";
+import type { Point } from "./point.ts";
 import { RectPipeline } from "./rect.ts";
 import { GladeRenderer } from "./renderer.ts";
 import { GladeScene } from "./scene.ts";
@@ -117,15 +120,7 @@ import {
 import { TextPipeline, TextSystem } from "./text.ts";
 import type { Theme } from "./theme.ts";
 import { type TooltipBuilder, type TooltipConfig, TooltipManager } from "./tooltip.ts";
-import type {
-  ContentMask,
-  EntityId,
-  FocusId,
-  Point,
-  ScrollHandleId,
-  TransformationMatrix,
-  WindowId,
-} from "./types.ts";
+import type { TransformationMatrix } from "./transform.ts";
 import { UnderlinePipeline } from "./underline.ts";
 
 function normalizeMouseButton(button: number, mods: Modifiers): number {
@@ -273,9 +268,6 @@ export class GladeWindow {
 
   // Tooltips
   private tooltipManager = new TooltipManager();
-
-  // Note: PopoverManager and DialogManager removed
-  // Overlays now render via deferred children in their respective elements
 
   // Tab stops and focus
   private tabStopRegistry = new TabStopRegistry();
@@ -1121,11 +1113,6 @@ export class GladeWindow {
     });
   }
 
-  // ============ Popovers ============
-
-  // Note: getPopoverManager, registerPopover, getDialogManager, registerDialog removed
-  // Overlays now render via deferred children in their respective elements
-
   /**
    * Get the current content mask.
    */
@@ -1275,7 +1262,6 @@ export class GladeWindow {
     this.tooltipManager.update(hoveredHitboxId, this.platform.now(), this.getContext());
 
     // Render active tooltip (separate layout/prepaint/paint cycle)
-    // Note: Dialogs and popovers now render via deferred children, no separate render call needed
     const tooltipHitTestNode = this.renderActiveTooltip();
 
     // Paint deferred elements in priority order (higher priority on top)
@@ -1452,7 +1438,6 @@ export class GladeWindow {
     this.dropTargetHitboxes.clear();
     // Clear tooltip registrations from previous frame
     this.tooltipManager.clearRegistrations();
-    // Note: Popover and dialog managers no longer used - overlays render via deferred children
     // Clear tab stops from previous frame
     this.tabStopRegistry.clear();
     // Clear focus contexts from previous frame
@@ -1559,9 +1544,6 @@ export class GladeWindow {
 
     this.scene.endOverlay();
   }
-
-  // Note: renderActivePopover() and renderActiveDialog() removed
-  // Popovers and dialogs now render via deferred children in their respective elements
 
   /**
    * Render the active tooltip if one exists.
@@ -1914,9 +1896,6 @@ export class GladeWindow {
       const cleanup = target.onMouseDown((x, y, button, mods) => {
         const normalizedButton = normalizeMouseButton(button, mods);
 
-        // Note: Popover click-outside dismissal is now handled by backdrop elements
-        // in GladeDropdown and GladeRightClickMenu
-
         // Intercept for cross-element selection FIRST
         const manager = this.getCrossElementSelection();
         if (manager.hasSelectableElements() && normalizedButton === 0) {
@@ -2052,8 +2031,6 @@ export class GladeWindow {
 
     if (target.onScroll) {
       const cleanup = target.onScroll((x, y, deltaX, deltaY, mods) => {
-        // Note: Popover scroll dismissal handled by individual elements if needed
-
         const event: GladeScrollEvent = { x, y, deltaX, deltaY, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
         dispatchScrollEvent(event, path, this, this.getContext());
@@ -2403,9 +2380,6 @@ export class GladeWindow {
       ): void => {
         registerTooltipFn(hitboxId, bounds, builder, config);
       },
-
-      // Note: registerPopover and registerDialog removed
-      // Overlays now render via deferred children in their respective elements
 
       updateScrollContentSize: (
         handle: ScrollHandle,

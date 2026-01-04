@@ -8,9 +8,9 @@
 import { GPUBufferUsage } from "@glade/core/webgpu";
 import { type Color, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { PathPrimitive, PathVertex } from "./scene.ts";
-import type { Bounds } from "./types.ts";
 
 /**
  * Path command types.

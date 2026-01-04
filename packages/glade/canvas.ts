@@ -5,6 +5,7 @@
  * defining a full element type.
  */
 
+import type { Bounds } from "./bounds.ts";
 import {
   GladeElement,
   type NoState,
@@ -14,7 +15,6 @@ import {
   type RequestLayoutResult,
 } from "./element.ts";
 import type { Styles } from "./styles.ts";
-import type { Bounds } from "./types.ts";
 
 export type CanvasPrepaint<T> = (bounds: Bounds, cx: PrepaintContext) => T;
 

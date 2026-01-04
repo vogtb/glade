@@ -18,6 +18,7 @@ import {
 } from "@glade/svg";
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type {
   PaintContext,
@@ -26,7 +27,7 @@ import type {
   RequestLayoutResult,
 } from "./element.ts";
 import { GladeElement } from "./element.ts";
-import { type Bounds, type TransformationMatrix } from "./types.ts";
+import type { TransformationMatrix } from "./transform.ts";
 
 export type { TessellatedMesh } from "@glade/svg";
 

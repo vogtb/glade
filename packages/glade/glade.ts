@@ -15,20 +15,15 @@
 
 // Core types
 export { boundsIntersect, boundsIsEmpty } from "./bounds";
+export type { ContentMask } from "./element";
+export type { EntityId, FocusId, ScrollHandleId, WindowId } from "./id";
+export type { Point } from "./point";
 export type { ScrollOffset, ScrollState } from "./scroll";
 export { clampScrollOffset, createScrollState, isScrollable } from "./scroll";
+export type { Size } from "./size";
 export type { Theme, ThemeFonts } from "./theme";
 export { createDefaultTheme, createThemeFonts, resolveTheme, ThemeManager } from "./theme";
-export type {
-  ContentMask,
-  EntityId,
-  FocusId,
-  Point,
-  ScrollHandleId,
-  Size,
-  TransformationMatrix,
-  WindowId,
-} from "./types";
+export type { TransformationMatrix } from "./transform";
 export {
   IDENTITY_TRANSFORM,
   multiplyTransform,
@@ -38,7 +33,7 @@ export {
   scaleTransform,
   transformPoint,
   translateTransform,
-} from "./types";
+} from "./transform";
 
 // Layout engine
 export type { AvailableSpace, AvailableSpaceValue, LayoutId } from "./layout";

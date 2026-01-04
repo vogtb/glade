@@ -15,6 +15,7 @@
  *   deferred(anchored().position(point).child(menu))
  */
 
+import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import {
   GladeContainerElement,
@@ -25,7 +26,8 @@ import {
   type RequestLayoutResult,
 } from "./element.ts";
 import type { LayoutId } from "./layout.ts";
-import type { Bounds, Point, Size } from "./types.ts";
+import type { Point } from "./point.ts";
+import type { Size } from "./size.ts";
 
 /**
  * Corner position for anchoring.

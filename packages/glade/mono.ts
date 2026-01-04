@@ -11,6 +11,7 @@
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import { div, type GladeDiv } from "./div.ts";
 import {
@@ -24,7 +25,6 @@ import {
   text,
 } from "./element.ts";
 import type { ThemeFonts } from "./theme.ts";
-import type { Bounds } from "./types.ts";
 const GENERIC_FAMILY_NAMES = new Set([
   "ui-monospace",
   "monospace",

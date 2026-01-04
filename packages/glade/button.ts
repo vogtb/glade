@@ -10,13 +10,13 @@
 import type { Color, ColorObject } from "@glade/utils";
 import { toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import { GladeDiv } from "./div.ts";
 import type { PrepaintContext, RequestLayoutContext } from "./element.ts";
 import type { AnyGladeElement } from "./element.ts";
 import { GladeTextElement, text } from "./element.ts";
 import { StyleBuilder } from "./styles.ts";
 import type { Theme } from "./theme.ts";
-import type { Bounds } from "./types.ts";
 
 /**
  * Button visual variants.

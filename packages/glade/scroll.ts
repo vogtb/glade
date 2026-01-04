@@ -1,4 +1,5 @@
-import type { Point, Size } from "./types";
+import type { Point } from "./point";
+import type { Size } from "./size";
 
 /**
  * Scroll offset representing the current scroll position.

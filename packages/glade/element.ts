@@ -14,13 +14,12 @@ import { type Color, type ColorObject, rgb, toColorObject } from "@glade/utils";
 
 import type { Bounds } from "./bounds.ts";
 import type { GladeContext, GladeViewContext } from "./context.ts";
-// Note: PopoverRegistration and DialogRegistration imports removed
-// These are no longer needed as overlays render via deferred children
 import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
 import type { EventHandlers, HitTestNode } from "./dispatch.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
+import type { FocusId } from "./id.ts";
 import type { DecodedImage, ImageTile } from "./image.ts";
 import type { LayoutId } from "./layout.ts";
 import type { PathBuilder } from "./path.ts";
@@ -31,8 +30,17 @@ import type { TabStopConfig } from "./tab.ts";
 import { type CachedTextLayout, createCachedTextLayout, normalizeWhitespace } from "./text.ts";
 import type { Theme } from "./theme.ts";
 import type { TooltipConfig } from "./tooltip.ts";
-import type { ContentMask, FocusId, TransformationMatrix } from "./types.ts";
+import type { TransformationMatrix } from "./transform.ts";
 import type { GladeWindow as _GladeWindow } from "./window.ts";
+
+/**
+ * Content mask for clipping regions.
+ * Clips content to the specified bounds with optional rounded corners.
+ */
+export interface ContentMask {
+  bounds: Bounds;
+  cornerRadius: number;
+}
 
 /**
  * Debug information attached to elements for inspector mode.
@@ -236,9 +244,6 @@ export interface PrepaintContext {
     builder: (cx: GladeContext) => AnyGladeElement,
     config: TooltipConfig
   ): void;
-
-  // Note: registerPopover and registerDialog removed
-  // Overlays now render via deferred children in their respective elements
 
   /**
    * Update the content and viewport size for a scroll handle.

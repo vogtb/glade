@@ -13,15 +13,16 @@
 
 import { type Color, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import type { EventResult, GladeKeyEvent, GladeMouseEvent } from "./dispatch.ts";
 import type { GlobalElementId } from "./element.ts";
 import { FocusHandle } from "./entity.ts";
 import { Key } from "./keyboard.ts";
+import type { Point } from "./point.ts";
 import type { GladeScene } from "./scene.ts";
 import type { CachedTextLayout, TextHitTestResult } from "./text.ts";
 import { computeRangeRectsWithLayout, hitTestWithLayout } from "./text.ts";
-import { type Bounds, type Point } from "./types.ts";
 import type { GladeWindow } from "./window.ts";
 
 /**

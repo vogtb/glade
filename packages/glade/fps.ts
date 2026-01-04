@@ -14,8 +14,8 @@
 
 import { type ColorObject, gray, red, rgb } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { PaintContext } from "./element.ts";
-import type { Bounds } from "./types.ts";
 
 const BAR_GRAPH_WIDTH = 60;
 const FPS_TEXT_WIDTH = 24;

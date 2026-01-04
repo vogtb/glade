@@ -5,7 +5,7 @@
  */
 
 import type { FocusHandle } from "./entity.ts";
-import type { FocusId } from "./types.ts";
+import type { FocusId } from "./id.ts";
 
 /**
  * Focus stack for a window.

@@ -14,8 +14,8 @@ import { type ColorObject, toColorObject } from "@glade/utils";
 
 import { type Bounds, boundsIntersect, BoundsTree, type DrawOrder } from "./bounds.ts";
 import type { UnderlineStyle } from "./element.ts";
-import type { ContentMask, TransformationMatrix } from "./types.ts";
-import { IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
+import type { ContentMask } from "./element.ts";
+import { IDENTITY_TRANSFORM, multiplyTransform, type TransformationMatrix } from "./transform.ts";
 
 export type { DrawOrder } from "./bounds.ts";
 

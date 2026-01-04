@@ -9,8 +9,12 @@ import { type CursorStyle } from "@glade/core/events.ts";
 export { CursorStyle } from "@glade/core/events.ts";
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
-import type { TransformationMatrix } from "./types.ts";
-import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
+import {
+  rotateTransform,
+  scaleTransform,
+  type TransformationMatrix,
+  translateTransform,
+} from "./transform.ts";
 
 /**
  * Shadow preset names.

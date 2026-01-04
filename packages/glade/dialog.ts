@@ -28,6 +28,7 @@
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
 import { anchored, AnchoredElement } from "./anchored.ts";
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import { deferred, DeferredElement } from "./deferred.ts";
 import type { ClickHandler, HitTestNode, KeyHandler } from "./dispatch.ts";
@@ -45,8 +46,8 @@ import {
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { LayoutId } from "./layout.ts";
+import type { Size } from "./size.ts";
 import type { Theme } from "./theme.ts";
-import { type Bounds, type Size } from "./types.ts";
 
 // ============================================================================
 // Sizes

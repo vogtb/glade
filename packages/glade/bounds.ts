@@ -10,7 +10,7 @@
  * - Overlapping bounds get increasing draw orders to ensure correct stacking
  */
 
-import type { Point } from "./types";
+import type { Point } from "./point";
 
 /**
  * Axis-aligned bounding box.

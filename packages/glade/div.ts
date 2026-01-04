@@ -7,6 +7,7 @@
 
 import { type Color, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type {
   ClickHandler,
   DragStartHandler,
@@ -48,8 +49,12 @@ import { StyleBuilder } from "./styles.ts";
 import type { TabStopConfig } from "./tab.ts";
 import type { TooltipBuilder, TooltipConfig } from "./tooltip.ts";
 import { DEFAULT_TOOLTIP_CONFIG, TooltipConfigBuilder } from "./tooltip.ts";
-import type { Bounds, TransformationMatrix } from "./types.ts";
-import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
+import {
+  rotateTransform,
+  scaleTransform,
+  type TransformationMatrix,
+  translateTransform,
+} from "./transform.ts";
 
 /**
  * State passed from requestLayout to prepaint for GladeDiv.

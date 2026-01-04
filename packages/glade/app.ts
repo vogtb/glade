@@ -21,9 +21,9 @@ import {
   type SubscriberCallback,
   SubscriberHandle,
 } from "./entity.ts";
+import type { EntityId, FocusId, WindowId } from "./id.ts";
 import type { ScrollOffset } from "./scroll.ts";
 import { createThemeFonts, type Theme, ThemeManager } from "./theme.ts";
-import type { EntityId, FocusId, WindowId } from "./types.ts";
 import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts";
 
 /**
