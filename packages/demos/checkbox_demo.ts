@@ -1,5 +1,4 @@
-import { checkbox, div, divider, text } from "@glade/glade";
-import { colors } from "@glade/utils";
+import { checkbox, colors, div, divider, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 

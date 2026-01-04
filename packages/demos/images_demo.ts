@@ -1,6 +1,5 @@
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
-import { type DecodedImage, div, img, text } from "@glade/glade";
-import { base64ToBytes, colors } from "@glade/utils";
+import { base64ToBytes, colors, type DecodedImage, div, img, text } from "@glade/glade";
 
 import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";

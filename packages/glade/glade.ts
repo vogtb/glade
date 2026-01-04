@@ -570,3 +570,18 @@ export {
 } from "./editor";
 export * from "./fps";
 export * from "./header";
+
+// Re-export logging
+export { log } from "@glade/logging";
+
+// Re-export utils
+export { base64ToBytes, colors, rgb } from "@glade/utils";
+
+// Re-export WebGPU constants from core
+export {
+  GPUBufferUsage,
+  GPUColorWrite,
+  GPUMapMode,
+  GPUShaderStage,
+  GPUTextureUsage,
+} from "@glade/core";

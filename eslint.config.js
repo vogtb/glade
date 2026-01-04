@@ -81,6 +81,8 @@ export default [
       "**/.open-next/*",
       "**/*example*",
       ".open-next/*",
+      "packages/glade/platform.browser.ts",
+      "packages/glade/platform.macos.ts",
     ],
   },
 ];

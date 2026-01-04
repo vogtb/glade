@@ -1,4 +1,4 @@
-import { log } from "@glade/logging";
+import { log } from "@glade/glade";
 
 const server = Bun.serve({
   port: 3000,

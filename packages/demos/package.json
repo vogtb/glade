@@ -21,11 +21,6 @@
   },
   "dependencies": {
     "@glade/comptime": "workspace:*",
-    "@glade/core": "workspace:*",
-    "@glade/fonts": "workspace:*",
-    "@glade/glade": "workspace:*",
-    "@glade/platform": "workspace:*",
-    "@glade/utils": "workspace:*",
-    "@glade/logging": "workspace:*"
+    "@glade/glade": "workspace:*"
   }
 }

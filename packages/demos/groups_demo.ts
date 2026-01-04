@@ -1,5 +1,4 @@
-import { div, type GladeDiv, text } from "@glade/glade";
-import { colors, rgb } from "@glade/utils";
+import { colors, div, type GladeDiv, rgb, text } from "@glade/glade";
 
 import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";

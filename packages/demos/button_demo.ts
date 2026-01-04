@@ -1,5 +1,4 @@
-import { button, div, divider, icon, text } from "@glade/glade";
-import { colors } from "@glade/utils";
+import { button, colors, div, divider, icon, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 

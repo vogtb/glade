@@ -1,5 +1,4 @@
-import { div, divider, radioGroup, radioItem, text } from "@glade/glade";
-import { colors } from "@glade/utils";
+import { colors, div, divider, radioGroup, radioItem, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 

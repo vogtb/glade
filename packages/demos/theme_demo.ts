@@ -1,5 +1,4 @@
-import { div, switchToggle, text } from "@glade/glade";
-import { colors } from "@glade/utils";
+import { colors, div, switchToggle, text } from "@glade/glade";
 
 import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";

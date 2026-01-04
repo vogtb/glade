@@ -1,4 +1,5 @@
 import {
+  colors,
   dialog,
   dialogContent,
   dialogFooter,
@@ -7,7 +8,6 @@ import {
   divider,
   text,
 } from "@glade/glade";
-import { colors } from "@glade/utils";
 
 import type { Demo, DemoItem } from "./demo";
 

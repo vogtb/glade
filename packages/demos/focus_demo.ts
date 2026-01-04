@@ -6,9 +6,9 @@ import {
   div,
   type FocusHandle,
   type GladeDiv,
+  rgb,
   text,
 } from "@glade/glade";
-import { rgb } from "@glade/utils";
 
 import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem, DemoState } from "./demo";

@@ -1,8 +1,15 @@
-import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
-import { div, text, type WebGPUHost, webgpuHost } from "@glade/glade";
-import type { RenderTexture, WebGPUHostInput } from "@glade/glade/host.ts";
-import { createRenderTexture } from "@glade/glade/host.ts";
-import { colors } from "@glade/utils";
+import {
+  colors,
+  createRenderTexture,
+  div,
+  GPUBufferUsage,
+  GPUShaderStage,
+  type RenderTexture,
+  text,
+  type WebGPUHost,
+  webgpuHost,
+  type WebGPUHostInput,
+} from "@glade/glade";
 
 import { SPACER_10PX } from "./common";
 import type { Demo, DemoItem } from "./demo";

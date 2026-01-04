@@ -1,6 +1,5 @@
-import { GladeApp, type GladeContext } from "@glade/glade";
-import { log } from "@glade/logging";
-import { createGladePlatform } from "@glade/platform";
+import { GladeApp, type GladeContext, log } from "@glade/glade";
+import { createGladePlatform } from "@glade/glade/platform";
 
 import { MainView } from "./main.ts";
 

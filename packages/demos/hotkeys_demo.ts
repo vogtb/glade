@@ -12,11 +12,11 @@ import {
   type HotkeyDisposable,
   hotkeys,
   isHotkeyPressed,
+  log,
   mono,
   text,
   type Theme,
 } from "@glade/glade";
-import { log } from "@glade/logging";
 
 import type { Demo, DemoItem } from "./demo";
 

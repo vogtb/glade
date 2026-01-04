@@ -1,6 +1,15 @@
-import type { GladeTableRow } from "@glade/glade";
-import { table, tbody, td, text, tfoot, th, thead, tr } from "@glade/glade";
-import { colors } from "@glade/utils";
+import {
+  colors,
+  type GladeTableRow,
+  table,
+  tbody,
+  td,
+  text,
+  tfoot,
+  th,
+  thead,
+  tr,
+} from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 

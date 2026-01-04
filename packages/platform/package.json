@@ -7,7 +7,9 @@
       "bun": "./platform.macos.ts",
       "browser": "./platform.browser.ts",
       "default": "./platform.browser.ts"
-    }
+    },
+    "./platform.browser": "./platform.browser.ts",
+    "./platform.macos": "./platform.macos.ts"
   },
   "scripts": {
     "lint": "eslint . --fix",
