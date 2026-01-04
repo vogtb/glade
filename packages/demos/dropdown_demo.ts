@@ -1,13 +1,13 @@
 import {
   colors,
   div,
-  divider,
   dropdown,
   dropdownItem,
   dropdownLabel,
   dropdownSeparator,
   dropdownSub,
   icon,
+  separator,
   text,
 } from "@glade/glade";
 
@@ -17,7 +17,7 @@ export const DROPDOWN_DEMO: Demo = {
   name: "Dropdown Menu",
   renderElement: (cx, state): DemoItem[] => [
     text("Displays a menu triggered by a button with items, separators, and labels"),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Status display
     div()

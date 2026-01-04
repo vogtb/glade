@@ -1,4 +1,4 @@
-import { colors, div, divider, icon, text } from "@glade/glade";
+import { colors, div, icon, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -6,7 +6,7 @@ export const DEBUG_MODE_DEMO: Demo = {
   name: "Debug Mode",
   renderElement: (_cx, _state): DemoItem[] => [
     text("Visual debugging tools for inspecting elements"),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Activation
     text("Activation"),

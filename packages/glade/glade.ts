@@ -138,7 +138,7 @@ export {
 export { div, GladeDiv } from "./div";
 
 // Divider element
-export { divider, GladeDivider } from "./divider";
+export { GladeSeparator, separator } from "./separator";
 
 // Monospace text helpers
 export type { MonoVariant } from "./mono";

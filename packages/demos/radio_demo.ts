@@ -1,4 +1,4 @@
-import { colors, div, divider, radioGroup, radioItem, text } from "@glade/glade";
+import { colors, div, radioGroup, radioItem, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -7,7 +7,7 @@ export const RADIO_INPUT_DEMO: Demo = {
   renderElement: (cx, state): DemoItem[] => [
     text("Radio Group").size(32),
     text("A set of checkable buttons where only one can be checked at a time").size(16),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Vertical layout
     text("Vertical Layout").size(18),

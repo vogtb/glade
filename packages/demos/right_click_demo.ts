@@ -1,11 +1,11 @@
 import {
   div,
-  divider,
   rightClickItem,
   rightClickLabel,
   rightClickMenu,
   rightClickSeparator,
   rightClickSub,
+  separator,
   text,
 } from "@glade/glade";
 
@@ -18,7 +18,7 @@ export const RIGHT_CLICK_DEMO: Demo = {
 
     return [
       text("Context menus triggered by right-click (or Ctrl+click on Mac)"),
-      divider().color(theme.semantic.border.default),
+      separator(),
 
       // Status display
       div()

@@ -1,4 +1,4 @@
-import { div, divider, icon, text } from "@glade/glade";
+import { div, icon, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -20,7 +20,7 @@ export const TOOLTIP_DEMO: Demo = {
 
     return [
       text("Tooltips provide additional information on hover"),
-      divider().color(theme.semantic.border.default),
+      separator(),
 
       // Basic Tooltip
       text("Basic Tooltip"),

@@ -1,4 +1,4 @@
-import { checkbox, colors, div, divider, text } from "@glade/glade";
+import { checkbox, colors, div, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -7,7 +7,7 @@ export const CHECKBOX_DEMO: Demo = {
   renderElement: (cx, state): DemoItem[] => [
     text("Checkbox").size(32),
     text("A control that allows toggling between checked and unchecked states").size(16),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Basic checkbox
     text("Basic Checkbox").size(18),

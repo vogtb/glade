@@ -1,7 +1,6 @@
 import {
   button,
   div,
-  divider,
   formatHotkey,
   type GladeView,
   type GladeViewContext,
@@ -18,6 +17,7 @@ import {
   type Theme,
 } from "@glade/glade";
 
+import { separator } from "../glade/separator";
 import type { Demo, DemoItem } from "./demo";
 
 // Track demo state for hotkey actions
@@ -183,7 +183,7 @@ export const HOTKEYS_DEMO: Demo = {
 
     const elements: DemoItem[] = [
       text("Keyboard shortcuts with type-safe bindings and OS-specific formatting"),
-      divider().color(theme.semantic.border.default),
+      separator(),
 
       // Status display
       h2("Status"),

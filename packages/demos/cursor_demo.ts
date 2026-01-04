@@ -1,4 +1,4 @@
-import { type CursorStyle, div, divider, text } from "@glade/glade";
+import { type CursorStyle, div, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -25,7 +25,7 @@ export const CURSOR_DEMO: Demo = {
 
     return [
       text("Cursor styles change the mouse pointer when hovering over elements"),
-      divider().color(theme.semantic.border.default),
+      separator(),
 
       text("Available Cursor Styles"),
       text("Hover over each box to see the cursor change"),

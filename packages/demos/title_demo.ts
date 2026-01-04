@@ -1,17 +1,16 @@
-import { button, div, divider, text } from "@glade/glade";
+import { button, div, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
 export const TITLE_DEMO: Demo = {
   name: "Title",
   renderElement: (cx, _state): DemoItem[] => {
-    const theme = cx.getTheme();
     const window = cx.window;
     const setTitle = (title: string) => window.setTitle(title);
 
     return [
       text("Change the window title dynamically"),
-      divider().color(theme.semantic.border.default),
+      separator(),
 
       text("Click a button to change the window title"),
 

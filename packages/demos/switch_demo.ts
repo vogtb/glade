@@ -1,4 +1,4 @@
-import { colors, div, divider, switchToggle, text } from "@glade/glade";
+import { colors, div, separator, switchToggle, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -7,7 +7,7 @@ export const SWITCH_DEMO: Demo = {
   renderElement: (cx, state): DemoItem[] => [
     text("Switch").size(32),
     text("A toggle control for on/off states, commonly used for settings").size(16),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Basic switch
     text("Basic Switch").size(18),

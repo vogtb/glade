@@ -5,7 +5,7 @@ import {
   dialogFooter,
   dialogHeader,
   div,
-  divider,
+  separator,
   text,
 } from "@glade/glade";
 
@@ -15,7 +15,7 @@ export const DIALOG_DEMO: Demo = {
   name: "Dialog",
   renderElement: (cx, state): DemoItem[] => [
     text("Modal dialogs with backdrop, header, footer, and configurable behavior"),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Basic Dialog
     text("Basic Dialog"),
@@ -269,7 +269,7 @@ export const DIALOG_DEMO: Demo = {
       ),
 
     // Status display
-    divider().color(colors.gray.x500),
+    separator(),
     div()
       .flex()
       .flexRow()

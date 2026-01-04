@@ -1,4 +1,4 @@
-import { button, colors, div, divider, icon, text } from "@glade/glade";
+import { button, colors, div, icon, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -6,7 +6,7 @@ export const BUTTON_DEMO: Demo = {
   name: "Button",
   renderElement: (_cx, _state): DemoItem[] => [
     text("An interactive control that triggers actions when clicked"),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Variants
     text("Variants"),

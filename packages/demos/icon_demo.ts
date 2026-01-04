@@ -1,4 +1,4 @@
-import { colors, div, divider, icon, text } from "@glade/glade";
+import { colors, div, icon, separator, text } from "@glade/glade";
 
 import type { Demo, DemoItem } from "./demo";
 
@@ -36,7 +36,7 @@ export const ICON_DEMO: Demo = {
   renderElement: (_cx, _state): DemoItem[] => [
     text("Icon").size(32),
     text("Simple icon component wrapping SVG icons").size(16),
-    divider().color(colors.gray.x500),
+    separator(),
 
     // Icon grid
     text("Available Icons").size(18),
