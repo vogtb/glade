@@ -5,12 +5,11 @@ import type { Demo, DemoItem } from "./demo";
 export const DEBUG_MODE_DEMO: Demo = {
   name: "Debug Mode",
   renderElement: (_cx, _state): DemoItem[] => [
-    text("Debug Mode / Inspector").size(32),
-    text("Visual debugging tools for inspecting elements").size(16),
+    text("Visual debugging tools for inspecting elements"),
     divider().color(colors.gray.x500),
 
     // Activation
-    text("Activation").size(18),
+    text("Activation"),
     div()
       .flex()
       .flexRow()
@@ -41,7 +40,7 @@ export const DEBUG_MODE_DEMO: Demo = {
       ),
 
     // Features
-    text("Features").size(18),
+    text("Features:"),
     div()
       .flex()
       .flexCol()
@@ -98,7 +97,7 @@ export const DEBUG_MODE_DEMO: Demo = {
       ),
 
     // Inspector Colors
-    text("Inspector Colors").size(18),
+    text("Inspector Colors:"),
     div()
       .flex()
       .flexCol()
