@@ -1,13 +1,14 @@
 /**
  * Deferred element for Glade.
  *
- * Deferred elements delay their paint phase until after all normal elements
- * have painted. This enables overlay content (tooltips, menus, modals) to
- * appear on top of the normal element tree while maintaining proper layout.
+ * Deferred elements run a SEPARATE layout pass after the main tree is complete.
+ * This ensures overlay content (tooltips, menus, modals) gets window-sized
+ * available space rather than being constrained by their parent's layout.
  *
  * Key behavior:
- * - Layout phase: child is laid out normally in the tree
- * - Prepaint phase: child is extracted and queued for deferred drawing
+ * - Layout phase: returns a zero-sized placeholder, stores child for later
+ * - Prepaint phase: registers child for deferred layout processing
+ * - Deferred layout: Window runs separate layout pass with window dimensions
  * - Paint phase: empty (child paints in deferred pass after normal paint)
  *
  * Priority controls stacking order within deferred elements:
@@ -26,16 +27,17 @@ import {
 } from "./element.ts";
 import type { Bounds, Point } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
+// HitTestNode import kept for type definitions used externally
 import type { HitTestNode } from "./dispatch.ts";
 
 /**
  * State passed from requestLayout to prepaint for DeferredElement.
+ * Child is stored for deferred layout processing - not included in main tree.
  */
-interface DeferredRequestLayoutState {
+export interface DeferredRequestLayoutState {
   layoutId: LayoutId;
-  childLayoutId: LayoutId;
+  child: GladeElement<unknown, unknown> | null;
   childElementId: GlobalElementId;
-  childRequestState: unknown;
 }
 
 /**
@@ -56,6 +58,16 @@ export interface DeferredDrawEntry {
   childElementId: GlobalElementId;
   childPrepaintState: unknown;
   hitTestNode: HitTestNode | null;
+}
+
+/**
+ * Entry in the deferred layout queue.
+ * Elements registered here get a separate layout pass with window dimensions.
+ */
+export interface DeferredLayoutEntry {
+  child: GladeElement<unknown, unknown>;
+  childElementId: GlobalElementId;
+  priority: number;
 }
 
 /**
@@ -89,79 +101,43 @@ export class DeferredElement extends GladeElement<
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DeferredRequestLayoutState> {
-    if (!this.child) {
-      const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
-      return {
-        layoutId,
-        requestState: {
-          layoutId,
-          childLayoutId: layoutId,
-          childElementId: cx.elementId,
-          childRequestState: undefined,
-        },
-      };
-    }
-
-    const childElementId = cx.allocateChildId();
-    const childCx: RequestLayoutContext = {
-      ...cx,
-      elementId: childElementId,
-    };
-
-    const { layoutId: childLayoutId, requestState: childRequestState } =
-      this.child.requestLayout(childCx);
-
-    const layoutId = cx.requestLayout({}, [childLayoutId]);
+    // Return a zero-sized placeholder. The child is NOT included in the main layout tree.
+    // Instead, it will be laid out separately with window dimensions during processDeferredLayouts.
+    const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
+    const childElementId = this.child ? cx.allocateChildId() : cx.elementId;
 
     return {
       layoutId,
       requestState: {
         layoutId,
-        childLayoutId,
+        child: this.child,
         childElementId,
-        childRequestState,
       },
     };
   }
 
   prepaint(
     cx: PrepaintContext,
-    bounds: Bounds,
+    _bounds: Bounds,
     requestState: DeferredRequestLayoutState
   ): DeferredPrepaintState {
-    if (!this.child) {
+    const { child, childElementId } = requestState;
+
+    if (!child) {
       return { hitTestNode: null };
     }
 
-    const { childLayoutId, childElementId, childRequestState } = requestState;
-
-    const childBounds = cx.getBounds(childLayoutId);
-    const childCx = cx.withElementId(childElementId);
-    const childPrepaintState = this.child.prepaint(childCx, childBounds, childRequestState);
-
-    const offset: Point = {
-      x: bounds.x,
-      y: bounds.y,
-    };
-
-    const entry: DeferredDrawEntry = {
-      child: this.child,
-      bounds: childBounds,
-      offset,
-      priority: this.priorityValue,
+    // Register for deferred layout processing.
+    // The Window will run a separate layout pass with window dimensions,
+    // then prepaint, then add to the deferred draw queue.
+    cx.registerDeferredLayout?.({
+      child,
       childElementId,
-      childPrepaintState,
-      hitTestNode:
-        (childPrepaintState as { hitTestNode?: HitTestNode } | undefined)?.hitTestNode ?? null,
-    };
+      priority: this.priorityValue,
+    });
 
-    cx.registerDeferredDraw?.(entry);
-
-    this.child = null;
-
-    return {
-      hitTestNode: entry.hitTestNode,
-    };
+    // Hit test node will be set by processDeferredLayouts after the child's prepaint runs
+    return { hitTestNode: null };
   }
 
   paint(_cx: PaintContext, _bounds: Bounds, _prepaintState: DeferredPrepaintState): void {

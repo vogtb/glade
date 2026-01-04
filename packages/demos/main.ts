@@ -71,6 +71,20 @@ export class MainView implements GladeView {
   private dropdown4Open = false;
   private dropdownLastAction = "None";
 
+  private dialogOpen = false;
+  private dialog2Open = false;
+  private dialog3Open = false;
+  private dialog4Open = false;
+  private dialogLastAction = "None";
+
+  private rightClickOpen = false;
+  private rightClick2Open = false;
+  private rightClick3Open = false;
+  private rightClickPosition = { x: 0, y: 0 };
+  private rightClick2Position = { x: 0, y: 0 };
+  private rightClick3Position = { x: 0, y: 0 };
+  private rightClickLastAction = "None";
+
   private useSystemTheme = true;
   private preferDarkMode = true;
 
@@ -238,6 +252,56 @@ export class MainView implements GladeView {
       },
       setDropdownLastAction: (action: string) => {
         this.dropdownLastAction = action;
+      },
+
+      dialogOpen: this.dialogOpen,
+      dialog2Open: this.dialog2Open,
+      dialog3Open: this.dialog3Open,
+      dialog4Open: this.dialog4Open,
+      dialogLastAction: this.dialogLastAction,
+      setDialogOpen: (open: boolean) => {
+        this.dialogOpen = open;
+      },
+      setDialog2Open: (open: boolean) => {
+        this.dialog2Open = open;
+      },
+      setDialog3Open: (open: boolean) => {
+        this.dialog3Open = open;
+      },
+      setDialog4Open: (open: boolean) => {
+        this.dialog4Open = open;
+      },
+      setDialogLastAction: (action: string) => {
+        this.dialogLastAction = action;
+      },
+
+      rightClickOpen: this.rightClickOpen,
+      rightClick2Open: this.rightClick2Open,
+      rightClick3Open: this.rightClick3Open,
+      rightClickPosition: this.rightClickPosition,
+      rightClick2Position: this.rightClick2Position,
+      rightClick3Position: this.rightClick3Position,
+      rightClickLastAction: this.rightClickLastAction,
+      setRightClickOpen: (open: boolean) => {
+        this.rightClickOpen = open;
+      },
+      setRightClick2Open: (open: boolean) => {
+        this.rightClick2Open = open;
+      },
+      setRightClick3Open: (open: boolean) => {
+        this.rightClick3Open = open;
+      },
+      setRightClickPosition: (pos: { x: number; y: number }) => {
+        this.rightClickPosition = pos;
+      },
+      setRightClick2Position: (pos: { x: number; y: number }) => {
+        this.rightClick2Position = pos;
+      },
+      setRightClick3Position: (pos: { x: number; y: number }) => {
+        this.rightClick3Position = pos;
+      },
+      setRightClickLastAction: (action: string) => {
+        this.rightClickLastAction = action;
       },
 
       useSystemTheme: this.useSystemTheme,

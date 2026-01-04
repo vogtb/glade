@@ -695,7 +695,7 @@ export class GladeDropdownItem
         paddingRight: paddingX,
         paddingTop: paddingY,
         paddingBottom: paddingY,
-        width: "100%",
+        alignSelf: "stretch",
         minWidth: contentWidth,
         height: lineHeight + paddingY * 2,
       },
@@ -927,7 +927,7 @@ export class GladeDropdownCheckbox
         paddingRight: paddingX,
         paddingTop: paddingY,
         paddingBottom: paddingY,
-        width: "100%",
+        alignSelf: "stretch",
         minWidth: labelSize.width + indicatorWidth + paddingX * 3,
         height: lineHeight + paddingY * 2,
       },
@@ -1154,7 +1154,7 @@ export class GladeDropdownRadio
         paddingRight: paddingX,
         paddingTop: paddingY,
         paddingBottom: paddingY,
-        width: "100%",
+        alignSelf: "stretch",
         minWidth: labelSize.width + indicatorWidth + paddingX * 3,
         height: lineHeight + paddingY * 2,
       },
@@ -1437,7 +1437,7 @@ export class GladeDropdownSub
         paddingRight: paddingX,
         paddingTop: paddingY,
         paddingBottom: paddingY,
-        width: "100%",
+        alignSelf: "stretch",
         minWidth: labelSize.width + paddingX * 2 + chevronWidth,
         height: lineHeight + paddingY * 2,
       },
@@ -1752,7 +1752,7 @@ export class GladeDropdownSeparator
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DropdownSeparatorRequestState> {
     const layoutId = cx.requestLayout(
       {
-        width: "100%",
+        alignSelf: "stretch",
         height: DEFAULT_SEPARATOR_HEIGHT,
         marginTop: DEFAULT_SEPARATOR_MARGIN,
         marginBottom: DEFAULT_SEPARATOR_MARGIN,
@@ -1851,7 +1851,7 @@ export class GladeDropdownLabel
         paddingRight: paddingX,
         paddingTop: paddingY + 4,
         paddingBottom: paddingY,
-        width: "100%",
+        alignSelf: "stretch",
       },
       measureId
     );

@@ -81,12 +81,12 @@ import {
 } from "./hitbox.ts";
 import { DragTracker, type ActiveDrag, type DragPayload } from "./drag.ts";
 import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./tooltip.ts";
-import { PopoverManager, type PopoverRegistration } from "./popover.ts";
-import { DialogManager, type DialogRegistration } from "./dialog.ts";
+// Note: PopoverManager and DialogManager imports removed
+// Overlays now render via deferred children
 import { GladeDiv } from "./div.ts";
 import { AnchoredElement } from "./anchored.ts";
 import { DeferredElement } from "./deferred.ts";
-import type { DeferredDrawEntry } from "./deferred.ts";
+import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
 import {
   TabStopRegistry,
   FocusContextManager,
@@ -255,11 +255,8 @@ export class GladeWindow {
   // Tooltips
   private tooltipManager = new TooltipManager();
 
-  // Popovers (dropdowns, context menus, etc.)
-  private popoverManager = new PopoverManager();
-
-  // Dialogs (modal windows)
-  private dialogManager = new DialogManager();
+  // Note: PopoverManager and DialogManager removed
+  // Overlays now render via deferred children in their respective elements
 
   // Tab stops and focus
   private tabStopRegistry = new TabStopRegistry();
@@ -288,6 +285,7 @@ export class GladeWindow {
 
   // Deferred drawing
   private deferredDrawQueue: DeferredDrawEntry[] = [];
+  private deferredLayoutQueue: DeferredLayoutEntry[] = [];
 
   // FPS overlay (visual display)
   private fpsOverlay: GladeFps | null = null;
@@ -1090,35 +1088,8 @@ export class GladeWindow {
 
   // ============ Popovers ============
 
-  /**
-   * Get the popover manager.
-   */
-  getPopoverManager(): PopoverManager {
-    return this.popoverManager;
-  }
-
-  /**
-   * Register a popover for an element.
-   */
-  registerPopover(registration: PopoverRegistration): void {
-    this.popoverManager.register(registration);
-  }
-
-  // ============ Dialogs ============
-
-  /**
-   * Get the dialog manager.
-   */
-  getDialogManager(): DialogManager {
-    return this.dialogManager;
-  }
-
-  /**
-   * Register a dialog for an element.
-   */
-  registerDialog(registration: DialogRegistration): void {
-    this.dialogManager.register(registration);
-  }
+  // Note: getPopoverManager, registerPopover, getDialogManager, registerDialog removed
+  // Overlays now render via deferred children in their respective elements
 
   /**
    * Get the current content mask.
@@ -1249,6 +1220,11 @@ export class GladeWindow {
     const prepaintCx = this.createPrepaintContext(rootElementId);
     const rootPrepaintState = element.prepaint(prepaintCx, rootBounds, rootRequestState);
 
+    // Process deferred layouts AFTER main tree prepaint but BEFORE paint.
+    // Deferred elements (menus, dialogs) registered during prepaint get their own
+    // layout pass with window dimensions, then prepaint, then add to draw queue.
+    this.processDeferredLayouts();
+
     const paintCx = this.createPaintContext(rootElementId);
     element.paint(paintCx, rootBounds, rootPrepaintState);
 
@@ -1263,13 +1239,8 @@ export class GladeWindow {
       currentHitTest.hoverHitboxCount > 0 ? (currentHitTest.ids[0] ?? null) : null;
     this.tooltipManager.update(hoveredHitboxId, this.platform.now(), this.getContext());
 
-    // Render active dialog (separate layout/prepaint/paint cycle)
-    const dialogHitTestNode = this.renderActiveDialog();
-
-    // Render active popover (separate layout/prepaint/paint cycle)
-    const popoverHitTestNode = this.renderActivePopover();
-
     // Render active tooltip (separate layout/prepaint/paint cycle)
+    // Note: Dialogs and popovers now render via deferred children, no separate render call needed
     const tooltipHitTestNode = this.renderActiveTooltip();
 
     // Paint deferred elements in priority order (higher priority on top)
@@ -1285,21 +1256,11 @@ export class GladeWindow {
       this.hitTestTree.push(prepaintStateWithHitTest.hitTestNode);
     }
 
-    // Also add deferred element hit test nodes
+    // Also add deferred element hit test nodes (includes dialogs, popovers, menus)
     for (const entry of this.deferredDrawQueue) {
       if (entry.hitTestNode) {
         this.hitTestTree.push(entry.hitTestNode);
       }
-    }
-
-    // Add dialog hit test node (modal, should be on top of most things)
-    if (dialogHitTestNode) {
-      this.hitTestTree.push(dialogHitTestNode);
-    }
-
-    // Add popover hit test node (should be on top)
-    if (popoverHitTestNode) {
-      this.hitTestTree.push(popoverHitTestNode);
     }
 
     // Add tooltip hit test node
@@ -1456,21 +1417,67 @@ export class GladeWindow {
     this.dropTargetHitboxes.clear();
     // Clear tooltip registrations from previous frame
     this.tooltipManager.clearRegistrations();
-    // Clear popover registrations from previous frame
-    this.popoverManager.clearRegistrations();
-    // Clear dialog registrations from previous frame
-    this.dialogManager.clearRegistrations();
+    // Note: Popover and dialog managers no longer used - overlays render via deferred children
     // Clear tab stops from previous frame
     this.tabStopRegistry.clear();
     // Clear focus contexts from previous frame
     this.focusContextManager.clear();
-    // Clear deferred draw queue from previous frame
+    // Clear deferred queues from previous frame
     this.deferredDrawQueue = [];
+    this.deferredLayoutQueue = [];
     // Clear cross-element selection registry
     this.crossElementSelection?.beginFrame();
     // Clear text measure registry for new frame
     this.measureRegistry.clear();
     this.nextMeasureId = 1;
+  }
+
+  /**
+   * Process elements registered for deferred layout.
+   * Each element gets its own layout pass with window dimensions,
+   * then prepaint, and is added to the deferred draw queue.
+   */
+  private processDeferredLayouts(): void {
+    if (this.deferredLayoutQueue.length === 0) {
+      return;
+    }
+
+    // Sort by priority (lower priority processed first, but they'll be painted in order)
+    this.deferredLayoutQueue.sort((a, b) => a.priority - b.priority);
+
+    for (const entry of this.deferredLayoutQueue) {
+      // Create a fresh layout context for this deferred element
+      const layoutCx = this.createRequestLayoutContext(entry.childElementId);
+      const { layoutId, requestState } = entry.child.requestLayout(layoutCx);
+
+      // CRITICAL: Run separate layout with window dimensions
+      // This is what allows overlay content to get full window space
+      this.layoutEngine.computeLayoutWithMeasure(
+        layoutId,
+        this.width,
+        this.height,
+        this.measureTextCallback.bind(this)
+      );
+
+      // Get bounds from the fresh layout (not accumulated from parent)
+      const bounds = this.layoutEngine.layoutBounds(layoutId);
+
+      // Run prepaint with the correctly computed bounds
+      const prepaintCx = this.createPrepaintContext(entry.childElementId);
+      const prepaintState = entry.child.prepaint(prepaintCx, bounds, requestState);
+
+      // Add to deferred draw queue
+      this.deferredDrawQueue.push({
+        child: entry.child,
+        bounds,
+        offset: { x: 0, y: 0 },
+        priority: entry.priority,
+        childElementId: entry.childElementId,
+        childPrepaintState: prepaintState,
+        hitTestNode:
+          (prepaintState as { hitTestNode?: HitTestNode } | undefined)?.hitTestNode ?? null,
+      });
+    }
   }
 
   private paintDeferredElements(): void {
@@ -1518,154 +1525,8 @@ export class GladeWindow {
     this.scene.endOverlay();
   }
 
-  /**
-   * Render the active popover if one exists.
-   * This runs its own layout/prepaint/paint cycle separate from the main tree.
-   */
-  private renderActivePopover(): HitTestNode | null {
-    const activePopover = this.popoverManager.getActivePopover();
-    if (!activePopover) {
-      return null;
-    }
-
-    // Build the popover element
-    this.popoverManager.buildActivePopover(this.getContext(), {
-      width: this.width,
-      height: this.height,
-    });
-
-    const popoverElement = activePopover.element;
-    if (!popoverElement) {
-      return null;
-    }
-
-    // Create anchored wrapper for positioning
-    const anchoredElement = new AnchoredElement();
-    anchoredElement.anchor(activePopover.anchorCorner);
-    anchoredElement.position(activePopover.anchorPosition);
-    anchoredElement.setWindowSize({ width: this.width, height: this.height });
-    anchoredElement.snapToWindowWithMargin(activePopover.registration.config.windowMargin);
-    anchoredElement.child(popoverElement);
-
-    const deferredWrapper = new DeferredElement(anchoredElement);
-    deferredWrapper.priority(1); // Menus render above tooltips
-
-    // Run layout for popover
-    const popoverElementId = this.allocateElementId();
-    const requestLayoutCx = this.createRequestLayoutContext(popoverElementId);
-    const { layoutId: popoverLayoutId, requestState: popoverRequestState } =
-      deferredWrapper.requestLayout(requestLayoutCx);
-
-    this.layoutEngine.computeLayoutWithMeasure(
-      popoverLayoutId,
-      this.width,
-      this.height,
-      this.measureTextCallback.bind(this)
-    );
-
-    const popoverBounds = this.layoutEngine.layoutBounds(popoverLayoutId);
-    const prepaintCx = this.createPrepaintContext(popoverElementId);
-    const popoverPrepaintState = deferredWrapper.prepaint(
-      prepaintCx,
-      popoverBounds,
-      popoverRequestState
-    );
-
-    // Paint is handled by deferred system (deferredWrapper registers itself)
-    const paintCx = this.createPaintContext(popoverElementId);
-    deferredWrapper.paint(paintCx, popoverBounds, popoverPrepaintState);
-
-    // Return hit test node for the popover
-    return (popoverPrepaintState as { hitTestNode?: HitTestNode })?.hitTestNode ?? null;
-  }
-
-  /**
-   * Render the active dialog if one exists.
-   * This runs its own layout/prepaint/paint cycle separate from the main tree.
-   * Dialogs are modal and render with a backdrop overlay.
-   * Uses the deferred rendering system for proper z-ordering.
-   */
-  private renderActiveDialog(): HitTestNode | null {
-    const activeDialog = this.dialogManager.getActiveDialog();
-    if (!activeDialog) {
-      return null;
-    }
-
-    // Build the dialog element
-    this.dialogManager.buildActiveDialog(this.getContext(), {
-      width: this.width,
-      height: this.height,
-    });
-
-    const dialogElement = activeDialog.element;
-    if (!dialogElement) {
-      return null;
-    }
-
-    const backdropColor = activeDialog.registration.config.backdropColor;
-    const onOpenChange = activeDialog.registration.onClose;
-    const closeOnBackdrop = activeDialog.registration.config.closeOnBackdropClick;
-
-    // Create a backdrop div that covers the full window and centers the dialog
-    const backdropDiv = new GladeDiv();
-    backdropDiv
-      .w(this.width)
-      .h(this.height)
-      .bg(backdropColor)
-      .flex()
-      .itemsCenter()
-      .justifyCenter()
-      .occludeMouse() // Block hover/click events from reaching elements behind
-      .child(dialogElement);
-
-    // Add click handler to backdrop for dismissal
-    if (closeOnBackdrop && onOpenChange) {
-      backdropDiv.onClick(() => {
-        onOpenChange();
-      });
-    }
-
-    // Wrap in DeferredElement for proper z-ordering (priority 2 = above popovers)
-    const deferredWrapper = new DeferredElement(backdropDiv);
-    deferredWrapper.priority(2);
-
-    // Run layout for the wrapper
-    const dialogElementId = this.allocateElementId();
-    const requestLayoutCx = this.createRequestLayoutContext(dialogElementId);
-    const { layoutId: dialogLayoutId, requestState: dialogRequestState } =
-      deferredWrapper.requestLayout(requestLayoutCx);
-
-    this.layoutEngine.computeLayoutWithMeasure(
-      dialogLayoutId,
-      this.width,
-      this.height,
-      this.measureTextCallback.bind(this)
-    );
-
-    const dialogBounds = this.layoutEngine.layoutBounds(dialogLayoutId);
-
-    // Store bounds for reference
-    activeDialog.bounds = dialogBounds;
-
-    // Prepaint - this registers with deferred draw system
-    const prepaintCx = this.createPrepaintContext(dialogElementId);
-    const dialogPrepaintState = deferredWrapper.prepaint(
-      prepaintCx,
-      dialogBounds,
-      dialogRequestState
-    );
-
-    // Paint is handled by deferred system (deferredWrapper registers itself)
-    const paintCx = this.createPaintContext(dialogElementId);
-    deferredWrapper.paint(paintCx, dialogBounds, dialogPrepaintState);
-
-    // Return hit test node for the dialog, marked as blocking pointer events
-    const hitTestNode = (dialogPrepaintState as { hitTestNode?: HitTestNode })?.hitTestNode ?? null;
-    if (hitTestNode) {
-      hitTestNode.blocksPointerEvents = true;
-    }
-    return hitTestNode;
-  }
+  // Note: renderActivePopover() and renderActiveDialog() removed
+  // Popovers and dialogs now render via deferred children in their respective elements
 
   /**
    * Render the active tooltip if one exists.
@@ -2019,45 +1880,8 @@ export class GladeWindow {
       const cleanup = target.onMouseDown((x, y, button, mods) => {
         const normalizedButton = normalizeMouseButton(button, mods);
 
-        // Check for popover click-outside dismissal
-        const activePopover = this.popoverManager.getActivePopover();
-        if (activePopover && normalizedButton === 0) {
-          // Get popover bounds from hit test tree (last entry if popover is active)
-          const popoverHitNode = this.hitTestTree.find((node) => {
-            // Check if this node is from the popover by checking bounds overlap
-            const triggerBounds = activePopover.registration.triggerBounds;
-            const isClickOnTrigger =
-              x >= triggerBounds.x &&
-              x <= triggerBounds.x + triggerBounds.width &&
-              y >= triggerBounds.y &&
-              y <= triggerBounds.y + triggerBounds.height;
-            if (isClickOnTrigger) return false;
-
-            // Check if click is inside this node's bounds
-            return (
-              x >= node.bounds.x &&
-              x <= node.bounds.x + node.bounds.width &&
-              y >= node.bounds.y &&
-              y <= node.bounds.y + node.bounds.height
-            );
-          });
-
-          // If click is not on popover or trigger, dismiss
-          const triggerBounds = activePopover.registration.triggerBounds;
-          const isClickOnTrigger =
-            x >= triggerBounds.x &&
-            x <= triggerBounds.x + triggerBounds.width &&
-            y >= triggerBounds.y &&
-            y <= triggerBounds.y + triggerBounds.height;
-
-          if (!popoverHitNode && !isClickOnTrigger) {
-            const onClose = activePopover.registration.onClose;
-            if (onClose) {
-              onClose();
-              this.getContext().markWindowDirty(this.id);
-            }
-          }
-        }
+        // Note: Popover click-outside dismissal is now handled by backdrop elements
+        // in GladeDropdown and GladeRightClickMenu
 
         // Intercept for cross-element selection FIRST
         const manager = this.getCrossElementSelection();
@@ -2194,10 +2018,7 @@ export class GladeWindow {
 
     if (target.onScroll) {
       const cleanup = target.onScroll((x, y, deltaX, deltaY, mods) => {
-        // Close any open popovers when scrolling occurs
-        if (this.popoverManager.isActive()) {
-          this.popoverManager.hide();
-        }
+        // Note: Popover scroll dismissal handled by individual elements if needed
 
         const event: GladeScrollEvent = { x, y, deltaX, deltaY, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
@@ -2484,6 +2305,10 @@ export class GladeWindow {
       getTheme: (): Theme => {
         return this.getContext().getTheme();
       },
+
+      getWindowSize: (): { width: number; height: number } => {
+        return { width: this.width, height: this.height };
+      },
     };
   }
 
@@ -2545,13 +2370,8 @@ export class GladeWindow {
         registerTooltipFn(hitboxId, bounds, builder, config);
       },
 
-      registerPopover: (registration: PopoverRegistration): void => {
-        this.registerPopover(registration);
-      },
-
-      registerDialog: (registration: DialogRegistration): void => {
-        this.registerDialog(registration);
-      },
+      // Note: registerPopover and registerDialog removed
+      // Overlays now render via deferred children in their respective elements
 
       updateScrollContentSize: (
         handle: ScrollHandle,
@@ -2568,6 +2388,10 @@ export class GladeWindow {
 
       registerDeferredDraw: (entry: DeferredDrawEntry): void => {
         this.registerDeferredDraw(entry);
+      },
+
+      registerDeferredLayout: (entry: DeferredLayoutEntry): void => {
+        this.registerDeferredLayout(entry);
       },
 
       getWindowSize: (): { width: number; height: number } => {
@@ -2604,6 +2428,10 @@ export class GladeWindow {
 
   private registerDeferredDraw(entry: DeferredDrawEntry): void {
     this.deferredDrawQueue.push(entry);
+  }
+
+  private registerDeferredLayout(entry: DeferredLayoutEntry): void {
+    this.deferredLayoutQueue.push(entry);
   }
 
   private createPaintContext(elementId: GlobalElementId): PaintContext {

@@ -74,6 +74,32 @@ export type DemoState = {
   setDropdown4Open: (open: boolean) => void;
   setDropdownLastAction: (action: string) => void;
 
+  dialogOpen: boolean;
+  dialog2Open: boolean;
+  dialog3Open: boolean;
+  dialog4Open: boolean;
+  dialogLastAction: string;
+  setDialogOpen: (open: boolean) => void;
+  setDialog2Open: (open: boolean) => void;
+  setDialog3Open: (open: boolean) => void;
+  setDialog4Open: (open: boolean) => void;
+  setDialogLastAction: (action: string) => void;
+
+  rightClickOpen: boolean;
+  rightClick2Open: boolean;
+  rightClick3Open: boolean;
+  rightClickPosition: { x: number; y: number };
+  rightClick2Position: { x: number; y: number };
+  rightClick3Position: { x: number; y: number };
+  rightClickLastAction: string;
+  setRightClickOpen: (open: boolean) => void;
+  setRightClick2Open: (open: boolean) => void;
+  setRightClick3Open: (open: boolean) => void;
+  setRightClickPosition: (pos: { x: number; y: number }) => void;
+  setRightClick2Position: (pos: { x: number; y: number }) => void;
+  setRightClick3Position: (pos: { x: number; y: number }) => void;
+  setRightClickLastAction: (action: string) => void;
+
   useSystemTheme: boolean;
   preferDarkMode: boolean;
   setUseSystemTheme: (use: boolean) => void;

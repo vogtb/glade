@@ -1,5 +1,6 @@
 import {
   GladeContainerElement,
+  GladeElement,
   type RequestLayoutContext,
   type PrepaintContext,
   type PaintContext,
@@ -10,8 +11,9 @@ import { type Bounds } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode, ClickHandler } from "./dispatch.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { PopoverConfig } from "./popover.ts";
-import type { GladeContext } from "./context.ts";
+import { AnchoredElement } from "./anchored.ts";
+import { DeferredElement, type DeferredRequestLayoutState } from "./deferred.ts";
+import { GladeDiv } from "./div.ts";
 import {
   DEFAULT_FONT_SIZE,
   DEFAULT_INDICATOR_WIDTH,
@@ -53,6 +55,21 @@ type DropdownRequestState = {
   triggerLayoutId: LayoutId;
   triggerElementId: GlobalElementId;
   triggerRequestState: unknown;
+  // Menu state (when open)
+  menuLayoutId: LayoutId | null;
+  menuElementId: GlobalElementId | null;
+  menuRequestState: DeferredRequestLayoutState | null;
+  menuElement: DeferredElement | null;
+  // Backdrop for click-outside-to-close
+  backdropLayoutId: LayoutId | null;
+  backdropElementId: GlobalElementId | null;
+  backdropRequestState: DeferredRequestLayoutState | null;
+  backdropElement: DeferredElement | null;
+  // Keep references for setting bounds in prepaint
+  anchoredElement: AnchoredElement | null;
+  backdropDiv: GladeDiv | null;
+  // Store window size for layout
+  windowSize: { width: number; height: number };
 };
 
 type DropdownPrepaintState = {
@@ -303,16 +320,59 @@ export class GladeDropdown extends GladeContainerElement<
     );
   }
 
-  private buildPopoverConfig(): PopoverConfig {
-    return {
-      side: this.sideValue,
-      align: this.alignValue,
-      sideOffset: this.sideOffsetValue,
-      windowMargin: this.windowMarginValue,
-    };
+  /**
+   * Build the menu element wrapped in anchored + deferred.
+   * Returns both the deferred element and the anchored element reference.
+   * Note: The anchored element's triggerBounds will be set during prepaint.
+   *
+   * Structure: Two separate deferred elements:
+   * 1. Backdrop (priority 1) - covers window for click-outside-to-close
+   * 2. Menu (priority 1) - the actual menu content, positioned by AnchoredElement
+   */
+  private buildMenuElement(theme: Theme): {
+    deferredMenu: DeferredElement;
+    deferredBackdrop: DeferredElement;
+    anchored: AnchoredElement;
+    backdrop: GladeDiv;
+  } {
+    const menuContent = new GladeDropdownMenuContent();
+    menuContent.setItems([...this.menuItems]);
+    menuContent.setContext(this.buildMenuContext(theme));
+
+    // Wrap menu in anchored for positioning (triggerBounds set in prepaint)
+    const anchoredMenu = new AnchoredElement();
+    anchoredMenu
+      .side(this.sideValue)
+      .align(this.alignValue)
+      .sideOffset(this.sideOffsetValue)
+      .snapToWindowWithMargin(this.windowMarginValue)
+      .child(menuContent);
+
+    // Wrap anchored menu in deferred for z-ordering
+    const deferredMenu = new DeferredElement(anchoredMenu);
+    deferredMenu.priority(1);
+
+    // Create a full-window transparent backdrop for click-outside-to-close
+    const onOpenChange = this.onOpenChangeHandler;
+    const backdrop = new GladeDiv();
+    backdrop
+      .occludeMouse() // Block events from reaching elements behind
+      .onClick(() => {
+        if (onOpenChange) {
+          onOpenChange(false);
+        }
+      });
+
+    // Wrap backdrop in deferred (same priority, but added first so it's behind)
+    const deferredBackdrop = new DeferredElement(backdrop);
+    deferredBackdrop.priority(1);
+
+    return { deferredMenu, deferredBackdrop, anchored: anchoredMenu, backdrop };
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DropdownRequestState> {
+    const windowSize = cx.getWindowSize();
+
     if (!this.triggerElement) {
       const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
       return {
@@ -322,6 +382,17 @@ export class GladeDropdown extends GladeContainerElement<
           triggerLayoutId: layoutId,
           triggerElementId: cx.elementId,
           triggerRequestState: undefined,
+          menuLayoutId: null,
+          menuElementId: null,
+          menuRequestState: null,
+          menuElement: null,
+          backdropLayoutId: null,
+          backdropElementId: null,
+          backdropRequestState: null,
+          backdropElement: null,
+          anchoredElement: null,
+          backdropDiv: null,
+          windowSize,
         },
       };
     }
@@ -330,6 +401,46 @@ export class GladeDropdown extends GladeContainerElement<
     const triggerCx: RequestLayoutContext = { ...cx, elementId: triggerElementId };
     const triggerResult = this.triggerElement.requestLayout(triggerCx);
 
+    // Layout menu and backdrop if open
+    let menuLayoutId: LayoutId | null = null;
+    let menuElementId: GlobalElementId | null = null;
+    let menuRequestState: DeferredRequestLayoutState | null = null;
+    let menuElement: DeferredElement | null = null;
+    let backdropLayoutId: LayoutId | null = null;
+    let backdropElementId: GlobalElementId | null = null;
+    let backdropRequestState: DeferredRequestLayoutState | null = null;
+    let backdropElement: DeferredElement | null = null;
+    let anchoredElement: AnchoredElement | null = null;
+    let backdropDiv: GladeDiv | null = null;
+
+    if (this.openValue && this.menuItems.length > 0) {
+      const theme = cx.getTheme();
+      const result = this.buildMenuElement(theme);
+      menuElement = result.deferredMenu;
+      backdropElement = result.deferredBackdrop;
+      anchoredElement = result.anchored;
+      backdropDiv = result.backdrop;
+
+      // Set window size on anchored element for layout calculations
+      anchoredElement.setWindowSize(windowSize);
+
+      // Layout the backdrop (full window size)
+      backdropDiv.w(windowSize.width).h(windowSize.height);
+      backdropElementId = cx.allocateChildId();
+      const backdropCx: RequestLayoutContext = { ...cx, elementId: backdropElementId };
+      const backdropResult = backdropElement.requestLayout(backdropCx);
+      backdropLayoutId = backdropResult.layoutId;
+      backdropRequestState = backdropResult.requestState;
+
+      // Layout the menu
+      menuElementId = cx.allocateChildId();
+      const menuCx: RequestLayoutContext = { ...cx, elementId: menuElementId };
+      const menuResult = menuElement.requestLayout(menuCx);
+      menuLayoutId = menuResult.layoutId;
+      menuRequestState = menuResult.requestState;
+    }
+
+    // The dropdown's layout only includes the trigger (menu is deferred/positioned separately)
     const layoutId = cx.requestLayout(
       {
         display: "flex",
@@ -345,6 +456,17 @@ export class GladeDropdown extends GladeContainerElement<
         triggerLayoutId: triggerResult.layoutId,
         triggerElementId,
         triggerRequestState: triggerResult.requestState,
+        menuLayoutId,
+        menuElementId,
+        menuRequestState,
+        menuElement,
+        backdropLayoutId,
+        backdropElementId,
+        backdropRequestState,
+        backdropElement,
+        anchoredElement,
+        backdropDiv,
+        windowSize,
       },
     };
   }
@@ -354,7 +476,21 @@ export class GladeDropdown extends GladeContainerElement<
     bounds: Bounds,
     requestState: DropdownRequestState
   ): DropdownPrepaintState {
-    const { layoutId, triggerLayoutId, triggerElementId, triggerRequestState } = requestState;
+    const {
+      layoutId,
+      triggerLayoutId,
+      triggerElementId,
+      triggerRequestState,
+      menuLayoutId,
+      menuElementId,
+      menuRequestState,
+      menuElement,
+      backdropLayoutId,
+      backdropElementId,
+      backdropRequestState,
+      backdropElement,
+      windowSize,
+    } = requestState;
 
     const originalBounds = cx.getBounds(layoutId);
     const deltaX = bounds.x - originalBounds.x;
@@ -393,11 +529,7 @@ export class GladeDropdown extends GladeContainerElement<
       }
     };
 
-    const hitbox = cx.insertHitbox(
-      triggerBounds,
-      HitboxBehavior.Normal,
-      isDisabled ? "not-allowed" : "pointer"
-    );
+    cx.insertHitbox(triggerBounds, HitboxBehavior.Normal, isDisabled ? "not-allowed" : "pointer");
 
     const wrappedTriggerHitTest: HitTestNode = {
       bounds: triggerBounds,
@@ -411,25 +543,39 @@ export class GladeDropdown extends GladeContainerElement<
       children: triggerHitTestNode?.children ?? [],
     };
 
-    if (this.openValue && this.menuItems.length > 0) {
-      const menuItems = [...this.menuItems];
-      const theme = cx.getWindow().getTheme();
-      const menuContext = this.buildMenuContext(theme);
+    // Prepaint backdrop if open - this registers it with the deferred draw system
+    if (
+      backdropElement &&
+      backdropLayoutId !== null &&
+      backdropElementId !== null &&
+      backdropRequestState !== null
+    ) {
+      // Backdrop covers full window
+      const backdropBounds: Bounds = {
+        x: 0,
+        y: 0,
+        width: windowSize.width,
+        height: windowSize.height,
+      };
+      const backdropCx = cx.withElementId(backdropElementId);
+      backdropElement.prepaint(backdropCx, backdropBounds, backdropRequestState);
+    }
 
-      cx.registerPopover({
-        id: this.dropdownId,
-        hitboxId: hitbox.id,
-        triggerBounds,
-        builder: (_gladeCx: GladeContext) => {
-          const menuContent = new GladeDropdownMenuContent();
-          menuContent.setItems(menuItems);
-          menuContent.setContext(menuContext);
-          return menuContent;
-        },
-        config: this.buildPopoverConfig(),
-        open: true,
-        onClose: onOpenChange ? () => onOpenChange(false) : null,
-      });
+    // Prepaint menu if open - this registers it with the deferred draw system
+    if (
+      menuElement &&
+      menuLayoutId !== null &&
+      menuElementId !== null &&
+      menuRequestState !== null &&
+      requestState.anchoredElement
+    ) {
+      // Set trigger bounds on the anchored element for positioning calculation
+      requestState.anchoredElement.triggerBounds(triggerBounds);
+
+      const menuBounds = cx.getBounds(menuLayoutId);
+      const menuCx = cx.withElementId(menuElementId);
+      // Prepaint will cause the DeferredElement to register itself via registerDeferredDraw
+      menuElement.prepaint(menuCx, menuBounds, menuRequestState);
     }
 
     const hitTestNode: HitTestNode = {

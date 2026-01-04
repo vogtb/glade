@@ -36,12 +36,15 @@ import {
 } from "./element.ts";
 import { type Bounds, type Size } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
-import type { HitTestNode, ClickHandler } from "./dispatch.ts";
+import type { HitTestNode, ClickHandler, KeyHandler } from "./dispatch.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { GladeContext } from "./context.ts";
 import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 import type { Theme } from "./theme.ts";
+import { DeferredElement, deferred } from "./deferred.ts";
+import { div, GladeDiv } from "./div.ts";
+import { AnchoredElement, anchored } from "./anchored.ts";
 
 // ============================================================================
 // Sizes
@@ -1260,6 +1263,14 @@ type DialogRequestState = {
   triggerLayoutId: LayoutId;
   triggerElementId: GlobalElementId;
   triggerRequestState: unknown;
+  // Dialog overlay elements (when open)
+  dialogContentLayoutId: LayoutId | null;
+  dialogContentElementId: GlobalElementId | null;
+  dialogContentRequestState: unknown;
+  dialogContentElement: GladeElement<unknown, unknown> | null;
+  anchoredElement: AnchoredElement | null;
+  backdropElement: GladeDiv | null;
+  deferredElement: DeferredElement | null;
 };
 
 type DialogPrepaintState = {
@@ -1430,7 +1441,99 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
     };
   }
 
+  /**
+   * Build the dialog overlay element structure.
+   * Creates: deferred(backdrop with centered anchored content)
+   */
+  private buildDialogOverlay(theme: Theme): {
+    deferred: DeferredElement;
+    anchored: AnchoredElement;
+    backdrop: GladeDiv;
+    content: GladeElement<unknown, unknown>;
+  } {
+    const config = this.buildDialogConfig(theme);
+    const contentContext = this.buildContentContext(theme);
+    const onOpenChange = this.onOpenChangeHandler;
+
+    // Build the content - pass null for GladeContext since we're in layout phase
+    // Most dialog content doesn't need GladeContext; if it does, user should
+    // build it before passing to dialog().content()
+    const content = this.contentBuilder!(null as unknown as GladeContext);
+    if (content instanceof GladeDialogContent) {
+      content.setContext(contentContext);
+    }
+
+    // Create anchored element for centering
+    const anchoredContent = anchored().centerInWindow().child(content);
+
+    // Create backdrop click handler
+    const backdropClickHandler: ClickHandler = () => {
+      if (config.closeOnBackdropClick && onOpenChange) {
+        onOpenChange(false);
+      }
+      return { stopPropagation: true };
+    };
+
+    // Create escape key handler
+    const escapeKeyHandler: KeyHandler = (event) => {
+      if (config.closeOnEscape && event.key === "Escape" && onOpenChange) {
+        onOpenChange(false);
+        return { stopPropagation: true };
+      }
+      return { stopPropagation: false };
+    };
+
+    // Create backdrop with centered content
+    const backdrop = div()
+      .absolute()
+      .inset(0)
+      .bg(config.backdropColor)
+      .flex()
+      .itemsCenter()
+      .justifyCenter()
+      .occludeMouse()
+      .onClick(backdropClickHandler)
+      .onKeyDown(escapeKeyHandler)
+      .child(anchoredContent);
+
+    // Wrap in deferred with priority 2 (dialogs)
+    const deferredDialog = deferred(backdrop).priority(2);
+
+    return {
+      deferred: deferredDialog,
+      anchored: anchoredContent,
+      backdrop,
+      content,
+    };
+  }
+
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DialogRequestState> {
+    const theme = cx.getTheme();
+
+    // Build dialog overlay if open
+    let dialogContentLayoutId: LayoutId | null = null;
+    let dialogContentElementId: GlobalElementId | null = null;
+    let dialogContentRequestState: unknown = null;
+    let dialogContentElement: GladeElement<unknown, unknown> | null = null;
+    let anchoredElement: AnchoredElement | null = null;
+    let backdropElement: GladeDiv | null = null;
+    let deferredElement: DeferredElement | null = null;
+
+    if (this.openValue && this.contentBuilder) {
+      const overlay = this.buildDialogOverlay(theme);
+      deferredElement = overlay.deferred;
+      anchoredElement = overlay.anchored;
+      backdropElement = overlay.backdrop;
+      dialogContentElement = overlay.content;
+
+      // Layout the deferred element (which contains backdrop -> anchored -> content)
+      dialogContentElementId = cx.allocateChildId();
+      const dialogCx: RequestLayoutContext = { ...cx, elementId: dialogContentElementId };
+      const dialogResult = deferredElement.requestLayout(dialogCx);
+      dialogContentLayoutId = dialogResult.layoutId;
+      dialogContentRequestState = dialogResult.requestState;
+    }
+
     if (!this.triggerElement) {
       const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
       return {
@@ -1440,6 +1543,13 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
           triggerLayoutId: layoutId,
           triggerElementId: cx.elementId,
           triggerRequestState: undefined,
+          dialogContentLayoutId,
+          dialogContentElementId,
+          dialogContentRequestState,
+          dialogContentElement,
+          anchoredElement,
+          backdropElement,
+          deferredElement,
         },
       };
     }
@@ -1463,6 +1573,13 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
         triggerLayoutId: triggerResult.layoutId,
         triggerElementId,
         triggerRequestState: triggerResult.requestState,
+        dialogContentLayoutId,
+        dialogContentElementId,
+        dialogContentRequestState,
+        dialogContentElement,
+        anchoredElement,
+        backdropElement,
+        deferredElement,
       },
     };
   }
@@ -1472,7 +1589,18 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
     bounds: Bounds,
     requestState: DialogRequestState
   ): DialogPrepaintState {
-    const { dialogLayoutId, triggerLayoutId, triggerElementId, triggerRequestState } = requestState;
+    const {
+      dialogLayoutId,
+      triggerLayoutId,
+      triggerElementId,
+      triggerRequestState,
+      dialogContentLayoutId,
+      dialogContentElementId,
+      dialogContentRequestState,
+      anchoredElement,
+      backdropElement,
+      deferredElement,
+    } = requestState;
 
     // Get trigger bounds and adjust for scroll offset.
     // The parent passes scroll-adjusted bounds for the dialog wrapper.
@@ -1517,7 +1645,7 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
       }
     };
 
-    const hitbox = cx.insertHitbox(triggerBounds, HitboxBehavior.Normal, "pointer");
+    cx.insertHitbox(triggerBounds, HitboxBehavior.Normal, "pointer");
 
     // Wrap trigger hit test to add click handler
     const wrappedTriggerHitTest: HitTestNode = {
@@ -1531,27 +1659,31 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
       children: triggerHitTestNode?.children ?? [],
     };
 
-    const theme = cx.getWindow().getTheme();
+    // Prepaint dialog overlay if open
+    // This registers the deferred draw entry which will paint after normal elements
+    if (
+      deferredElement &&
+      anchoredElement &&
+      backdropElement &&
+      dialogContentLayoutId !== null &&
+      dialogContentElementId !== null &&
+      cx.getWindowSize
+    ) {
+      // Set window size on the backdrop so it covers the full window
+      const windowSize = cx.getWindowSize();
+      backdropElement.w(windowSize.width).h(windowSize.height);
 
-    // Register with DialogManager if open
-    if (this.openValue && this.contentBuilder) {
-      const contentBuilder = this.contentBuilder;
-      const contentContext = this.buildContentContext(theme);
+      // Set window size on the anchored element for centering
+      anchoredElement.setWindowSize(windowSize);
 
-      cx.registerDialog({
-        id: this.dialogId,
-        hitboxId: hitbox.id,
-        builder: (_gladeCx: GladeContext) => {
-          const content = contentBuilder(_gladeCx);
-          if (content instanceof GladeDialogContent) {
-            content.setContext(contentContext);
-          }
-          return content;
-        },
-        config: this.buildDialogConfig(theme),
-        open: true,
-        onClose: onOpenChange ? () => onOpenChange(false) : null,
-      });
+      // Prepaint the deferred element - this registers it in the deferred draw queue
+      const dialogBounds = cx.getBounds(dialogContentLayoutId);
+      const dialogCx = cx.withElementId(dialogContentElementId);
+      deferredElement.prepaint(
+        dialogCx,
+        dialogBounds,
+        dialogContentRequestState as Parameters<typeof deferredElement.prepaint>[2]
+      );
     }
 
     const hitTestNode: HitTestNode = {

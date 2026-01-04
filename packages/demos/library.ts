@@ -33,6 +33,8 @@ import { SWITCH_DEMO } from "./switch_demo.ts";
 import { CHECKBOX_DEMO } from "./checkbox_demo.ts";
 import { DEBUG_MODE_DEMO } from "./debug_mode_demo.ts";
 import { DROPDOWN_DEMO } from "./dropdown_demo.ts";
+import { DIALOG_DEMO } from "./dialog_demo.ts";
+// import { RIGHT_CLICK_DEMO } from "./right_click_demo.ts";
 import { THEME_DEMO } from "./theme_demo.ts";
 import { HOTKEYS_DEMO } from "./hotkeys_demo.ts";
 
@@ -44,6 +46,7 @@ export const ALL_DEMOS: Demo[] = [
   CLIPBOARD_DEMO,
   CODE_DEMO,
   DEBUG_MODE_DEMO,
+  DIALOG_DEMO,
   DIV_DEMO,
   DROPDOWN_DEMO,
   EMOJI_DEMO,
@@ -62,6 +65,7 @@ export const ALL_DEMOS: Demo[] = [
   MULTI_SELECTION_DEMO,
   PADDING_DEMO,
   RADIO_INPUT_DEMO,
+  // RIGHT_CLICK_DEMO,
   SCROLLBAR_DEMO,
   SWITCH_DEMO,
   TABLE_DEMO,
@@ -81,6 +85,7 @@ export {
   CLIPBOARD_DEMO,
   CODE_DEMO,
   DEBUG_MODE_DEMO,
+  DIALOG_DEMO,
   DIV_DEMO,
   DROPDOWN_DEMO,
   EMOJI_DEMO,
@@ -99,6 +104,7 @@ export {
   MULTI_SELECTION_DEMO,
   PADDING_DEMO,
   RADIO_INPUT_DEMO,
+  // RIGHT_CLICK_DEMO,
   SCROLLBAR_DEMO,
   SWITCH_DEMO,
   TABLE_DEMO,

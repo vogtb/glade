@@ -33,6 +33,16 @@ import type { HitTestNode } from "./dispatch.ts";
 export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 /**
+ * Side position relative to a trigger element.
+ */
+export type AnchoredSide = "top" | "bottom" | "left" | "right";
+
+/**
+ * Alignment along the side.
+ */
+export type AnchoredAlign = "start" | "center" | "end";
+
+/**
  * Position mode determines the coordinate space for anchor position.
  */
 export type AnchoredPositionMode = "window" | "local";
@@ -157,6 +167,13 @@ export class AnchoredElement extends GladeContainerElement<
   private fitMode: AnchoredFitMode = "switch-anchor";
   private windowSize: Size = { width: 0, height: 0 };
 
+  // Side/align positioning (alternative to direct corner positioning)
+  private sideValue: AnchoredSide | null = null;
+  private alignValue: AnchoredAlign = "start";
+  private sideOffsetValue = 0;
+  private triggerBoundsValue: Bounds | null = null;
+  private centerInWindowValue = false;
+
   /**
    * Set the anchor corner. This corner of the element will be placed at the anchor position.
    */
@@ -221,6 +238,116 @@ export class AnchoredElement extends GladeContainerElement<
   setWindowSize(size: Size): this {
     this.windowSize = size;
     return this;
+  }
+
+  /**
+   * Set the side relative to trigger bounds.
+   * Use with triggerBounds() for popover/dropdown positioning.
+   */
+  side(side: AnchoredSide): this {
+    this.sideValue = side;
+    return this;
+  }
+
+  /**
+   * Set alignment along the side.
+   * Use with side() and triggerBounds().
+   */
+  align(align: AnchoredAlign): this {
+    this.alignValue = align;
+    return this;
+  }
+
+  /**
+   * Set offset from the trigger when using side positioning.
+   */
+  sideOffset(offset: number): this {
+    this.sideOffsetValue = offset;
+    return this;
+  }
+
+  /**
+   * Set the trigger element bounds for side/align positioning.
+   */
+  triggerBounds(bounds: Bounds): this {
+    this.triggerBoundsValue = bounds;
+    return this;
+  }
+
+  /**
+   * Center the element in the window.
+   * Used for dialogs/modals.
+   */
+  centerInWindow(): this {
+    this.centerInWindowValue = true;
+    return this;
+  }
+
+  /**
+   * Calculate anchor position and corner from side/align/trigger settings.
+   */
+  private calculateSidePosition(
+    trigger: Bounds,
+    side: AnchoredSide,
+    align: AnchoredAlign,
+    offset: number
+  ): { position: Point; corner: Corner } {
+    let x: number = trigger.x;
+    let y: number = trigger.y;
+    let corner: Corner = "top-left";
+
+    switch (side) {
+      case "bottom":
+        y = trigger.y + trigger.height + offset;
+        corner = "top-left";
+        break;
+      case "top":
+        y = trigger.y - offset;
+        corner = "bottom-left";
+        break;
+      case "right":
+        x = trigger.x + trigger.width + offset;
+        y = trigger.y;
+        corner = "top-left";
+        break;
+      case "left":
+        x = trigger.x - offset;
+        y = trigger.y;
+        corner = "top-right";
+        break;
+    }
+
+    // Handle alignment
+    if (side === "bottom" || side === "top") {
+      switch (align) {
+        case "start":
+          x = trigger.x;
+          break;
+        case "center":
+          x = trigger.x + trigger.width / 2;
+          corner = side === "bottom" ? "top-left" : "bottom-left";
+          break;
+        case "end":
+          x = trigger.x + trigger.width;
+          corner = side === "bottom" ? "top-right" : "bottom-right";
+          break;
+      }
+    } else {
+      switch (align) {
+        case "start":
+          y = trigger.y;
+          break;
+        case "center":
+          y = trigger.y + trigger.height / 2;
+          break;
+        case "end":
+          y = trigger.y + trigger.height;
+          corner = side === "right" ? "bottom-left" : "bottom-right";
+          break;
+      }
+    }
+
+    return { position: { x, y }, corner };
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<AnchoredRequestLayoutState> {
@@ -290,12 +417,43 @@ export class AnchoredElement extends GladeContainerElement<
       height: maxY - minY,
     };
 
-    const anchorPoint: Point = {
-      x: this.anchorPosition.x + this.offsetValue.x,
-      y: this.anchorPosition.y + this.offsetValue.y,
-    };
+    // Determine anchor position and corner based on positioning mode
+    let anchorPoint: Point;
+    let currentCorner: Corner;
 
-    let currentCorner = this.anchorCorner;
+    if (this.centerInWindowValue) {
+      // Center in window mode - position at window center
+      anchorPoint = {
+        x: this.windowSize.width / 2,
+        y: this.windowSize.height / 2,
+      };
+      // Use top-left corner offset to center the content
+      currentCorner = "top-left";
+      // Adjust to center the content
+      anchorPoint.x -= contentSize.width / 2;
+      anchorPoint.y -= contentSize.height / 2;
+    } else if (this.sideValue !== null && this.triggerBoundsValue !== null) {
+      // Side/align positioning relative to trigger
+      const result = this.calculateSidePosition(
+        this.triggerBoundsValue,
+        this.sideValue,
+        this.alignValue,
+        this.sideOffsetValue
+      );
+      anchorPoint = {
+        x: result.position.x + this.offsetValue.x,
+        y: result.position.y + this.offsetValue.y,
+      };
+      currentCorner = result.corner;
+    } else {
+      // Direct position/corner mode (original behavior)
+      anchorPoint = {
+        x: this.anchorPosition.x + this.offsetValue.x,
+        y: this.anchorPosition.y + this.offsetValue.y,
+      };
+      currentCorner = this.anchorCorner;
+    }
+
     let desired = boundsFromCornerAndSize(currentCorner, anchorPoint, contentSize);
 
     const limits: Bounds = {
@@ -305,7 +463,8 @@ export class AnchoredElement extends GladeContainerElement<
       height: this.windowSize.height,
     };
 
-    if (this.fitMode === "switch-anchor") {
+    // Skip switch-anchor logic for centerInWindow mode
+    if (this.fitMode === "switch-anchor" && !this.centerInWindowValue) {
       if (desired.x < limits.x || desired.x + desired.width > limits.x + limits.width) {
         const flippedCorner = flipCornerHorizontal(currentCorner);
         const switched = boundsFromCornerAndSize(flippedCorner, anchorPoint, contentSize);

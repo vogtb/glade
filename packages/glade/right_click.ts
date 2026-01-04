@@ -1,16 +1,18 @@
 import {
   GladeContainerElement,
+  GladeElement,
   type RequestLayoutContext,
   type PrepaintContext,
   type PaintContext,
   type RequestLayoutResult,
+  type GlobalElementId,
 } from "./element.ts";
 import type { Bounds } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
 import type { HitTestNode } from "./dispatch.ts";
-import { HitboxBehavior } from "./hitbox.ts";
-import type { PopoverConfig } from "./popover.ts";
-import type { GladeContext } from "./context.ts";
+import { AnchoredElement } from "./anchored.ts";
+import { DeferredElement } from "./deferred.ts";
+import { GladeDiv } from "./div.ts";
 import {
   DEFAULT_FONT_SIZE,
   DEFAULT_INDICATOR_WIDTH,
@@ -46,6 +48,13 @@ import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 
 type RightClickRequestState = {
   layoutId: LayoutId;
+  // Menu state (when open)
+  menuLayoutId: LayoutId | null;
+  menuElementId: GlobalElementId | null;
+  menuRequestState: unknown;
+  menuElement: GladeElement<unknown, unknown> | null;
+  anchoredElement: AnchoredElement | null;
+  backdropElement: GladeDiv | null;
 };
 
 type RightClickPrepaintState = {
@@ -293,57 +302,114 @@ export class GladeRightClickMenu extends GladeContainerElement<
     );
   }
 
-  private buildPopoverConfig(): PopoverConfig {
-    return {
-      side: this.sideValue,
-      align: this.alignValue,
-      sideOffset: this.sideOffsetValue,
-      windowMargin: this.windowMarginValue,
-    };
+  /**
+   * Build the menu element wrapped in anchored + deferred.
+   * For right-click menus, we use the click position directly.
+   */
+  private buildMenuElement(theme: Theme): {
+    deferred: DeferredElement;
+    anchored: AnchoredElement;
+    backdrop: GladeDiv;
+  } {
+    const menuContent = new GladeDropdownMenuContent();
+    menuContent.setItems([...this.menuItems]);
+    menuContent.setContext(this.buildMenuContext(theme));
+
+    // Wrap in anchored for positioning at click location
+    const anchoredMenu = new AnchoredElement();
+    anchoredMenu
+      .anchor("top-left")
+      .position(this.positionValue)
+      .snapToWindowWithMargin(this.windowMarginValue)
+      .child(menuContent);
+
+    // Create a full-window transparent backdrop for click-outside-to-close
+    const onOpenChange = this.onOpenChangeHandler;
+    const backdrop = new GladeDiv();
+    backdrop
+      .absolute()
+      .inset(0)
+      .occludeMouse()
+      .onClick(() => {
+        if (onOpenChange) {
+          onOpenChange(false);
+        }
+      })
+      .child(anchoredMenu);
+
+    // Wrap in deferred for z-ordering (priority 1 = menus)
+    const deferredMenu = new DeferredElement(backdrop);
+    deferredMenu.priority(1);
+
+    return { deferred: deferredMenu, anchored: anchoredMenu, backdrop };
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<RightClickRequestState> {
+    // Layout menu if open
+    let menuLayoutId: LayoutId | null = null;
+    let menuElementId: GlobalElementId | null = null;
+    let menuRequestState: unknown = null;
+    let menuElement: GladeElement<unknown, unknown> | null = null;
+    let anchoredElement: AnchoredElement | null = null;
+    let backdropElement: GladeDiv | null = null;
+
+    if (this.openValue && this.menuItems.length > 0) {
+      const theme = cx.getTheme();
+      const { deferred, anchored, backdrop } = this.buildMenuElement(theme);
+      menuElement = deferred;
+      anchoredElement = anchored;
+      backdropElement = backdrop;
+      menuElementId = cx.allocateChildId();
+      const menuCx: RequestLayoutContext = { ...cx, elementId: menuElementId };
+      const menuResult = menuElement.requestLayout(menuCx);
+      menuLayoutId = menuResult.layoutId;
+      menuRequestState = menuResult.requestState;
+    }
+
+    // The right-click menu has zero size (it only renders the deferred menu)
     const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
     return {
       layoutId,
-      requestState: { layoutId },
+      requestState: {
+        layoutId,
+        menuLayoutId,
+        menuElementId,
+        menuRequestState,
+        menuElement,
+        anchoredElement,
+        backdropElement,
+      },
     };
   }
 
   prepaint(
     cx: PrepaintContext,
     bounds: Bounds,
-    _requestState: RightClickRequestState
+    requestState: RightClickRequestState
   ): RightClickPrepaintState {
-    const triggerBounds: Bounds = {
-      x: this.positionValue.x,
-      y: this.positionValue.y,
-      width: 1,
-      height: 1,
-    };
+    const { menuLayoutId, menuElementId, menuRequestState, menuElement } = requestState;
 
-    if (this.openValue && this.menuItems.length > 0) {
-      const menuItems = [...this.menuItems];
-      const theme = cx.getWindow().getTheme();
-      const menuContext = this.buildMenuContext(theme);
+    // Prepaint menu if open - this registers it with the deferred draw system
+    if (
+      menuElement &&
+      menuLayoutId !== null &&
+      menuElementId !== null &&
+      requestState.anchoredElement
+    ) {
+      const windowSize = cx.getWindowSize?.() ?? { width: 0, height: 0 };
 
-      // We still need a hitbox for PopoverManager to handle outside click.
-      const hitbox = cx.insertHitbox(triggerBounds, HitboxBehavior.Normal, "default");
+      // Set window size on the anchored element
+      requestState.anchoredElement.setWindowSize(windowSize);
 
-      cx.registerPopover({
-        id: this.menuId,
-        hitboxId: hitbox.id,
-        triggerBounds,
-        builder: (_gladeCx: GladeContext) => {
-          const menuContent = new GladeDropdownMenuContent();
-          menuContent.setItems(menuItems);
-          menuContent.setContext(menuContext);
-          return menuContent;
-        },
-        config: this.buildPopoverConfig(),
-        open: true,
-        onClose: this.onOpenChangeHandler ? () => this.onOpenChangeHandler?.(false) : null,
-      });
+      // Set backdrop to cover the full window
+      if (requestState.backdropElement) {
+        requestState.backdropElement.w(windowSize.width).h(windowSize.height);
+      }
+
+      const menuBounds = cx.getBounds(menuLayoutId);
+      const menuCx = cx.withElementId(menuElementId);
+      // Prepaint will cause the DeferredElement to register itself via registerDeferredDraw
+      menuElement.prepaint(menuCx, menuBounds, menuRequestState);
     }
 
     const hitTestNode: HitTestNode = {

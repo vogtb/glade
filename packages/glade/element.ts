@@ -21,9 +21,9 @@ import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { GladeWindow as _GladeWindow } from "./window.ts";
 import type { TooltipConfig } from "./tooltip.ts";
-import type { PopoverRegistration } from "./popover.ts";
-import type { DialogRegistration } from "./dialog.ts";
-import type { DeferredDrawEntry } from "./deferred.ts";
+// Note: PopoverRegistration and DialogRegistration imports removed
+// These are no longer needed as overlays render via deferred children
+import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
 import type { TabStopConfig } from "./tab.ts";
 import type { PathBuilder } from "./path.ts";
 import type { ImageTile, DecodedImage } from "./image.ts";
@@ -161,6 +161,11 @@ export interface RequestLayoutContext {
    * Get the active theme.
    */
   getTheme(): Theme;
+
+  /**
+   * Get the window size.
+   */
+  getWindowSize(): { width: number; height: number };
 }
 
 /**
@@ -231,15 +236,8 @@ export interface PrepaintContext {
     config: TooltipConfig
   ): void;
 
-  /**
-   * Register a popover for an element.
-   */
-  registerPopover(registration: PopoverRegistration): void;
-
-  /**
-   * Register a dialog for an element.
-   */
-  registerDialog(registration: DialogRegistration): void;
+  // Note: registerPopover and registerDialog removed
+  // Overlays now render via deferred children in their respective elements
 
   /**
    * Update the content and viewport size for a scroll handle.
@@ -262,6 +260,13 @@ export interface PrepaintContext {
    * The element will be painted after all normal elements in priority order.
    */
   registerDeferredDraw?(entry: DeferredDrawEntry): void;
+
+  /**
+   * Register an element for deferred layout processing.
+   * The element will get a separate layout pass with window dimensions after the main tree prepaint.
+   * This allows overlay content (menus, dialogs) to be laid out with full window space.
+   */
+  registerDeferredLayout?(entry: DeferredLayoutEntry): void;
 
   /**
    * Get the window size for overflow calculations (e.g., anchored elements).
