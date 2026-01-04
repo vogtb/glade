@@ -21,8 +21,9 @@ import {
   type SubscriberCallback,
   SubscriberHandle,
 } from "./entity.ts";
+import type { ScrollOffset } from "./scroll.ts";
 import { createThemeFonts, type Theme, ThemeManager } from "./theme.ts";
-import type { EntityId, FocusId, GladeTask, ScrollOffset, WindowId } from "./types.ts";
+import type { EntityId, FocusId, WindowId } from "./types.ts";
 import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts";
 
 /**
@@ -637,11 +638,6 @@ class GladeAppContext implements GladeContext {
 
   scrollBy(handle: ScrollHandle, deltaX: number, deltaY: number): void {
     this.app.scrollBy(handle, deltaX, deltaY);
-  }
-
-  // TODO: remove.
-  spawn<T>(_future: Promise<T>): GladeTask<T> {
-    throw new Error("unimplemented");
   }
 
   markWindowDirty(windowId: WindowId): void {

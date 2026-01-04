@@ -11,6 +11,7 @@
 
 import { type Color, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import {
@@ -26,8 +27,8 @@ import type { ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { LayoutId } from "./layout.ts";
+import type { ScrollOffset } from "./scroll.ts";
 import type { Styles } from "./styles.ts";
-import { type Bounds, type ScrollOffset } from "./types.ts";
 
 /**
  * Scroll-to strategies for scrollToItem.

@@ -2,8 +2,16 @@
   "name": "@glade/fonts",
   "version": "0.0.1",
   "type": "module",
-  "main": "fonts.ts",
-  "types": "fonts.ts",
+  "exports": {
+    ".": {
+      "types": "./fonts.ts",
+      "default": "./fonts.ts"
+    },
+    "./embedded": {
+      "types": "./embedded.ts",
+      "default": "./embedded.ts"
+    }
+  },
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",

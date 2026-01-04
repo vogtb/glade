@@ -96,6 +96,12 @@ import { PathPipeline } from "./path.ts";
 import { RectPipeline } from "./rect.ts";
 import { GladeRenderer } from "./renderer.ts";
 import { GladeScene } from "./scene.ts";
+import {
+  clampScrollOffset,
+  createScrollState,
+  type ScrollOffset,
+  type ScrollState,
+} from "./scroll.ts";
 import type { ScrollbarDragState } from "./scrollbar.ts";
 import { calculateDragScrollOffset } from "./scrollbar.ts";
 import { CrossElementSelectionManager } from "./select.ts";
@@ -117,12 +123,9 @@ import type {
   FocusId,
   Point,
   ScrollHandleId,
-  ScrollOffset,
-  ScrollState,
   TransformationMatrix,
   WindowId,
 } from "./types.ts";
-import { clampScrollOffset, createScrollState } from "./types.ts";
 import { UnderlinePipeline } from "./underline.ts";
 
 function normalizeMouseButton(button: number, mods: Modifiers): number {

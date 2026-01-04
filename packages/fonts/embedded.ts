@@ -2,7 +2,7 @@ import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
 import { formatBytes, timed } from "@glade/utils";
 
-import { FontFamily, FontVariant } from "./types";
+import { FontFamily, FontVariant } from "./font";
 
 const INTER_VAR_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
 const INTER_VAR_ITALIC_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable-Italic.ttf");

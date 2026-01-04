@@ -14,28 +14,23 @@
  */
 
 // Core types
+export { boundsIntersect, boundsIsEmpty } from "./bounds";
+export type { ScrollOffset, ScrollState } from "./scroll";
+export { clampScrollOffset, createScrollState, isScrollable } from "./scroll";
 export type { Theme, ThemeFonts } from "./theme";
 export { createDefaultTheme, createThemeFonts, resolveTheme, ThemeManager } from "./theme";
 export type {
   ContentMask,
   EntityId,
   FocusId,
-  GladeTask,
   Point,
   ScrollHandleId,
-  ScrollOffset,
-  ScrollState,
   Size,
   TransformationMatrix,
   WindowId,
 } from "./types";
 export {
-  boundsIntersect,
-  boundsIsEmpty,
-  clampScrollOffset,
-  createScrollState,
   IDENTITY_TRANSFORM,
-  isScrollable,
   multiplyTransform,
   rotateAroundTransform,
   rotateTransform,
@@ -567,17 +562,6 @@ export {
 } from "./editor";
 export * from "./fps";
 export * from "./header";
-
-// Re-export logging
-export { log } from "@glade/logging";
-
-// Re-export utils
-export { base64ToBytes, colors, rgb } from "@glade/utils";
-
-// Re-export font types (not the embedded data)
-export { FontFamily, FontVariant } from "@glade/fonts/types";
-
-// Re-export WebGPU constants from core
 export {
   GPUBufferUsage,
   GPUColorWrite,
@@ -585,3 +569,6 @@ export {
   GPUShaderStage,
   GPUTextureUsage,
 } from "@glade/core";
+export { FontFamily, FontVariant } from "@glade/fonts";
+export { log } from "@glade/logging";
+export { base64ToBytes, colors, rgb } from "@glade/utils";

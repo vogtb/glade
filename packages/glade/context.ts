@@ -7,6 +7,7 @@
 
 import type { ColorScheme } from "@glade/core";
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeView } from "./element.ts";
 import type {
   FocusHandle,
@@ -16,8 +17,9 @@ import type {
   ScrollHandle,
   SubscriberHandle,
 } from "./entity.ts";
+import type { ScrollOffset } from "./scroll.ts";
 import type { Theme } from "./theme.ts";
-import type { Bounds, EntityId, FocusId, GladeTask, ScrollOffset, WindowId } from "./types.ts";
+import type { EntityId, FocusId, WindowId } from "./types.ts";
 import type { GladeWindow } from "./window.ts";
 
 /**
@@ -169,14 +171,6 @@ export interface GladeContext extends GladeReadContext {
    * Scroll by a delta amount.
    */
   scrollBy(handle: ScrollHandle, deltaX: number, deltaY: number): void;
-
-  // Async
-
-  /**
-   * Spawn an async task.
-   */
-  spawn<T>(future: Promise<T>): GladeTask<T>;
-
   // Window
 
   /**

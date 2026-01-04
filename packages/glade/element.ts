@@ -12,6 +12,7 @@
 
 import { type Color, type ColorObject, rgb, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext, GladeViewContext } from "./context.ts";
 // Note: PopoverRegistration and DialogRegistration imports removed
 // These are no longer needed as overlays render via deferred children
@@ -24,12 +25,13 @@ import type { DecodedImage, ImageTile } from "./image.ts";
 import type { LayoutId } from "./layout.ts";
 import type { PathBuilder } from "./path.ts";
 import type { GladeScene } from "./scene.ts";
+import type { ScrollOffset } from "./scroll.ts";
 import type { CursorStyle, ObjectFit, Styles, WhitespaceMode } from "./styles.ts";
 import type { TabStopConfig } from "./tab.ts";
 import { type CachedTextLayout, createCachedTextLayout, normalizeWhitespace } from "./text.ts";
 import type { Theme } from "./theme.ts";
 import type { TooltipConfig } from "./tooltip.ts";
-import type { Bounds, ContentMask, FocusId, ScrollOffset, TransformationMatrix } from "./types.ts";
+import type { ContentMask, FocusId, TransformationMatrix } from "./types.ts";
 import type { GladeWindow as _GladeWindow } from "./window.ts";
 
 /**

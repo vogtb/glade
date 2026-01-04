@@ -35,6 +35,30 @@ export function boundsContains(bounds: Bounds, point: Point): boolean {
 }
 
 /**
+ * Intersect two bounds, returning the overlapping region.
+ * Returns null if bounds don't overlap.
+ */
+export function boundsIntersect(a: Bounds, b: Bounds): Bounds | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const right = Math.min(a.x + a.width, b.x + b.width);
+  const bottom = Math.min(a.y + a.height, b.y + b.height);
+
+  if (right <= x || bottom <= y) {
+    return null;
+  }
+
+  return { x, y, width: right - x, height: bottom - y };
+}
+
+/**
+ * Check if bounds are empty (zero or negative area).
+ */
+export function boundsIsEmpty(bounds: Bounds): boolean {
+  return bounds.width <= 0 || bounds.height <= 0;
+}
+
+/**
  * Draw order value for z-sorting primitives.
  * Higher values are drawn on top (closer to camera).
  */

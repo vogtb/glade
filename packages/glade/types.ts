@@ -39,103 +39,12 @@ export interface Size {
 }
 
 /**
- * Async task handle.
- */
-export interface GladeTask<T> {
-  readonly id: number;
-  cancel(): void;
-  then<R>(onFulfilled: (value: T) => R): GladeTask<R>;
-}
-
-/**
  * Content mask for clipping regions.
  * Clips content to the specified bounds with optional rounded corners.
  */
 export interface ContentMask {
   bounds: Bounds;
   cornerRadius: number;
-}
-
-/**
- * Intersect two bounds, returning the overlapping region.
- * Returns null if bounds don't overlap.
- */
-export function boundsIntersect(a: Bounds, b: Bounds): Bounds | null {
-  const x = Math.max(a.x, b.x);
-  const y = Math.max(a.y, b.y);
-  const right = Math.min(a.x + a.width, b.x + b.width);
-  const bottom = Math.min(a.y + a.height, b.y + b.height);
-
-  if (right <= x || bottom <= y) {
-    return null;
-  }
-
-  return { x, y, width: right - x, height: bottom - y };
-}
-
-/**
- * Check if bounds are empty (zero or negative area).
- */
-export function boundsIsEmpty(bounds: Bounds): boolean {
-  return bounds.width <= 0 || bounds.height <= 0;
-}
-
-// ============ Scroll Types ============
-
-/**
- * Scroll offset representing the current scroll position.
- */
-export interface ScrollOffset {
-  x: number;
-  y: number;
-}
-
-/**
- * Scroll state for a scroll container.
- */
-export interface ScrollState {
-  offset: ScrollOffset;
-  contentSize: Size;
-  viewportSize: Size;
-  velocityX: number;
-  velocityY: number;
-  viewportOrigin: Point;
-}
-
-/**
- * Create an empty scroll state.
- */
-export function createScrollState(): ScrollState {
-  return {
-    offset: { x: 0, y: 0 },
-    contentSize: { width: 0, height: 0 },
-    viewportSize: { width: 0, height: 0 },
-    velocityX: 0,
-    velocityY: 0,
-    viewportOrigin: { x: 0, y: 0 },
-  };
-}
-
-/**
- * Clamp scroll offset to valid range based on content and viewport sizes.
- */
-export function clampScrollOffset(state: ScrollState): ScrollOffset {
-  const maxX = Math.max(0, state.contentSize.width - state.viewportSize.width);
-  const maxY = Math.max(0, state.contentSize.height - state.viewportSize.height);
-  return {
-    x: Math.max(0, Math.min(state.offset.x, maxX)),
-    y: Math.max(0, Math.min(state.offset.y, maxY)),
-  };
-}
-
-/**
- * Check if content is scrollable in either direction.
- */
-export function isScrollable(state: ScrollState): { x: boolean; y: boolean } {
-  return {
-    x: state.contentSize.width > state.viewportSize.width,
-    y: state.contentSize.height > state.viewportSize.height,
-  };
 }
 
 // ============ 2D Transforms ============
