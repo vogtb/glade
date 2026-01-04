@@ -4,17 +4,20 @@
  * Bridges a WebGPUContext to Glade's GladePlatform interface.
  */
 
-import type {
-  CharEvent,
-  Clipboard,
-  ColorSchemeProvider,
-  CursorStyle,
-  RenderCallback,
-  TextInputEvent,
-  WebGPUContext,
+import {
+  type CharEvent,
+  type Clipboard,
+  type ColorSchemeProvider,
+  coreModsToGladeMods,
+  type CursorStyle,
+  type DecodedImageData,
+  type GladePlatform,
+  type GladeRenderTarget,
+  type Modifiers,
+  type RenderCallback,
+  type TextInputEvent,
+  type WebGPUContext,
 } from "@glade/core";
-import type { DecodedImageData, GladePlatform, GladeRenderTarget, Modifiers } from "@glade/glade";
-import { coreModsToGladeMods } from "@glade/glade";
 
 import {
   type BrowserWebGPUContext,

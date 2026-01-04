@@ -251,7 +251,6 @@ export type {
   GladeTextInputEvent,
   HitTestNode,
   KeyHandler,
-  Modifiers,
   MouseHandler,
   ScrollHandler,
   TextInputHandler,
@@ -280,8 +279,12 @@ export {
 } from "./hitbox";
 
 // Window
-export type { DecodedImageData, GladePlatform, GladeRenderTarget, WindowOptions } from "./window";
+export type { WindowOptions } from "./window";
 export { GladeWindow } from "./window";
+
+// Re-export platform types from core
+export type { DecodedImageData, GladePlatform, GladeRenderTarget, Modifiers } from "@glade/core";
+export { coreModsToGladeMods } from "@glade/core";
 
 // App
 export type { Action, KeyBinding } from "./actions";
@@ -323,7 +326,7 @@ export { dragPayload, dragPayloadWithPreview, DragTracker } from "./drag";
 export { FocusContextStack, FocusNavigator, FocusStack } from "./focus";
 export type { Keystroke } from "./keyboard";
 export { formatKeystroke, Key, matchesKeystroke, parseKeystroke } from "./keyboard";
-export { coreModsToGladeMods, MouseState } from "./mouse";
+export { MouseState } from "./mouse";
 export type {
   ActivePopover,
   PopoverAlign,

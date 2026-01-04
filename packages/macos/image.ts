@@ -217,19 +217,3 @@ function bgraToRgba(buffer: Uint8Array): void {
     }
   }
 }
-
-/**
- * Decode a PNG image.
- * @deprecated Use decodeImage() which handles all formats automatically.
- */
-export function decodePNG(data: Uint8Array): DecodedImage {
-  return decodeImage(data);
-}
-
-/**
- * Decode a JPEG image.
- * @deprecated Use decodeImage() which handles all formats automatically.
- */
-export function decodeJPEG(data: Uint8Array): DecodedImage {
-  return decodeImage(data);
-}

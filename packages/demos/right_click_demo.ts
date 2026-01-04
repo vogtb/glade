@@ -51,7 +51,7 @@ export const RIGHT_CLICK_DEMO: Demo = {
           }
         })
         .children(
-          text("Right-click here").color(theme.semantic.text.muted),
+          div().p(40).child(text("Right-click here").color(theme.semantic.text.muted)),
           rightClickMenu()
             .open(state.rightClickOpen)
             .position(state.rightClickPosition)
@@ -102,7 +102,7 @@ export const RIGHT_CLICK_DEMO: Demo = {
           }
         })
         .children(
-          text("Right-click here").color(theme.semantic.text.muted),
+          div().p(40).child(text("Right-click here").color(theme.semantic.text.muted)),
           rightClickMenu()
             .open(state.rightClick2Open)
             .position(state.rightClick2Position)
@@ -159,7 +159,7 @@ export const RIGHT_CLICK_DEMO: Demo = {
           }
         })
         .children(
-          text("Right-click here").color(theme.semantic.text.muted),
+          div().p(40).child(text("Right-click here").color(theme.semantic.text.muted)),
           rightClickMenu()
             .id("file-context-menu")
             .open(state.rightClick3Open)

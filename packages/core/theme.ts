@@ -19,22 +19,3 @@ export interface ColorSchemeProvider {
    */
   subscribe(callback: (scheme: ColorScheme) => void): () => void;
 }
-
-/**
- * Create a provider that always reports the given scheme.
- */
-export function createStaticColorSchemeProvider(scheme: ColorScheme): ColorSchemeProvider {
-  const listeners = new Set<(value: ColorScheme) => void>();
-
-  return {
-    get(): ColorScheme {
-      return scheme;
-    },
-    subscribe(callback: (value: ColorScheme) => void): () => void {
-      listeners.add(callback);
-      return () => {
-        listeners.delete(callback);
-      };
-    },
-  };
-}
