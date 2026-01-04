@@ -1,10 +1,10 @@
-import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { base64ToBytes, colors, type DecodedImage, div, img, text } from "@glade/glade";
+import { COMPTIME_embedAsBase64 } from "@glade/glade/comptime" with { type: "macro" };
 
 import type { Demo, DemoItem } from "./demo";
 
-const DEMO_PNG_BASE64 = COMPTIME_embedAsBase64("../../assets/image.png");
-const DEMO_JPG_BASE64 = COMPTIME_embedAsBase64("../../assets/flower.jpg");
+const DEMO_PNG_BASE64 = COMPTIME_embedAsBase64("assets/image.png");
+const DEMO_JPG_BASE64 = COMPTIME_embedAsBase64("assets/image.jpg");
 
 let cachedPngImage: DecodedImage | null = null;
 let cachedJpgImage: DecodedImage | null = null;

@@ -1,4 +1,5 @@
-import { FONT_FAMILIES, type FontFamily } from "@glade/fonts";
+import { type FontFamily } from "@glade/glade";
+import { FONT_FAMILIES } from "@glade/glade/fonts";
 import { createGladePlatform, type MacOSGladePlatformOptions } from "@glade/glade/platform.macos";
 
 export type DemosPlatformResult = {

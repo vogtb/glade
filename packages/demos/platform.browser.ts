@@ -1,4 +1,4 @@
-import { FontFamily, FontVariant } from "@glade/fonts/types";
+import { FontFamily, FontVariant } from "@glade/glade";
 import {
   type BrowserGladePlatformOptions,
   createGladePlatform,

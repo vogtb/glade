@@ -577,6 +577,9 @@ export { log } from "@glade/logging";
 // Re-export utils
 export { base64ToBytes, colors, rgb } from "@glade/utils";
 
+// Re-export font types (not the embedded data)
+export { FontFamily, FontVariant } from "@glade/fonts/types";
+
 // Re-export WebGPU constants from core
 export {
   GPUBufferUsage,
