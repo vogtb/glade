@@ -4,11 +4,21 @@
  * Bridges a WebGPUContext to Glade's GladePlatform interface.
  */
 
-import type { CharEvent, Clipboard, CursorStyle, TextInputEvent, WebGPUContext } from "@glade/core";
+import type {
+  CharEvent,
+  Clipboard,
+  ColorSchemeProvider,
+  CursorStyle,
+  RenderCallback,
+  TextInputEvent,
+  WebGPUContext,
+} from "@glade/core";
 import type { DecodedImageData, GladePlatform, GladeRenderTarget, Modifiers } from "@glade/glade";
 import { coreModsToGladeMods } from "@glade/glade";
 
+import { createWebGPUContext, type MacOSContextOptions, runWebGPURenderLoop } from "./context.ts";
 import { decodeJPEG, decodePNG } from "./image";
+import { createColorSchemeProvider } from "./theme.ts";
 
 /**
  * MacOS platform implementation for Glade.
@@ -16,14 +26,16 @@ import { decodeJPEG, decodePNG } from "./image";
 class MacOSGladePlatform implements GladePlatform {
   readonly runtime = "macos" as const;
   readonly clipboard: Clipboard;
+  readonly colorSchemeProvider: ColorSchemeProvider;
 
   private ctx: WebGPUContext;
   private animationFrameId = 0;
   private animationFrameCallbacks = new Map<number, (time: number) => void>();
 
-  constructor(ctx: WebGPUContext) {
+  constructor(ctx: WebGPUContext, colorSchemeProvider: ColorSchemeProvider) {
     this.ctx = ctx;
     this.clipboard = ctx.clipboard;
+    this.colorSchemeProvider = colorSchemeProvider;
   }
 
   async requestAdapter(): Promise<GPUAdapter | null> {
@@ -83,6 +95,17 @@ class MacOSGladePlatform implements GladePlatform {
 
   openUrl(url: string): void {
     Bun.spawn(["open", url]);
+  }
+
+  /**
+   * Run the WebGPU render loop.
+   */
+  runRenderLoop(callback: RenderCallback): void {
+    const ctx = this.ctx as import("./context.ts").MacOSWebGPUContext;
+    runWebGPURenderLoop(ctx, (time: number, _deltaTime: number) => {
+      this.tick(time * 1000);
+      return callback(time, _deltaTime);
+    });
   }
 }
 
@@ -387,15 +410,27 @@ class MacOSRenderTarget implements GladeRenderTarget {
 }
 
 /**
- * Extended platform interface with tick method for render loop integration.
+ * Extended platform interface with tick and runRenderLoop methods.
  */
 export interface MacOSGladePlatformInstance extends GladePlatform {
+  readonly colorSchemeProvider: ColorSchemeProvider;
   tick(time: number): void;
+  runRenderLoop(callback: RenderCallback): void;
 }
 
 /**
- * Create a Glade platform from an existing WebGPU context.
+ * Options for creating a Glade platform on macOS.
  */
-export function createGladePlatform(ctx: WebGPUContext): MacOSGladePlatformInstance {
-  return new MacOSGladePlatform(ctx);
+export type MacOSGladePlatformOptions = MacOSContextOptions;
+
+/**
+ * Create a Glade platform for macOS.
+ * This creates the WebGPU context and color scheme provider internally.
+ */
+export async function createGladePlatform(
+  options: MacOSGladePlatformOptions = {}
+): Promise<MacOSGladePlatformInstance> {
+  const ctx = await createWebGPUContext(options);
+  const colorSchemeProvider = createColorSchemeProvider();
+  return new MacOSGladePlatform(ctx, colorSchemeProvider);
 }

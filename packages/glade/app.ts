@@ -6,7 +6,6 @@
  */
 
 import type { ColorScheme, ColorSchemeProvider } from "@glade/core";
-import { createStaticColorSchemeProvider } from "@glade/core";
 import { FONT_FAMILIES } from "@glade/fonts";
 
 import type { GladeContext, GladeEffect, GladeEntityContext, GladeViewContext } from "./context.ts";
@@ -31,7 +30,6 @@ import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts
 export interface GladeAppOptions {
   platform: GladePlatform;
   theme?: Theme;
-  colorSchemeProvider?: ColorSchemeProvider;
 }
 
 /**
@@ -74,8 +72,7 @@ export class GladeApp {
   constructor(options: GladeAppOptions) {
     this.platform = options.platform;
     this.format = this.platform.getPreferredCanvasFormat();
-    this.colorSchemeProvider =
-      options.colorSchemeProvider ?? createStaticColorSchemeProvider("dark");
+    this.colorSchemeProvider = this.platform.colorSchemeProvider;
     this.themeManager = new ThemeManager(this.colorSchemeProvider.get(), options.theme);
   }
 

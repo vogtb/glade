@@ -8,8 +8,15 @@
  * 3. paint - emit GPU primitives
  */
 
-import type { CharEvent, Clipboard, CompositionEvent, TextInputEvent } from "@glade/core";
-import type { KeyEvent } from "@glade/core";
+import type {
+  CharEvent,
+  Clipboard,
+  ColorSchemeProvider,
+  CompositionEvent,
+  KeyEvent,
+  RenderCallback,
+  TextInputEvent,
+} from "@glade/core";
 import type { FontFamily } from "@glade/fonts";
 import { type Color, toColorObject } from "@glade/utils";
 
@@ -148,6 +155,7 @@ export interface DecodedImageData {
 export interface GladePlatform {
   readonly runtime: "browser" | "macos";
   readonly clipboard: Clipboard;
+  readonly colorSchemeProvider: ColorSchemeProvider;
 
   requestAdapter(): Promise<GPUAdapter | null>;
   requestDevice(): Promise<GPUDevice>;
@@ -162,6 +170,8 @@ export interface GladePlatform {
   decodeImage(data: Uint8Array): Promise<DecodedImageData>;
 
   openUrl(url: string): void;
+
+  runRenderLoop(callback: RenderCallback): void;
 }
 
 /**

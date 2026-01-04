@@ -12,13 +12,7 @@ import {
   TextInputController,
   type WindowId,
 } from "@glade/glade";
-import {
-  type BrowserWebGPUContext,
-  createColorSchemeProvider,
-  createGladePlatform,
-  createWebGPUContext,
-  runWebGPURenderLoop,
-} from "@glade/platform";
+import { type BrowserGladePlatformInstance, createGladePlatform } from "@glade/platform";
 
 class DemoView implements GladeView {
   private activeDemo: Demo;
@@ -406,7 +400,7 @@ class DemoView implements GladeView {
 export class DemoRenderer {
   private app: GladeApp;
   private view: DemoView;
-  private ctx: BrowserWebGPUContext;
+  private platform: BrowserGladePlatformInstance;
   private gladeWindow: GladeWindow;
   private windowId: WindowId;
 
@@ -415,11 +409,9 @@ export class DemoRenderer {
     width: number,
     height: number
   ): Promise<DemoRenderer> {
-    const ctx = await createWebGPUContext({ canvas, width, height });
-    const platform = createGladePlatform(ctx);
-    const colorSchemeProvider = createColorSchemeProvider();
+    const platform = await createGladePlatform({ canvas, width, height });
 
-    const app = new GladeApp({ platform, colorSchemeProvider });
+    const app = new GladeApp({ platform });
     await app.initialize();
 
     const initialDemo = ALL_DEMOS[0];
@@ -434,26 +426,20 @@ export class DemoRenderer {
     );
 
     app.run();
+    platform.runRenderLoop(() => true);
 
-    const tick = Reflect.get(platform, "tick");
-    if (typeof tick === "function") {
-      runWebGPURenderLoop(ctx, (time: number) => {
-        Reflect.apply(tick, platform, [time * 1000]);
-      });
-    }
-
-    return new DemoRenderer(app, view, ctx, gladeWindow);
+    return new DemoRenderer(app, view, platform, gladeWindow);
   }
 
   private constructor(
     app: GladeApp,
     view: DemoView,
-    ctx: BrowserWebGPUContext,
+    platform: BrowserGladePlatformInstance,
     gladeWindow: GladeWindow
   ) {
     this.app = app;
     this.view = view;
-    this.ctx = ctx;
+    this.platform = platform;
     this.gladeWindow = gladeWindow;
     this.windowId = gladeWindow.id;
   }
@@ -472,6 +458,5 @@ export class DemoRenderer {
 
   destroy(): void {
     this.app.stop();
-    this.ctx.destroy();
   }
 }

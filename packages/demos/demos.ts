@@ -1,42 +1,28 @@
 import { GladeApp, type GladeContext } from "@glade/glade";
 import { log } from "@glade/logging";
-import {
-  createColorSchemeProvider,
-  createGladePlatform,
-  createWebGPUContext,
-  runWebGPURenderLoop,
-} from "@glade/platform";
+import { createGladePlatform } from "@glade/platform";
 
 import { MainView } from "./main.ts";
 
 async function main() {
-  const ctx = await createWebGPUContext({
+  const platform = await createGladePlatform({
     width: 960,
     height: 540,
     title: "Glade Example",
     titleBarStyle: "controlled",
   });
 
-  const platform = createGladePlatform(ctx);
-  const colorSchemeProvider = createColorSchemeProvider();
-
-  const app = new GladeApp({ platform, colorSchemeProvider });
+  const app = new GladeApp({ platform });
   await app.initialize();
 
   const mainView = new MainView({ showTitlebar: platform.runtime === "macos" });
   const _window = await app.openWindow(
-    { width: ctx.width, height: ctx.height, title: "Glade Example" },
+    { width: 960, height: 540, title: "Glade Example" },
     (cx: GladeContext) => cx.newView(() => mainView)
   );
 
   app.run();
-
-  const tick = Reflect.get(platform, "tick");
-  if (typeof tick === "function") {
-    runWebGPURenderLoop(ctx, (time: number, _deltaTime: number) => {
-      Reflect.apply(tick, platform, [time * 1000]);
-    });
-  }
+  platform.runRenderLoop(() => true);
 }
 
 main().catch((error) => {

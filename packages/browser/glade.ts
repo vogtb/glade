@@ -4,9 +4,25 @@
  * Bridges a WebGPUContext to Glade's GladePlatform interface.
  */
 
-import type { CharEvent, Clipboard, CursorStyle, TextInputEvent, WebGPUContext } from "@glade/core";
+import type {
+  CharEvent,
+  Clipboard,
+  ColorSchemeProvider,
+  CursorStyle,
+  RenderCallback,
+  TextInputEvent,
+  WebGPUContext,
+} from "@glade/core";
 import type { DecodedImageData, GladePlatform, GladeRenderTarget, Modifiers } from "@glade/glade";
 import { coreModsToGladeMods } from "@glade/glade";
+
+import {
+  type BrowserWebGPUContext,
+  type BrowserWebGPUContextOptions,
+  createWebGPUContext,
+  runWebGPURenderLoop,
+} from "./context.ts";
+import { createColorSchemeProvider } from "./theme.ts";
 
 /**
  * Browser platform implementation for Glade.
@@ -14,12 +30,14 @@ import { coreModsToGladeMods } from "@glade/glade";
 class BrowserGladePlatform implements GladePlatform {
   readonly runtime = "browser" as const;
   readonly clipboard: Clipboard;
+  readonly colorSchemeProvider: ColorSchemeProvider;
 
-  private ctx: WebGPUContext;
+  private ctx: BrowserWebGPUContext;
 
-  constructor(ctx: WebGPUContext) {
+  constructor(ctx: BrowserWebGPUContext, colorSchemeProvider: ColorSchemeProvider) {
     this.ctx = ctx;
     this.clipboard = ctx.clipboard;
+    this.colorSchemeProvider = colorSchemeProvider;
   }
 
   async requestAdapter(): Promise<GPUAdapter | null> {
@@ -74,6 +92,13 @@ class BrowserGladePlatform implements GladePlatform {
 
   openUrl(url: string): void {
     window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  /**
+   * Run the WebGPU render loop.
+   */
+  runRenderLoop(callback: RenderCallback): void {
+    runWebGPURenderLoop(this.ctx, callback);
   }
 }
 
@@ -327,8 +352,26 @@ class BrowserRenderTarget implements GladeRenderTarget {
 }
 
 /**
- * Create a Glade platform from an existing WebGPU context.
+ * Extended platform interface with runRenderLoop method.
  */
-export function createGladePlatform(ctx: WebGPUContext): GladePlatform {
-  return new BrowserGladePlatform(ctx);
+export interface BrowserGladePlatformInstance extends GladePlatform {
+  readonly colorSchemeProvider: ColorSchemeProvider;
+  runRenderLoop(callback: RenderCallback): void;
+}
+
+/**
+ * Options for creating a Glade platform in the browser.
+ */
+export type BrowserGladePlatformOptions = BrowserWebGPUContextOptions;
+
+/**
+ * Create a Glade platform for the browser.
+ * This creates the WebGPU context and color scheme provider internally.
+ */
+export async function createGladePlatform(
+  options: BrowserGladePlatformOptions = {}
+): Promise<BrowserGladePlatformInstance> {
+  const ctx = await createWebGPUContext(options);
+  const colorSchemeProvider = createColorSchemeProvider();
+  return new BrowserGladePlatform(ctx, colorSchemeProvider);
 }
