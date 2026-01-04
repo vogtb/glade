@@ -634,8 +634,6 @@ export abstract class GladeContainerElement<
   RequestLayoutState = NoState,
   PrepaintState = NoState,
 > extends GladeElement<RequestLayoutState, PrepaintState> {
-  // TODO: we should definitely be able to type the children
-
   protected _children: AnyGladeElement[] = [];
   protected childLayoutIds: LayoutId[] = [];
 
