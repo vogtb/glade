@@ -453,8 +453,8 @@ export type { AnchoredFitMode, AnchoredPositionMode, Corner, Edges } from "./anc
 export { anchored, AnchoredElement, edges } from "./anchored";
 
 // SVG rendering
-export type { ParsedSvg, ParsedSvgPath, SvgPathCommand, TessellatedMesh } from "./svg";
-export { clearSvgCache, parseSvg, svg, SvgElement, SvgIcons } from "./svg";
+export type { TessellatedMesh } from "./svg";
+export { clearSvgCache, svg, SvgElement, SvgIcons } from "./svg";
 
 // Icon element
 export type { IconName } from "./icon";

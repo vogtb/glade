@@ -848,16 +848,6 @@ export class HostTexturePipeline {
   }
 
   /**
-   * Legacy render method for backwards compatibility.
-   * Renders all host textures in a single call, resetting the buffer first.
-   * Prefer using beginFrame() + renderBatch() for interleaved rendering.
-   */
-  render(pass: GPURenderPassEncoder, hostTextures: HostTexturePrimitive[]): void {
-    this.beginFrame();
-    this.renderBatch(pass, hostTextures);
-  }
-
-  /**
    * Destroy the pipeline and release resources.
    */
   destroy(): void {

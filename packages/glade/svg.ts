@@ -11,7 +11,6 @@
 
 import {
   createSvgTessellator,
-  type ParsedSvg as WasmParsedSvg,
   parseSvg as parseSvgWasm,
   type SvgTessellator,
   type TessellatedMesh,
@@ -38,86 +37,6 @@ function getTessellator(): SvgTessellator {
     sharedTessellator = createSvgTessellator();
   }
   return sharedTessellator;
-}
-
-/**
- * Parsed SVG path command (legacy - kept for backwards compatibility).
- */
-export type SvgPathCommand =
-  | { type: "M"; x: number; y: number; relative: boolean }
-  | { type: "L"; x: number; y: number; relative: boolean }
-  | { type: "H"; x: number; relative: boolean }
-  | { type: "V"; y: number; relative: boolean }
-  | {
-      type: "C";
-      x1: number;
-      y1: number;
-      x2: number;
-      y2: number;
-      x: number;
-      y: number;
-      relative: boolean;
-    }
-  | { type: "S"; x2: number; y2: number; x: number; y: number; relative: boolean }
-  | { type: "Q"; x1: number; y1: number; x: number; y: number; relative: boolean }
-  | { type: "T"; x: number; y: number; relative: boolean }
-  | {
-      type: "A";
-      rx: number;
-      ry: number;
-      rotation: number;
-      largeArc: boolean;
-      sweep: boolean;
-      x: number;
-      y: number;
-      relative: boolean;
-    }
-  | { type: "Z" };
-
-/**
- * A parsed SVG path element (legacy interface for compatibility).
- */
-export interface ParsedSvgPath {
-  commands: SvgPathCommand[];
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-}
-
-/**
- * A parsed SVG document.
- */
-export interface ParsedSvg {
-  width: number;
-  height: number;
-  viewBox: { x: number; y: number; width: number; height: number } | null;
-  paths: ParsedSvgPath[];
-}
-
-/**
- * Parse a simple SVG XML string using the WASM parser.
- * Returns data compatible with the legacy ParsedSvg interface.
- */
-export function parseSvg(svgContent: string): ParsedSvg {
-  const wasmParsed: WasmParsedSvg = parseSvgWasm(getTessellator(), svgContent);
-  return {
-    width: wasmParsed.width,
-    height: wasmParsed.height,
-    viewBox: wasmParsed.view_box
-      ? {
-          x: wasmParsed.view_box.x,
-          y: wasmParsed.view_box.y,
-          width: wasmParsed.view_box.width,
-          height: wasmParsed.view_box.height,
-        }
-      : null,
-    paths: wasmParsed.paths.map((p) => ({
-      commands: [],
-      fill: p.fill,
-      stroke: p.stroke,
-      strokeWidth: p.stroke_width,
-    })),
-  };
 }
 
 /**

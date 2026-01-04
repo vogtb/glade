@@ -303,6 +303,9 @@ export const BuiltinActions = {
   // Window
   Close: "glade:close",
   Quit: "glade:quit",
+
+  // Debug
+  ToggleInspector: "glade:toggle-inspector",
 } as const;
 
 /**
@@ -329,6 +332,9 @@ export function createDefaultKeymap(): Keymap {
     // Window
     { key: "meta+w", action: BuiltinActions.Close },
     { key: "meta+q", action: BuiltinActions.Quit },
+
+    // Debug
+    { key: "i", action: BuiltinActions.ToggleInspector },
   ]);
 
   return keymap;

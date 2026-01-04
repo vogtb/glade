@@ -672,15 +672,6 @@ export abstract class GladeContainerElement<
   getChildren(): readonly GladeElement<any, any>[] {
     return this._children;
   }
-
-  /**
-   * Backwards-compatible accessor used by generated container code.
-   * TODO: don't use any
-   */
-
-  get children__(): readonly GladeElement<any, any>[] {
-    return this._children;
-  }
 }
 
 // ============ Text Element ============

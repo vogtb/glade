@@ -730,15 +730,6 @@ export class ImagePipeline {
   }
 
   /**
-   * Legacy render method for backwards compatibility.
-   * Renders all images in a single call, resetting the buffer first.
-   */
-  render(pass: GPURenderPassEncoder, images: ImageInstance[]): void {
-    this.beginFrame();
-    this.renderBatch(pass, images);
-  }
-
-  /**
    * Destroy the pipeline and release resources.
    */
   destroy(): void {

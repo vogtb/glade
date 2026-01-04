@@ -1048,15 +1048,6 @@ export class PathPipeline {
   }
 
   /**
-   * Legacy render method for backwards compatibility.
-   * Renders all paths in a single call, resetting the buffer first.
-   */
-  render(pass: GPURenderPassEncoder, paths: PathPrimitive[], uniformBindGroup: GPUBindGroup): void {
-    this.beginFrame();
-    this.renderBatch(pass, paths, uniformBindGroup);
-  }
-
-  /**
    * Destroy the pipeline and release resources.
    */
   destroy(): void {

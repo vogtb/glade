@@ -422,19 +422,6 @@ export class UnderlinePipeline {
   }
 
   /**
-   * Legacy render method for backwards compatibility.
-   * Renders all underlines in a single call, resetting the buffer first.
-   */
-  render(
-    pass: GPURenderPassEncoder,
-    underlines: UnderlinePrimitive[],
-    uniformBindGroup: GPUBindGroup
-  ): void {
-    this.beginFrame();
-    this.renderBatch(pass, underlines, uniformBindGroup);
-  }
-
-  /**
    * Destroy the pipeline and release resources.
    */
   destroy(): void {

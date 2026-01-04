@@ -336,7 +336,7 @@ export class GladeTable extends GladeContainerElement<TableRequestState, TablePr
 
   private collectSections(): GladeTableSection[] {
     const sections: GladeTableSection[] = [];
-    for (const child of this.children__) {
+    for (const child of this.getChildren()) {
       if (child instanceof GladeTableSection) {
         sections.push(child);
       } else if (child instanceof GladeTableRow) {

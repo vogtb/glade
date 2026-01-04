@@ -355,7 +355,7 @@ export class AnchoredElement extends GladeContainerElement<
     const childElementIds: GlobalElementId[] = [];
     const childRequestStates: unknown[] = [];
 
-    for (const child of this.children__) {
+    for (const child of this.getChildren()) {
       const childElementId = cx.allocateChildId();
       childElementIds.push(childElementId);
 
@@ -389,7 +389,7 @@ export class AnchoredElement extends GladeContainerElement<
   ): AnchoredPrepaintState {
     const { childLayoutIds, childElementIds, childRequestStates } = requestState;
 
-    if (this.children__.length === 0) {
+    if (this.getChildren().length === 0) {
       return {
         childElementIds: [],
         childPrepaintStates: [],
@@ -511,8 +511,8 @@ export class AnchoredElement extends GladeContainerElement<
     const adjustedChildBounds: Bounds[] = [];
     const childHitTestNodes: HitTestNode[] = [];
 
-    for (let i = 0; i < this.children__.length; i++) {
-      const child = this.children__[i]!;
+    for (let i = 0; i < this.getChildren().length; i++) {
+      const child = this.getChildren()[i]!;
       const childElementId = childElementIds[i]!;
       const childLayoutBound = childLayoutBounds[i]!;
       const childRequestState = childRequestStates[i];
@@ -558,8 +558,8 @@ export class AnchoredElement extends GladeContainerElement<
   paint(cx: PaintContext, _bounds: Bounds, prepaintState: AnchoredPrepaintState): void {
     const { childElementIds, childPrepaintStates, childBounds } = prepaintState;
 
-    for (let i = 0; i < this.children__.length; i++) {
-      const child = this.children__[i]!;
+    for (let i = 0; i < this.getChildren().length; i++) {
+      const child = this.getChildren()[i]!;
       const childElementId = childElementIds[i]!;
       const childBound = childBounds[i]!;
       const childPrepaintState = childPrepaintStates[i];

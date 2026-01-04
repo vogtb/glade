@@ -484,7 +484,7 @@ export class GladeRadioGroup extends GladeContainerElement<
     const childElementIds: GlobalElementId[] = [];
     const childRequestStates: unknown[] = [];
 
-    for (const child of this.children__) {
+    for (const child of this.getChildren()) {
       // Pass context to radio items
       if (child instanceof GladeRadioGroupItem) {
         child.setGroupContext(context);
@@ -531,8 +531,8 @@ export class GladeRadioGroup extends GladeContainerElement<
     const childPrepaintStates: unknown[] = [];
     const adjustedChildBounds: Bounds[] = [];
 
-    for (let i = 0; i < this.children__.length; i++) {
-      const child = this.children__[i]!;
+    for (let i = 0; i < this.getChildren().length; i++) {
+      const child = this.getChildren()[i]!;
       const childId = childElementIds[i]!;
       let childBound = layoutChildBounds[i]!;
       const childRequestState = childRequestStates[i];
@@ -564,7 +564,7 @@ export class GladeRadioGroup extends GladeContainerElement<
 
     // Build hit test node
     const childHitTestNodes: HitTestNode[] = [];
-    for (let i = this.children__.length - 1; i >= 0; i--) {
+    for (let i = this.getChildren().length - 1; i >= 0; i--) {
       const childPrepaintState = childPrepaintStates[i] as RadioItemPrepaintState | undefined;
       if (childPrepaintState?.hitTestNode) {
         childHitTestNodes.unshift(childPrepaintState.hitTestNode);
@@ -599,8 +599,8 @@ export class GladeRadioGroup extends GladeContainerElement<
     }
 
     // Paint children
-    for (let i = 0; i < this.children__.length; i++) {
-      const child = this.children__[i]!;
+    for (let i = 0; i < this.getChildren().length; i++) {
+      const child = this.getChildren()[i]!;
       const childId = childElementIds[i]!;
       const childBound = childBounds[i]!;
       const childPrepaintState = childPrepaintStates[i];
@@ -619,8 +619,8 @@ export class GladeRadioGroup extends GladeContainerElement<
   hitTest(bounds: Bounds, childBounds: Bounds[]): HitTestNode {
     const childNodes: HitTestNode[] = [];
 
-    for (let i = this.children__.length - 1; i >= 0; i--) {
-      const child = this.children__[i];
+    for (let i = this.getChildren().length - 1; i >= 0; i--) {
+      const child = this.getChildren()[i];
       const childBound = childBounds[i];
       if (child && childBound) {
         const childNode = child.hitTest(childBound, []);

@@ -20,7 +20,13 @@ import type {
 import type { FontFamily } from "@glade/fonts";
 import { type Color, toColorObject } from "@glade/utils";
 
-import { ActionRegistry, KeyDispatcher, Keymap } from "./actions.ts";
+import {
+  ActionRegistry,
+  BuiltinActions,
+  createDefaultKeymap,
+  KeyDispatcher,
+  Keymap,
+} from "./actions.ts";
 // Note: PopoverManager and DialogManager imports removed
 // Overlays now render via deferred children
 import { AnchoredElement } from "./anchored.ts";
@@ -276,7 +282,7 @@ export class GladeWindow {
 
   // Key dispatch
   private actionRegistry = new ActionRegistry();
-  private keymap = new Keymap();
+  private keymap = createDefaultKeymap();
   private keyDispatcher: KeyDispatcher;
   private hotkeyManager: HotkeyManager;
 
@@ -412,6 +418,15 @@ export class GladeWindow {
 
     // Initialize inspector
     this.inspector = new Inspector();
+
+    // Register built-in actions
+    this.actionRegistry.register({
+      name: BuiltinActions.ToggleInspector,
+      label: "Toggle Inspector",
+      handler: (_cx, window) => {
+        window.toggleInspector();
+      },
+    });
 
     this.setupEventListeners();
   }

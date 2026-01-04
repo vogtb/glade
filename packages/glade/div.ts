@@ -1090,7 +1090,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     const childElementIds: GlobalElementId[] = [];
     const childRequestStates: unknown[] = [];
 
-    for (const child of this.children__) {
+    for (const child of this.getChildren()) {
       const childId = cx.allocateChildId();
       const childCx: RequestLayoutContext = {
         ...cx,
@@ -1165,8 +1165,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     // Get scroll offset if this is a scroll container
     const scrollOffset = this.scrollHandleRef ? cx.getScrollOffset(this.scrollHandleRef) : null;
 
-    for (let i = 0; i < this.children__.length; i++) {
-      const child = this.children__[i]!;
+    for (let i = 0; i < this.getChildren().length; i++) {
+      const child = this.getChildren()[i]!;
       const childId = childElementIds[i]!;
       let childBound = layoutChildBounds[i]!;
       const childRequestState = childRequestStates[i];
@@ -1229,8 +1229,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
     // Build hit test node with scroll-adjusted child bounds
     const childHitTestNodes: HitTestNode[] = [];
-    for (let i = this.children__.length - 1; i >= 0; i--) {
-      const child = this.children__[i];
+    for (let i = this.getChildren().length - 1; i >= 0; i--) {
+      const child = this.getChildren()[i];
       const childPrepaintState = childPrepaintStates[i] as DivPrepaintState | undefined;
       if (child && childPrepaintState?.hitTestNode) {
         childHitTestNodes.unshift(childPrepaintState.hitTestNode);
@@ -1507,8 +1507,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
       // Paint children with optional clipping
       const paintChildren = () => {
-        for (let i = 0; i < this.children__.length; i++) {
-          const child = this.children__[i]!;
+        for (let i = 0; i < this.getChildren().length; i++) {
+          const child = this.getChildren()[i]!;
           const childId = childElementIds[i]!;
           const childBound = childBounds[i]!;
           const childPrepaintState = childPrepaintStates[i];
@@ -1624,8 +1624,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   hitTest(bounds: Bounds, childBounds: Bounds[]): HitTestNode {
     const childNodes: HitTestNode[] = [];
 
-    for (let i = this.children__.length - 1; i >= 0; i--) {
-      const child = this.children__[i];
+    for (let i = this.getChildren().length - 1; i >= 0; i--) {
+      const child = this.getChildren()[i];
       const childBound = childBounds[i];
       if (child && childBound) {
         const childNode = child.hitTest(childBound, []);

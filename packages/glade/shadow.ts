@@ -407,19 +407,6 @@ export class ShadowPipeline {
   }
 
   /**
-   * Legacy render method for backwards compatibility.
-   * Renders all shadows in a single call, resetting the buffer first.
-   */
-  render(
-    pass: GPURenderPassEncoder,
-    shadows: ShadowPrimitive[],
-    uniformBindGroup: GPUBindGroup
-  ): void {
-    this.beginFrame();
-    this.renderBatch(pass, shadows, uniformBindGroup);
-  }
-
-  /**
    * Destroy the pipeline and release resources.
    */
   destroy(): void {

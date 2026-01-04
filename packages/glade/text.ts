@@ -1390,16 +1390,6 @@ export class TextPipeline {
   }
 
   /**
-   * Legacy render method for backwards compatibility.
-   * Renders all glyphs in a single call, resetting the buffer first.
-   * Prefer using beginFrame() + renderBatch() for interleaved rendering.
-   */
-  render(pass: GPURenderPassEncoder, glyphs: GlyphInstance[], _zIndexStart: number = 0): void {
-    this.beginFrame();
-    this.renderBatch(pass, glyphs);
-  }
-
-  /**
    * Destroy the pipeline and release resources.
    */
   destroy(): void {

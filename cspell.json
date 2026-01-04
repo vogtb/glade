@@ -61,6 +61,8 @@
     "callsite",
     "bunx",
     "Titlebar",
-    "libgladehelpers"
+    "libgladehelpers",
+    "Vogt",
+    "backronym"
   ]
 }
