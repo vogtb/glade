@@ -42,7 +42,7 @@ import {
   resolveScrollbarConfig,
   trackClickToScrollOffset,
 } from "./scrollbar.ts";
-import type { Cursor, GridAutoFlow, Styles, TrackSize } from "./styles.ts";
+import type { CursorStyle, GridAutoFlow, Styles, TrackSize } from "./styles.ts";
 import { overflowClipsContent } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import type { TabStopConfig } from "./tab.ts";
@@ -774,7 +774,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
   // ============ Interactivity ============
 
-  cursor(v: Cursor): this {
+  cursor(v: CursorStyle): this {
     this.styles.cursor = v;
     return this;
   }

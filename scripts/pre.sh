@@ -6,7 +6,6 @@
 
 set -euo pipefail
 
-bun run format
 bun run --filter='*' format
 bun run --filter='*' lint
 bun run --filter='*' typecheck

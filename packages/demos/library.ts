@@ -6,6 +6,7 @@ import { CANVAS_DEMO } from "./canvas_demo.ts";
 import { CHECKBOX_DEMO } from "./checkbox_demo.ts";
 import { CLIPBOARD_DEMO } from "./clipboard_demo.ts";
 import { CODE_DEMO } from "./code_pre_demo.ts";
+import { CURSOR_DEMO } from "./cursor_demo.ts";
 import { DEBUG_MODE_DEMO } from "./debug_mode_demo.ts";
 import type { Demo } from "./demo.ts";
 import { DIALOG_DEMO } from "./dialog_demo.ts";
@@ -46,6 +47,7 @@ export const ALL_DEMOS: Demo[] = [
   CHECKBOX_DEMO,
   CLIPBOARD_DEMO,
   CODE_DEMO,
+  CURSOR_DEMO,
   DEBUG_MODE_DEMO,
   DIALOG_DEMO,
   DIV_DEMO,
@@ -86,6 +88,7 @@ export {
   CHECKBOX_DEMO,
   CLIPBOARD_DEMO,
   CODE_DEMO,
+  CURSOR_DEMO,
   DEBUG_MODE_DEMO,
   DIALOG_DEMO,
   DIV_DEMO,

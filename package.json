@@ -7,22 +7,21 @@
     "packages/*"
   ],
   "scripts": {
-    "typecheck": "bun run --filter '*' typecheck",
-    "demo:webgpu:native": "bun run --filter '@glade/demos' dev:webgpu:native",
-    "demo:webgpu:web": "bun run --filter '@glade/demos' dev:webgpu:web",
-    "build:webgpu:native": "bun run --filter '@glade/demos' build:webgpu:native",
-    "run:webgpu:native": "bun run --filter '@glade/demos' run:webgpu:native",
-    "build:webgpu:web": "bun run --filter '@glade/demos' build:webgpu:web",
-    "run:webgpu:web": "bun run --filter '@glade/demos' run:webgpu:web",
-    "run:glade:native": "bun run --filter '@glade/demos' run:glade:native",
-    "run:glade:web": "bun run --filter '@glade/demos' run:glade:web",
     "build:glade:native": "bun run --filter '@glade/demos' build:glade:native",
     "build:glade:web": "bun run --filter '@glade/demos' build:glade:web",
-    "build:vendor-glfw": "./vendor/build-glfw.sh",
-    "build:vendor-dawn": "./vendor/build-dawn.sh",
     "build:layout": "bun run --filter '@glade/layout' build",
+    "build:vendor-dawn": "./vendor/build-dawn.sh",
+    "build:vendor-glfw": "./vendor/build-glfw.sh",
+    "build:webgpu:native": "bun run --filter '@glade/demos' build:webgpu:native",
+    "build:webgpu:web": "bun run --filter '@glade/demos' build:webgpu:web",
+    "demo:webgpu:native": "bun run --filter '@glade/demos' dev:webgpu:native",
+    "demo:webgpu:web": "bun run --filter '@glade/demos' dev:webgpu:web",
     "postinstall": "./vendor/build-glfw.sh",
-    "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,cjs,js,json,md,html}\""
+    "run:glade:native": "bun run --filter '@glade/demos' run:glade:native",
+    "run:glade:web": "bun run --filter '@glade/demos' run:glade:web",
+    "run:webgpu:native": "bun run --filter '@glade/demos' run:webgpu:native",
+    "run:webgpu:web": "bun run --filter '@glade/demos' run:webgpu:web",
+    "typecheck": "bun run --filter '*' typecheck"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

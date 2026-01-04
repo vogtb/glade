@@ -2566,12 +2566,10 @@ function ensureErrorCallback(): JSCallback {
         let message = "<could not read message>";
         if (messageData && messageLength > 0n) {
           try {
-            const { read } = require("bun:ffi");
             const len = Number(messageLength);
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-              bytes[i] = read.u8(messageData + i);
-            }
+            // @ts-expect-error - pointer type mismatch
+            const buffer = toArrayBuffer(messageData, 0, len);
+            const bytes = new Uint8Array(buffer);
             message = new TextDecoder().decode(bytes);
           } catch (e) {
             message = `<error reading message: ${e}>`;
@@ -2920,21 +2918,9 @@ export function getSurfaceCapabilities(
       return [];
     }
     const ptrAsNumber = Number(ptrVal);
-    const dataView = new DataView(
-      Buffer.from(
-        new Uint8Array(
-          // Read memory directly using FFI pointer
-          (function () {
-            const { read } = require("bun:ffi");
-            const result = new Uint8Array(count * 4);
-            for (let i = 0; i < count * 4; i++) {
-              result[i] = read.u8(ptrAsNumber + i);
-            }
-            return result.buffer;
-          })()
-        )
-      ).buffer
-    );
+    // @ts-expect-error - pointer type mismatch
+    const buffer = toArrayBuffer(ptrAsNumber, 0, count * 4);
+    const dataView = new DataView(buffer);
     const result: number[] = [];
     for (let i = 0; i < count; i++) {
       result.push(dataView.getUint32(i * 4, true));

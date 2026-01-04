@@ -24,7 +24,7 @@ import type { DecodedImage, ImageTile } from "./image.ts";
 import type { LayoutId } from "./layout.ts";
 import type { PathBuilder } from "./path.ts";
 import type { GladeScene } from "./scene.ts";
-import type { Cursor, ObjectFit, Styles, WhitespaceMode } from "./styles.ts";
+import type { CursorStyle, ObjectFit, Styles, WhitespaceMode } from "./styles.ts";
 import type { TabStopConfig } from "./tab.ts";
 import { type CachedTextLayout, createCachedTextLayout, normalizeWhitespace } from "./text.ts";
 import type { Theme } from "./theme.ts";
@@ -211,7 +211,7 @@ export interface PrepaintContext {
    * Insert a hitbox for the current frame.
    * Returns the hitbox for later hover/active checking.
    */
-  insertHitbox(bounds: Bounds, behavior?: HitboxBehavior, cursor?: Cursor): Hitbox;
+  insertHitbox(bounds: Bounds, behavior?: HitboxBehavior, cursor?: CursorStyle): Hitbox;
 
   /**
    * Add a hitbox to a group for coordinated hover/active effects.

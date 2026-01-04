@@ -77,7 +77,7 @@ export type {
   AlignItems,
   AlignSelf,
   BorderStyle,
-  Cursor,
+  CursorStyle,
   Display,
   FlexDirection,
   FlexWrap,

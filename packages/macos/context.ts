@@ -46,6 +46,7 @@ import {
   type TitlebarDragMonitorHandle,
 } from "./helpers.ts";
 import { createMetalLayerForView } from "./metal.ts";
+import { getClass, getSelector, objcSendNoArgs } from "./objc.ts";
 import {
   configureSurface,
   createInstance,
@@ -68,7 +69,8 @@ import {
 import { applyTitleBarStyle, type MacOSTitleBarStyle } from "./window_style.ts";
 
 // Map CursorStyle to GLFW cursor shape constants
-function cursorStyleToGLFWShape(style: CursorStyle): number {
+// Returns null for cursors that need NSCursor handling
+function cursorStyleToGLFWShape(style: CursorStyle): number | null {
   switch (style) {
     case CursorStyle.Default:
       return GLFW_ARROW_CURSOR;
@@ -78,11 +80,11 @@ function cursorStyleToGLFWShape(style: CursorStyle): number {
       return GLFW_IBEAM_CURSOR;
     case CursorStyle.Grab:
     case CursorStyle.Grabbing:
-      return GLFW_HAND_CURSOR; // GLFW doesn't have separate grab cursors
+      return null; // Use NSCursor for these
+    case CursorStyle.Move:
+      return GLFW_RESIZE_ALL_CURSOR; // Four-directional arrows
     case CursorStyle.NotAllowed:
       return GLFW_NOT_ALLOWED_CURSOR;
-    case CursorStyle.Move:
-      return GLFW_RESIZE_ALL_CURSOR;
     case CursorStyle.Crosshair:
       return GLFW_CROSSHAIR_CURSOR;
     case CursorStyle.EwResize:
@@ -94,6 +96,31 @@ function cursorStyleToGLFWShape(style: CursorStyle): number {
       return GLFW_HRESIZE_CURSOR; // Fallback for diagonal resize
     default:
       return GLFW_ARROW_CURSOR;
+  }
+}
+
+// Set cursor using native NSCursor API
+// Used for cursors not available in GLFW (grab, grabbing)
+function setNSCursor(style: CursorStyle): void {
+  const NSCursor = getClass("NSCursor");
+  let selectorName: string;
+
+  switch (style) {
+    case CursorStyle.Grab:
+      selectorName = "openHandCursor";
+      break;
+    case CursorStyle.Grabbing:
+      selectorName = "closedHandCursor";
+      break;
+    default:
+      return;
+  }
+
+  const sel = getSelector(selectorName);
+  const cursor = objcSendNoArgs.symbols.objc_msgSend(NSCursor, sel);
+  if (cursor) {
+    const setSel = getSelector("set");
+    objcSendNoArgs.symbols.objc_msgSend(cursor, setSel);
   }
 }
 
@@ -610,8 +637,14 @@ export async function createWebGPUContext(
 
     setCursor(style: CursorStyle): void {
       const shape = cursorStyleToGLFWShape(style);
-      const cursor = cursorCache.get(shape);
-      glfw.setCursor(window, cursor);
+      if (shape === null) {
+        // Use native NSCursor for grab, grabbing, move
+        glfw.setCursor(window, null); // Clear GLFW cursor first
+        setNSCursor(style);
+      } else {
+        const cursor = cursorCache.get(shape);
+        glfw.setCursor(window, cursor);
+      }
     },
   };
 

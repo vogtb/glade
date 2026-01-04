@@ -10,7 +10,6 @@
 
 import type { CharEvent, Clipboard, CompositionEvent, TextInputEvent } from "@glade/core";
 import type { KeyEvent } from "@glade/core";
-import { CursorStyle } from "@glade/core/events.ts";
 import type { FontFamily } from "@glade/fonts";
 import { type Color, toColorObject } from "@glade/utils";
 
@@ -88,8 +87,8 @@ import type { ScrollbarDragState } from "./scrollbar.ts";
 import { calculateDragScrollOffset } from "./scrollbar.ts";
 import { CrossElementSelectionManager } from "./select.ts";
 import { ShadowPipeline } from "./shadow.ts";
-import type { Cursor, Styles } from "./styles.ts";
-import { cursorToCursorStyle, SHADOW_DEFINITIONS } from "./styles.ts";
+import type { Styles } from "./styles.ts";
+import { CursorStyle, SHADOW_DEFINITIONS } from "./styles.ts";
 import {
   FocusContextManager,
   FocusRestoration,
@@ -894,7 +893,7 @@ export class GladeWindow {
   insertHitbox(
     bounds: Bounds,
     behavior: HitboxBehavior = HitboxBehavior.Normal,
-    cursor?: Cursor
+    cursor?: CursorStyle
   ): Hitbox {
     return insertHitbox(this.hitboxFrame, bounds, this.currentContentMask, behavior, cursor);
   }
@@ -1649,9 +1648,7 @@ export class GladeWindow {
   }
 
   private updateCursor(): void {
-    const newCursor = this.mouseHitTest.cursor
-      ? cursorToCursorStyle(this.mouseHitTest.cursor)
-      : CursorStyle.Default;
+    const newCursor = this.mouseHitTest.cursor ?? CursorStyle.Default;
 
     if (newCursor !== this.currentCursor) {
       this.currentCursor = newCursor;
@@ -2349,7 +2346,7 @@ export class GladeWindow {
         return createPrepaintContext(newElementId);
       },
 
-      insertHitbox: (bounds: Bounds, behavior?: HitboxBehavior, cursor?: Cursor): Hitbox => {
+      insertHitbox: (bounds: Bounds, behavior?: HitboxBehavior, cursor?: CursorStyle): Hitbox => {
         return insertHitboxFn(bounds, behavior ?? HitboxBehavior.Normal, cursor);
       },
 

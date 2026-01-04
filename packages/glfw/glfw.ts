@@ -50,14 +50,14 @@ const lib = dlopen(GLFW_PATH, {
   glfwSetCursor: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.void },
 });
 
-// Standard cursor shapes
+// Standard cursors, see https://www.glfw.org/docs/latest/group__shapes.html
+// and https://www.glfw.org/docs/latest/input_guide.html#cursor_standard
 export const GLFW_ARROW_CURSOR = 0x00036001;
 export const GLFW_IBEAM_CURSOR = 0x00036002;
 export const GLFW_CROSSHAIR_CURSOR = 0x00036003;
 export const GLFW_HAND_CURSOR = 0x00036004; // "pointing_hand" in newer GLFW
 export const GLFW_HRESIZE_CURSOR = 0x00036005;
 export const GLFW_VRESIZE_CURSOR = 0x00036006;
-// GLFW 3.4+ cursors (may not be available in older versions)
 export const GLFW_RESIZE_NWSE_CURSOR = 0x00036007;
 export const GLFW_RESIZE_NESW_CURSOR = 0x00036008;
 export const GLFW_RESIZE_ALL_CURSOR = 0x00036009;

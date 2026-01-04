@@ -5,7 +5,7 @@
  * similar to GPUI's hitbox system.
  */
 
-import type { Cursor } from "./styles.ts";
+import type { CursorStyle } from "./styles.ts";
 import type { Bounds, ContentMask } from "./types.ts";
 
 declare const __hitboxIdBrand: unique symbol;
@@ -41,7 +41,7 @@ export interface Hitbox {
   readonly bounds: Bounds;
   readonly contentMask: ContentMask | null;
   readonly behavior: HitboxBehavior;
-  readonly cursor: Cursor | undefined;
+  readonly cursor: CursorStyle | undefined;
 }
 
 /**
@@ -53,7 +53,7 @@ export interface HitTest {
   /** Number of hitboxes that should report as hovered (occlusion cutoff). */
   hoverHitboxCount: number;
   /** Cursor from the topmost hovered hitbox that has a cursor set. */
-  cursor: Cursor | undefined;
+  cursor: CursorStyle | undefined;
 }
 
 /**
@@ -94,7 +94,7 @@ export function insertHitbox(
   bounds: Bounds,
   contentMask: ContentMask | null,
   behavior: HitboxBehavior = HitboxBehavior.Normal,
-  cursor?: Cursor
+  cursor?: CursorStyle
 ): Hitbox {
   const id = frame.nextHitboxId++ as HitboxId;
   const hitbox: Hitbox = {

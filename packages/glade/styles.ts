@@ -4,7 +4,9 @@
  * Provides a Tailwind-like styling API for layout and visual properties.
  */
 
-import { CursorStyle } from "@glade/core/events.ts";
+import { type CursorStyle } from "@glade/core/events.ts";
+
+export { CursorStyle } from "@glade/core/events.ts";
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
 import type { TransformationMatrix } from "./types.ts";
@@ -65,11 +67,6 @@ export type Overflow = "visible" | "hidden" | "scroll" | "auto";
  * Text alignment.
  */
 export type TextAlign = "left" | "center" | "right" | "justify";
-
-/**
- * Cursor style.
- */
-export type Cursor = "default" | "pointer" | "text" | "grab" | "grabbing" | "not-allowed" | "move";
 
 /**
  * Border style.
@@ -237,7 +234,7 @@ export interface Styles {
   letterSpacing?: number;
 
   // Interactivity
-  cursor?: Cursor;
+  cursor?: CursorStyle;
 
   // Stacking
   zIndex?: number;
@@ -269,7 +266,7 @@ export class StyleBuilder {
     return this;
   }
 
-  cursor(v: Cursor): this {
+  cursor(v: CursorStyle): this {
     this.styles.cursor = v;
     return this;
   }
@@ -336,26 +333,3 @@ export const SHADOW_DEFINITIONS: Record<
   xl: { blur: 25, offsetY: 20, opacity: 0.1 },
   "2xl": { blur: 50, offsetY: 25, opacity: 0.25 },
 };
-
-/**
- * Convert Glade Cursor style to platform CursorStyle.
- */
-export function cursorToCursorStyle(cursor: Cursor | undefined): CursorStyle {
-  switch (cursor) {
-    case "pointer":
-      return CursorStyle.Pointer;
-    case "text":
-      return CursorStyle.Text;
-    case "grab":
-      return CursorStyle.Grab;
-    case "grabbing":
-      return CursorStyle.Grabbing;
-    case "not-allowed":
-      return CursorStyle.NotAllowed;
-    case "move":
-      return CursorStyle.Move;
-    case "default":
-    default:
-      return CursorStyle.Default;
-  }
-}
