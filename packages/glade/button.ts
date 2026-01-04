@@ -42,99 +42,37 @@ const SIZE_CONFIGS: Record<
 };
 
 /**
- * Get button colors from theme for each variant.
+ * Button colors type for accessing theme button colors.
  */
-export function buttonColors(theme: Theme): Record<
-  ButtonVariant,
-  {
-    bg: ColorObject;
-    bgHover: ColorObject;
-    bgActive: ColorObject;
-    text: ColorObject;
-    border: ColorObject | null;
+type ButtonColors = {
+  bg: ColorObject;
+  bgHover: ColorObject;
+  bgActive: ColorObject;
+  text: ColorObject;
+  border: ColorObject | null;
+};
+
+/**
+ * Get button colors from theme for a specific variant.
+ */
+function getButtonColors(theme: Theme, variant: ButtonVariant): ButtonColors {
+  const btn = theme.components.button[variant];
+  if (variant === "outline") {
+    const outline = theme.components.button.outline;
+    return {
+      bg: outline.background,
+      bgHover: outline.hover.background,
+      bgActive: outline.active.background,
+      text: outline.foreground,
+      border: outline.border,
+    };
   }
-> {
-  const transparent = { r: 0, g: 0, b: 0, a: 0 };
-
-  const darken = (c: ColorObject, amount: number): ColorObject => ({
-    r: Math.max(0, c.r - amount),
-    g: Math.max(0, c.g - amount),
-    b: Math.max(0, c.b - amount),
-    a: c.a,
-  });
-
-  const lighten = (c: ColorObject, amount: number): ColorObject => ({
-    r: Math.min(1, c.r + amount),
-    g: Math.min(1, c.g + amount),
-    b: Math.min(1, c.b + amount),
-    a: c.a,
-  });
-
-  const withAlpha = (c: ColorObject, a: number): ColorObject => ({ ...c, a });
-
-  // TODO: move these into theme.
-  const primaryButton = theme.components.dialog.primaryButton;
-  const destructiveButton = theme.components.dialog.destructiveButton;
-
-  const primaryBg = primaryButton.background;
-  const primaryHover = primaryButton.hover.background ?? lighten(primaryBg, 0.05);
-  const primaryActive = darken(primaryHover, 0.05);
-  const primaryText = primaryButton.foreground;
-
-  const destructiveBg = destructiveButton.background;
-  const destructiveHover = destructiveButton.hover.background ?? lighten(destructiveBg, 0.05);
-  const destructiveActive = darken(destructiveHover, 0.05);
-  const destructiveText = destructiveButton.foreground;
-
   return {
-    default: {
-      bg: primaryBg,
-      bgHover: primaryHover,
-      bgActive: primaryActive,
-      text: primaryText,
-      border: null,
-    },
-    destructive: {
-      bg: destructiveBg,
-      bgHover: destructiveHover,
-      bgActive: destructiveActive,
-      text: destructiveText,
-      border: null,
-    },
-    outline: {
-      bg: transparent,
-      bgHover: withAlpha(theme.semantic.text.default, 0.05),
-      bgActive: withAlpha(theme.semantic.text.default, 0.1),
-      text: theme.semantic.text.default,
-      border: theme.semantic.border.default,
-    },
-    secondary: {
-      bg: theme.semantic.surface.muted,
-      bgHover:
-        theme.scheme === "dark"
-          ? lighten(theme.semantic.surface.muted, 0.05)
-          : darken(theme.semantic.surface.muted, 0.05),
-      bgActive:
-        theme.scheme === "dark"
-          ? lighten(theme.semantic.surface.muted, 0.1)
-          : darken(theme.semantic.surface.muted, 0.1),
-      text: theme.semantic.text.default,
-      border: null,
-    },
-    ghost: {
-      bg: transparent,
-      bgHover: withAlpha(theme.semantic.text.default, 0.05),
-      bgActive: withAlpha(theme.semantic.text.default, 0.1),
-      text: theme.semantic.text.default,
-      border: null,
-    },
-    link: {
-      bg: transparent,
-      bgHover: transparent,
-      bgActive: transparent,
-      text: theme.components.link.foreground,
-      border: null,
-    },
+    bg: btn.background,
+    bgHover: btn.hover.background,
+    bgActive: btn.active.background,
+    text: btn.foreground,
+    border: null,
   };
 }
 
@@ -276,7 +214,7 @@ export class GladeButton extends GladeDiv {
    * This is called internally during requestLayout.
    */
   private buildContent(theme: Theme): void {
-    const colors = buttonColors(theme)[this.variantValue];
+    const colors = getButtonColors(theme, this.variantValue);
     const config = SIZE_CONFIGS[this.sizeValue];
 
     // Apply background color (unless custom)
@@ -346,7 +284,7 @@ export class GladeButton extends GladeDiv {
    */
   override prepaint(cx: PrepaintContext, bounds: Bounds, requestState: unknown) {
     const theme = cx.getWindow().getTheme();
-    const colors = buttonColors(theme)[this.variantValue];
+    const colors = getButtonColors(theme, this.variantValue);
 
     // Apply theme colors
     if (!this.customBg && colors.bg.a > 0) {

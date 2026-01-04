@@ -400,6 +400,69 @@ export type ThemeComponents = {
       invalidOutline: ColorObject;
     };
   };
+  button: {
+    default: {
+      background: ColorObject;
+      foreground: ColorObject;
+      hover: {
+        background: ColorObject;
+      };
+      active: {
+        background: ColorObject;
+      };
+    };
+    destructive: {
+      background: ColorObject;
+      foreground: ColorObject;
+      hover: {
+        background: ColorObject;
+      };
+      active: {
+        background: ColorObject;
+      };
+    };
+    outline: {
+      background: ColorObject;
+      foreground: ColorObject;
+      border: ColorObject;
+      hover: {
+        background: ColorObject;
+      };
+      active: {
+        background: ColorObject;
+      };
+    };
+    secondary: {
+      background: ColorObject;
+      foreground: ColorObject;
+      hover: {
+        background: ColorObject;
+      };
+      active: {
+        background: ColorObject;
+      };
+    };
+    ghost: {
+      background: ColorObject;
+      foreground: ColorObject;
+      hover: {
+        background: ColorObject;
+      };
+      active: {
+        background: ColorObject;
+      };
+    };
+    link: {
+      background: ColorObject;
+      foreground: ColorObject;
+      hover: {
+        background: ColorObject;
+      };
+      active: {
+        background: ColorObject;
+      };
+    };
+  };
 };
 
 export type Theme = {
@@ -887,6 +950,72 @@ function buildTheme(palette: ThemePalette, fonts: ThemeFonts): Theme {
         background: setAlpha(semantic.selection.background, 0.3),
         validOutline: semantic.status.success,
         invalidOutline: semantic.status.danger,
+      },
+    },
+    button: {
+      default: {
+        background: palette.primary,
+        foreground: palette.primaryForeground,
+        hover: {
+          background: lighten(palette.primary, 0.05),
+        },
+        active: {
+          background: darken(palette.primary, 0.05),
+        },
+      },
+      destructive: {
+        background: palette.danger,
+        foreground: palette.primaryForeground,
+        hover: {
+          background: lighten(palette.danger, 0.05),
+        },
+        active: {
+          background: darken(palette.danger, 0.05),
+        },
+      },
+      outline: {
+        background: TRANSPARENT,
+        foreground: semantic.text.default,
+        border: semantic.border.default,
+        hover: {
+          background: setAlpha(semantic.text.default, 0.05),
+        },
+        active: {
+          background: setAlpha(semantic.text.default, 0.1),
+        },
+      },
+      secondary: {
+        background: semantic.surface.muted,
+        foreground: semantic.text.default,
+        hover: {
+          background: semantic.surface.hover,
+        },
+        active: {
+          background:
+            palette.scheme === "dark"
+              ? lighten(semantic.surface.muted, 0.1)
+              : darken(semantic.surface.muted, 0.1),
+        },
+      },
+      ghost: {
+        background: TRANSPARENT,
+        foreground: semantic.text.default,
+        hover: {
+          background: setAlpha(semantic.text.default, 0.05),
+        },
+        active: {
+          background: setAlpha(semantic.text.default, 0.1),
+        },
+      },
+      link: {
+        background: TRANSPARENT,
+        foreground: palette.primary,
+        hover: {
+          background: TRANSPARENT,
+        },
+        active: {
+          background: TRANSPARENT,
+        },
       },
     },
   };

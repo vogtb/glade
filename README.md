@@ -15,7 +15,7 @@ For browsers, it renders to a canvas element. For native macOS, it renders to a 
 
 MIT License
 
-Copyright (c) 2025 Ben Vogt
+Copyright (c) 2026 Ben Vogt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
