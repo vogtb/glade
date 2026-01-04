@@ -1,14 +1,14 @@
+export { createClipboard } from "./clipboard.ts";
 export {
   // WebGPU
   createWebGPUContext,
-  runWebGPURenderLoop,
+  type MacOSContextOptions,
   // Types
   type MacOSWebGPUContext,
-  type MacOSContextOptions,
+  runWebGPURenderLoop,
 } from "./context.ts";
-export { createClipboard } from "./clipboard.ts";
-export { glfw } from "@glade/glfw";
 export * from "./webgpu.ts";
+export { glfw } from "@glade/glfw";
 
 // Glade platform
 export { createGladePlatform, type MacOSGladePlatformInstance } from "./glade.ts";

@@ -1,6 +1,6 @@
 import type { ColorScheme } from "@glade/core";
-import { colors, rgb, type ColorObject } from "@glade/utils";
-import { type FontFamily, FONT_FAMILIES } from "@glade/fonts";
+import { FONT_FAMILIES, type FontFamily } from "@glade/fonts";
+import { type ColorObject, colors, rgb } from "@glade/utils";
 
 export type ThemeFonts = {
   system: FontFamily;

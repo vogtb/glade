@@ -1,25 +1,26 @@
-import type { WebGPUContext, RenderCallback, ContextOptions } from "@glade/core";
+import type { ContextOptions, RenderCallback, WebGPUContext } from "@glade/core";
 import {
-  KeyAction,
-  MouseButton,
-  ModifierKey,
-  CursorStyle,
-  type KeyCallback,
   type CharCallback,
-  type MouseButtonCallback,
-  type CursorMoveCallback,
-  type ScrollCallback,
-  type ResizeCallback,
   type CloseCallback,
-  type FocusCallback,
-  type CursorEnterCallback,
-  type RefreshCallback,
   type CompositionCallback,
+  type CursorEnterCallback,
+  type CursorMoveCallback,
+  CursorStyle,
+  type FocusCallback,
+  KeyAction,
+  type KeyCallback,
+  ModifierKey,
+  MouseButton,
+  type MouseButtonCallback,
+  type RefreshCallback,
+  type ResizeCallback,
+  type ScrollCallback,
   type TextInputCallback,
 } from "@glade/core/events";
-import { hashCode } from "@glade/utils";
-import { createClipboard } from "./clipboard.ts";
 import { log } from "@glade/logging";
+import { hashCode } from "@glade/utils";
+
+import { createClipboard } from "./clipboard.ts";
 
 export interface BrowserContextOptions extends ContextOptions {
   canvas?: HTMLCanvasElement;

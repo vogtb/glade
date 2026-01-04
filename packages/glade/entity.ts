@@ -5,9 +5,9 @@
  * access to entities - they're inert without a context.
  */
 
-import type { EntityId, FocusId, WindowId, ScrollHandleId, ScrollOffset } from "./types.ts";
-import type { GladeReadContext, GladeContext, GladeEntityContext } from "./context.ts";
+import type { GladeContext, GladeEntityContext, GladeReadContext } from "./context.ts";
 import type { GladeView } from "./element.ts";
+import type { EntityId, FocusId, ScrollHandleId, ScrollOffset, WindowId } from "./types.ts";
 
 /**
  * A handle to an entity owned by GladeApp.

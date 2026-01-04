@@ -5,24 +5,25 @@
  * the render cycle across windows.
  */
 
-import type { EntityId, WindowId, FocusId, GladeTask, ScrollOffset, Bounds } from "./types.ts";
-import type { ColorSchemeProvider, ColorScheme } from "@glade/core";
+import type { ColorScheme, ColorSchemeProvider } from "@glade/core";
 import { createStaticColorSchemeProvider } from "@glade/core";
+import { FONT_FAMILIES } from "@glade/fonts";
+
+import type { GladeContext, GladeEffect, GladeEntityContext, GladeViewContext } from "./context.ts";
+import type { GladeView } from "./element.ts";
 import {
+  type EntityMeta,
+  FocusHandle,
   GladeHandle,
   GladeViewHandle,
-  FocusHandle,
-  ScrollHandle,
   ObserverHandle,
-  SubscriberHandle,
-  type EntityMeta,
+  ScrollHandle,
   type SubscriberCallback,
+  SubscriberHandle,
 } from "./entity.ts";
-import type { GladeEffect, GladeContext, GladeEntityContext, GladeViewContext } from "./context.ts";
-import type { GladeView } from "./element.ts";
-import { GladeWindow, type WindowOptions, type GladePlatform } from "./window.ts";
-import { ThemeManager, type Theme } from "./theme.ts";
-import { FONT_FAMILIES } from "@glade/fonts";
+import { type Theme, ThemeManager } from "./theme.ts";
+import type { Bounds, EntityId, FocusId, GladeTask, ScrollOffset, WindowId } from "./types.ts";
+import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts";
 
 /**
  * Options for creating a GladeApp.

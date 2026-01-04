@@ -1,5 +1,6 @@
 import { div, divider, radioGroup, radioItem, text } from "@glade/glade";
 import { colors } from "@glade/utils";
+
 import type { Demo, DemoItem } from "./demo";
 
 export const RADIO_INPUT_DEMO: Demo = {

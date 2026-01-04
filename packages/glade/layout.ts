@@ -9,14 +9,15 @@
 
 import {
   createLayoutEngine,
+  type LayoutId as WasmLayoutId,
+  type MeasureCallback,
+  type StyleInput,
   styleToWasm,
   type TaffyLayoutEngine,
-  type LayoutId as WasmLayoutId,
-  type StyleInput,
-  type MeasureCallback,
 } from "@glade/layout";
-import type { Bounds } from "./types.ts";
+
 import type { Styles } from "./styles.ts";
+import type { Bounds } from "./types.ts";
 
 declare const __layoutIdBrand: unique symbol;
 export type LayoutId = number & { [__layoutIdBrand]: true };

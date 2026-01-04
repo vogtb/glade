@@ -5,50 +5,51 @@
  * Implements three-phase lifecycle: requestLayout → prepaint → paint
  */
 
+import { type Color, toColorObject } from "@glade/utils";
+
+import type {
+  ClickHandler,
+  DragStartHandler,
+  EventHandlers,
+  HitTestNode,
+  KeyHandler,
+  MouseHandler,
+  ScrollHandler,
+  TextInputHandler,
+} from "./dispatch.ts";
+import type { CanDropPredicate, DropHandler } from "./drag.ts";
 import {
   GladeContainerElement,
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds, TransformationMatrix } from "./types.ts";
-import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
-import { overflowClipsContent } from "./styles.ts";
-import type { LayoutId } from "./layout.ts";
-import type { Styles, Cursor, TrackSize, GridAutoFlow } from "./styles.ts";
-import { StyleBuilder } from "./styles.ts";
-import type {
-  EventHandlers,
-  HitTestNode,
-  MouseHandler,
-  ClickHandler,
-  KeyHandler,
-  TextInputHandler,
-  ScrollHandler,
-  DragStartHandler,
-} from "./dispatch.ts";
-import type { DropHandler, CanDropPredicate } from "./drag.ts";
-import type { TooltipBuilder, TooltipConfig } from "./tooltip.ts";
-import { DEFAULT_TOOLTIP_CONFIG, TooltipConfigBuilder } from "./tooltip.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { TabStopConfig } from "./tab.ts";
-import type { ScrollbarConfig, ScrollbarDragState, ResolvedScrollbarConfig } from "./scrollbar.ts";
+import type { LayoutId } from "./layout.ts";
+import type { ResolvedScrollbarConfig, ScrollbarConfig, ScrollbarDragState } from "./scrollbar.ts";
 import {
-  calculateThumbMetrics,
-  calculateVerticalTrackBounds,
   calculateHorizontalTrackBounds,
   calculateThumbBounds,
+  calculateThumbMetrics,
+  calculateVerticalTrackBounds,
   getThumbColor,
   isPointInThumb,
-  trackClickToScrollOffset,
   resolveScrollbarConfig,
+  trackClickToScrollOffset,
 } from "./scrollbar.ts";
-import { toColorObject, type Color } from "@glade/utils";
+import type { Cursor, GridAutoFlow, Styles, TrackSize } from "./styles.ts";
+import { overflowClipsContent } from "./styles.ts";
+import { StyleBuilder } from "./styles.ts";
+import type { TabStopConfig } from "./tab.ts";
+import type { TooltipBuilder, TooltipConfig } from "./tooltip.ts";
+import { DEFAULT_TOOLTIP_CONFIG, TooltipConfigBuilder } from "./tooltip.ts";
+import type { Bounds, TransformationMatrix } from "./types.ts";
+import { rotateTransform, scaleTransform, translateTransform } from "./types.ts";
 
 /**
  * State passed from requestLayout to prepaint for GladeDiv.
@@ -1191,7 +1192,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
       adjustedChildBounds.push(childBound);
 
       const childCx = cx.withElementId(childId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const prepaintState = (child as GladeElement<any, any>).prepaint(
         childCx,
         childBound,
@@ -1513,7 +1514,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
           const childPrepaintState = childPrepaintStates[i];
 
           const childCx = cx.withElementId(childId);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
           (child as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
         }
       };

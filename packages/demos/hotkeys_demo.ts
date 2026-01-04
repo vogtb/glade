@@ -2,22 +2,23 @@ import {
   button,
   div,
   divider,
-  text,
-  mono,
-  h2,
-  hotkey,
-  hotkeys,
-  isHotkeyPressed,
   formatHotkey,
+  type GladeView,
+  type GladeViewContext,
+  h2,
   Hotkey,
+  hotkey,
   HotkeyDebugger,
   type HotkeyDisposable,
-  type GladeViewContext,
-  type GladeView,
+  hotkeys,
+  isHotkeyPressed,
+  mono,
+  text,
   type Theme,
 } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
 import { log } from "@glade/logging";
+
+import type { Demo, DemoItem } from "./demo";
 
 // Track demo state for hotkey actions
 let actionCounter = 0;

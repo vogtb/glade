@@ -10,11 +10,12 @@
  * primitives of different types need to interleave correctly.
  */
 
-import type { ContentMask, Bounds, TransformationMatrix } from "./types.ts";
-import type { UnderlineStyle } from "./element.ts";
-import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
+import { type ColorObject, toColorObject } from "@glade/utils";
+
 import { BoundsTree, type DrawOrder } from "./bounds.ts";
-import { toColorObject, type ColorObject } from "@glade/utils";
+import type { UnderlineStyle } from "./element.ts";
+import type { Bounds, ContentMask, TransformationMatrix } from "./types.ts";
+import { boundsIntersect, IDENTITY_TRANSFORM, multiplyTransform } from "./types.ts";
 
 export type { DrawOrder } from "./bounds.ts";
 

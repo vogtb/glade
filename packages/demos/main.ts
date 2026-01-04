@@ -1,16 +1,17 @@
 import {
   createListState,
   div,
-  h1,
-  text,
-  TextInputController,
+  type FocusHandle,
   type GladeView,
   type GladeViewContext,
-  type FocusHandle,
+  h1,
   type ListState,
   type ScrollHandle,
+  text,
+  TextInputController,
   type Theme,
 } from "@glade/glade";
+
 import { ALL_DEMOS, type Demo, type DemoState } from "./library.ts";
 
 export class MainView implements GladeView {

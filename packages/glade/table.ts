@@ -6,22 +6,22 @@
  * which flattens cells into a single grid.
  */
 
+import type { HitTestNode } from "./dispatch.ts";
+import { GladeDiv } from "./div.ts";
 import {
   GladeContainerElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import { GladeDiv } from "./div.ts";
-import type { Bounds } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { Styles, GridTemplate, TrackSize } from "./styles.ts";
-import { overflowClipsContent } from "./styles.ts";
-import type { HitTestNode } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
+import type { LayoutId } from "./layout.ts";
+import type { GridTemplate, Styles, TrackSize } from "./styles.ts";
+import { overflowClipsContent } from "./styles.ts";
+import type { Bounds } from "./types.ts";
 
 type TableSectionKind = "head" | "body" | "foot";
 

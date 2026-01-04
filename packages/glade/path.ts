@@ -6,10 +6,11 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
-import type { Bounds } from "./types.ts";
-import type { PathPrimitive, PathVertex } from "./scene.ts";
+import { type Color, toColorObject } from "@glade/utils";
+
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
-import { toColorObject, type Color } from "@glade/utils";
+import type { PathPrimitive, PathVertex } from "./scene.ts";
+import type { Bounds } from "./types.ts";
 
 /**
  * Path command types.

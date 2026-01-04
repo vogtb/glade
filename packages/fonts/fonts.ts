@@ -1,6 +1,6 @@
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
-import { base64ToBytes, formatBytes, timed } from "@glade/utils";
 import { log } from "@glade/logging";
+import { base64ToBytes, formatBytes, timed } from "@glade/utils";
 
 const INTER_VAR_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
 const INTER_VAR_ITALIC_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable-Italic.ttf");

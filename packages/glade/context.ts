@@ -5,18 +5,19 @@
  * are available in different situations (reading, updating, rendering).
  */
 
-import type { EntityId, FocusId, WindowId, GladeTask, ScrollOffset, Bounds } from "./types.ts";
-import type { Theme } from "./theme.ts";
 import type { ColorScheme } from "@glade/core";
+
+import type { GladeView } from "./element.ts";
 import type {
+  FocusHandle,
   GladeHandle,
   GladeViewHandle,
-  FocusHandle,
-  ScrollHandle,
   ObserverHandle,
+  ScrollHandle,
   SubscriberHandle,
 } from "./entity.ts";
-import type { GladeView } from "./element.ts";
+import type { Theme } from "./theme.ts";
+import type { Bounds, EntityId, FocusId, GladeTask, ScrollOffset, WindowId } from "./types.ts";
 import type { GladeWindow } from "./window.ts";
 
 /**

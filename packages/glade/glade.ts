@@ -14,91 +14,86 @@
  */
 
 // Core types
+export type { Theme, ThemeFonts } from "./theme";
+export { createDefaultTheme, DEFAULT_THEME_FONTS, resolveTheme, ThemeManager } from "./theme";
 export type {
-  EntityId,
-  WindowId,
-  FocusId,
-  ScrollHandleId,
-  Point,
-  Size,
   Bounds,
-  GladeTask,
   ContentMask,
-  TransformationMatrix,
+  EntityId,
+  FocusId,
+  GladeTask,
+  Point,
+  ScrollHandleId,
   ScrollOffset,
   ScrollState,
+  Size,
+  TransformationMatrix,
+  WindowId,
 } from "./types";
-
-export type { Theme, ThemeFonts } from "./theme";
-export { DEFAULT_THEME_FONTS, createDefaultTheme, resolveTheme, ThemeManager } from "./theme";
-
 export {
   boundsContains,
   boundsIntersect,
   boundsIsEmpty,
-  IDENTITY_TRANSFORM,
-  translateTransform,
-  scaleTransform,
-  rotateTransform,
-  multiplyTransform,
-  transformPoint,
-  rotateAroundTransform,
-  scaleAroundTransform,
-  createScrollState,
   clampScrollOffset,
+  createScrollState,
+  IDENTITY_TRANSFORM,
   isScrollable,
+  multiplyTransform,
+  rotateAroundTransform,
+  rotateTransform,
+  scaleAroundTransform,
+  scaleTransform,
+  transformPoint,
+  translateTransform,
 } from "./types";
 
 // Layout engine
-export type { LayoutId, AvailableSpace, AvailableSpaceValue } from "./layout";
-
-export { GladeLayoutEngine, definite, minContent, maxContent } from "./layout";
+export type { AvailableSpace, AvailableSpaceValue, LayoutId } from "./layout";
+export { definite, GladeLayoutEngine, maxContent, minContent } from "./layout";
 
 // Entity system
+export type { EntityMeta, ObserverCallback, SubscriberCallback } from "./entity";
 export {
+  FocusHandle,
   GladeHandle,
   GladeViewHandle,
-  FocusHandle,
-  ScrollHandle,
   ObserverHandle,
+  ScrollHandle,
   SubscriberHandle,
 } from "./entity";
 
-export type { EntityMeta, ObserverCallback, SubscriberCallback } from "./entity";
-
 // Context system
 export type {
-  GladeEffect,
-  GladeReadContext,
   GladeContext,
+  GladeEffect,
   GladeEntityContext,
+  GladeReadContext,
   GladeViewContext,
   GladeWindowContext,
 } from "./context";
 
 // Styles
 export type {
-  Styles,
+  AlignItems,
+  AlignSelf,
+  BorderStyle,
+  Cursor,
   Display,
   FlexDirection,
   FlexWrap,
-  AlignItems,
   JustifyContent,
-  AlignSelf,
-  Position,
-  Overflow,
-  TextAlign,
-  Cursor,
-  ShadowPreset,
-  BorderStyle,
   ObjectFit,
+  Overflow,
+  Position,
+  ShadowPreset,
+  Styles,
+  TextAlign,
 } from "./styles";
-
 export {
-  StyleBuilder,
-  SHADOW_DEFINITIONS,
   overflowAllowsScroll,
   overflowClipsContent,
+  SHADOW_DEFINITIONS,
+  StyleBuilder,
 } from "./styles";
 
 // Scrollbar
@@ -108,85 +103,82 @@ export type {
   ScrollbarVisibility,
   ThumbMetrics,
 } from "./scrollbar";
-
 export {
-  DEFAULT_SCROLLBAR_CONFIG,
-  calculateThumbMetrics,
-  calculateVerticalTrackBounds,
+  calculateDragScrollOffset,
   calculateHorizontalTrackBounds,
   calculateThumbBounds,
+  calculateThumbMetrics,
+  calculateVerticalTrackBounds,
+  DEFAULT_SCROLLBAR_CONFIG,
+  getThumbColor,
+  isPointInThumb,
   thumbPositionToScrollOffset,
   trackClickToScrollOffset,
-  calculateDragScrollOffset,
-  isPointInThumb,
-  getThumbColor,
 } from "./scrollbar";
 
 // Elements
-export type {
-  GladeView,
-  GladeRenderOnce,
-  RequestLayoutContext,
-  PrepaintContext,
-  PaintContext,
-  GlobalElementId,
-  DispatchNodeId,
-  NoState,
-  RequestLayoutResult,
-  ElementDebugMeta,
-} from "./element";
-
-export {
-  GladeElement,
-  GladeContainerElement,
-  GladeTextElement,
-  GladeImageElement,
-  text,
-  img,
-} from "./element";
 export {
   canvas,
   CanvasElement,
-  type CanvasPrepaint,
-  type CanvasPaint,
-  type CanvasOptionsWithPrepaint,
   type CanvasOptionsWithoutPrepaint,
+  type CanvasOptionsWithPrepaint,
+  type CanvasPaint,
+  type CanvasPrepaint,
 } from "./canvas";
+export type {
+  DispatchNodeId,
+  ElementDebugMeta,
+  GladeRenderOnce,
+  GladeView,
+  GlobalElementId,
+  NoState,
+  PaintContext,
+  PrepaintContext,
+  RequestLayoutContext,
+  RequestLayoutResult,
+} from "./element";
+export {
+  GladeContainerElement,
+  GladeElement,
+  GladeImageElement,
+  GladeTextElement,
+  img,
+  text,
+} from "./element";
 
 // Div element
-export { GladeDiv, div } from "./div";
+export { div, GladeDiv } from "./div";
 
 // Divider element
-export { GladeDivider, divider } from "./divider";
+export { divider, GladeDivider } from "./divider";
 
 // Monospace text helpers
 export type { MonoVariant } from "./mono";
-export { MonoElement, mono, code, pre } from "./mono";
+export { code, mono, MonoElement, pre } from "./mono";
 
 // Text input element
 export {
   GladeTextInput,
-  textInput,
-  TEXT_INPUT_CONTEXT,
-  TextInputController,
   renderTextDecorations,
+  TEXT_INPUT_CONTEXT,
+  textInput,
+  TextInputController,
 } from "./input";
 
 // Scene and GPU primitives
+export type { UnderlineStyle } from "./element";
 export type {
-  RectPrimitive,
-  ShadowPrimitive,
+  DrawOrder,
   GlyphPrimitive,
-  TextPrimitive,
   ImagePrimitive,
   PathPrimitive,
   PathVertex,
-  UnderlinePrimitive,
+  RectPrimitive,
   SceneLayer,
-  DrawOrder,
+  ShadowPrimitive,
+  TextPrimitive,
+  UnderlinePrimitive,
 } from "./scene";
-export type { UnderlineStyle } from "./element";
-
 export { GladeScene } from "./scene";
 
 // Spatial indexing
@@ -194,318 +186,283 @@ export { BoundsTree } from "./bounds";
 
 // Text system
 export type {
-  GlyphCacheKey,
   CachedGlyph,
-  TextRun,
-  ShapedText,
-  GlyphInstance,
   GlyphAtlasConfig,
+  GlyphCacheKey,
+  GlyphInstance,
+  ShapedText,
+  TextRun,
 } from "./text";
-
-export { GlyphAtlas, TextSystem, TextPipeline } from "./text";
+export { GlyphAtlas, TextPipeline, TextSystem } from "./text";
 
 // Text input state helpers
 export type {
-  SelectionRange,
   CompositionRange,
-  TextInputSnapshot,
+  PointerSelectionSession,
+  SelectionAnchor,
+  SelectionBehavior,
+  SelectionRange,
+  TextHitTestResult,
   TextInputHistory,
+  TextInputSnapshot,
   TextInputState,
   TextInputStateInit,
-  TextHitTestResult,
-  SelectionBehavior,
-  SelectionAnchor,
-  PointerSelectionSession,
   TextSelectionRect,
 } from "./text";
 export {
-  createTextInputState,
-  valueWithComposition,
+  applyHitTestSelection,
+  beginSelection,
   captureSnapshot,
+  caretPrimitive,
+  compositionUnderlines,
+  computeCaretRect,
+  computeCompositionRects,
+  computeRangeRects,
+  computeSelectionRects,
+  createTextInputState,
+  hitTestText,
+  normalizeSelection,
   pushHistory,
-  undo,
   redo,
   restoreSnapshot,
-  setSelection,
+  selectionPrimitives,
+  selectLineAtHit,
+  selectWordAtHit,
   setComposition,
   setFocused,
   setPreferredCaretX,
-  normalizeSelection,
-  applyHitTestSelection,
-  selectWordAtHit,
-  selectLineAtHit,
-  beginSelection,
-  updateSelectionWithAnchor,
+  setSelection,
   startPointerSelection,
+  undo,
   updatePointerSelection,
-  computeRangeRects,
-  computeSelectionRects,
-  computeCompositionRects,
-  computeCaretRect,
-  hitTestText,
-  caretPrimitive,
-  selectionPrimitives,
-  compositionUnderlines,
+  updateSelectionWithAnchor,
+  valueWithComposition,
 } from "./text";
 
 // Event dispatch
 export type {
-  GladeMouseEvent,
+  ClickHandler,
+  EventHandlers,
+  EventResult,
   GladeClickEvent,
   GladeKeyEvent,
+  GladeMouseEvent,
   GladeScrollEvent,
   GladeTextInputEvent,
-  Modifiers,
-  EventResult,
-  MouseHandler,
-  ClickHandler,
-  KeyHandler,
-  TextInputHandler,
-  ScrollHandler,
-  EventHandlers,
   HitTestNode,
+  KeyHandler,
+  Modifiers,
+  MouseHandler,
+  ScrollHandler,
+  TextInputHandler,
 } from "./dispatch";
-
 export {
-  hitTest,
-  dispatchMouseEvent,
+  buildKeyContextChain,
   dispatchClickEvent,
   dispatchKeyEvent,
+  dispatchMouseEvent,
   dispatchScrollEvent,
-  buildKeyContextChain,
   getFocusedPath,
+  hitTest,
 } from "./dispatch";
 
 // Hitbox system
-export type { Hitbox, HitboxId, HitTest, HitboxFrame } from "./hitbox";
-
+export type { Hitbox, HitboxFrame, HitboxId, HitTest } from "./hitbox";
 export {
-  HitboxBehavior,
   createHitboxFrame,
   createHitTest,
-  insertHitbox,
-  performHitTest,
-  isHitboxHovered,
-  shouldHitboxHandleScroll,
   GroupHitboxes,
+  HitboxBehavior,
+  insertHitbox,
+  isHitboxHovered,
+  performHitTest,
+  shouldHitboxHandleScroll,
 } from "./hitbox";
 
 // Window
-export type { WindowOptions, GladePlatform, GladeRenderTarget, DecodedImageData } from "./window";
-
+export type { DecodedImageData, GladePlatform, GladeRenderTarget, WindowOptions } from "./window";
 export { GladeWindow } from "./window";
 
 // App
+export type { Action, KeyBinding } from "./actions";
 export type { GladeAppOptions } from "./app";
-
 export { GladeApp } from "./app";
-
-export { MouseState, coreModsToGladeMods } from "./mouse";
-
 export type {
-  DragId,
-  DragHandler,
-  DropHandler,
-  CanDropPredicate,
-  DragPayload,
+  ActiveDialog,
+  DialogActionHandler,
+  DialogBuilder,
+  DialogConfig,
+  DialogContentContext,
+  DialogOpenChangeHandler,
+  DialogRegistration,
+} from "./dialog";
+export {
+  DEFAULT_DIALOG_CONFIG,
+  dialog,
+  dialogConfig,
+  DialogConfigBuilder,
+  dialogContent,
+  dialogFooter,
+  dialogHeader,
+  DialogManager,
+  GladeDialog,
+  GladeDialogContent,
+  GladeDialogFooter,
+  GladeDialogHeader,
+} from "./dialog";
+export type {
   ActiveDrag,
+  CanDropPredicate,
+  DragHandler,
+  DragId,
+  DragPayload,
+  DropHandler,
   DropTarget,
 } from "./drag";
-
-export { DragTracker, dragPayload, dragPayloadWithPreview } from "./drag";
-
-export type {
-  TooltipPosition,
-  TooltipConfig,
-  TooltipBuilder,
-  TooltipRegistration,
-  ActiveTooltip,
-} from "./tooltip";
-
-export {
-  TooltipManager,
-  TooltipConfigBuilder,
-  tooltipConfig,
-  DEFAULT_TOOLTIP_CONFIG,
-} from "./tooltip";
-
-export type {
-  PopoverSide,
-  PopoverAlign,
-  PopoverCorner,
-  PopoverConfig,
-  PopoverBuilder,
-  PopoverRegistration,
-  ActivePopover,
-} from "./popover";
-
-export {
-  PopoverManager,
-  PopoverConfigBuilder,
-  popoverConfig,
-  DEFAULT_POPOVER_CONFIG,
-} from "./popover";
-
-export type {
-  DialogOpenChangeHandler,
-  DialogActionHandler,
-  DialogConfig,
-  DialogBuilder,
-  DialogRegistration,
-  ActiveDialog,
-  DialogContentContext,
-} from "./dialog";
-
-export {
-  DialogManager,
-  DialogConfigBuilder,
-  dialogConfig,
-  DEFAULT_DIALOG_CONFIG,
-  GladeDialogHeader,
-  GladeDialogFooter,
-  GladeDialogContent,
-  GladeDialog,
-  dialog,
-  dialogContent,
-  dialogHeader,
-  dialogFooter,
-} from "./dialog";
-
+export { dragPayload, dragPayloadWithPreview, DragTracker } from "./drag";
+export { FocusContextStack, FocusNavigator, FocusStack } from "./focus";
 export type { Keystroke } from "./keyboard";
-
-export { Key, parseKeystroke, matchesKeystroke, formatKeystroke } from "./keyboard";
-
-export { FocusStack, FocusNavigator, FocusContextStack } from "./focus";
-
-export type { TabStopConfig, TabStop } from "./tab";
-
-export { TabStopRegistry, FocusContextManager, FocusRestoration } from "./tab";
-
-export type { Action, KeyBinding } from "./actions";
+export { formatKeystroke, Key, matchesKeystroke, parseKeystroke } from "./keyboard";
+export { coreModsToGladeMods, MouseState } from "./mouse";
+export type {
+  ActivePopover,
+  PopoverAlign,
+  PopoverBuilder,
+  PopoverConfig,
+  PopoverCorner,
+  PopoverRegistration,
+  PopoverSide,
+} from "./popover";
+export {
+  DEFAULT_POPOVER_CONFIG,
+  popoverConfig,
+  PopoverConfigBuilder,
+  PopoverManager,
+} from "./popover";
+export type { TabStop, TabStopConfig } from "./tab";
+export { FocusContextManager, FocusRestoration, TabStopRegistry } from "./tab";
+export type {
+  ActiveTooltip,
+  TooltipBuilder,
+  TooltipConfig,
+  TooltipPosition,
+  TooltipRegistration,
+} from "./tooltip";
+export {
+  DEFAULT_TOOLTIP_CONFIG,
+  tooltipConfig,
+  TooltipConfigBuilder,
+  TooltipManager,
+} from "./tooltip";
 
 // Hotkeys utilities
 export {
-  Hotkey,
-  type HotkeyCombo,
-  type HotkeyHandler,
-  type HotkeyOptions,
-  type HotkeyDisposable,
-  HotkeyManager,
-  hotkey,
-  hotkeys,
-  isHotkeyPressed,
-  formatHotkey,
-  HotkeyDebugger,
-} from "./hotkeys";
-
-export {
   ActionRegistry,
-  Keymap,
-  KeyDispatcher,
   BuiltinActions,
   createDefaultKeymap,
+  KeyDispatcher,
+  Keymap,
 } from "./actions";
-
+export {
+  formatHotkey,
+  Hotkey,
+  hotkey,
+  type HotkeyCombo,
+  HotkeyDebugger,
+  type HotkeyDisposable,
+  type HotkeyHandler,
+  HotkeyManager,
+  type HotkeyOptions,
+  hotkeys,
+  isHotkeyPressed,
+} from "./hotkeys";
 export type { RendererConfig } from "./renderer";
-
 export { GladeRenderer, PREMULTIPLIED_ALPHA_BLEND, STANDARD_ALPHA_BLEND } from "./renderer";
 
 // Pipelines
 export { RectPipeline } from "./rect";
-
 export { ShadowPipeline } from "./shadow";
 
 // Path rendering
 export type { PathCommand, TessellatedPath } from "./path";
-
-export { PathBuilder, PathPipeline, path } from "./path";
+export { path, PathBuilder, PathPipeline } from "./path";
 
 // Underline rendering
 export { UnderlinePipeline } from "./underline";
 
 // Image rendering
-export type { ImageId, DecodedImage, ImageTile, ImageInstance, ImageAtlasConfig } from "./image";
-
+export type { DecodedImage, ImageAtlasConfig, ImageId, ImageInstance, ImageTile } from "./image";
 export { ImageAtlas, ImagePipeline } from "./image";
 
 // WebGPU Host rendering
 export type { RenderTexture, WebGPUHost, WebGPUHostInput } from "./host";
-
-export { createRenderTexture, HostTexturePipeline, WebGPUHostElement, webgpuHost } from "./host";
-
+export { createRenderTexture, HostTexturePipeline, webgpuHost, WebGPUHostElement } from "./host";
 export type { HostTexturePrimitive } from "./scene";
 
 // Buffer utilities
 export {
-  DynamicBuffer,
+  BufferFactory,
   BufferPool,
+  DynamicBuffer,
   StagingBuffer,
   UniformBufferManager,
-  BufferFactory,
 } from "./buffers";
 
 // Inspector/Debug Mode
 export type { ElementDebugInfo, InspectorState } from "./inspector";
-
-export { Inspector, INSPECTOR_COLORS, createInspector, createInspectorState } from "./inspector";
+export { createInspector, createInspectorState, Inspector, INSPECTOR_COLORS } from "./inspector";
 
 // Virtual scrolling - UniformList (fixed height)
 export type { ScrollToStrategy, UniformListItemProps, UniformListRenderItem } from "./uniform_list";
-
 export { UniformList, uniformList } from "./uniform_list";
 
 // Virtual scrolling - List (variable height)
 export type {
   ListAlignment,
-  ListOffset,
-  ListScrollEvent,
   ListItemProps,
+  ListOffset,
   ListRenderItem,
+  ListScrollEvent,
 } from "./list";
-
-export { List, ListState, list, createListState, type ListMeasureItem } from "./list";
+export { createListState, List, list, type ListMeasureItem, ListState } from "./list";
 
 // Table elements
 export {
   GladeTable,
-  GladeTableSection,
-  GladeTableRow,
   GladeTableCell,
+  GladeTableRow,
+  GladeTableSection,
   table,
-  thead,
   tbody,
-  tfoot,
-  tr,
-  th,
   td,
+  tfoot,
+  th,
+  thead,
+  tr,
 } from "./table";
 
 // Deferred element (overlay/popup support)
 export type { DeferredDrawEntry } from "./deferred";
-
-export { DeferredElement, deferred } from "./deferred";
+export { deferred, DeferredElement } from "./deferred";
 
 // Anchored element (positioned overlays)
-export type { Corner, AnchoredPositionMode, AnchoredFitMode, Edges } from "./anchored";
-
-export { AnchoredElement, anchored, edges } from "./anchored";
+export type { AnchoredFitMode, AnchoredPositionMode, Corner, Edges } from "./anchored";
+export { anchored, AnchoredElement, edges } from "./anchored";
 
 // SVG rendering
-export type { SvgPathCommand, ParsedSvgPath, ParsedSvg, TessellatedMesh } from "./svg";
-
-export { SvgElement, svg, parseSvg, SvgIcons, clearSvgCache } from "./svg";
+export type { ParsedSvg, ParsedSvgPath, SvgPathCommand, TessellatedMesh } from "./svg";
+export { clearSvgCache, parseSvg, svg, SvgElement, SvgIcons } from "./svg";
 
 // Icon element
 export type { IconName } from "./icon";
-
 export { GladeIcon, icon } from "./icon";
 
 // Link element
 export { GladeLink, link } from "./link";
 
 // Checkbox element
-export type { CheckedState, CheckedChangeHandler } from "./checkbox";
-export { GladeCheckbox, checkbox } from "./checkbox";
+export type { CheckedChangeHandler, CheckedState } from "./checkbox";
+export { checkbox, GladeCheckbox } from "./checkbox";
 
 // Radio group elements
 export type { RadioValueChangeHandler } from "./radio";
@@ -517,100 +474,96 @@ export { GladeSwitch, switchToggle, toggle } from "./switch";
 
 // Tabs elements
 export type { TabValueChangeHandler } from "./tabs";
-export { GladeTabs, GladeTab, tabs, tab } from "./tabs";
+export { GladeTab, GladeTabs, tab, tabs } from "./tabs";
 
 // Dropdown menu elements
 export type {
-  DropdownOpenChangeHandler,
-  DropdownSelectHandler,
-  DropdownCheckedChangeHandler,
-  DropdownValueChangeHandler,
-  DropdownSide,
   DropdownAlign,
+  DropdownCheckedChangeHandler,
   DropdownMenuContentPrepaintState,
   DropdownMenuContentRequestState,
   DropdownMenuContext,
   DropdownMenuState,
+  DropdownOpenChangeHandler,
+  DropdownSelectHandler,
+  DropdownSide,
+  DropdownValueChangeHandler,
   MenuItemElement,
 } from "./dropdown";
 export {
-  GladeDropdown,
-  GladeDropdownItem,
-  GladeDropdownSeparator,
-  GladeDropdownLabel,
-  GladeDropdownCheckbox,
-  GladeDropdownRadio,
-  GladeDropdownRadioGroup,
-  GladeDropdownSub,
-  GladeDropdownMenuContent,
   dropdown,
-  dropdownItem,
-  dropdownSeparator,
-  dropdownLabel,
   dropdownCheckbox,
+  dropdownItem,
+  dropdownLabel,
   dropdownRadio,
   dropdownRadioGroup,
+  dropdownSeparator,
   dropdownSub,
+  GladeDropdown,
+  GladeDropdownCheckbox,
+  GladeDropdownItem,
+  GladeDropdownLabel,
+  GladeDropdownMenuContent,
+  GladeDropdownRadio,
+  GladeDropdownRadioGroup,
+  GladeDropdownSeparator,
+  GladeDropdownSub,
 } from "./dropdown";
 
 // Right click (context) menu elements
 export {
   GladeRightClickMenu,
-  rightClickMenu,
-  rightClickItem,
-  rightClickSeparator,
-  rightClickLabel,
   rightClickCheckbox,
+  rightClickItem,
+  rightClickLabel,
+  rightClickMenu,
   rightClickRadio,
   rightClickRadioGroup,
+  rightClickSeparator,
   rightClickSub,
 } from "./right_click";
 
 // Ideal text editor system
+export * from "./button";
 export type {
+  CompositionState,
   DocumentOffset,
   DocumentPosition,
-  VisualPoint,
-  PositionedGlyph,
-  TextLine,
-  TextDocument,
-  TextSelection,
-  CompositionState,
-  SelectionMode,
-  SelectionGesture,
   HitTestResult,
+  PositionedGlyph,
+  SelectionGesture,
+  SelectionMode,
+  TextDocument,
+  TextLine,
   TextRect,
+  TextSelection,
+  VisualPoint,
 } from "./editor";
-
 export {
-  offset,
-  createSelection,
-  collapseToFocus,
+  caretRect,
   collapseToAnchor,
-  collapseToStart,
   collapseToEnd,
-  extendTo,
-  selectAll as selectAllText,
-  prevGrapheme,
-  nextGrapheme,
-  wordBoundaryLeft,
-  wordBoundaryRight,
-  wordStart,
-  wordEnd,
+  collapseToFocus,
+  collapseToStart,
+  createSelection,
   createTextDocument,
+  extendTo,
   lineAtOffset,
   lineAtY,
-  offsetToPosition,
-  positionToOffset,
+  nextGrapheme,
+  offset,
   offsetToPoint,
+  offsetToPosition,
   pointToOffset,
+  positionToOffset,
+  prevGrapheme,
+  selectAll as selectAllText,
   selectionRects,
-  caretRect,
   TextEditor,
+  wordBoundaryLeft,
+  wordBoundaryRight,
+  wordEnd,
+  wordStart,
 } from "./editor";
-
-export * from "./header";
-
-export * from "./button";
-
 export * from "./fps";
+export * from "./header";

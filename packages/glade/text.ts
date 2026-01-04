@@ -38,20 +38,21 @@
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
-import { clamp, toColorObject, type Color, type ColorObject } from "@glade/utils";
+import type { FontFamily } from "@glade/fonts";
 import {
   createTextShaper,
-  type TextShaper,
   type FontId,
+  type FontStyle,
+  type LayoutResult,
   type ShapedGlyph,
   type ShapedLineResult,
-  type LayoutResult,
-  type FontStyle,
+  type TextShaper,
 } from "@glade/shaper";
-import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
+import { clamp, type Color, type ColorObject, toColorObject } from "@glade/utils";
+
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import type { RectPrimitive, UnderlinePrimitive } from "./scene.ts";
 import { DEFAULT_THEME_FONTS, type ThemeFonts } from "./theme.ts";
-import type { FontFamily } from "@glade/fonts";
 
 let sharedTextShaper: TextShaper | null = null;
 

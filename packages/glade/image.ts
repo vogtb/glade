@@ -6,9 +6,10 @@
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
-import type { TransformationMatrix } from "./types.ts";
-import type { ClipBounds } from "./scene.ts";
+
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import type { ClipBounds } from "./scene.ts";
+import type { TransformationMatrix } from "./types.ts";
 
 /**
  * Unique identifier for an image in the atlas.

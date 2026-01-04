@@ -1,7 +1,8 @@
 import { div, text } from "@glade/glade";
 import { colors } from "@glade/utils";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 const sampleItems = Array.from({ length: 30 }, (_, i) => `Item ${i + 1}: Sample content line`);
 

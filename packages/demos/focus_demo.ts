@@ -4,13 +4,14 @@ import {
   dialogFooter,
   dialogHeader,
   div,
-  text,
   type FocusHandle,
   type GladeDiv,
+  text,
 } from "@glade/glade";
 import { rgb } from "@glade/utils";
-import type { Demo, DemoItem, DemoState } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem, DemoState } from "./demo";
 
 function focusButton(
   cx: Parameters<Demo["renderElement"]>[0],

@@ -9,21 +9,22 @@
  * and CRLF/CR newlines are normalized to LF to mirror the DOM's line break handling.
  */
 
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
+import type { HitTestNode } from "./dispatch.ts";
+import { div, type GladeDiv } from "./div.ts";
 import {
   GladeElement,
-  text,
   type GladeTextElement,
   type GlobalElementId,
   type PaintContext,
   type PrepaintContext,
   type RequestLayoutContext,
   type RequestLayoutResult,
+  text,
 } from "./element.ts";
-import { div, type GladeDiv } from "./div.ts";
-import type { HitTestNode } from "./dispatch.ts";
-import type { Bounds } from "./types.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
 import type { ThemeFonts } from "./theme.ts";
+import type { Bounds } from "./types.ts";
 const GENERIC_FAMILY_NAMES = new Set([
   "ui-monospace",
   "monospace",

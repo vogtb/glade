@@ -6,8 +6,9 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
-import type { UnderlinePrimitive } from "./scene.ts";
+
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import type { UnderlinePrimitive } from "./scene.ts";
 
 /**
  * WGSL shader for underline rendering with solid and wavy styles.

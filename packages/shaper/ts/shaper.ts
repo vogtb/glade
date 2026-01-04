@@ -8,11 +8,12 @@
  * native (Bun) and browser environments.
  */
 
-import { initSync, TextShaper as WasmTextShaper, type InitOutput } from "../pkg/shaper";
-import type { FontId } from "../pkg/shaper";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
-import { base64ToBytes } from "@glade/utils";
 import { log } from "@glade/logging";
+import { base64ToBytes } from "@glade/utils";
+
+import type { FontId } from "../pkg/shaper";
+import { type InitOutput, initSync, TextShaper as WasmTextShaper } from "../pkg/shaper";
 
 // Embed WASM as base64 at build time via Bun macro
 const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");

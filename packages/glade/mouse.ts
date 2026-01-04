@@ -4,9 +4,10 @@
  * Extends the core event types with Glade-specific functionality.
  */
 
-import type { MouseButton, MouseButtonEvent, CursorMoveEvent } from "@glade/core";
-import type { Point, Bounds } from "./types.ts";
+import type { CursorMoveEvent, MouseButton, MouseButtonEvent } from "@glade/core";
+
 import type { Modifiers } from "./dispatch.ts";
+import type { Bounds, Point } from "./types.ts";
 
 export { MouseButton } from "@glade/core";
 

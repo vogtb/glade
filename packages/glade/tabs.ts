@@ -8,25 +8,26 @@
  * Follows accessibility and API patterns similar to Radix UI / Base UI tabs.
  */
 
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
+import type { ClickHandler, HitTestNode } from "./dispatch.ts";
 import {
   GladeContainerElement,
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import { type Bounds } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { HitTestNode, ClickHandler } from "./dispatch.ts";
+import type { FocusHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { FocusHandle } from "./entity.ts";
+import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import type { Theme } from "./theme.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import { type Bounds } from "./types.ts";
 
 const DEFAULT_DISABLED_OPACITY = 0.5;
 
@@ -321,7 +322,7 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
 export class GladeTab {
   private tabValue: string;
   private labelText: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   private contentElement: GladeElement<any, any> | null = null;
   private disabledValue: boolean = false;
 
@@ -347,7 +348,7 @@ export class GladeTab {
   /**
    * Set the content element to display when this tab is active.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   content(element: GladeElement<any, any>): this {
     this.contentElement = element;
     return this;
@@ -356,7 +357,7 @@ export class GladeTab {
   /**
    * Get the content element.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   getContent(): GladeElement<any, any> | null {
     return this.contentElement;
   }
@@ -691,7 +692,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
   /**
    * Get the currently active tab's content element.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   private getActiveContent(): GladeElement<any, any> | null {
     if (this.valueState === null) {
       return null;
@@ -870,7 +871,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
       };
 
       const contentCx = cx.withElementId(contentElementId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       contentPrepaintState = (activeContent as GladeElement<any, any>).prepaint(
         contentCx,
         contentBounds,
@@ -984,7 +985,7 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
     const activeContent = this.getActiveContent();
     if (activeContent && contentElementId && contentBounds) {
       const contentCx = cx.withElementId(contentElementId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (activeContent as GladeElement<any, any>).paint(
         contentCx,
         contentBounds,

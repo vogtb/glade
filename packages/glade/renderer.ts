@@ -5,15 +5,16 @@
  */
 
 import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
-import type { GladeScene, PrimitiveBatch } from "./scene.ts";
-import type { RectPipeline } from "./rect.ts";
-import type { ShadowPipeline } from "./shadow.ts";
-import type { TextPipeline, TextSystem, GlyphInstance } from "./text.ts";
-import type { PathPipeline } from "./path.ts";
-import type { UnderlinePipeline } from "./underline.ts";
-import type { ImagePipeline, ImageInstance } from "./image.ts";
-import type { HostTexturePipeline } from "./host.ts";
 import { log } from "@glade/logging";
+
+import type { HostTexturePipeline } from "./host.ts";
+import type { ImageInstance, ImagePipeline } from "./image.ts";
+import type { PathPipeline } from "./path.ts";
+import type { RectPipeline } from "./rect.ts";
+import type { GladeScene, PrimitiveBatch } from "./scene.ts";
+import type { ShadowPipeline } from "./shadow.ts";
+import type { GlyphInstance, TextPipeline, TextSystem } from "./text.ts";
+import type { UnderlinePipeline } from "./underline.ts";
 
 /**
  * Renderer configuration.

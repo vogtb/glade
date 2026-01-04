@@ -7,15 +7,16 @@
  * Built as a composition of div() and text() elements.
  */
 
+import type { Color, ColorObject } from "@glade/utils";
+import { toColorObject } from "@glade/utils";
+
 import { GladeDiv } from "./div.ts";
+import type { PrepaintContext, RequestLayoutContext } from "./element.ts";
+import type { GladeElement } from "./element.ts";
 import { GladeTextElement, text } from "./element.ts";
-import type { RequestLayoutContext, PrepaintContext } from "./element.ts";
 import { StyleBuilder } from "./styles.ts";
 import type { Theme } from "./theme.ts";
 import type { Bounds } from "./types.ts";
-import type { GladeElement } from "./element.ts";
-import type { ColorObject, Color } from "@glade/utils";
-import { toColorObject } from "@glade/utils";
 
 /**
  * Button visual variants.
@@ -71,6 +72,7 @@ export function buttonColors(theme: Theme): Record<
 
   const withAlpha = (c: ColorObject, a: number): ColorObject => ({ ...c, a });
 
+  // TODO: move these into theme.
   const primaryButton = theme.components.dialog.primaryButton;
   const destructiveButton = theme.components.dialog.destructiveButton;
 
@@ -264,7 +266,7 @@ export class GladeButton extends GladeDiv {
   }
 
   /** Override the child method to track children. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   override child(element: GladeElement<any, any> | string | number): this {
     return super.child(element);
   }
@@ -379,7 +381,6 @@ export class GladeButton extends GladeDiv {
       return s;
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return super.prepaint(cx, bounds, requestState as any);
   }
 }

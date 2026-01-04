@@ -4,19 +4,20 @@
  * Styled like a traditional HTML anchor tag with blue color and underline on hover.
  */
 
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
+import type { HitTestNode } from "./dispatch.ts";
 import {
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
   type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
   type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { HitTestNode } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import type { LayoutId } from "./layout.ts";
+import type { Bounds } from "./types.ts";
 
 /**
  * Default link color (blue).

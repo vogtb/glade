@@ -8,112 +8,111 @@
  * 3. paint - emit GPU primitives
  */
 
-import type {
-  WindowId,
-  EntityId,
-  FocusId,
-  Point,
-  Bounds,
-  ContentMask,
-  TransformationMatrix,
-  ScrollHandleId,
-  ScrollOffset,
-  ScrollState,
-} from "./types.ts";
-import { createScrollState, clampScrollOffset } from "./types.ts";
-import type { ScrollbarDragState } from "./scrollbar.ts";
-import { calculateDragScrollOffset } from "./scrollbar.ts";
+import type { CharEvent, Clipboard, CompositionEvent, TextInputEvent } from "@glade/core";
+import type { KeyEvent } from "@glade/core";
 import { CursorStyle } from "@glade/core/events.ts";
-import type { Theme } from "./theme.ts";
-import type { Clipboard, CharEvent, CompositionEvent, TextInputEvent } from "@glade/core";
-import type { GladeViewHandle, ScrollHandle } from "./entity.ts";
-import { FocusHandle } from "./entity.ts";
-import type {
-  GladeView,
-  RequestLayoutContext,
-  PrepaintContext,
-  PaintContext,
-  GlobalElementId,
-} from "./element.ts";
+import type { FontFamily } from "@glade/fonts";
+import { type Color, toColorObject } from "@glade/utils";
+
+import { ActionRegistry, KeyDispatcher, Keymap } from "./actions.ts";
+// Note: PopoverManager and DialogManager imports removed
+// Overlays now render via deferred children
+import { AnchoredElement } from "./anchored.ts";
 import type { GladeContext, GladeViewContext } from "./context.ts";
+import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
 import type {
-  HitTestNode,
-  GladeMouseEvent,
   GladeClickEvent,
+  GladeMouseEvent,
   GladeScrollEvent,
   GladeTextInputEvent,
+  HitTestNode,
   Modifiers,
 } from "./dispatch.ts";
 import {
-  hitTest,
-  dispatchMouseEvent,
-  dispatchClickEvent,
-  dispatchScrollEvent,
-  dispatchKeyEvent,
-  dispatchTextInputEvent,
-  dispatchCompositionEvent,
   buildKeyContextChain,
+  dispatchClickEvent,
+  dispatchCompositionEvent,
+  dispatchKeyEvent,
+  dispatchMouseEvent,
+  dispatchScrollEvent,
+  dispatchTextInputEvent,
   getFocusedPath,
   type GladeKeyEvent,
+  hitTest,
 } from "./dispatch.ts";
-import type { KeyEvent } from "@glade/core";
-import { ActionRegistry, Keymap, KeyDispatcher } from "./actions.ts";
+import { type ActiveDrag, type DragPayload, DragTracker } from "./drag.ts";
+import type {
+  GladeView,
+  GlobalElementId,
+  PaintContext,
+  PrepaintContext,
+  RequestLayoutContext,
+} from "./element.ts";
+import type { GladeViewHandle, ScrollHandle } from "./entity.ts";
+import { FocusHandle } from "./entity.ts";
+import { computeFpsBounds, type FpsConfig, type FpsCorner, GladeFps } from "./fps.ts";
+import type { Hitbox, HitboxFrame, HitboxId, HitTest } from "./hitbox.ts";
 import {
-  HotkeyManager,
-  setGlobalHotkeyManager,
-  keyCodeToHotkey,
-  getModifierHotkeys,
-} from "./hotkeys.ts";
-import { coreModsToGladeMods, Key } from "./keyboard.ts";
-import { GladeScene } from "./scene.ts";
-import type { Styles, Cursor } from "./styles.ts";
-import { SHADOW_DEFINITIONS, cursorToCursorStyle } from "./styles.ts";
-import { GladeLayoutEngine, type LayoutId } from "./layout.ts";
-import type { Hitbox, HitboxId, HitTest, HitboxFrame } from "./hitbox.ts";
-import {
-  HitboxBehavior,
   createHitboxFrame,
-  insertHitbox,
-  performHitTest,
-  isHitboxHovered,
-  GroupHitboxes,
   createHitTest,
+  GroupHitboxes,
+  HitboxBehavior,
+  insertHitbox,
+  isHitboxHovered,
+  performHitTest,
 } from "./hitbox.ts";
-import { DragTracker, type ActiveDrag, type DragPayload } from "./drag.ts";
-import { TooltipManager, type TooltipBuilder, type TooltipConfig } from "./tooltip.ts";
-// Note: PopoverManager and DialogManager imports removed
-// Overlays now render via deferred children
-import { GladeDiv } from "./div.ts";
-import { AnchoredElement } from "./anchored.ts";
-import { DeferredElement } from "./deferred.ts";
-import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
+import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
+import { HostTexturePipeline } from "./host.ts";
 import {
-  TabStopRegistry,
-  FocusContextManager,
-  FocusRestoration,
-  type TabStopConfig,
-} from "./tab.ts";
-import { GladeRenderer } from "./renderer.ts";
-import { RectPipeline } from "./rect.ts";
-import { ShadowPipeline } from "./shadow.ts";
-import { TextSystem, TextPipeline } from "./text.ts";
-import { PathPipeline } from "./path.ts";
-import type { PathBuilder } from "./path.ts";
-import { UnderlinePipeline } from "./underline.ts";
+  getModifierHotkeys,
+  HotkeyManager,
+  keyCodeToHotkey,
+  setGlobalHotkeyManager,
+} from "./hotkeys.ts";
 import {
+  type DecodedImage,
   ImageAtlas,
   ImageCache,
   ImagePipeline,
   type ImageTile,
-  type DecodedImage,
 } from "./image.ts";
-import { HostTexturePipeline } from "./host.ts";
-import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
-import { Inspector, type ElementDebugInfo, type InspectorState } from "./inspector.ts";
+import { type ElementDebugInfo, Inspector, type InspectorState } from "./inspector.ts";
+import { coreModsToGladeMods, Key } from "./keyboard.ts";
+import { GladeLayoutEngine, type LayoutId } from "./layout.ts";
+import type { PathBuilder } from "./path.ts";
+import { PathPipeline } from "./path.ts";
+import { RectPipeline } from "./rect.ts";
+import { GladeRenderer } from "./renderer.ts";
+import { GladeScene } from "./scene.ts";
+import type { ScrollbarDragState } from "./scrollbar.ts";
+import { calculateDragScrollOffset } from "./scrollbar.ts";
 import { CrossElementSelectionManager } from "./select.ts";
-import { toColorObject, type Color } from "@glade/utils";
-import type { FontFamily } from "@glade/fonts";
-import { GladeFps, computeFpsBounds, type FpsCorner, type FpsConfig } from "./fps.ts";
+import { ShadowPipeline } from "./shadow.ts";
+import type { Cursor, Styles } from "./styles.ts";
+import { cursorToCursorStyle, SHADOW_DEFINITIONS } from "./styles.ts";
+import {
+  FocusContextManager,
+  FocusRestoration,
+  type TabStopConfig,
+  TabStopRegistry,
+} from "./tab.ts";
+import { TextPipeline, TextSystem } from "./text.ts";
+import type { Theme } from "./theme.ts";
+import { type TooltipBuilder, type TooltipConfig, TooltipManager } from "./tooltip.ts";
+import type {
+  Bounds,
+  ContentMask,
+  EntityId,
+  FocusId,
+  Point,
+  ScrollHandleId,
+  ScrollOffset,
+  ScrollState,
+  TransformationMatrix,
+  WindowId,
+} from "./types.ts";
+import { clampScrollOffset, createScrollState } from "./types.ts";
+import { UnderlinePipeline } from "./underline.ts";
 
 function normalizeMouseButton(button: number, mods: Modifiers): number {
   if (button === 0 && mods.ctrl) {
@@ -1577,36 +1576,37 @@ export class GladeWindow {
     anchoredElement.setWindowSize({ width: this.width, height: this.height });
     anchoredElement.child(freshTooltipElement);
 
-    const deferredWrapper = new DeferredElement(anchoredElement);
-    deferredWrapper.priority(0); // Tooltips render below menus
-
-    // Run layout for deferred wrapper
-    const wrappedElementId = this.allocateElementId();
-    const wrappedRequestLayoutCx = this.createRequestLayoutContext(wrappedElementId);
-    const { layoutId: wrappedLayoutId, requestState: wrappedRequestState } =
-      deferredWrapper.requestLayout(wrappedRequestLayoutCx);
+    // Run layout for anchored element directly (no DeferredElement wrapper needed
+    // since renderActiveTooltip already runs outside the main tree)
+    const elementId = this.allocateElementId();
+    const layoutCx = this.createRequestLayoutContext(elementId);
+    const { layoutId, requestState } = anchoredElement.requestLayout(layoutCx);
 
     this.layoutEngine.computeLayoutWithMeasure(
-      wrappedLayoutId,
+      layoutId,
       this.width,
       this.height,
       this.measureTextCallback.bind(this)
     );
 
-    const wrappedBounds = this.layoutEngine.layoutBounds(wrappedLayoutId);
-    const prepaintCx = this.createPrepaintContext(wrappedElementId);
-    const wrappedPrepaintState = deferredWrapper.prepaint(
-      prepaintCx,
-      wrappedBounds,
-      wrappedRequestState
-    );
+    const bounds = this.layoutEngine.layoutBounds(layoutId);
+    const prepaintCx = this.createPrepaintContext(elementId);
+    const prepaintState = anchoredElement.prepaint(prepaintCx, bounds, requestState);
 
-    // Paint is handled by deferred system (deferredWrapper registers itself)
-    const paintCx = this.createPaintContext(wrappedElementId);
-    deferredWrapper.paint(paintCx, wrappedBounds, wrappedPrepaintState);
+    // Add tooltip to deferred draw queue so it renders on top of normal content
+    const hitTestNode =
+      (prepaintState as { hitTestNode?: HitTestNode } | undefined)?.hitTestNode ?? null;
+    this.deferredDrawQueue.push({
+      child: anchoredElement,
+      bounds,
+      offset: { x: 0, y: 0 },
+      priority: 0, // Tooltips render below menus (priority 1)
+      childElementId: elementId,
+      childPrepaintState: prepaintState,
+      hitTestNode,
+    });
 
-    // Return hit test node for the tooltip
-    return (wrappedPrepaintState as { hitTestNode?: HitTestNode })?.hitTestNode ?? null;
+    return hitTestNode;
   }
 
   private endFrame(): void {

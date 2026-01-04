@@ -1,20 +1,22 @@
-import {
-  GladeContainerElement,
-  GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
-  type GlobalElementId,
-} from "./element.ts";
-import { type Bounds } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { HitTestNode, ClickHandler } from "./dispatch.ts";
-import { HitboxBehavior } from "./hitbox.ts";
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
 import { AnchoredElement } from "./anchored.ts";
 import { DeferredElement, type DeferredRequestLayoutState } from "./deferred.ts";
+import type { ClickHandler, HitTestNode } from "./dispatch.ts";
 import { GladeDiv } from "./div.ts";
 import {
+  GladeContainerElement,
+  type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
+} from "./element.ts";
+import { HitboxBehavior } from "./hitbox.ts";
+import type { LayoutId } from "./layout.ts";
+import {
+  buildRootMenuContext,
+  clearDropdownState,
   DEFAULT_FONT_SIZE,
   DEFAULT_INDICATOR_WIDTH,
   DEFAULT_ITEM_PADDING_X,
@@ -23,6 +25,16 @@ import {
   DEFAULT_MENU_BORDER_RADIUS,
   DEFAULT_MENU_PADDING,
   DEFAULT_SHORTCUT_FONT_SIZE,
+  type DropdownAlign,
+  type DropdownCheckedChangeHandler,
+  type DropdownMenuContentPrepaintState,
+  type DropdownMenuContentRequestState,
+  type DropdownMenuContext,
+  type DropdownMenuState,
+  type DropdownOpenChangeHandler,
+  type DropdownSelectHandler,
+  type DropdownSide,
+  type DropdownValueChangeHandler,
   GladeDropdownCheckbox,
   GladeDropdownItem,
   GladeDropdownLabel,
@@ -31,24 +43,12 @@ import {
   GladeDropdownRadioGroup,
   GladeDropdownSeparator,
   GladeDropdownSub,
-  buildRootMenuContext,
-  clearDropdownState,
   hasDropdownState,
-  resetDropdownState,
-  type DropdownMenuContentPrepaintState,
-  type DropdownMenuContentRequestState,
-  type DropdownMenuContext,
-  type DropdownMenuState,
-  type DropdownOpenChangeHandler,
-  type DropdownSelectHandler,
-  type DropdownCheckedChangeHandler,
-  type DropdownValueChangeHandler,
-  type DropdownSide,
-  type DropdownAlign,
   type MenuItemElement,
+  resetDropdownState,
 } from "./menu.ts";
 import type { Theme } from "./theme.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import { type Bounds } from "./types.ts";
 
 type DropdownRequestState = {
   layoutId: LayoutId;
@@ -89,7 +89,7 @@ export class GladeDropdown extends GladeContainerElement<
   private openValue = false;
   private onOpenChangeHandler: DropdownOpenChangeHandler | null = null;
   private disabledValue = false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   private triggerElement: GladeContainerElement<any, any> | null = null;
   private menuItems: MenuItemElement[] = [];
 
@@ -159,7 +159,6 @@ export class GladeDropdown extends GladeContainerElement<
     return this;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   trigger(element: GladeContainerElement<any, any>): this {
     this.triggerElement = element;
     return this;
@@ -649,26 +648,26 @@ export function dropdownSub(label: string): GladeDropdownSub {
 }
 
 export {
-  GladeDropdownItem,
-  GladeDropdownSeparator,
-  GladeDropdownLabel,
   GladeDropdownCheckbox,
+  GladeDropdownItem,
+  GladeDropdownLabel,
+  GladeDropdownMenuContent,
   GladeDropdownRadio,
   GladeDropdownRadioGroup,
+  GladeDropdownSeparator,
   GladeDropdownSub,
-  GladeDropdownMenuContent,
 };
 
 export type {
+  DropdownAlign,
+  DropdownCheckedChangeHandler,
   DropdownMenuContentPrepaintState,
   DropdownMenuContentRequestState,
   DropdownMenuContext,
   DropdownMenuState,
   DropdownOpenChangeHandler,
   DropdownSelectHandler,
-  DropdownCheckedChangeHandler,
-  DropdownValueChangeHandler,
   DropdownSide,
-  DropdownAlign,
+  DropdownValueChangeHandler,
   MenuItemElement,
 };

@@ -7,22 +7,22 @@
  * Inspired by GPUI's list element with ListState.
  */
 
+import { type Color, toColorObject } from "@glade/utils";
+
+import type { GladeContext } from "./context.ts";
+import type { HitTestNode } from "./dispatch.ts";
 import {
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import { type Bounds, type ScrollOffset } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { Styles } from "./styles.ts";
-import type { HitTestNode } from "./dispatch.ts";
-import type { GladeContext } from "./context.ts";
 import type { ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
+import type { LayoutId } from "./layout.ts";
 import {
   calculateHorizontalTrackBounds,
   calculateThumbBounds,
@@ -30,13 +30,14 @@ import {
   calculateVerticalTrackBounds,
   getThumbColor,
   isPointInThumb,
-  resolveScrollbarConfig,
-  trackClickToScrollOffset,
   type ResolvedScrollbarConfig,
+  resolveScrollbarConfig,
   type ScrollbarConfig,
   type ScrollbarDragState,
+  trackClickToScrollOffset,
 } from "./scrollbar.ts";
-import { toColorObject, type Color } from "@glade/utils";
+import type { Styles } from "./styles.ts";
+import { type Bounds, type ScrollOffset } from "./types.ts";
 
 /**
  * Alignment for list items (top-aligned or bottom-aligned).
@@ -77,7 +78,6 @@ export type ListRenderItem<T> = (
   item: T,
   props: ListItemProps,
   cx: GladeContext
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ) => GladeElement<any, any>;
 
 /**
@@ -382,9 +382,9 @@ interface ListRequestState {
   visibleRange: { start: number; end: number };
   renderedItems: Array<{
     index: number;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     element: GladeElement<any, any>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     requestState: any;
     layoutId: LayoutId;
   }>;
@@ -396,7 +396,7 @@ interface ListRequestState {
  */
 interface ListPrepaintState {
   visibleRange: { start: number; end: number };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   renderedItems: Array<{ index: number; element: GladeElement<any, any>; prepaintState: any }>;
   itemElementIds: GlobalElementId[];
   itemBounds: Bounds[];
@@ -628,9 +628,9 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
 
     const renderedItems: Array<{
       index: number;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       element: GladeElement<any, any>;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       requestState: any;
       layoutId: LayoutId;
     }> = [];
@@ -654,7 +654,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
       itemElementIds.push(childId);
 
       const childCx = { ...cx, elementId: childId };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const result = (element as GladeElement<any, any>).requestLayout(childCx);
       renderedItems.push({
         index: i,
@@ -740,9 +740,9 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
 
     const prepaintedItems: Array<{
       index: number;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       element: GladeElement<any, any>;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       prepaintState: any;
     }> = [];
 
@@ -779,7 +779,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
       itemBounds.push(itemBound);
 
       const childCx = cx.withElementId(childId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const prepaintState = (element as GladeElement<any, any>).prepaint(
         childCx,
         itemBound,
@@ -1011,7 +1011,7 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
           }
 
           const childCx = cx.withElementId(childId);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
           (element as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
         }
         this.paintScrollbars(cx, prepaintState);

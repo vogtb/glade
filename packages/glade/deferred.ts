@@ -17,18 +17,18 @@
  * - Tooltips might use priority 0, menus priority 1, modals priority 2
  */
 
-import {
-  GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
-  type GlobalElementId,
-} from "./element.ts";
-import type { Bounds, Point } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
 // HitTestNode import kept for type definitions used externally
 import type { HitTestNode } from "./dispatch.ts";
+import {
+  GladeElement,
+  type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
+} from "./element.ts";
+import type { LayoutId } from "./layout.ts";
+import type { Bounds, Point } from "./types.ts";
 
 /**
  * State passed from requestLayout to prepaint for DeferredElement.

@@ -1,6 +1,7 @@
 import { div, h1, h2, h3, h4, h5, h6, text } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 export const HEADING_DEMO: Demo = {
   name: "Headings",

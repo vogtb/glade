@@ -21,7 +21,8 @@
     "build:vendor-glfw": "./vendor/build-glfw.sh",
     "build:vendor-dawn": "./vendor/build-dawn.sh",
     "build:layout": "bun run --filter '@glade/layout' build",
-    "postinstall": "./vendor/build-glfw.sh"
+    "postinstall": "./vendor/build-glfw.sh",
+    "format": "prettier --write \"**/*.{ts,tsx,mts,mjs,cjs,js,json,md,html}\""
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",
@@ -38,6 +39,10 @@
     "turbo": "2.7.2",
     "typescript": "5.7.2",
     "typescript-eslint": "8.48.1",
+    "@typescript-eslint/eslint-plugin": "8.51.0",
+    "@typescript-eslint/parser": "8.51.0",
+    "eslint-plugin-prettier": "5.5.4",
+    "eslint-plugin-simple-import-sort": "12.1.1",
     "wrangler": "4.56.0"
   }
 }

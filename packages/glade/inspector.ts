@@ -8,15 +8,16 @@
  * - Element tree navigation
  */
 
-import type { Bounds, Point } from "./types.ts";
-import type { Styles } from "./styles.ts";
+import { log } from "@glade/logging";
+import type { ColorObject } from "@glade/utils";
+
+import type { HitTestNode } from "./dispatch.ts";
 import type { GlobalElementId } from "./element.ts";
 import type { GladeScene } from "./scene.ts";
-import type { HitTestNode } from "./dispatch.ts";
+import type { Styles } from "./styles.ts";
 import type { TextSystem } from "./text.ts";
 import { DEFAULT_THEME_FONTS, type Theme } from "./theme.ts";
-import type { ColorObject } from "@glade/utils";
-import { log } from "@glade/logging";
+import type { Bounds, Point } from "./types.ts";
 
 /**
  * Debug info attached to elements during render.

@@ -1,61 +1,42 @@
-import type { WebGPUContext, RenderCallback, ContextOptions } from "@glade/core";
+import type { ContextOptions, RenderCallback, WebGPUContext } from "@glade/core";
 import {
-  KeyAction,
-  CursorStyle,
-  type MouseButton,
-  type KeyCallback,
   type CharCallback,
-  type MouseButtonCallback,
-  type CursorMoveCallback,
-  type ScrollCallback,
-  type ResizeCallback,
   type CloseCallback,
-  type FocusCallback,
-  type CursorEnterCallback,
-  type RefreshCallback,
   type CompositionCallback,
+  type CursorEnterCallback,
+  type CursorMoveCallback,
+  CursorStyle,
+  type FocusCallback,
+  KeyAction,
+  type KeyCallback,
+  type MouseButton,
+  type MouseButtonCallback,
+  type RefreshCallback,
+  type ResizeCallback,
+  type ScrollCallback,
   type TextInputCallback,
 } from "@glade/core/events";
 import {
+  type WGPUAdapter,
+  type WGPUDevice,
+  type WGPUInstance,
+  type WGPUSurface,
+} from "@glade/dawn";
+import {
   glfw,
-  type GLFWwindow,
-  type GLFWcursor,
   GLFW_ARROW_CURSOR,
-  GLFW_IBEAM_CURSOR,
   GLFW_CROSSHAIR_CURSOR,
   GLFW_HAND_CURSOR,
   GLFW_HRESIZE_CURSOR,
-  GLFW_VRESIZE_CURSOR,
-  GLFW_RESIZE_ALL_CURSOR,
+  GLFW_IBEAM_CURSOR,
   GLFW_NOT_ALLOWED_CURSOR,
+  GLFW_RESIZE_ALL_CURSOR,
+  GLFW_VRESIZE_CURSOR,
+  type GLFWcursor,
+  type GLFWwindow,
 } from "@glade/glfw";
+
 import { createClipboard } from "./clipboard.ts";
-import {
-  createInstance,
-  requestAdapter,
-  requestDevice,
-  getDeviceQueue,
-  createSurfaceFromMetalLayer,
-  configureSurface,
-  getSurfaceCapabilities,
-  releaseInstance,
-  releaseAdapter,
-  releaseDevice,
-  releaseQueue,
-  releaseSurface,
-  processEvents,
-  tickDevice,
-  DawnGPUDevice,
-  DawnGPUCanvasContext,
-  textureFormatToString,
-} from "./webgpu.ts";
-import {
-  type WGPUInstance,
-  type WGPUAdapter,
-  type WGPUDevice,
-  type WGPUSurface,
-} from "@glade/dawn";
-import { createMetalLayerForView } from "./metal.ts";
 import {
   attachIme,
   attachTitlebarDrag,
@@ -64,6 +45,26 @@ import {
   type TitlebarDragHandle,
   type TitlebarDragMonitorHandle,
 } from "./helpers.ts";
+import { createMetalLayerForView } from "./metal.ts";
+import {
+  configureSurface,
+  createInstance,
+  createSurfaceFromMetalLayer,
+  DawnGPUCanvasContext,
+  DawnGPUDevice,
+  getDeviceQueue,
+  getSurfaceCapabilities,
+  processEvents,
+  releaseAdapter,
+  releaseDevice,
+  releaseInstance,
+  releaseQueue,
+  releaseSurface,
+  requestAdapter,
+  requestDevice,
+  textureFormatToString,
+  tickDevice,
+} from "./webgpu.ts";
 import { applyTitleBarStyle, type MacOSTitleBarStyle } from "./window_style.ts";
 
 // Map CursorStyle to GLFW cursor shape constants

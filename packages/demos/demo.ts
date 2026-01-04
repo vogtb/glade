@@ -1,8 +1,8 @@
 import type {
+  FocusHandle,
   GladeElement,
   GladeView,
   GladeViewContext,
-  FocusHandle,
   ListState,
   ScrollHandle,
   TextInputController,

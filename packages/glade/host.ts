@@ -10,17 +10,18 @@
  */
 
 import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
-import type { Bounds } from "./types.ts";
+
 import type { HitTestNode } from "./dispatch.ts";
-import type { HostTexturePrimitive } from "./scene.ts";
-import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import {
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
   type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
   type RequestLayoutResult,
 } from "./element.ts";
+import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import type { HostTexturePrimitive } from "./scene.ts";
+import type { Bounds } from "./types.ts";
 
 // =============================================================================
 // RenderTexture

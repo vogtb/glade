@@ -5,11 +5,11 @@
  * Inspired by GPUI's drag/drop system.
  */
 
-import type { Point, Bounds, WindowId } from "./types.ts";
-import type { GladeElement } from "./element.ts";
 import type { GladeContext } from "./context.ts";
-import type { GladeWindow } from "./window.ts";
+import type { GladeElement } from "./element.ts";
 import type { HitboxId } from "./hitbox.ts";
+import type { Bounds, Point, WindowId } from "./types.ts";
+import type { GladeWindow } from "./window.ts";
 
 /**
  * Unique identifier for a drag operation.

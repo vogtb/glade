@@ -7,14 +7,14 @@
 
 import {
   GladeElement,
+  type NoState,
+  type PaintContext,
+  type PrepaintContext,
   type RequestLayoutContext,
   type RequestLayoutResult,
-  type PrepaintContext,
-  type PaintContext,
-  type NoState,
 } from "./element.ts";
-import type { Bounds } from "./types.ts";
 import type { Styles } from "./styles.ts";
+import type { Bounds } from "./types.ts";
 
 export type CanvasPrepaint<T> = (bounds: Bounds, cx: PrepaintContext) => T;
 

@@ -1,11 +1,11 @@
 // Re-export all event types
-export * from "./events.ts";
 export type { Clipboard } from "./clipboard.ts";
+export * from "./events.ts";
 export type { ColorScheme, ColorSchemeProvider } from "./theme.ts";
 export { createStaticColorSchemeProvider } from "./theme.ts";
 
-import type { EventTarget } from "./events";
 import type { Clipboard } from "./clipboard";
+import type { EventTarget } from "./events";
 
 /**
  * Platform-agnostic WebGPU context interface. Provides access to the standard

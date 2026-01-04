@@ -3,17 +3,18 @@
  * windows to WebGPU/Dawn.
  */
 
-import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
+import { log } from "@glade/logging";
+import { dlopen, FFIType, type Pointer, ptr } from "bun:ffi";
+
 import {
   getClass,
   getSelector,
   objcSendNoArgs,
-  objcSendOnePtr,
   objcSendOneBool,
-  objcSendReturnDouble,
   objcSendOneDouble,
+  objcSendOnePtr,
+  objcSendReturnDouble,
 } from "./objc";
-import { log } from "@glade/logging";
 
 // CoreFoundation for CFString creation
 const coreFoundation = dlopen(

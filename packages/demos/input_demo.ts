@@ -1,6 +1,7 @@
 import { div, text, textInput } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 export const INPUTS_DEMO: Demo = {
   name: "Inputs",

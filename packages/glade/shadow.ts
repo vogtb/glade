@@ -6,8 +6,9 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
-import type { ShadowPrimitive } from "./scene.ts";
+
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import type { ShadowPrimitive } from "./scene.ts";
 
 /**
  * WGSL shader for shadow rendering with Gaussian blur approximation.

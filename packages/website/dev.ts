@@ -1,6 +1,6 @@
 import { log } from "@glade/logging";
-import { watch } from "fs";
 import { spawn } from "bun";
+import { watch } from "fs";
 
 const PORT = 3001;
 

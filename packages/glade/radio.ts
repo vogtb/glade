@@ -7,25 +7,26 @@
  * Follows accessibility patterns similar to Radix UI radio group components.
  */
 
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
+import type { ClickHandler, HitTestNode } from "./dispatch.ts";
 import {
   GladeContainerElement,
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { HitTestNode, ClickHandler } from "./dispatch.ts";
+import type { FocusHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { FocusHandle } from "./entity.ts";
+import type { LayoutId } from "./layout.ts";
 import type { Styles } from "./styles.ts";
 import { StyleBuilder } from "./styles.ts";
 import type { Theme } from "./theme.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import type { Bounds } from "./types.ts";
 
 const DEFAULT_DISABLED_OPACITY = 0.5;
 const DEFAULT_SIZE = 18;
@@ -552,7 +553,7 @@ export class GladeRadioGroup extends GladeContainerElement<
       }
 
       const childCx = cx.withElementId(childId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const prepaintState = (child as GladeElement<any, any>).prepaint(
         childCx,
         childBound,
@@ -610,7 +611,7 @@ export class GladeRadioGroup extends GladeContainerElement<
       }
 
       const childCx = cx.withElementId(childId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (child as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
     }
   }

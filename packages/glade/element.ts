@@ -10,26 +10,27 @@
  * 3. paint() - Emit GPU primitives using PrepaintState
  */
 
-import type { Bounds, ContentMask, ScrollOffset, TransformationMatrix, FocusId } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { Styles, Cursor, WhitespaceMode, ObjectFit } from "./styles.ts";
-import type { HitTestNode, EventHandlers } from "./dispatch.ts";
-import type { GladeViewContext, GladeContext } from "./context.ts";
-import type { FocusHandle, ScrollHandle } from "./entity.ts";
-import type { GladeScene } from "./scene.ts";
-import type { Hitbox, HitboxId } from "./hitbox.ts";
-import { HitboxBehavior } from "./hitbox.ts";
-import type { GladeWindow as _GladeWindow } from "./window.ts";
-import type { TooltipConfig } from "./tooltip.ts";
+import { type Color, type ColorObject, rgb, toColorObject } from "@glade/utils";
+
+import type { GladeContext, GladeViewContext } from "./context.ts";
 // Note: PopoverRegistration and DialogRegistration imports removed
 // These are no longer needed as overlays render via deferred children
 import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
-import type { TabStopConfig } from "./tab.ts";
+import type { EventHandlers, HitTestNode } from "./dispatch.ts";
+import type { FocusHandle, ScrollHandle } from "./entity.ts";
+import type { Hitbox, HitboxId } from "./hitbox.ts";
+import { HitboxBehavior } from "./hitbox.ts";
+import type { DecodedImage, ImageTile } from "./image.ts";
+import type { LayoutId } from "./layout.ts";
 import type { PathBuilder } from "./path.ts";
-import type { ImageTile, DecodedImage } from "./image.ts";
-import { createCachedTextLayout, normalizeWhitespace, type CachedTextLayout } from "./text.ts";
-import { toColorObject, type Color, type ColorObject, rgb } from "@glade/utils";
+import type { GladeScene } from "./scene.ts";
+import type { Cursor, ObjectFit, Styles, WhitespaceMode } from "./styles.ts";
+import type { TabStopConfig } from "./tab.ts";
+import { type CachedTextLayout, createCachedTextLayout, normalizeWhitespace } from "./text.ts";
 import type { Theme } from "./theme.ts";
+import type { TooltipConfig } from "./tooltip.ts";
+import type { Bounds, ContentMask, FocusId, ScrollOffset, TransformationMatrix } from "./types.ts";
+import type { GladeWindow as _GladeWindow } from "./window.ts";
 
 /**
  * Debug information attached to elements for inspector mode.
@@ -69,7 +70,6 @@ export interface RequestLayoutResult<R> {
  * Analogous to a React component or GPUI View.
  */
 export interface GladeView {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render(cx: GladeViewContext<this>): GladeElement<any, any>;
 }
 
@@ -78,7 +78,6 @@ export interface GladeView {
  * Similar to GPUI's RenderOnce.
  */
 export interface GladeRenderOnce {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render(cx: GladeViewContext<never>): GladeElement<any, any>;
 }
 
@@ -231,7 +230,7 @@ export interface PrepaintContext {
   registerTooltip(
     hitboxId: HitboxId,
     bounds: Bounds,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     builder: (cx: GladeContext) => GladeElement<any, any>,
     config: TooltipConfig
   ): void;
@@ -623,14 +622,14 @@ export abstract class GladeContainerElement<
   PrepaintState = NoState,
 > extends GladeElement<RequestLayoutState, PrepaintState> {
   // TODO: we should definitely be able to type the children
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   protected _children: GladeElement<any, any>[] = [];
   protected childLayoutIds: LayoutId[] = [];
 
   /**
    * Add a child element.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   child(element: GladeElement<any, any> | string | number): this {
     if (typeof element === "string" || typeof element === "number") {
       this._children.push(new GladeTextElement(String(element)));
@@ -643,7 +642,7 @@ export abstract class GladeContainerElement<
   /**
    * Add multiple children.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   children(...elements: Array<GladeElement<any, any> | string | number | null | undefined>): this {
     for (const el of elements) {
       if (el != null) {
@@ -656,7 +655,7 @@ export abstract class GladeContainerElement<
   /**
    * Add multiple children (nullable-friendly).
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   children_(...elements: Array<GladeElement<any, any> | string | number | null | undefined>): this {
     for (const el of elements) {
       if (el != null) {
@@ -669,7 +668,7 @@ export abstract class GladeContainerElement<
   /**
    * Get the child elements.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   getChildren(): readonly GladeElement<any, any>[] {
     return this._children;
   }
@@ -678,7 +677,7 @@ export abstract class GladeContainerElement<
    * Backwards-compatible accessor used by generated container code.
    * TODO: don't use any
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   get children__(): readonly GladeElement<any, any>[] {
     return this._children;
   }

@@ -5,10 +5,11 @@
  * for GPU rendering in Glade.
  */
 
-import { base64ToBytes } from "@glade/utils";
-import { log } from "@glade/logging";
-import { initSync, SvgTessellator as WasmSvgTessellator, type InitOutput } from "../pkg/svg";
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
+import { log } from "@glade/logging";
+import { base64ToBytes } from "@glade/utils";
+
+import { type InitOutput, initSync, SvgTessellator as WasmSvgTessellator } from "../pkg/svg";
 
 const wasmBase64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm");
 

@@ -1,8 +1,9 @@
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
-import { div, img, text, type DecodedImage } from "@glade/glade";
+import { type DecodedImage, div, img, text } from "@glade/glade";
 import { base64ToBytes, colors } from "@glade/utils";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 const DEMO_PNG_BASE64 = COMPTIME_embedAsBase64("../../assets/image.png");
 const DEMO_JPG_BASE64 = COMPTIME_embedAsBase64("../../assets/flower.jpg");

@@ -1,6 +1,7 @@
 import { code, div, pre, text } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 const INLINE_SAMPLE =
   'const value    = input ?? defaultUser;\n\treturn value?.profile?.email ?? "missing";';

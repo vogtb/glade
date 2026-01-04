@@ -8,15 +8,16 @@
  * native (Bun) and browser environments.
  */
 
-import { base64ToBytes } from "@glade/utils";
+import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
+import { base64ToBytes } from "@glade/utils";
+
+import type { LayoutBounds, LayoutId } from "../pkg/layout";
 import {
+  type InitOutput,
   initSync,
   TaffyLayoutEngine as WasmTaffyLayoutEngine,
-  type InitOutput,
 } from "../pkg/layout";
-import type { LayoutId, LayoutBounds } from "../pkg/layout";
-import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 
 // Embed WASM as base64 at build time via Bun macro
 const wasmBase64 = COMPTIME_embedAsBase64("../layout/pkg/layout_bg.wasm");
@@ -43,7 +44,7 @@ export function createLayoutEngine(): TaffyLayoutEngine {
 }
 
 // Re-export types
-export type { LayoutId, LayoutBounds, InitOutput };
+export type { InitOutput, LayoutBounds, LayoutId };
 
 /**
  * Callback type for measuring nodes during layout computation.

@@ -19,7 +19,7 @@
  * VisualPoint: Pixel coordinates relative to document origin (TEXT-LOCAL space)
  */
 
-import { createTextShaper, type TextShaper, type ShapedGlyph, type FontStyle } from "@glade/shaper";
+import { createTextShaper, type FontStyle, type ShapedGlyph, type TextShaper } from "@glade/shaper";
 
 // ============================================================================
 // Coordinate Types

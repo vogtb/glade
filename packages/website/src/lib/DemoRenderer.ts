@@ -1,24 +1,24 @@
 import { ALL_DEMOS, type Demo, type DemoState } from "@glade/demos/library";
 import {
-  createWebGPUContext,
-  createGladePlatform,
-  createColorSchemeProvider,
-  runWebGPURenderLoop,
-  type BrowserWebGPUContext,
-} from "@glade/platform";
-import {
-  GladeApp,
-  div,
   createListState,
-  TextInputController,
+  div,
+  type FocusHandle,
+  GladeApp,
   type GladeView,
   type GladeViewContext,
-  type FocusHandle,
+  type GladeWindow,
   type ListState,
   type ScrollHandle,
-  type GladeWindow,
+  TextInputController,
   type WindowId,
 } from "@glade/glade";
+import {
+  type BrowserWebGPUContext,
+  createColorSchemeProvider,
+  createGladePlatform,
+  createWebGPUContext,
+  runWebGPURenderLoop,
+} from "@glade/platform";
 
 class DemoView implements GladeView {
   private activeDemo: Demo;

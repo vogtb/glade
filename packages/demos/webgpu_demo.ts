@@ -1,10 +1,11 @@
-import { div, text, webgpuHost, type WebGPUHost } from "@glade/glade";
 import { GPUBufferUsage, GPUShaderStage } from "@glade/core/webgpu";
-import type { WebGPUHostInput, RenderTexture } from "@glade/glade/host.ts";
+import { div, text, type WebGPUHost, webgpuHost } from "@glade/glade";
+import type { RenderTexture, WebGPUHostInput } from "@glade/glade/host.ts";
 import { createRenderTexture } from "@glade/glade/host.ts";
 import { colors } from "@glade/utils";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 type WebGPUDemoId = "hexagon" | "metaball" | "particle" | "raymarch" | "terrain" | "galaxy";
 

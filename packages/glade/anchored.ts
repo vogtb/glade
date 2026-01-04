@@ -15,17 +15,17 @@
  *   deferred(anchored().position(point).child(menu))
  */
 
+import type { HitTestNode } from "./dispatch.ts";
 import {
   GladeContainerElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import type { Bounds, Point, Size } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
-import type { HitTestNode } from "./dispatch.ts";
+import type { Bounds, Point, Size } from "./types.ts";
 
 /**
  * Corner position for anchoring.

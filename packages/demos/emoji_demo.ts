@@ -1,6 +1,7 @@
 import { div, text } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 export const EMOJI_DEMO: Demo = {
   name: "Emoji",

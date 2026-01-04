@@ -12,11 +12,11 @@
  * - Click outside dismisses the popover
  */
 
-import type { Bounds, Point, Size } from "./types.ts";
-import type { GladeElement } from "./element.ts";
-import type { GladeContext } from "./context.ts";
-import type { HitboxId } from "./hitbox.ts";
 import type { Corner } from "./anchored.ts";
+import type { GladeContext } from "./context.ts";
+import type { GladeElement } from "./element.ts";
+import type { HitboxId } from "./hitbox.ts";
+import type { Bounds, Point, Size } from "./types.ts";
 
 export type PopoverSide = "top" | "bottom" | "left" | "right";
 export type PopoverAlign = "start" | "center" | "end";
@@ -49,7 +49,7 @@ export const DEFAULT_POPOVER_CONFIG: PopoverConfig = {
 /**
  * Builder function for creating popover content.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export type PopoverBuilder = (cx: GladeContext) => GladeElement<any, any>;
 
 /**
@@ -81,7 +81,7 @@ export interface ActivePopover {
   /** Computed popover bounds. */
   bounds: Bounds | null;
   /** The popover element. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   element: GladeElement<any, any> | null;
   /** Anchor corner used for positioning. */
   anchorCorner: Corner;

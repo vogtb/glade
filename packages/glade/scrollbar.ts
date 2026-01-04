@@ -5,7 +5,8 @@
  * and rendering utilities for scroll containers.
  */
 
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
 import { type Bounds, type ScrollHandleId } from "./types.ts";
 
 /**

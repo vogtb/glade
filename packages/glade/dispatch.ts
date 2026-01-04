@@ -1,8 +1,8 @@
-import type { Bounds, Point, FocusId } from "./types.ts";
-import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { GladeContext } from "./context.ts";
+import type { CanDropPredicate, DragPayload, DropHandler } from "./drag.ts";
+import type { FocusHandle, ScrollHandle } from "./entity.ts";
+import type { Bounds, FocusId, Point } from "./types.ts";
 import type { GladeWindow } from "./window.ts";
-import type { DragPayload, DropHandler, CanDropPredicate } from "./drag.ts";
 
 /**
  * Mouse event data.

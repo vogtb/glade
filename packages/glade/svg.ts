@@ -9,24 +9,25 @@
  * - High-quality tessellation with fine tolerance
  */
 
-import { type Bounds, type TransformationMatrix } from "./types.ts";
+import {
+  createSvgTessellator,
+  type ParsedSvg as WasmParsedSvg,
+  parseSvg as parseSvgWasm,
+  type SvgTessellator,
+  type TessellatedMesh,
+  tessellateSvg,
+} from "@glade/svg";
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
+import type { HitTestNode } from "./dispatch.ts";
 import type {
-  RequestLayoutContext,
-  PrepaintContext,
   PaintContext,
+  PrepaintContext,
+  RequestLayoutContext,
   RequestLayoutResult,
 } from "./element.ts";
 import { GladeElement } from "./element.ts";
-import type { HitTestNode } from "./dispatch.ts";
-import {
-  createSvgTessellator,
-  tessellateSvg,
-  parseSvg as parseSvgWasm,
-  type TessellatedMesh,
-  type ParsedSvg as WasmParsedSvg,
-  type SvgTessellator,
-} from "@glade/svg";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import { type Bounds, type TransformationMatrix } from "./types.ts";
 
 export type { TessellatedMesh } from "@glade/svg";
 

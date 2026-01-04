@@ -1,7 +1,8 @@
-import { div, text, uniformList, list } from "@glade/glade";
+import { div, list, text, uniformList } from "@glade/glade";
 import { colors } from "@glade/utils";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 export const VIRTUAL_SCROLLING_DEMO: Demo = {
   name: "Virtual Scrolling",

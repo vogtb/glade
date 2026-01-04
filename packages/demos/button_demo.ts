@@ -1,5 +1,6 @@
-import { button, div, divider, text, icon } from "@glade/glade";
+import { button, div, divider, icon, text } from "@glade/glade";
 import { colors } from "@glade/utils";
+
 import type { Demo, DemoItem } from "./demo";
 
 export const BUTTON_DEMO: Demo = {

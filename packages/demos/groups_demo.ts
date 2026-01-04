@@ -1,7 +1,8 @@
-import { div, text, type GladeDiv } from "@glade/glade";
+import { div, type GladeDiv, text } from "@glade/glade";
 import { colors, rgb } from "@glade/utils";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 function groupButton(
   label: string,

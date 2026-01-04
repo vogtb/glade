@@ -1,7 +1,8 @@
-import { canvas, text } from "@glade/glade";
 import type { Bounds, PrepaintContext } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
+import { canvas, text } from "@glade/glade";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 type CanvasBarsState = {
   values: number[];

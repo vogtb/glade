@@ -1,7 +1,8 @@
 import { div, link, text } from "@glade/glade";
 import { colors } from "@glade/utils";
-import type { Demo, DemoItem } from "./demo";
+
 import { SPACER_10PX } from "./common";
+import type { Demo, DemoItem } from "./demo";
 
 export const LINK_DEMO: Demo = {
   name: "Link",

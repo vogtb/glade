@@ -9,10 +9,10 @@
  * - Disposable pattern for cleanup
  */
 
+import { type Action, ActionRegistry, Keymap } from "./actions.ts";
 import type { GladeContext } from "./context.ts";
-import type { GladeWindow } from "./window.ts";
 import type { FocusContext } from "./focus.ts";
-import { ActionRegistry, Keymap, type Action } from "./actions.ts";
+import type { GladeWindow } from "./window.ts";
 
 /**
  * Type-safe hotkey enum for all supported keys.

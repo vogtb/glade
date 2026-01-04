@@ -1,5 +1,6 @@
 import { div, divider, icon, text } from "@glade/glade";
 import { colors } from "@glade/utils";
+
 import type { Demo, DemoItem } from "./demo";
 
 export const DEBUG_MODE_DEMO: Demo = {

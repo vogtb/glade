@@ -5,13 +5,13 @@
  */
 
 export {
+  type BrowserContextOptions,
+  // Types
+  type BrowserWebGPUContext,
+  type BrowserWebGPUContextOptions,
   // WebGPU
   createWebGPUContext,
   runWebGPURenderLoop,
-  // Types
-  type BrowserWebGPUContext,
-  type BrowserContextOptions,
-  type BrowserWebGPUContextOptions,
 } from "./context.ts";
 
 // Clipboard

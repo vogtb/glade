@@ -9,23 +9,24 @@
  * TODO: absorb into list.ts
  */
 
+import { type Color, toColorObject } from "@glade/utils";
+
+import type { GladeContext } from "./context.ts";
+import type { HitTestNode } from "./dispatch.ts";
 import {
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import { type Bounds, type ScrollOffset } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { Styles } from "./styles.ts";
-import type { HitTestNode } from "./dispatch.ts";
-import type { GladeContext } from "./context.ts";
 import type { ScrollHandle } from "./entity.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import { toColorObject, type Color } from "@glade/utils";
+import type { LayoutId } from "./layout.ts";
+import type { Styles } from "./styles.ts";
+import { type Bounds, type ScrollOffset } from "./types.ts";
 
 /**
  * Scroll-to strategies for scrollToItem.
@@ -48,7 +49,6 @@ export type UniformListRenderItem<T> = (
   item: T,
   props: UniformListItemProps,
   cx: GladeContext
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ) => GladeElement<any, any>;
 
 /**
@@ -58,7 +58,7 @@ interface UniformListRequestState {
   layoutId: LayoutId;
   itemLayoutIds: LayoutId[];
   itemElementIds: GlobalElementId[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   itemRequestStates: any[];
   visibleRange: { start: number; end: number };
 }
@@ -69,7 +69,7 @@ interface UniformListRequestState {
 interface UniformListPrepaintState {
   itemLayoutIds: LayoutId[];
   itemElementIds: GlobalElementId[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   itemPrepaintStates: any[];
   itemBounds: Bounds[];
   hitbox: Hitbox | null;
@@ -273,7 +273,7 @@ export class UniformList<T> extends GladeElement<
     const visibleRange = this.calculateVisibleRange(scrollOffset.y, estimatedViewportHeight);
     const itemLayoutIds: LayoutId[] = [];
     const itemElementIds: GlobalElementId[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const itemRequestStates: any[] = [];
 
     // Only create layout for visible items
@@ -299,7 +299,6 @@ export class UniformList<T> extends GladeElement<
         elementId: childId,
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = (element as GladeElement<any, any>).requestLayout(childCx);
       itemLayoutIds.push(result.layoutId);
       itemRequestStates.push({ element, requestState: result.requestState });
@@ -379,7 +378,7 @@ export class UniformList<T> extends GladeElement<
 
     // Calculate item bounds with scroll offset
     const itemBounds: Bounds[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const itemPrepaintStates: any[] = [];
 
     for (let i = 0; i < itemRequestStates.length; i++) {
@@ -398,7 +397,7 @@ export class UniformList<T> extends GladeElement<
       itemBounds.push(itemBound);
 
       const childCx = cx.withElementId(childId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const prepaintState = (element as GladeElement<any, any>).prepaint(
         childCx,
         itemBound,
@@ -458,7 +457,7 @@ export class UniformList<T> extends GladeElement<
           }
 
           const childCx = cx.withElementId(childId);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
           (element as GladeElement<any, any>).paint(childCx, childBound, childPrepaintState);
         }
       }

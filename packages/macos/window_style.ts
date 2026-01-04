@@ -1,5 +1,6 @@
 import type { Pointer } from "bun:ffi";
-import { getSelector, objcSendReturnU64, objcSendOneU64, objcSendOneBool } from "./objc";
+
+import { getSelector, objcSendOneBool, objcSendOneU64, objcSendReturnU64 } from "./objc";
 
 const NSWindowStyleMaskTitled = 1n << 0n;
 const NSWindowStyleMaskFullSizeContentView = 1n << 15n;

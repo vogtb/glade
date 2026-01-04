@@ -1,12 +1,13 @@
+import { GladeApp, type GladeContext } from "@glade/glade";
+import { log } from "@glade/logging";
 import {
   createColorSchemeProvider,
   createGladePlatform,
   createWebGPUContext,
   runWebGPURenderLoop,
 } from "@glade/platform";
-import { GladeApp, type GladeContext } from "@glade/glade";
+
 import { MainView } from "./main.ts";
-import { log } from "@glade/logging";
 
 async function main() {
   const ctx = await createWebGPUContext({

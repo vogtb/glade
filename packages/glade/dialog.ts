@@ -25,26 +25,27 @@
  *     )
  */
 
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
+import { anchored, AnchoredElement } from "./anchored.ts";
+import type { GladeContext } from "./context.ts";
+import { deferred, DeferredElement } from "./deferred.ts";
+import type { ClickHandler, HitTestNode, KeyHandler } from "./dispatch.ts";
+import { div, GladeDiv } from "./div.ts";
 import {
   GladeContainerElement,
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import { type Bounds, type Size } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { HitTestNode, ClickHandler, KeyHandler } from "./dispatch.ts";
 import type { Hitbox, HitboxId } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { GladeContext } from "./context.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import type { LayoutId } from "./layout.ts";
 import type { Theme } from "./theme.ts";
-import { DeferredElement, deferred } from "./deferred.ts";
-import { div, GladeDiv } from "./div.ts";
-import { AnchoredElement, anchored } from "./anchored.ts";
+import { type Bounds, type Size } from "./types.ts";
 
 // ============================================================================
 // Sizes
@@ -105,7 +106,7 @@ export const DEFAULT_DIALOG_CONFIG: DialogConfig = {
 /**
  * Builder function for creating dialog content.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export type DialogBuilder = (cx: GladeContext) => GladeElement<any, any>;
 
 /**
@@ -133,7 +134,7 @@ export interface ActiveDialog {
   /** Registration that created this dialog. */
   registration: DialogRegistration;
   /** The dialog element once built. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   element: GladeElement<any, any> | null;
   /** Computed dialog bounds. */
   bounds: Bounds | null;
@@ -992,7 +993,7 @@ export class GladeDialogContent extends GladeElement<
   DialogContentPrepaintState
 > {
   private headerElement: GladeDialogHeader | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   private bodyElement: GladeElement<any, any> | null = null;
   private footerElement: GladeDialogFooter | null = null;
   private context: DialogContentContext | null = null;
@@ -1012,7 +1013,7 @@ export class GladeDialogContent extends GladeElement<
   /**
    * Set the body content.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   body(body: GladeElement<any, any>): this {
     this.bodyElement = body;
     return this;
@@ -1290,7 +1291,7 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
   private dialogId: string;
   private openValue = false;
   private onOpenChangeHandler: DialogOpenChangeHandler | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   private triggerElement: GladeElement<any, any> | null = null;
   private contentBuilder: DialogBuilder | null = null;
 
@@ -1330,7 +1331,7 @@ export class GladeDialog extends GladeContainerElement<DialogRequestState, Dialo
   /**
    * Set the trigger element that opens the dialog.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   trigger(element: GladeElement<any, any>): this {
     this.triggerElement = element;
     return this;

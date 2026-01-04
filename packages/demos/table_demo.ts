@@ -1,7 +1,8 @@
-import { table, tbody, td, text, tfoot, th, thead, tr } from "@glade/glade";
 import type { GladeTableRow } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
+import { table, tbody, td, text, tfoot, th, thead, tr } from "@glade/glade";
 import { colors } from "@glade/utils";
+
+import type { Demo, DemoItem } from "./demo";
 
 export const TABLE_DEMO: Demo = {
   name: "Table",

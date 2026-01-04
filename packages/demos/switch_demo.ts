@@ -1,5 +1,6 @@
 import { div, divider, switchToggle, text } from "@glade/glade";
 import { colors } from "@glade/utils";
+
 import type { Demo, DemoItem } from "./demo";
 
 export const SWITCH_DEMO: Demo = {

@@ -3,7 +3,7 @@
  * Provides low-level access to the Objective-C runtime for FFI calls.
  */
 
-import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
+import { dlopen, FFIType, type Pointer, ptr } from "bun:ffi";
 
 const LIBOBJC_DYLIB_PATH = "/usr/lib/libobjc.A.dylib";
 

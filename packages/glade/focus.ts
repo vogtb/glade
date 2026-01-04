@@ -4,8 +4,8 @@
  * Handles focus state, focus navigation, and focus-related events.
  */
 
-import type { FocusId } from "./types.ts";
 import type { FocusHandle } from "./entity.ts";
+import type { FocusId } from "./types.ts";
 
 /**
  * Focus stack for a window.

@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { DemoShowcase } from "./components/DemoShowcase";
 import { ALL_DEMOS } from "@glade/demos/library";
+import { useState } from "react";
+
+import { DemoShowcase } from "./components/DemoShowcase";
 
 export default function App() {
   const [currentDemo, setCurrentDemo] = useState(ALL_DEMOS[0]?.name ?? "Button");

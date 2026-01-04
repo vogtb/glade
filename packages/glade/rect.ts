@@ -7,8 +7,9 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
-import type { RectPrimitive } from "./scene.ts";
+
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
+import type { RectPrimitive } from "./scene.ts";
 
 /**
  * WGSL shader for rectangle rendering with SDF-based rounded corners.

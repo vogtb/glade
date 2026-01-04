@@ -1,5 +1,6 @@
 import { log } from "@glade/logging";
 import { dlopen, FFIType, JSCallback, type Pointer } from "bun:ffi";
+
 // @ts-expect-error - Bun-specific import attribute for embedded dylib
 import GLADE_HELPERS_PATH from "../../libs/libgladehelpers.dylib" with { type: "file" };
 

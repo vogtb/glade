@@ -5,10 +5,10 @@
  * Inspired by GPUI's tooltip system.
  */
 
-import type { Bounds, Point } from "./types.ts";
-import type { GladeElement } from "./element.ts";
 import type { GladeContext } from "./context.ts";
+import type { GladeElement } from "./element.ts";
 import type { HitboxId } from "./hitbox.ts";
+import type { Bounds, Point } from "./types.ts";
 
 /**
  * Position preference for tooltip placement.
@@ -43,7 +43,7 @@ export const DEFAULT_TOOLTIP_CONFIG: TooltipConfig = {
  * Builder function for creating tooltip content.
  * Called when tooltip should be displayed.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export type TooltipBuilder = (cx: GladeContext) => GladeElement<any, any>;
 
 /**

@@ -5,8 +5,8 @@
  * similar to GPUI's hitbox system.
  */
 
-import type { Bounds, ContentMask } from "./types.ts";
 import type { Cursor } from "./styles.ts";
+import type { Bounds, ContentMask } from "./types.ts";
 
 declare const __hitboxIdBrand: unique symbol;
 export type HitboxId = number & { [__hitboxIdBrand]: true };

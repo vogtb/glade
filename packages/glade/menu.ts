@@ -5,21 +5,22 @@
  * menus can share behavior without duplication.
  */
 
+import type { ColorObject } from "@glade/utils";
+
+import type { ClickHandler, HitTestNode, KeyHandler, MouseHandler } from "./dispatch.ts";
 import {
   GladeContainerElement,
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type GlobalElementId,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import { type Bounds, type Size, type WindowId } from "./types.ts";
-import type { LayoutId } from "./layout.ts";
-import type { HitTestNode, ClickHandler, KeyHandler, MouseHandler } from "./dispatch.ts";
 import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
-import type { ColorObject } from "@glade/utils";
+import type { LayoutId } from "./layout.ts";
+import { type Bounds, type Size, type WindowId } from "./types.ts";
 
 export const DEFAULT_FONT_SIZE = 14;
 export const DEFAULT_LABEL_FONT_SIZE = 12;

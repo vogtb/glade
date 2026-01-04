@@ -5,6 +5,7 @@
  */
 
 import type { KeyEvent } from "@glade/core";
+
 import type { Modifiers } from "./dispatch.ts";
 
 /**

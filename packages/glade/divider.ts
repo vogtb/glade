@@ -7,18 +7,19 @@
  * TODO: rename to separator.
  */
 
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
+import type { HitTestNode } from "./dispatch.ts";
 import {
   GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
   type NoState,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
 } from "./element.ts";
-import { type Bounds } from "./types.ts";
 import type { LayoutId } from "./layout.ts";
-import type { HitTestNode } from "./dispatch.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import { type Bounds } from "./types.ts";
 
 type DividerOrientation = "horizontal" | "vertical";
 

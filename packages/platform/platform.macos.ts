@@ -1,16 +1,16 @@
+export * from "@glade/core";
 export {
-  // WebGPU
-  createWebGPUContext,
-  runWebGPURenderLoop,
   // Clipboard
   createClipboard,
-  // Glade
-  createGladePlatform,
   // Color scheme
   createColorSchemeProvider,
-  // Types
-  type MacOSWebGPUContext,
+  // Glade
+  createGladePlatform,
+  // WebGPU
+  createWebGPUContext,
   type MacOSContextOptions,
   type MacOSGladePlatformInstance,
+  // Types
+  type MacOSWebGPUContext,
+  runWebGPURenderLoop,
 } from "@glade/macos";
-export * from "@glade/core";

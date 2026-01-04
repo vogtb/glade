@@ -1,44 +1,43 @@
-import type { Bounds } from "./types.ts";
-import {
-  GladeElement,
-  type RequestLayoutContext,
-  type PrepaintContext,
-  type PaintContext,
-  type RequestLayoutResult,
-} from "./element.ts";
-import type { LayoutId } from "./layout.ts";
+import type { FontStyle } from "@glade/shaper";
+import { type Color, type ColorObject, toColorObject } from "@glade/utils";
+
 import type { GladeContext } from "./context.ts";
-import type { GladeWindow } from "./window.ts";
-import type { Hitbox } from "./hitbox.ts";
 import type {
+  ClickHandler,
+  CompositionHandler,
   EventHandlers,
   HitTestNode,
   KeyHandler,
   MouseHandler,
   TextInputHandler,
-  CompositionHandler,
-  ClickHandler,
 } from "./dispatch.ts";
-import { Key } from "./keyboard.ts";
-import type { FocusHandle, ScrollHandle } from "./entity.ts";
-
 import {
+  GladeElement,
+  type PaintContext,
+  type PrepaintContext,
+  type RequestLayoutContext,
+  type RequestLayoutResult,
+} from "./element.ts";
+import type { FocusHandle, ScrollHandle } from "./entity.ts";
+import type { Hitbox } from "./hitbox.ts";
+import { Key } from "./keyboard.ts";
+import type { LayoutId } from "./layout.ts";
+import { GladeScene } from "./scene.ts";
+import {
+  beginComposition,
+  type CachedTextLayout,
+  cancelComposition,
+  caretPrimitiveWithLayout,
+  commitComposition,
+  compositionUnderlinesWithLayout,
   computeCaretRectWithLayout,
   createCachedTextLayout,
-  cutSelectedText,
-  getSelectedText,
-  hitTestWithLayout,
-  selectLineAtHit,
-  selectWordAtHit,
-  setFocused,
-  setPreferredCaretX,
-  valueWithComposition,
-  beginComposition,
-  cancelComposition,
-  commitComposition,
   createTextInputState,
+  cutSelectedText,
   deleteBackward,
   deleteForward,
+  getSelectedText,
+  hitTestWithLayout,
   insertText,
   moveLeft,
   moveRight,
@@ -46,27 +45,28 @@ import {
   moveToStart,
   moveWordLeft,
   moveWordRight,
+  type PointerSelectionSession,
   redo,
   selectAll,
+  selectionPrimitivesWithLayout,
+  type SelectionRange,
+  selectLineAtHit,
+  selectWordAtHit,
+  setFocused,
+  setPreferredCaretX,
   setSelection,
   startPointerSelection,
-  undo,
-  updateComposition,
-  updatePointerSelection,
-  selectionPrimitivesWithLayout,
-  compositionUnderlinesWithLayout,
-  caretPrimitiveWithLayout,
-  type CachedTextLayout,
-  type PointerSelectionSession,
-  type SelectionRange,
   type TextHitTestResult,
   type TextInputState,
   type TextInputStateInit,
+  undo,
+  updateComposition,
+  updatePointerSelection,
+  valueWithComposition,
 } from "./text.ts";
-import type { FontStyle } from "@glade/shaper";
-import { GladeScene } from "./scene.ts";
 import { DEFAULT_THEME_FONTS } from "./theme.ts";
-import { toColorObject, type Color, type ColorObject } from "@glade/utils";
+import type { Bounds } from "./types.ts";
+import type { GladeWindow } from "./window.ts";
 
 export const TEXT_INPUT_CONTEXT = "glade:text-input";
 

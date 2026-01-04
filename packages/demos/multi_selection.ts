@@ -1,6 +1,7 @@
 import { div, text } from "@glade/glade";
-import type { Demo, DemoItem } from "./demo";
 import { colors } from "@glade/utils";
+
+import type { Demo, DemoItem } from "./demo";
 
 export const MULTI_SELECTION_DEMO: Demo = {
   name: "Multi Selection",

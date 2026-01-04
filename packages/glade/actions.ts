@@ -6,10 +6,11 @@
  */
 
 import type { KeyEvent } from "@glade/core";
+
 import type { GladeContext } from "./context.ts";
-import type { GladeWindow } from "./window.ts";
-import { type Keystroke, parseKeystroke, matchesKeystroke } from "./keyboard.ts";
 import type { FocusContext } from "./focus.ts";
+import { type Keystroke, matchesKeystroke, parseKeystroke } from "./keyboard.ts";
+import type { GladeWindow } from "./window.ts";
 
 /**
  * Action handler function.
