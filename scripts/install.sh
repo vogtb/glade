@@ -1,6 +1,10 @@
 #!/bin/bash
 
-set -x
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+LIBS_DIR="$ROOT_DIR/libs"
 
 echo "Installing dependencies for JS/TS..."
 bun install
@@ -23,3 +27,22 @@ fi
 echo "Adding targets for rust..."
 rustup target add wasm32-unknown-unknown
 echo "Done adding targets for rust"
+
+echo "Installing libs..."
+GLFW_DYLIB="$LIBS_DIR/libglfw.dylib"
+if [ -f "$GLFW_DYLIB" ]; then
+    echo "libglfw.dylib already exists, skipping download"
+else
+    echo "Downloading GLFW 3.4 for macOS..."
+    GLFW_URL="https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.MACOS.zip"
+    TEMP_DIR=$(mktemp -d)
+
+    curl -L "$GLFW_URL" -o "$TEMP_DIR/glfw.zip"
+    unzip -q "$TEMP_DIR/glfw.zip" -d "$TEMP_DIR"
+
+    cp "$TEMP_DIR/glfw-3.4.bin.MACOS/lib-universal/libglfw.3.dylib" "$GLFW_DYLIB"
+
+    rm -rf "$TEMP_DIR"
+    echo "Downloaded libglfw.dylib to $GLFW_DYLIB"
+fi
+echo "Done installing libs"

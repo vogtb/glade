@@ -15,21 +15,20 @@
     "**/build",
     "**/.cache",
     "**/tmp",
-    "vendor/glfw",
-    "vendor/dawn"
+    "vendor/dawn",
   ],
   "lsp": {
     "vscode-css-language-server": {
       "settings": {
         "css": {
-          "validate": false
-        }
-      }
-    }
+          "validate": false,
+        },
+      },
+    },
   },
   "languages": {
     "Markdown": {
-      "soft_wrap": "preferred_line_length"
-    }
-  }
+      "soft_wrap": "preferred_line_length",
+    },
+  },
 }
