@@ -8,6 +8,7 @@
  * - Element tree navigation
  */
 
+// eslint-disable-next-line simple-import-sort/imports
 import { log } from "@glade/logging";
 import type { ColorObject } from "@glade/utils";
 
@@ -17,7 +18,8 @@ import type { GladeScene } from "./scene.ts";
 import type { Styles } from "./styles.ts";
 import type { TextSystem } from "./text.ts";
 import type { Theme } from "./theme.ts";
-import type { Bounds, Point } from "./types.ts";
+import type { Point } from "./types.ts";
+import type { Bounds } from "./bounds.ts";
 
 /**
  * Debug info attached to elements during render.

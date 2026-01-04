@@ -17,7 +17,6 @@
 export type { Theme, ThemeFonts } from "./theme";
 export { createDefaultTheme, createThemeFonts, resolveTheme, ThemeManager } from "./theme";
 export type {
-  Bounds,
   ContentMask,
   EntityId,
   FocusId,
@@ -31,7 +30,6 @@ export type {
   WindowId,
 } from "./types";
 export {
-  boundsContains,
   boundsIntersect,
   boundsIsEmpty,
   clampScrollOffset,
@@ -166,6 +164,8 @@ export {
 } from "./input";
 
 // Scene and GPU primitives
+export type { Bounds } from "./bounds";
+export { boundsContains, BoundsTree } from "./bounds";
 export type { UnderlineStyle } from "./element";
 export type {
   DrawOrder,
@@ -180,9 +180,6 @@ export type {
   UnderlinePrimitive,
 } from "./scene";
 export { GladeScene } from "./scene";
-
-// Spatial indexing
-export { BoundsTree } from "./bounds";
 
 // Text system
 export type {

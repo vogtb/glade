@@ -29,6 +29,7 @@ import {
   Keymap,
 } from "./actions.ts";
 import { AnchoredElement } from "./anchored.ts";
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext, GladeViewContext } from "./context.ts";
 import type { DeferredDrawEntry, DeferredLayoutEntry } from "./deferred.ts";
 import type {
@@ -111,7 +112,6 @@ import { TextPipeline, TextSystem } from "./text.ts";
 import type { Theme } from "./theme.ts";
 import { type TooltipBuilder, type TooltipConfig, TooltipManager } from "./tooltip.ts";
 import type {
-  Bounds,
   ContentMask,
   EntityId,
   FocusId,

@@ -6,6 +6,9 @@
  * is bad. Maybe split these things out and put the types where they live.
  */
 
+import type { Bounds } from "./bounds";
+export type { Bounds } from "./bounds";
+
 // Branded types for type-safe IDs
 declare const __entityIdBrand: unique symbol;
 export type EntityId = number & { [__entityIdBrand]: true };
@@ -33,29 +36,6 @@ export interface Point {
 export interface Size {
   width: number;
   height: number;
-}
-
-/**
- * Axis-aligned bounding box.
- */
-export interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * Check if a point is inside bounds.
- */
-// TODO: Centralize bounds containment checks to avoid duplicate logic.
-export function boundsContains(bounds: Bounds, point: Point): boolean {
-  return (
-    point.x >= bounds.x &&
-    point.x < bounds.x + bounds.width &&
-    point.y >= bounds.y &&
-    point.y < bounds.y + bounds.height
-  );
 }
 
 /**

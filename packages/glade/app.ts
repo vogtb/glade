@@ -8,6 +8,7 @@
 import type { ColorScheme, ColorSchemeProvider } from "@glade/core";
 import type { FontFamily } from "@glade/fonts";
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext, GladeEffect, GladeEntityContext, GladeViewContext } from "./context.ts";
 import type { GladeView } from "./element.ts";
 import {
@@ -21,7 +22,7 @@ import {
   SubscriberHandle,
 } from "./entity.ts";
 import { createThemeFonts, type Theme, ThemeManager } from "./theme.ts";
-import type { Bounds, EntityId, FocusId, GladeTask, ScrollOffset, WindowId } from "./types.ts";
+import type { EntityId, FocusId, GladeTask, ScrollOffset, WindowId } from "./types.ts";
 import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts";
 
 /**

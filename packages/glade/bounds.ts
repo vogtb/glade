@@ -10,7 +10,29 @@
  * - Overlapping bounds get increasing draw orders to ensure correct stacking
  */
 
-import type { Bounds } from "./types.ts";
+import type { Point } from "./types";
+
+/**
+ * Axis-aligned bounding box.
+ */
+export interface Bounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Check if a point is inside bounds.
+ */
+export function boundsContains(bounds: Bounds, point: Point): boolean {
+  return (
+    point.x >= bounds.x &&
+    point.x < bounds.x + bounds.width &&
+    point.y >= bounds.y &&
+    point.y < bounds.y + bounds.height
+  );
+}
 
 /**
  * Draw order value for z-sorting primitives.

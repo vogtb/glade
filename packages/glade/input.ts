@@ -1,6 +1,7 @@
 import type { FontStyle } from "@glade/shaper";
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
 import type {
   ClickHandler,
@@ -64,7 +65,6 @@ import {
   updatePointerSelection,
   valueWithComposition,
 } from "./text.ts";
-import type { Bounds } from "./types.ts";
 import type { GladeWindow } from "./window.ts";
 
 export const TEXT_INPUT_CONTEXT = "glade:text-input";
