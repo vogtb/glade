@@ -23,7 +23,8 @@ import type { Theme } from "./theme.ts";
 import type { GladeWindow } from "./window.ts";
 
 /**
- * Effect types that are queued and processed after the current update completes.
+ * Effect types that are queued and processed after the current update
+ * completes.
  */
 export type GladeEffect =
   | { type: "notify"; entityId: EntityId }

@@ -202,18 +202,21 @@ export interface HitTestNode {
   scrollHandle: ScrollHandle | null;
   keyContext: string | null;
   children: HitTestNode[];
-  /** Allow children to be hit even if they extend outside this node's bounds. */
+  /**
+   * Allow children to be hit even if they extend outside this node's bounds.
+   * */
   allowChildOutsideBounds?: boolean;
-  /** If true, this node blocks pointer events from reaching nodes behind it. */
+  /**
+   * If true, this node blocks pointer events from reaching nodes behind it.
+   * */
   blocksPointerEvents?: boolean;
 }
 
 /**
  * Hit test a point against the tree, returning the path from root to leaf.
- *
- * Roots are expected to be in back-to-front order (main UI first, overlays last).
- * We iterate in reverse (front-to-back) to find the topmost blocking root first.
- * If a blocking root contains the point, we only return its path.
+ * Roots are expected to be in back-to-front order (main UI first, overlays
+ * last). We iterate in reverse (front-to-back) to find the topmost blocking
+ * root first. If a blocking root contains the point, we only return its path.
  */
 export function hitTest(roots: HitTestNode[], point: Point): HitTestNode[] {
   function walk(node: HitTestNode): HitTestNode[] {
@@ -224,7 +227,7 @@ export function hitTest(roots: HitTestNode[], point: Point): HitTestNode[] {
       point.y >= bounds.y &&
       point.y < bounds.y + bounds.height;
 
-    // Check children in reverse order (top-most first)
+    // check children in reverse order (top first)
     for (let i = node.children.length - 1; i >= 0; i--) {
       const child = node.children[i];
       if (!child) {
@@ -232,7 +235,8 @@ export function hitTest(roots: HitTestNode[], point: Point): HitTestNode[] {
       }
       const childPath = walk(child);
       if (childPath.length > 0) {
-        // If the parent allows out-of-bounds children, keep the parent in the path
+        // if the parent allows out-of-bounds children, keep the parent in
+        // the path
         if (inside || node.allowChildOutsideBounds === true) {
           return [node, ...childPath];
         }
@@ -383,8 +387,9 @@ export function dispatchCompositionEvent(
 }
 
 /**
- * Dispatch a scroll event through the hit test path.
- * First tries custom scroll handlers, then applies to scroll containers.
+ * Dispatch a scroll event through the hit test path. First tries custom
+ * scroll handlers, then applies to scroll containers. (One _can_ override
+ * another.)
  */
 export function dispatchScrollEvent(
   event: GladeScrollEvent,
@@ -414,9 +419,9 @@ export function dispatchScrollEvent(
 }
 
 /**
- * Build the key context chain from a hit test path.
- * Collects all keyContext values from nodes, ordered from root to leaf.
- * This determines which context-specific key bindings are active.
+ * Build the key context chain from a hit test path. Collects all keyContext
+ * values from nodes, ordered from root to leaf. This determines which
+ * context-specific key bindings are active.
  */
 export function buildKeyContextChain(path: HitTestNode[]): string[] {
   const contexts: string[] = [];
@@ -429,8 +434,8 @@ export function buildKeyContextChain(path: HitTestNode[]): string[] {
 }
 
 /**
- * Get the focused path from the hit test tree.
- * Returns the path to the element that owns the given focus ID.
+ * Get the focused path from the hit test tree. Returns the path to the
+ * element that owns the given focus ID.
  */
 export function getFocusedPath(roots: HitTestNode[], focusId: FocusId | null): HitTestNode[] {
   const path: HitTestNode[] = [];

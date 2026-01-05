@@ -1,8 +1,7 @@
 /**
- * GladeDiv - the primary container element.
- *
- * Provides a Tailwind-like chainable API for building UI.
- * Implements three-phase lifecycle: requestLayout → prepaint → paint
+ * GladeDiv - the primary container element. Provides an HTML-like,
+ * Tailwind-like chainable API for building UI. Implements three-phase
+ * lifecycle: requestLayout -> prepaint -> paint
  */
 
 import { type Color, toColorObject } from "@glade/utils";
@@ -57,8 +56,8 @@ import {
 } from "./transform.ts";
 
 /**
- * State passed from requestLayout to prepaint for GladeDiv.
- * Contains child layout IDs and element IDs for recursive processing.
+ * State passed from requestLayout to prepaint for GladeDiv. Contains child
+ * layout IDs and element IDs for recursive processing.
  */
 interface DivRequestLayoutState {
   layoutId: LayoutId;
@@ -68,8 +67,8 @@ interface DivRequestLayoutState {
 }
 
 /**
- * State passed from prepaint to paint for GladeDiv.
- * Contains child element IDs and prepaint states for recursive processing.
+ * State passed from prepaint to paint for GladeDiv. Contains child element
+ * IDs and prepaint states for recursive processing.
  */
 interface DivPrepaintState {
   childLayoutIds: LayoutId[];
@@ -120,8 +119,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   private tooltipConfigValue: TooltipConfig = DEFAULT_TOOLTIP_CONFIG;
   private tabStopConfigValue: TabStopConfig | null = null;
   private scrollbarConfigValue: Partial<ScrollbarConfig> | null = null;
-
-  // ============ Layout Styles (Tailwind-like API) ============
 
   // Display
   flex(): this {
@@ -273,11 +270,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ CSS Grid Layout ============
-
   /**
-   * Enable grid display mode.
-   * Equivalent to Tailwind's `grid` class.
+   * Enable grid display mode. Equivalent to Tailwind's `grid` class.
    */
   grid(): this {
     this.styles.display = "grid";
@@ -285,9 +279,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Set number of grid columns with equal 1fr sizing.
-   * Equivalent to Tailwind's `grid-cols-N` classes.
-   * @param count Number of columns (e.g., 3 for grid-cols-3)
+   * Set number of grid columns with equal 1fr sizing. Equivalent to
+   * Tailwind's `grid-cols-N` classes.
    */
   gridCols(count: number): this {
     this.styles.gridTemplateColumns = count;
@@ -295,8 +288,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Set explicit grid column template with custom track sizes.
-   * For advanced layouts needing specific column widths.
+   * Set explicit grid column template with custom track sizes. For advanced
+   * layouts needing specific column widths.
    * @param tracks Array of track sizes
    * @example gridColsTemplate([200, "1fr", "2fr"]) // 200px, 1fr, 2fr
    * @example gridColsTemplate(["auto", { min: 100, max: "1fr" }])
@@ -307,8 +300,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Set number of grid rows with equal 1fr sizing.
-   * Equivalent to Tailwind's `grid-rows-N` classes.
+   * Set number of grid rows with equal 1fr sizing. Equivalent to
+   * Tailwind's `grid-rows-N` classes.
    */
   gridRows(count: number): this {
     this.styles.gridTemplateRows = count;
@@ -324,8 +317,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Set auto-generated column sizing for implicit columns.
-   * Equivalent to Tailwind's `auto-cols-*` classes.
+   * Set auto-generated column sizing for implicit columns. Equivalent to
+   * Tailwind's `auto-cols-*` classes.
    */
   gridAutoCols(size: TrackSize): this {
     this.styles.gridAutoColumns = size;
@@ -333,8 +326,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Set auto-generated row sizing for implicit rows.
-   * Equivalent to Tailwind's `auto-rows-*` classes.
+   * Set auto-generated row sizing for implicit rows. Like Tailwind's
+   * `auto-rows-*` classes.
    */
   gridAutoRows(size: TrackSize): this {
     this.styles.gridAutoRows = size;
@@ -342,8 +335,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Set grid auto-flow direction.
-   * Equivalent to Tailwind's `grid-flow-*` classes.
+   * Set grid auto-flow direction. Maps to Tailwind's `grid-flow-*` classes.
    */
   gridFlow(flow: GridAutoFlow): this {
     this.styles.gridAutoFlow = flow;
@@ -369,8 +361,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   gridFlowColDense(): this {
     return this.gridFlow("column-dense");
   }
-
-  // ============ CSS Grid Item Placement ============
 
   /**
    * Set column start position.
@@ -437,8 +427,7 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Span all rows (row-span-full).
-   * Sets row from line 1 to line -1 (last line).
+   * Span all rows (row-span-full). Sets row from line 1 to line -1 (last line).
    */
   rowSpanFull(): this {
     this.styles.gridRowStart = 1;
@@ -447,8 +436,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Place item at specific grid cell (1-indexed).
-   * Convenience method combining colStart and rowStart.
+   * Place item at specific grid cell (1-indexed). Method for combining
+   * colStart and rowStart.
    */
   gridCell(col: number, row: number): this {
     this.styles.gridColumnStart = col;
@@ -457,8 +446,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Place item in a grid area defined by start/end positions.
-   * Convenience method for setting all four grid placement properties.
+   * Place item in a grid area defined by start/end positions. Convenience
+   * method for setting all four grid placement properties.
    */
   gridArea(colStart: number, rowStart: number, colEnd: number, rowEnd: number): this {
     this.styles.gridColumnStart = colStart;
@@ -644,8 +633,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ Visual Styles ============
-
   // Background
   bg(color: Color): this {
     this.styles.backgroundColor = toColorObject(color);
@@ -733,8 +720,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ Text Styles ============
-
   textColor(color: Color): this {
     this.styles.color = toColorObject(color);
     return this;
@@ -777,8 +762,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ Interactivity ============
-
   cursor(v: CursorStyle): this {
     this.styles.cursor = v;
     return this;
@@ -786,8 +769,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   cursorPointer(): this {
     return this.cursor("pointer");
   }
-
-  // ============ Transforms ============
 
   transformMatrix(matrix: TransformationMatrix): this {
     this.styles.transform = matrix;
@@ -815,8 +796,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ State Styles ============
-
   hover(f: (s: StyleBuilder) => StyleBuilder): this {
     this.hoverStyles = f(new StyleBuilder()).build();
     return this;
@@ -831,8 +810,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     this.focusedStyles = f(new StyleBuilder()).build();
     return this;
   }
-
-  // ============ Event Handlers ============
 
   onMouseDown(handler: MouseHandler): this {
     this.handlers.mouseDown = handler;
@@ -884,11 +861,9 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ Drag and Drop ============
-
   /**
-   * Make this element draggable.
-   * Handler is called on mouse down and should return a DragPayload if drag should start.
+   * Make this element draggable. Handler is called on mouse down and
+   * should return a DragPayload if drag should start.
    */
   onDragStart<T>(handler: DragStartHandler<T>): this {
     this.handlers.dragStart = handler as DragStartHandler;
@@ -896,8 +871,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Make this element a drop target.
-   * Handler is called when a dragged item is dropped on this element.
+   * Make this element a drop target. Handler is called when a dragged item
+   * is dropped on this element.
    */
   onDrop<T>(handler: DropHandler<T>): this {
     this.handlers.drop = handler as DropHandler;
@@ -906,8 +881,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Set a predicate to determine if this element can accept a drop.
-   * Only called if onDrop is set.
+   * Set a predicate to determine if this element can accept a drop. Only
+   * called if onDrop is set.
    */
   canDrop<T>(predicate: CanDropPredicate<T>): this {
     this.handlers.canDrop = predicate as CanDropPredicate;
@@ -921,8 +896,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     this.dragOverStyles = f(new StyleBuilder()).build();
     return this;
   }
-
-  // ============ Tooltips ============
 
   /**
    * Add a tooltip to this element.
@@ -943,8 +916,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     }
     return this;
   }
-
-  // ============ Focus ============
 
   trackFocus(handle: FocusHandle): this {
     this.focusHandleRef = handle;
@@ -1035,11 +1006,9 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ Hitbox ============
-
   /**
-   * Set this element to block all mouse events for elements behind it.
-   * Use for modal overlays that should prevent interaction with underlying content.
+   * Set this element to block all mouse events for elements behind it. Use for
+   * modal overlays that should prevent interaction with underlying content.
    */
   occludeMouse(): this {
     this.hitboxBehaviorValue = HitboxBehavior.BlockMouse;
@@ -1048,8 +1017,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
   /**
   /**
-   * Set this element to block hover but allow scroll events.
-   * Use for overlays that should allow scrolling underlying content.
+   * Set this element to block hover but allow scroll events. Use for
+   * overlays that should allow scrolling underlying content.
    */
   blockMouseExceptScroll(): this {
     this.hitboxBehaviorValue = HitboxBehavior.BlockMouseExceptScroll;
@@ -1057,8 +1026,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Assign this element to a hitbox group.
-   * Other elements can use groupHover() to respond to hover on this group.
+   * Assign this element to a hitbox group. Other elements can use groupHover()
+   * to respond to hover on this group.
    */
   group(name: string): this {
     this.groupNameValue = name;
@@ -1066,8 +1035,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Apply styles when any element in the named group is hovered.
-   * Use for coordinated hover effects across multiple elements.
+   * Apply styles when any element in the named group is hovered. Use for
+   * coordinated hover effects across multiple elements.
    */
   groupHover(groupName: string, f: (s: StyleBuilder) => StyleBuilder): this {
     this.groupHoverStylesMap.set(groupName, f(new StyleBuilder()).build());
@@ -1083,11 +1052,9 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     return this;
   }
 
-  // ============ Three-Phase Lifecycle ============
-
   /**
-   * Phase 1: Request layout for this element and all children.
-   * Creates Taffy layout nodes bottom-up.
+   * Phase 1: Request layout for this element and all children. Creates Taffy
+   * layout nodes bottom-up.
    */
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DivRequestLayoutState> {
     const childLayoutIds: LayoutId[] = [];
@@ -1122,8 +1089,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Phase 2: Prepaint - runs after layout computation.
-   * Creates hitbox and processes children.
+   * Phase 2: Prepaint - runs after layout computation. Creates hitbox and
+   * processes children.
    */
   prepaint(
     cx: PrepaintContext,
@@ -1156,8 +1123,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
       cx.registerTabStop?.(this.focusHandleRef.id, bounds, this.tabStopConfigValue);
     }
 
-    // Get our original layout bounds and compute the delta from the passed bounds.
-    // This delta accounts for scroll offsets from ancestor scroll containers.
+    // Get our original layout bounds and compute the delta from the passed
+    // bounds. delta accounts for scroll offsets from ancestor scroll containers.
     const originalBounds = cx.getBounds(layoutId);
     const deltaX = bounds.x - originalBounds.x;
     const deltaY = bounds.y - originalBounds.y;
@@ -1175,7 +1142,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
       let childBound = layoutChildBounds[i]!;
       const childRequestState = childRequestStates[i];
 
-      // Apply the delta from ancestor scroll to propagate scroll offset to children
+      // Apply the delta from ancestor scroll to propagate scroll
+      // offset to children
       childBound = {
         x: childBound.x + deltaX,
         y: childBound.y + deltaY,
@@ -1205,7 +1173,8 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
       childPrepaintStates.push(prepaintState);
     }
 
-    // If this is a scroll container, compute content size from children (using original layout bounds)
+    // If this is a scroll container, compute content size from children
+    // (using original layout bounds)
     if (this.scrollHandleRef && layoutChildBounds.length > 0) {
       let contentWidth = 0;
       let contentHeight = 0;

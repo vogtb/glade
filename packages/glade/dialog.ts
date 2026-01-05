@@ -1,28 +1,13 @@
 /**
- * Dialog system for Glade.
+ * Dialog system for Glade. Provides modal dialog windows with backdrop
+ * overlay, centered positioning, and structured content (header, body, footer).
  *
- * Provides modal dialog windows with backdrop overlay, centered positioning,
- * and structured content (header, body, footer).
- *
- * Key behavior:
  * - DialogManager tracks active dialog state
  * - Dialog renders a semi-transparent backdrop
  * - Content is centered in the window
  * - Click-outside (backdrop) dismisses by default
  * - Escape key dismisses by default
  * - Only one dialog can be active at a time
- *
- * Usage:
- *   dialog()
- *     .open(isOpen)
- *     .onOpenChange((open) => { ... })
- *     .trigger(button)
- *     .content(
- *       dialogContent()
- *         .header(dialogHeader().title("My Dialog"))
- *         .body(div().child(...))
- *         .footer(dialogFooter().cancel("Cancel").confirm("OK"))
- *     )
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";

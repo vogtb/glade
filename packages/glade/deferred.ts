@@ -5,7 +5,7 @@
  * This ensures overlay content (tooltips, menus, modals) gets window-sized
  * available space rather than being constrained by their parent's layout.
  *
- * Key behavior:
+ * Notes:
  * - Layout phase: returns a zero-sized placeholder, stores child for later
  * - Prepaint phase: registers child for deferred layout processing
  * - Deferred layout: Window runs separate layout pass with window dimensions
@@ -17,7 +17,6 @@
  * - Tooltips might use priority 0, menus priority 1, modals priority 2
  */
 
-// HitTestNode import kept for type definitions used externally
 import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import {
@@ -32,8 +31,8 @@ import type { LayoutId } from "./layout.ts";
 import type { Point } from "./point.ts";
 
 /**
- * State passed from requestLayout to prepaint for DeferredElement.
- * Child is stored for deferred layout processing - not included in main tree.
+ * State passed from requestLayout to prepaint for DeferredElement. Child is
+ * stored for deferred layout processing - not included in main tree.
  */
 export interface DeferredRequestLayoutState {
   layoutId: LayoutId;
@@ -102,8 +101,9 @@ export class DeferredElement extends GladeElement<
   }
 
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<DeferredRequestLayoutState> {
-    // Return a zero-sized placeholder. The child is NOT included in the main layout tree.
-    // Instead, it will be laid out separately with window dimensions during processDeferredLayouts.
+    // Return a zero-sized placeholder. The child is NOT included in the main
+    // layout tree. Instead, it will be laid out separately with window
+    // dimensions during processDeferredLayouts.
     const layoutId = cx.requestLayout({ width: 0, height: 0 }, []);
     const childElementId = this.child ? cx.allocateChildId() : cx.elementId;
 
@@ -128,16 +128,17 @@ export class DeferredElement extends GladeElement<
       return { hitTestNode: null };
     }
 
-    // Register for deferred layout processing.
-    // The Window will run a separate layout pass with window dimensions,
-    // then prepaint, then add to the deferred draw queue.
+    // Register for deferred layout processing. The Window will run a
+    // separate layout pass with window dimensions, then prepaint, then add
+    // to the deferred draw queue.
     cx.registerDeferredLayout?.({
       child,
       childElementId,
       priority: this.priorityValue,
     });
 
-    // Hit test node will be set by processDeferredLayouts after the child's prepaint runs
+    // Hit test node will be set by processDeferredLayouts after the child's
+    // prepaint runs
     return { hitTestNode: null };
   }
 
