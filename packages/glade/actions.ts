@@ -6,6 +6,7 @@
  */
 
 import type { KeyEvent } from "@glade/core";
+import { log } from "@glade/logging";
 
 import type { GladeContext } from "./context.ts";
 import type { FocusContext } from "./focus.ts";
@@ -105,7 +106,7 @@ export class ActionRegistry {
   dispatch(name: string, cx: GladeContext, window: GladeWindow): boolean {
     const action = this.actions.get(name);
     if (!action) {
-      console.warn(`Action not found: ${name}`);
+      log.warn(`Action not found: ${name}`);
       return false;
     }
     action.handler(cx, window);
@@ -125,7 +126,7 @@ export class Keymap {
   bind(keystrokeStr: string, action: string, context: FocusContext | null = null): boolean {
     const keystroke = parseKeystroke(keystrokeStr);
     if (!keystroke) {
-      console.warn(`Invalid keystroke: ${keystrokeStr}`);
+      log.warn(`Invalid keystroke: ${keystrokeStr}`);
       return false;
     }
 

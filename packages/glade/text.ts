@@ -39,6 +39,7 @@
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
 import type { FontFamily } from "@glade/fonts";
+import { log } from "@glade/logging";
 import {
   createTextShaper,
   type FontId,
@@ -356,7 +357,7 @@ export class GlyphAtlas {
     if (!atlasPos) {
       // Atlas is full - don't clear mid-frame as it invalidates existing glyph instances.
       // Instead, skip this glyph. The atlas should be cleared between frames if needed.
-      console.warn("Glyph atlas full, skipping glyph:", glyphChar);
+      log.warn("Glyph atlas full, skipping glyph:", glyphChar);
       return null;
     }
 

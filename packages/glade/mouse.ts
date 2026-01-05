@@ -96,7 +96,6 @@ export class MouseState {
   /**
    * Check if a point is inside bounds.
    */
-  // TODO: Reuse boundsContains to avoid duplicating bounds containment logic.
   isInsideBounds(bounds: Bounds): boolean {
     return (
       this.position.x >= bounds.x &&

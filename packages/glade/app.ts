@@ -7,6 +7,7 @@
 
 import type { ColorScheme, ColorSchemeProvider } from "@glade/core";
 import type { FontFamily } from "@glade/fonts";
+import { log } from "@glade/logging";
 
 import type { Bounds } from "./bounds.ts";
 import type { GladeContext, GladeEffect, GladeEntityContext, GladeViewContext } from "./context.ts";
@@ -89,7 +90,7 @@ export class GladeApp {
     this.device = await this.platform.requestDevice();
 
     this.device.lost.then((info) => {
-      console.error("WebGPU device lost:", info.message);
+      log.error("WebGPU device lost:", info.message);
     });
 
     if (!this.colorSchemeCleanup) {
@@ -667,8 +668,7 @@ class GladeEntityContextImpl<T> extends GladeAppContext implements GladeEntityCo
   }
 
   onDrop(_callback: () => void): void {
-    // Would need access to entityMeta - simplified for now
-    console.warn("onDrop not yet implemented");
+    log.warn("onDrop not yet implemented");
   }
 }
 
