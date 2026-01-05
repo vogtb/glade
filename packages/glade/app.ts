@@ -203,19 +203,8 @@ export class GladeApp {
       throw new Error(`Entity ${handle.id} not found`);
     }
 
-    // Lease pattern: temporarily remove to prevent reentrant access
-    this.entities.delete(handle.id);
-
-    try {
-      const cx = this.createEntityContext<T>(handle.id);
-      const result = f(state as T, cx);
-      return result;
-    } finally {
-      // Restore (entity may have been dropped during update)
-      if (!this.entities.has(handle.id)) {
-        this.entities.set(handle.id, state);
-      }
-    }
+    const cx = this.createEntityContext<T>(handle.id);
+    return f(state as T, cx);
   }
 
   dropEntity(handle: GladeHandle<unknown>): void {
