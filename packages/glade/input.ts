@@ -1,4 +1,4 @@
-import type { FontStyle } from "@glade/shaper";
+import type { FontStyleOptions } from "@glade/shaper";
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
 import type { Bounds } from "./bounds.ts";
@@ -195,7 +195,7 @@ export class TextInputController {
     lineHeight: number,
     fontFamily: string,
     maxWidth?: number,
-    style?: FontStyle
+    style?: FontStyleOptions
   ): void {
     this._fontSize = fontSize;
     this._lineHeight = lineHeight;

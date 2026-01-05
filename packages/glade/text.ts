@@ -38,12 +38,12 @@
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
-import type { FontFamily } from "@glade/fonts";
+import type { FontFamily, FontStyle } from "@glade/fonts";
 import { log } from "@glade/logging";
 import {
   createTextShaper,
   type FontId,
-  type FontStyle,
+  type FontStyleOptions,
   type LayoutResult,
   type ShapedGlyph,
   type ShapedLineResult,
@@ -120,7 +120,7 @@ export interface GlyphCacheKey {
   /** Font weight for variable fonts (e.g., 400 for regular, 700 for bold) */
   weight?: number;
   /** Font style (normal, italic, oblique) */
-  style?: "normal" | "italic" | "oblique";
+  style?: FontStyle;
 }
 
 /**
@@ -146,7 +146,7 @@ export interface TextRun {
   fontSize: number;
   lineHeight: number;
   color: ColorObject;
-  fontStyle?: FontStyle;
+  fontStyle?: FontStyleOptions;
 }
 
 /**
@@ -681,7 +681,7 @@ export class TextSystem {
     fontSize: number,
     lineHeight: number,
     family: string,
-    style?: FontStyle
+    style?: FontStyleOptions
   ): ShapedGlyph | null {
     const shaped = this.shaper.shapeLine(char, fontSize, lineHeight, { ...style, family });
     const fallbackGlyph = shaped.glyphs[0];
@@ -698,7 +698,7 @@ export class TextSystem {
     text: string,
     fontSize: number,
     lineHeight: number,
-    style?: FontStyle
+    style?: FontStyleOptions
   ): ShapedLineResult {
     return this.shaper.shapeLine(text, fontSize, lineHeight, style ?? {});
   }
@@ -711,7 +711,7 @@ export class TextSystem {
     fontSize: number,
     lineHeight: number,
     maxWidth: number,
-    style?: FontStyle
+    style?: FontStyleOptions
   ): LayoutResult {
     return this.shaper.layoutText(text, fontSize, lineHeight, maxWidth, style ?? {});
   }
@@ -724,7 +724,7 @@ export class TextSystem {
     fontSize: number,
     lineHeight: number,
     maxWidth?: number,
-    style?: FontStyle
+    style?: FontStyleOptions
   ): { width: number; height: number } {
     const safeFontSize = fontSize > 0 ? fontSize : 1;
     const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
@@ -756,11 +756,11 @@ export class TextSystem {
     lineHeight: number,
     fontFamily: string,
     maxWidth?: number,
-    style?: FontStyle
+    style?: FontStyleOptions
   ): TextHitTestResult {
     const safeFontSize = fontSize > 0 ? fontSize : 1;
     const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
-    const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+    const effectiveStyle: FontStyleOptions = { ...style, family: fontFamily };
     const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
     const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
     let lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
@@ -840,14 +840,14 @@ export class TextSystem {
     lineHeight: number,
     color: Color,
     fontFamily: string,
-    style?: FontStyle,
+    style?: FontStyleOptions,
     maxWidth?: number
   ): GlyphInstance[] {
     const resolvedColor = toColorObject(color);
     // Merge fontFamily into style to ensure shaper uses the correct font
     const safeFontSize = fontSize > 0 ? fontSize : 1;
     const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
-    const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+    const effectiveStyle: FontStyleOptions = { ...style, family: fontFamily };
     const instances: GlyphInstance[] = [];
     type GlyphLine = { glyphs: ShapedGlyph[]; y: number; lineHeight: number };
     const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
@@ -1528,7 +1528,7 @@ export type CachedTextLayout = {
   /** Max width for wrapping (undefined for single-line) */
   maxWidth: number | undefined;
   /** Font style options */
-  style: FontStyle | undefined;
+  style: FontStyleOptions | undefined;
   /** Computed line layout */
   lines: Array<{
     glyphs: ShapedGlyph[];
@@ -1550,7 +1550,7 @@ export function createCachedTextLayout(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): CachedTextLayout {
   const { lines, byteToUtf16Index } = layoutDecoratedLines(
     text,
@@ -1750,13 +1750,13 @@ function layoutDecoratedLines(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): {
   lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
   byteToUtf16Index: Map<number, number>;
 } {
   const safeFontSize = fontSize > 0 ? fontSize : 1;
-  const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+  const effectiveStyle: FontStyleOptions = { ...style, family: fontFamily };
   const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
   // The underlying shaper panics on non-positive or non-finite widths; clamp
   // to at least 1px when provided.
@@ -1926,7 +1926,7 @@ export function hitTestText(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): TextHitTestResult {
   const { lines, byteToUtf16Index } = layoutDecoratedLines(
     text,
@@ -2661,7 +2661,7 @@ export function computeRangeRects(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): TextSelectionRect[] {
   const { lines, byteToUtf16Index } = layoutDecoratedLines(
     text,
@@ -2710,7 +2710,7 @@ export function computeSelectionRects(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): TextSelectionRect[] {
   const text = valueWithComposition(state);
   if (state.selection.start === state.selection.end) {
@@ -2733,7 +2733,7 @@ export function computeCompositionRects(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): TextSelectionRect[] {
   const text = valueWithComposition(state);
   if (!state.composition || state.composition.text.length === 0) {
@@ -2760,7 +2760,7 @@ export function computeCaretRect(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): TextSelectionRect | null {
   const text = valueWithComposition(state);
   const caretIndex = state.selection.end;
@@ -2900,7 +2900,7 @@ export function caretPrimitive(
   fontFamily: string,
   opts?: {
     maxWidth?: number;
-    style?: FontStyle;
+    style?: FontStyleOptions;
     thickness?: number;
     time?: number;
     blinkInterval?: number;
@@ -2947,7 +2947,7 @@ export function selectionPrimitives(
   fontSize: number,
   lineHeight: number,
   fontFamily: string,
-  opts?: { maxWidth?: number; style?: FontStyle; cornerRadius?: number }
+  opts?: { maxWidth?: number; style?: FontStyleOptions; cornerRadius?: number }
 ): RectPrimitive[] {
   const rects = computeSelectionRects(
     state,
@@ -2984,7 +2984,12 @@ export function selectionPrimitivesWithLayout(
   fontSize: number,
   lineHeight: number,
   fontFamily: string,
-  opts?: { maxWidth?: number; style?: FontStyle; cornerRadius?: number; layout?: CachedTextLayout }
+  opts?: {
+    maxWidth?: number;
+    style?: FontStyleOptions;
+    cornerRadius?: number;
+    layout?: CachedTextLayout;
+  }
 ): RectPrimitive[] {
   let rects: TextSelectionRect[];
   if (opts?.layout) {
@@ -3028,7 +3033,7 @@ export function compositionUnderlinesWithLayout(
   fontFamily: string,
   opts?: {
     maxWidth?: number;
-    style?: FontStyle;
+    style?: FontStyleOptions;
     thickness?: number;
     wavelength?: number;
     amplitude?: number;
@@ -3084,7 +3089,7 @@ export function caretPrimitiveWithLayout(
   fontFamily: string,
   opts?: {
     maxWidth?: number;
-    style?: FontStyle;
+    style?: FontStyleOptions;
     thickness?: number;
     time?: number;
     blinkInterval?: number;
@@ -3136,7 +3141,7 @@ export function compositionUnderlines(
   fontFamily: string,
   opts?: {
     maxWidth?: number;
-    style?: FontStyle;
+    style?: FontStyleOptions;
     thickness?: number;
     wavelength?: number;
     amplitude?: number;

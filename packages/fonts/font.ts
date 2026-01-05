@@ -1,4 +1,9 @@
 /**
+ * Font style variants.
+ */
+export type FontStyle = "normal" | "italic" | "oblique";
+
+/**
  * A single font variant (e.g., upright or italic).
  */
 export class FontVariant {

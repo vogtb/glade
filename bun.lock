@@ -135,6 +135,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@glade/comptime": "workspace:*",
+        "@glade/fonts": "workspace:*",
         "@glade/logging": "workspace:*",
         "@glade/utils": "workspace:*",
       },

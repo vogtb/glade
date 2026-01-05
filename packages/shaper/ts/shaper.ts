@@ -9,6 +9,7 @@
  */
 
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
+import type { FontStyle } from "@glade/fonts";
 import { log } from "@glade/logging";
 import { base64ToBytes, formatBytes } from "@glade/utils";
 
@@ -110,29 +111,31 @@ export interface RasterizedGlyph {
   isColor: boolean;
 }
 
+export type FontStretch =
+  | "ultra-condensed"
+  | "extra-condensed"
+  | "condensed"
+  | "semi-condensed"
+  | "normal"
+  | "semi-expanded"
+  | "expanded"
+  | "extra-expanded"
+  | "ultra-expanded";
+
 /**
  * Font style options for text shaping.
  */
-export interface FontStyle {
+export interface FontStyleOptions {
   family?: string;
   weight?: number;
-  style?: "normal" | "italic" | "oblique";
-  stretch?:
-    | "ultra-condensed"
-    | "extra-condensed"
-    | "condensed"
-    | "semi-condensed"
-    | "normal"
-    | "semi-expanded"
-    | "expanded"
-    | "extra-expanded"
-    | "ultra-expanded";
+  style?: FontStyle;
+  stretch?: FontStretch;
 }
 
 /**
- * Convert FontStyle to the format expected by WASM.
+ * Convert FontStyleOptions to the format expected by WASM.
  */
-function styleToWasm(style: FontStyle): Record<string, unknown> {
+function styleToWasm(style: FontStyleOptions): Record<string, unknown> {
   return {
     family: style.family,
     weight: style.weight,
@@ -223,7 +226,7 @@ export class TextShaper {
     text: string,
     fontSize: number,
     lineHeight: number,
-    style: FontStyle = {}
+    style: FontStyleOptions = {}
   ): ShapedLineResult {
     const result = this.inner.shape_line(text, fontSize, lineHeight, styleToWasm(style)) as {
       glyphs: Array<{
@@ -261,7 +264,7 @@ export class TextShaper {
     fontSize: number,
     lineHeight: number,
     maxWidth: number,
-    style: FontStyle = {}
+    style: FontStyleOptions = {}
   ): LayoutResult {
     const result = this.inner.layout_text(
       text,
@@ -311,7 +314,7 @@ export class TextShaper {
     fontSize: number,
     lineHeight: number,
     maxWidth?: number,
-    style: FontStyle = {}
+    style: FontStyleOptions = {}
   ): MeasureResult {
     const result = this.inner.measure_text(
       text,

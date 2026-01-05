@@ -21,7 +21,7 @@ import {
   type RenderCallback,
   type TextInputEvent,
 } from "@glade/core";
-import type { FontFamily } from "@glade/fonts";
+import type { FontFamily, FontStyle } from "@glade/fonts";
 import { type Color, toColorObject } from "@glade/utils";
 
 import {
@@ -205,16 +205,12 @@ export interface GladeRenderTarget {
     callback: (x: number, y: number, deltaX: number, deltaY: number, mods: Modifiers) => void
   ): () => void;
   onResize?(callback: (width: number, height: number) => void): () => void;
-  onKey?(callback: (event: import("@glade/core").KeyEvent) => void): () => void;
-  onChar?(callback: (event: import("@glade/core").CharEvent) => void): () => void;
-  onCompositionStart?(
-    callback: (event: import("@glade/core").CompositionEvent) => void
-  ): () => void;
-  onCompositionUpdate?(
-    callback: (event: import("@glade/core").CompositionEvent) => void
-  ): () => void;
-  onCompositionEnd?(callback: (event: import("@glade/core").CompositionEvent) => void): () => void;
-  onTextInput?(callback: (event: import("@glade/core").TextInputEvent) => void): () => void;
+  onKey?(callback: (event: KeyEvent) => void): () => void;
+  onChar?(callback: (event: CharEvent) => void): () => void;
+  onCompositionStart?(callback: (event: CompositionEvent) => void): () => void;
+  onCompositionUpdate?(callback: (event: CompositionEvent) => void): () => void;
+  onCompositionEnd?(callback: (event: CompositionEvent) => void): () => void;
+  onTextInput?(callback: (event: TextInputEvent) => void): () => void;
 
   setCursor?(style: CursorStyle): void;
   setTitle?(title: string): void;
@@ -235,8 +231,11 @@ export class GladeWindow {
   private focusStack: FocusId[] = [];
   private mousePosition: Point = { x: 0, y: 0 };
   private mouseDown = false;
-  private lastHoverPath: HitTestNode[] = []; // Track previous hover path for enter/leave events
+  // Track previous hover path for enter/leave events
+  private lastHoverPath: HitTestNode[] = [];
+  // TODO: track and expose via ctx for styling
   private windowFocused = true;
+  // TODO: track and expose via ctx for styling
   private cursorInside = true;
   private closed = false;
   private eventCleanups: Array<() => void> = [];
@@ -302,7 +301,7 @@ export class GladeWindow {
       fontSize: number;
       fontFamily: string;
       fontWeight: number;
-      fontStyle: "normal" | "italic" | "oblique";
+      fontStyle: FontStyle;
       lineHeight: number;
       noWrap: boolean;
       maxWidth: number | null;
@@ -326,7 +325,8 @@ export class GladeWindow {
   ) {
     this.scene = new GladeScene();
     this.layoutEngine = new GladeLayoutEngine();
-    // Layout engine operates in logical coordinates; rendering stage handles device pixel scaling
+    // Layout engine operates in logical coordinates; rendering stage
+    // handles device pixel scaling
     this.layoutEngine.setScaleFactor(1);
     this.renderTarget.configure(device, format);
 
@@ -388,7 +388,8 @@ export class GladeWindow {
     const imagePipeline = new ImagePipeline(device, format, imageAtlas, 10000, sampleCount);
     this.renderer.setImagePipeline(imagePipeline);
 
-    // Initialize host texture pipeline at startup (not lazily) to ensure GPU validation completes
+    // Initialize host texture pipeline at startup (not lazily) to ensure
+    // GPU validation completes
     this.hostTexturePipeline = new HostTexturePipeline(device, format, 100, sampleCount);
     this.renderer.setHostTexturePipeline(this.hostTexturePipeline);
 
@@ -456,8 +457,8 @@ export class GladeWindow {
   }
 
   /**
-   * Register a font family for text rendering.
-   * This loads both upright and italic variants if available.
+   * Register a font family for text rendering. This loads both upright and
+   * italic variants if available.
    */
   registerFontFamily(family: FontFamily): void {
     this.textSystem.registerFontFamily(family);
@@ -472,8 +473,8 @@ export class GladeWindow {
   }
 
   /**
-   * Decode image bytes (PNG, JPEG, etc.) into a DecodedImage.
-   * The decoded image can then be passed to getImageTile() or img().
+   * Decode image bytes (PNG, JPEG, etc.) into a DecodedImage. The decoded
+   * image can then be passed to getImageTile() or img().
    */
   decodeImage(data: Uint8Array): Promise<DecodedImage> {
     return this.platform.decodeImage(data);
@@ -492,8 +493,6 @@ export class GladeWindow {
   getTextSystem(): TextSystem {
     return this.textSystem;
   }
-
-  // ============ WebGPU Host Support ============
 
   /**
    * Get the GPU device for WebGPU host creation.
@@ -524,31 +523,31 @@ export class GladeWindow {
   }
 
   /**
-   * Schedule a WebGPU host to be rendered this frame.
-   * Called by WebGPUHostElement during prepaint.
+   * Schedule a WebGPU host to be rendered this frame. Called by
+   * WebGPUHostElement during prepaint.
    */
   scheduleHostRender(host: WebGPUHost, input: WebGPUHostInput): void {
     this.pendingHostRenders.push({ host, input });
   }
 
   /**
-   * Clear the host texture bind group cache.
-   * Call this when host textures are recreated (e.g., on resize).
+   * Clear the host texture bind group cache. Call this when host textures are
+   * recreated (e.g., on resize).
    */
   clearHostTextureCache(): void {
     this.hostTexturePipeline.clearBindGroupCache();
   }
 
   /**
-   * Register text for measurement during layout.
-   * Returns a measure ID that will be used in the callback.
+   * Register text for measurement during layout. Returns a measure ID that
+   * will be used in the callback.
    */
   registerTextMeasure(data: {
     text: string;
     fontSize: number;
     fontFamily: string;
     fontWeight: number;
-    fontStyle: "normal" | "italic" | "oblique";
+    fontStyle: FontStyle;
     lineHeight: number;
     noWrap: boolean;
     maxWidth: number | null;
@@ -583,9 +582,9 @@ export class GladeWindow {
     // 4. finite availableWidth AND text exceeds it -> wrap to fit
     // 5. Otherwise -> measure at natural width (no wrapping)
     //
-    // Note: Taffy passes Infinity for availableWidth during MinContent/MaxContent
-    // sizing passes. We only wrap when availableWidth is finite AND the text's
-    // natural width exceeds it.
+    // Note: Taffy passes Infinity for availableWidth during
+    // MinContent/MaxContent sizing passes. We only wrap when availableWidth
+    // is finite AND the text's natural width exceeds it.
     let effectiveMaxWidth: number | undefined;
     const fontStyle = { family: data.fontFamily, weight: data.fontWeight, style: data.fontStyle };
 
@@ -617,8 +616,8 @@ export class GladeWindow {
       effectiveMaxWidth = undefined;
     }
 
-    // Store the computed wrap width for retrieval during paint
-    // This ensures paint uses the exact same constraint as measurement
+    // Store the computed wrap width for retrieval during paint. This ensures
+    // paint uses the exact same constraint as measurement
     data.computedWrapWidth = effectiveMaxWidth;
 
     // Measure text with computed constraints
@@ -630,12 +629,13 @@ export class GladeWindow {
       fontStyle
     );
 
-    // The shaper's measureText returns height = line_y + line_height, where line_y
-    // includes the baseline offset (ascent). For proper layout, we need to normalize
-    // this to use lineHeight-based height that matches our rendering.
-    // For single-line text, height should be lineHeight.
-    // For multi-line, estimate lines from measured height and use lineHeight * numLines.
-    // The shaper's line_y offset is approximately 0.8 * fontSize (ascent).
+    // The shaper's measureText returns height = line_y + line_height,
+    // where line_y includes the baseline offset (ascent). For proper layout,
+    // we need to normalize this to use lineHeight-based height that matches
+    // our rendering. For single-line text, height should be lineHeight. For
+    // multi-line, estimate lines from measured height and
+    // use lineHeight * numLines. The shaper's line_y offset is
+    // approximately 0.8 * fontSize (ascent).
     const ascentOffset = data.fontSize * 0.8;
     const estimatedLines = Math.max(
       1,
@@ -647,8 +647,8 @@ export class GladeWindow {
   }
 
   /**
-   * Get the computed wrap width for a text element.
-   * Returns the effectiveMaxWidth that was used during measurement.
+   * Get the computed wrap width for a text element. Returns the
+   * effectiveMaxWidth that was used during measurement.
    */
   getComputedWrapWidth(measureId: number): number | undefined {
     const data = this.measureRegistry.get(measureId);
@@ -698,8 +698,6 @@ export class GladeWindow {
     return this.focusStack[this.focusStack.length - 1]!;
   }
 
-  // ============ Key Context & Actions ============
-
   /**
    * Get the action registry for registering actions.
    */
@@ -743,8 +741,6 @@ export class GladeWindow {
     const fallbackPath = hitTest(this.hitTestTree, this.mousePosition);
     return buildKeyContextChain(fallbackPath);
   }
-
-  // ============ Scroll State Management ============
 
   /**
    * Allocate a new scroll handle ID.
@@ -803,9 +799,9 @@ export class GladeWindow {
       y: state.offset.y + deltaY,
     };
 
-    // Only clamp if content sizes are known (non-zero).
-    // Virtual lists set content size during prepaint, so if we clamp before that
-    // with zero sizes, scroll would be incorrectly limited.
+    // Only clamp if content sizes are known (non-zero). Virtual lists set
+    // content size during prepaint, so if we clamp before that with zero
+    // sizes, scroll would be incorrectly limited.
     if (state.contentSize.width > 0 || state.contentSize.height > 0) {
       const clamped = clampScrollOffset(state);
       state.offset = clamped;
@@ -839,14 +835,12 @@ export class GladeWindow {
   }
 
   /**
-   * Get the scroll state for a scroll handle.
-   * Returns null if the scroll handle has not been initialized.
+   * Get the scroll state for a scroll handle. Returns null if the scroll
+   * handle has not been initialized.
    */
   getScrollState(scrollId: ScrollHandleId): ScrollState | null {
     return this.scrollStates.get(scrollId) ?? null;
   }
-
-  // ============ Scrollbar Drag Management ============
 
   /**
    * Start a scrollbar thumb drag operation.
@@ -900,8 +894,6 @@ export class GladeWindow {
   getScrollbarDragState(): ScrollbarDragState | null {
     return this.scrollbarDragState;
   }
-
-  // ============ Hitbox Management ============
 
   /**
    * Insert a hitbox for the current frame.
@@ -957,7 +949,8 @@ export class GladeWindow {
   }
 
   /**
-   * Check if a group is active (any hitbox in the group is hovered with mouse down).
+   * Check if a group is active (any hitbox in the group is hovered with
+   * mouse down).
    */
   isGroupActive(groupName: string): boolean {
     if (!this.mouseDown) {
@@ -1011,8 +1004,6 @@ export class GladeWindow {
     return this.tabStopRegistry.getPrevFocus(currentFocusId, currentGroup);
   }
 
-  // ============ Tooltips ============
-
   /**
    * Get the tooltip manager.
    */
@@ -1044,8 +1035,6 @@ export class GladeWindow {
     return this.currentContentMask;
   }
 
-  // ============ Cross-Element Text Selection ============
-
   /**
    * Get the cross-element selection manager.
    */
@@ -1063,8 +1052,6 @@ export class GladeWindow {
   getElementState(): Map<GlobalElementId, unknown> {
     return this.elementState;
   }
-
-  // ============ Inspector/Debug Mode ============
 
   /**
    * Get the inspector instance.
@@ -1167,15 +1154,16 @@ export class GladeWindow {
     const rootPrepaintState = element.prepaint(prepaintCx, rootBounds, rootRequestState);
 
     // Process deferred layouts AFTER main tree prepaint but BEFORE paint.
-    // Deferred elements (menus, dialogs) registered during prepaint get their own
-    // layout pass with window dimensions, then prepaint, then add to draw queue.
+    // Deferred elements (menus, dialogs) registered during prepaint get
+    // their own layout pass with window dimensions, then prepaint, then add
+    // to draw queue.
     this.processDeferredLayouts();
 
     const paintCx = this.createPaintContext(rootElementId);
     element.paint(paintCx, rootBounds, rootPrepaintState);
 
-    // Update tooltip state before rendering tooltips
-    // This allows tooltips registered in prepaint to be rendered this frame
+    // Update tooltip state before rendering tooltips. Allows tooltips
+    // registered in prepaint to be rendered this frame
     const currentHitTest = performHitTest(
       this.hitboxFrame,
       this.mousePosition.x,
@@ -1194,14 +1182,16 @@ export class GladeWindow {
     // Render FPS overlay (on top of everything except inspector)
     this.renderFpsOverlay();
 
-    // Extract hit test tree from prepaint state (built with scroll-adjusted bounds)
+    // Extract hit test tree from prepaint state (built with scroll-adjusted
+    // bounds)
     this.hitTestTree = [];
     const prepaintStateWithHitTest = rootPrepaintState as { hitTestNode?: HitTestNode };
     if (prepaintStateWithHitTest?.hitTestNode) {
       this.hitTestTree.push(prepaintStateWithHitTest.hitTestNode);
     }
 
-    // Also add deferred element hit test nodes (includes dialogs, popovers, menus)
+    // Also add deferred element hit test nodes (includes dialogs, popovers,
+    // menus)
     for (const entry of this.deferredDrawQueue) {
       if (entry.hitTestNode) {
         this.hitTestTree.push(entry.hitTestNode);
@@ -1215,7 +1205,8 @@ export class GladeWindow {
 
     this.updateFocusContexts();
 
-    // Paint cross-element selection highlights (after elements, before inspector)
+    // Paint cross-element selection highlights (after elements, before
+    // inspector)
     if (this.crossElementSelection) {
       // Compute visual order before painting (needed for getSelectionRanges)
       this.crossElementSelection.computeVisualOrder();
@@ -1258,8 +1249,8 @@ export class GladeWindow {
   private inspectorNextId = 0;
 
   /**
-   * Build inspector debug info recursively from hit test tree.
-   * The hit test tree has correctly computed bounds from the layout phase.
+   * Build inspector debug info recursively from hit test tree. The hit test
+   * tree has correctly computed bounds from the layout phase.
    */
   private buildInspectorFromHitTestTree(nodes: HitTestNode[], depth: number): void {
     for (const node of nodes) {
@@ -1295,8 +1286,8 @@ export class GladeWindow {
   }
 
   /**
-   * Present the rendered frame.
-   * Only presents if getCurrentTexture was called this frame.
+   * Present the rendered frame. Only presents if getCurrentTexture was
+   * called this frame.
    */
   present(): void {
     if (this.didRenderThisFrame) {
@@ -1375,16 +1366,17 @@ export class GladeWindow {
   }
 
   /**
-   * Process elements registered for deferred layout.
-   * Each element gets its own layout pass with window dimensions,
-   * then prepaint, and is added to the deferred draw queue.
+   * Process elements registered for deferred layout. Each element gets its
+   * own layout pass with window dimensions, then prepaint, and is added to the
+   * deferred draw queue.
    */
   private processDeferredLayouts(): void {
     if (this.deferredLayoutQueue.length === 0) {
       return;
     }
 
-    // Sort by priority (lower priority processed first, but they'll be painted in order)
+    // Sort by priority (lower priority processed first, but they'll be
+    // painted in order)
     this.deferredLayoutQueue.sort((a, b) => a.priority - b.priority);
 
     for (const entry of this.deferredLayoutQueue) {
@@ -1392,8 +1384,8 @@ export class GladeWindow {
       const layoutCx = this.createRequestLayoutContext(entry.childElementId);
       const { layoutId, requestState } = entry.child.requestLayout(layoutCx);
 
-      // CRITICAL: Run separate layout with window dimensions
-      // This is what allows overlay content to get full window space
+      // CRITICAL: Run separate layout with window dimensions, which allows
+      // overlay content to get full window space.
       this.layoutEngine.computeLayoutWithMeasure(
         layoutId,
         this.width,
@@ -1430,8 +1422,9 @@ export class GladeWindow {
     this.deferredDrawQueue.sort((a, b) => a.priority - b.priority);
 
     for (const entry of this.deferredDrawQueue) {
-      // Use overlay mode to ensure deferred elements render on top of all normal content
-      // Priority determines ordering between overlay types (tooltips: 0, menus: 1, modals: 2)
+      // Use overlay mode to ensure deferred elements render on top of all
+      // normal content. Priority determines ordering between overlay
+      // types (tooltips: 0, menus: 1, modals: 2)
       this.scene.beginOverlay(entry.priority);
 
       const paintCx = this.createPaintContext(entry.childElementId);
@@ -1442,8 +1435,8 @@ export class GladeWindow {
   }
 
   /**
-   * Render the FPS overlay if enabled.
-   * Paints directly using absolute positioning based on config.
+   * Render the FPS overlay if enabled. Paints directly using absolute
+   * positioning based on config.
    */
   private renderFpsOverlay(): void {
     if (!this.fpsOverlay) {
@@ -1468,8 +1461,8 @@ export class GladeWindow {
   }
 
   /**
-   * Render the active tooltip if one exists.
-   * This runs its own layout/prepaint/paint cycle separate from the main tree.
+   * Render the active tooltip if one exists. Runs its own
+   * layout/prepaint/paint cycle separate from the main tree.
    */
   private renderActiveTooltip(): HitTestNode | null {
     const activeTooltip = this.tooltipManager.getActiveTooltip();
@@ -1481,8 +1474,8 @@ export class GladeWindow {
     const targetBounds = activeTooltip.registration.targetBounds;
     const config = activeTooltip.registration.config;
 
-    // First, do a layout pass just to get the tooltip size
-    // We use a temporary layout that won't be used for rendering
+    // First, do a layout pass just to get the tooltip size. Use a temporary
+    // layout that won't be used for rendering
     const tempElementId = this.allocateElementId();
     const tempLayoutCx = this.createRequestLayoutContext(tempElementId);
     const { layoutId: tempLayoutId } = tooltipElement.requestLayout(tempLayoutCx);
@@ -1505,8 +1498,8 @@ export class GladeWindow {
       this.mousePosition
     );
 
-    // Recreate the tooltip element for actual rendering
-    // This is needed because elements can only go through layout once
+    // Recreate the tooltip element for actual rendering. This is needed
+    // because elements can only go through layout once.
     const freshTooltipElement = activeTooltip.registration.builder(this.getContext());
 
     // Create anchored wrapper for positioning
@@ -1516,8 +1509,8 @@ export class GladeWindow {
     anchoredElement.setWindowSize({ width: this.width, height: this.height });
     anchoredElement.child(freshTooltipElement);
 
-    // Run layout for anchored element directly (no DeferredElement wrapper needed
-    // since renderActiveTooltip already runs outside the main tree)
+    // Run layout for anchored element directly (no DeferredElement wrapper
+    // needed since renderActiveTooltip already runs outside the main tree)
     const elementId = this.allocateElementId();
     const layoutCx = this.createRequestLayoutContext(elementId);
     const { layoutId, requestState } = anchoredElement.requestLayout(layoutCx);
@@ -1570,8 +1563,8 @@ export class GladeWindow {
   }
 
   /**
-   * Render all scheduled WebGPU hosts.
-   * Called before the main Glade render pass.
+   * Render all scheduled WebGPU hosts. Called before the main Glade
+   * render pass.
    */
   private renderHosts(): void {
     if (this.pendingHostRenders.length === 0) {
@@ -1745,10 +1738,11 @@ export class GladeWindow {
         }
 
         let path = hitTest(this.hitTestTree, { x, y });
-        // When mouse is down, always route to the focused element.
-        // This ensures drag-to-select works even when cursor leaves the text input bounds.
-        // Without this, hitTest returns the path to whatever element is under the cursor,
-        // and the focused text input never receives mouseMove events during drag.
+        // When mouse is down, always route to the focused element. This
+        // ensures drag-to-select works even when cursor leaves the text input
+        // bounds. Without this, hitTest returns the path to whatever element
+        // is under the cursor, and the focused text input never receives
+        // mouseMove events during drag.
         if (this.mouseDown) {
           const focusId = this.getCurrentFocusId();
           if (focusId !== null) {
@@ -1764,7 +1758,8 @@ export class GladeWindow {
         const currentPathSet = new Set(path);
         const lastPathSet = new Set(lastPath);
 
-        // Dispatch mouseLeave for nodes that left the path (in reverse order, deepest first)
+        // Dispatch mouseLeave for nodes that left the path (in reverse order,
+        // deepest first)
         for (let i = lastPath.length - 1; i >= 0; i--) {
           const node = lastPath[i]!;
           if (!currentPathSet.has(node) && node.handlers.mouseLeave) {
@@ -1772,7 +1767,8 @@ export class GladeWindow {
           }
         }
 
-        // Dispatch mouseEnter for nodes that entered the path (in order, root first)
+        // Dispatch mouseEnter for nodes that entered the path (in order,
+        // root first)
         for (let i = 0; i < path.length; i++) {
           const node = path[i]!;
           if (!lastPathSet.has(node) && node.handlers.mouseEnter) {
@@ -1849,8 +1845,8 @@ export class GladeWindow {
         const event: GladeMouseEvent = { x, y, button: normalizedButton, modifiers: mods };
         let path = hitTest(this.hitTestTree, { x, y });
 
-        // When mouse was down, also route mouseUp to the focused element
-        // This ensures drag-to-select works even when cursor leaves the text bounds
+        // When mouse was down, also route mouseUp to the focused element. This
+        // ensures drag-to-select works even when cursor leaves the text bounds
         if (wasMouseDown) {
           const focusId = this.getCurrentFocusId();
           if (focusId !== null) {
@@ -2114,7 +2110,7 @@ export class GladeWindow {
         fontSize: number;
         fontFamily: string;
         fontWeight: number;
-        fontStyle: "normal" | "italic" | "oblique";
+        fontStyle: FontStyle;
         lineHeight: number;
         noWrap: boolean;
         maxWidth: number | null;
@@ -2416,7 +2412,7 @@ export class GladeWindow {
           fontSize: number;
           fontFamily: string;
           fontWeight: number;
-          fontStyle?: "normal" | "italic" | "oblique";
+          fontStyle?: FontStyle;
           lineHeight?: number;
           maxWidth?: number;
         }

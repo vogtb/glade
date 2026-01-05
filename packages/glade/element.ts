@@ -9,6 +9,7 @@
  * 3. paint() Emit GPU primitives using PrepaintState
  */
 
+import type { FontStyle } from "@glade/fonts";
 import { type Color, type ColorObject, rgb, toColorObject } from "@glade/utils";
 
 import type { Bounds } from "./bounds.ts";
@@ -118,7 +119,7 @@ export interface RequestLayoutContext {
     fontSize: number;
     fontFamily: string;
     fontWeight: number;
-    fontStyle: "normal" | "italic" | "oblique";
+    fontStyle: FontStyle;
     lineHeight: number;
     noWrap: boolean;
     maxWidth: number | null;
@@ -377,7 +378,7 @@ export interface PaintContext {
       fontSize: number;
       fontFamily: string;
       fontWeight: number;
-      fontStyle?: "normal" | "italic" | "oblique";
+      fontStyle?: FontStyle;
       lineHeight?: number;
       maxWidth?: number;
     }
@@ -687,7 +688,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   private fontFamily: string | null = null;
   private resolvedFontFamily: string | null = null;
   private fontWeight = 400;
-  private fontStyle: "normal" | "italic" | "oblique" = "normal";
+  private fontStyle: FontStyle = "normal";
   private lineHeightValue: number | null = null;
   private maxWidthValue: number | null = null;
   private noWrapValue = false;
@@ -753,7 +754,7 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   /**
    * Set font style explicitly.
    */
-  style(s: "normal" | "italic" | "oblique"): this {
+  style(s: FontStyle): this {
     this.fontStyle = s;
     return this;
   }

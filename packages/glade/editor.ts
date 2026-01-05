@@ -19,7 +19,7 @@
  * VisualPoint: Pixel coordinates relative to document origin (TEXT-LOCAL space)
  */
 
-import { type FontStyle, type ShapedGlyph, type TextShaper } from "@glade/shaper";
+import { type FontStyleOptions, type ShapedGlyph, type TextShaper } from "@glade/shaper";
 
 import { getSharedTextShaper } from "./text.ts";
 
@@ -127,7 +127,7 @@ export type TextDocument = {
   /** Max width for wrapping (undefined for single-line) */
   readonly maxWidth: number | undefined;
   /** Font style options */
-  readonly style: FontStyle | undefined;
+  readonly style: FontStyleOptions | undefined;
   /** Computed lines with positioned glyphs */
   readonly lines: ReadonlyArray<TextLine>;
   /** Total document width */
@@ -520,12 +520,12 @@ export function createTextDocument(
   lineHeight: number,
   fontFamily: string,
   maxWidth?: number,
-  style?: FontStyle
+  style?: FontStyleOptions
 ): TextDocument {
   const shaper = getShaper();
   const safeFontSize = fontSize > 0 ? fontSize : 1;
   const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
-  const effectiveStyle: FontStyle = { ...style, family: fontFamily };
+  const effectiveStyle: FontStyleOptions = { ...style, family: fontFamily };
   const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
   const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
 
@@ -937,7 +937,7 @@ export class TextEditor {
   private _lineHeight: number;
   private _fontFamily: string;
   private _maxWidth: number | undefined;
-  private _style: FontStyle | undefined;
+  private _style: FontStyleOptions | undefined;
 
   constructor(options: {
     text?: string;
@@ -945,7 +945,7 @@ export class TextEditor {
     lineHeight: number;
     fontFamily: string;
     maxWidth?: number;
-    style?: FontStyle;
+    style?: FontStyleOptions;
     historyLimit?: number;
     multiline?: boolean;
   }) {
@@ -1073,7 +1073,7 @@ export class TextEditor {
     lineHeight?: number;
     fontFamily?: string;
     maxWidth?: number;
-    style?: FontStyle;
+    style?: FontStyleOptions;
   }): void {
     if (params.fontSize !== undefined) {
       this._fontSize = params.fontSize;
