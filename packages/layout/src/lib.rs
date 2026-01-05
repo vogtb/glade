@@ -79,19 +79,15 @@ impl LayoutBounds {
 // ============ CSS Grid Input Types ============
 
 /// Track size input from JavaScript.
-/// Maps to Glade's TrackSize type.
+/// Accepts ergonomic formats: number (px), "Nfr", "auto", "min-content", "max-content", { min, max }
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "kebab-case")]
+#[serde(untagged)]
 pub enum TrackSizeInput {
-    Fixed {
-        value: f32,
-    },
-    Fr {
-        value: f32,
-    },
-    Auto,
-    MinContent,
-    MaxContent,
+    /// Plain number = fixed px
+    Fixed(f32),
+    /// String like "1fr", "auto", "min-content", "max-content"
+    Keyword(String),
+    /// { min: TrackSizeValue, max: TrackSizeValue }
     Minmax {
         min: Box<TrackSizeInput>,
         max: Box<TrackSizeInput>,
@@ -99,24 +95,29 @@ pub enum TrackSizeInput {
 }
 
 /// Grid template input from JavaScript.
-/// Maps to Glade's GridTemplate type.
+/// Accepts: number (count of 1fr tracks) or array of TrackSize values
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "kebab-case")]
+#[serde(untagged)]
 pub enum GridTemplateInput {
     /// N equal columns/rows of 1fr each
-    Count { value: u16 },
-    /// Explicit track sizing
-    Tracks { tracks: Vec<TrackSizeInput> },
+    Count(u16),
+    /// Explicit track sizing array
+    Tracks(Vec<TrackSizeInput>),
 }
 
 /// Grid placement input from JavaScript.
-/// Maps to Glade's GridPlacement type.
+/// Accepts ergonomic formats: "auto", number (line), { span: N }, { line: N }
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "kebab-case")]
+#[serde(untagged)]
 pub enum GridPlacementInput {
-    Auto,
-    Line { value: i16 },
-    Span { value: u16 },
+    /// String "auto"
+    Auto(String),
+    /// Plain number = line index
+    Line(i16),
+    /// { span: N }
+    SpanObj { span: u16 },
+    /// { line: N }
+    LineObj { line: i16 },
 }
 
 // ============ Style Input ============
@@ -206,20 +207,32 @@ pub struct StyleInput {
 // ============ Grid Type Conversions ============
 
 impl TrackSizeInput {
+    /// Parse a string keyword like "1fr", "auto", "min-content", "max-content"
+    fn parse_keyword(s: &str) -> TrackSizingFunction {
+        if s == "auto" {
+            TrackSizingFunction::AUTO
+        } else if s == "min-content" {
+            TrackSizingFunction::MIN_CONTENT
+        } else if s == "max-content" {
+            TrackSizingFunction::MAX_CONTENT
+        } else if s.ends_with("fr") {
+            // Parse "1fr", "2fr", etc.
+            let value = s.trim_end_matches("fr").parse::<f32>().unwrap_or(1.0);
+            // Standard fr: minmax(0, Nfr) - allows shrinking to 0
+            TrackSizingFunction {
+                min: MinTrackSizingFunction::from_length(0.0),
+                max: MaxTrackSizingFunction::from_fr(value),
+            }
+        } else {
+            TrackSizingFunction::AUTO
+        }
+    }
+
     /// Convert to Taffy's TrackSizingFunction
     fn to_taffy(&self) -> TrackSizingFunction {
         match self {
-            TrackSizeInput::Fixed { value } => TrackSizingFunction::from_length(*value),
-            TrackSizeInput::Fr { value } => {
-                // Standard fr: minmax(0, Nfr) - allows shrinking to 0
-                TrackSizingFunction {
-                    min: MinTrackSizingFunction::from_length(0.0),
-                    max: MaxTrackSizingFunction::from_fr(*value),
-                }
-            }
-            TrackSizeInput::Auto => TrackSizingFunction::AUTO,
-            TrackSizeInput::MinContent => TrackSizingFunction::MIN_CONTENT,
-            TrackSizeInput::MaxContent => TrackSizingFunction::MAX_CONTENT,
+            TrackSizeInput::Fixed(value) => TrackSizingFunction::from_length(*value),
+            TrackSizeInput::Keyword(s) => Self::parse_keyword(s),
             TrackSizeInput::Minmax { min, max } => TrackSizingFunction {
                 min: min.to_min_track(),
                 max: max.to_max_track(),
@@ -230,14 +243,21 @@ impl TrackSizeInput {
     /// Convert to MinTrackSizingFunction (for minmax min value)
     fn to_min_track(&self) -> MinTrackSizingFunction {
         match self {
-            TrackSizeInput::Fixed { value } => MinTrackSizingFunction::from_length(*value),
-            TrackSizeInput::Fr { .. } => {
-                // Fr not valid for min, treat as 0
-                MinTrackSizingFunction::from_length(0.0)
+            TrackSizeInput::Fixed(value) => MinTrackSizingFunction::from_length(*value),
+            TrackSizeInput::Keyword(s) => {
+                if s == "auto" {
+                    MinTrackSizingFunction::AUTO
+                } else if s == "min-content" {
+                    MinTrackSizingFunction::MIN_CONTENT
+                } else if s == "max-content" {
+                    MinTrackSizingFunction::MAX_CONTENT
+                } else if s.ends_with("fr") {
+                    // Fr not valid for min, treat as 0
+                    MinTrackSizingFunction::from_length(0.0)
+                } else {
+                    MinTrackSizingFunction::AUTO
+                }
             }
-            TrackSizeInput::Auto => MinTrackSizingFunction::AUTO,
-            TrackSizeInput::MinContent => MinTrackSizingFunction::MIN_CONTENT,
-            TrackSizeInput::MaxContent => MinTrackSizingFunction::MAX_CONTENT,
             TrackSizeInput::Minmax { min, .. } => min.to_min_track(),
         }
     }
@@ -245,11 +265,21 @@ impl TrackSizeInput {
     /// Convert to MaxTrackSizingFunction (for minmax max value)
     fn to_max_track(&self) -> MaxTrackSizingFunction {
         match self {
-            TrackSizeInput::Fixed { value } => MaxTrackSizingFunction::from_length(*value),
-            TrackSizeInput::Fr { value } => MaxTrackSizingFunction::from_fr(*value),
-            TrackSizeInput::Auto => MaxTrackSizingFunction::AUTO,
-            TrackSizeInput::MinContent => MaxTrackSizingFunction::MIN_CONTENT,
-            TrackSizeInput::MaxContent => MaxTrackSizingFunction::MAX_CONTENT,
+            TrackSizeInput::Fixed(value) => MaxTrackSizingFunction::from_length(*value),
+            TrackSizeInput::Keyword(s) => {
+                if s == "auto" {
+                    MaxTrackSizingFunction::AUTO
+                } else if s == "min-content" {
+                    MaxTrackSizingFunction::MIN_CONTENT
+                } else if s == "max-content" {
+                    MaxTrackSizingFunction::MAX_CONTENT
+                } else if s.ends_with("fr") {
+                    let value = s.trim_end_matches("fr").parse::<f32>().unwrap_or(1.0);
+                    MaxTrackSizingFunction::from_fr(value)
+                } else {
+                    MaxTrackSizingFunction::AUTO
+                }
+            }
             TrackSizeInput::Minmax { max, .. } => max.to_max_track(),
         }
     }
@@ -259,7 +289,7 @@ impl GridTemplateInput {
     /// Convert to Vec<TrackSizingFunction> for Taffy
     fn to_taffy(&self) -> Vec<GridTemplateComponent<String>> {
         match self {
-            GridTemplateInput::Count { value } => {
+            GridTemplateInput::Count(value) => {
                 // N columns/rows of 1fr each (GPUI pattern: minmax(0, 1fr))
                 (0..*value)
                     .map(|_| {
@@ -270,7 +300,7 @@ impl GridTemplateInput {
                     })
                     .collect()
             }
-            GridTemplateInput::Tracks { tracks } => tracks
+            GridTemplateInput::Tracks(tracks) => tracks
                 .iter()
                 .map(|t| GridTemplateComponent::Single(t.to_taffy()))
                 .collect(),
@@ -282,9 +312,10 @@ impl GridPlacementInput {
     /// Convert to Taffy's GridPlacement
     fn to_taffy(&self) -> GridPlacement {
         match self {
-            GridPlacementInput::Auto => GridPlacement::Auto,
-            GridPlacementInput::Line { value } => GridPlacement::from_line_index(*value),
-            GridPlacementInput::Span { value } => GridPlacement::Span(*value),
+            GridPlacementInput::Auto(_) => GridPlacement::Auto,
+            GridPlacementInput::Line(value) => GridPlacement::from_line_index(*value),
+            GridPlacementInput::SpanObj { span } => GridPlacement::Span(*span),
+            GridPlacementInput::LineObj { line } => GridPlacement::from_line_index(*line),
         }
     }
 }

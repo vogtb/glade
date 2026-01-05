@@ -91,120 +91,6 @@ export type TrackSize =
  */
 export type GridTemplate = number | TrackSize[];
 
-// ============ WASM Input Types for Grid ============
-
-/**
- * Track size input format for WASM serialization.
- */
-export type TrackSizeInput =
-  | { type: "fixed"; value: number }
-  | { type: "fr"; value: number }
-  | { type: "auto" }
-  | { type: "min-content" }
-  | { type: "max-content" }
-  | { type: "minmax"; min: TrackSizeInput; max: TrackSizeInput };
-
-/**
- * Grid template input format for WASM serialization.
- */
-export type GridTemplateInput =
-  | { type: "count"; value: number }
-  | { type: "tracks"; tracks: TrackSizeInput[] };
-
-/**
- * Grid placement input format for WASM serialization.
- */
-export type GridPlacementInput =
-  | { type: "auto" }
-  | { type: "line"; value: number }
-  | { type: "span"; value: number };
-
-// ============ Grid Conversion Functions ============
-
-/**
- * Convert a TrackSize to WASM input format.
- */
-export function convertTrackSize(size: TrackSize): TrackSizeInput {
-  if (typeof size === "number") {
-    return { type: "fixed", value: size };
-  }
-  if (typeof size === "string") {
-    if (size === "auto") return { type: "auto" };
-    if (size === "min-content") return { type: "min-content" };
-    if (size === "max-content") return { type: "max-content" };
-    if (size.endsWith("fr")) {
-      const value = parseFloat(size.slice(0, -2));
-      return { type: "fr", value };
-    }
-  }
-  if (typeof size === "object" && "min" in size && "max" in size) {
-    return {
-      type: "minmax",
-      min: convertTrackSizeValue(size.min),
-      max: convertTrackSizeValue(size.max),
-    };
-  }
-  return { type: "auto" };
-}
-
-/**
- * Convert a TrackSizeValue to WASM input format.
- */
-function convertTrackSizeValue(value: TrackSizeValue): TrackSizeInput {
-  if (typeof value === "number") {
-    return { type: "fixed", value };
-  }
-  if (typeof value === "string") {
-    if (value === "auto") return { type: "auto" };
-    if (value === "min-content") return { type: "min-content" };
-    if (value === "max-content") return { type: "max-content" };
-    if (value.endsWith("fr")) {
-      const num = parseFloat(value.slice(0, -2));
-      return { type: "fr", value: num };
-    }
-  }
-  return { type: "auto" };
-}
-
-/**
- * Convert a GridTemplate to WASM input format.
- */
-export function convertGridTemplate(template: GridTemplate): GridTemplateInput {
-  if (typeof template === "number") {
-    return { type: "count", value: template };
-  }
-  return {
-    type: "tracks",
-    tracks: template.map(convertTrackSize),
-  };
-}
-
-/**
- * Convert a GridPlacement to WASM input format.
- *
- * TODO: I think we should actually unify these types... Same for many parallel
- * types in this package.
- */
-export function convertGridPlacement(placement: GridPlacement): GridPlacementInput {
-  if (placement === "auto") {
-    return { type: "auto" };
-  }
-  if (typeof placement === "number") {
-    return { type: "line", value: placement };
-  }
-  if (typeof placement === "object") {
-    if ("span" in placement) {
-      return { type: "span", value: placement.span };
-    }
-    if ("line" in placement) {
-      return { type: "line", value: placement.line };
-    }
-  }
-  return { type: "auto" };
-}
-
-// ============ Style Input ============
-
 /**
  * Style input for layout computation.
  * Maps to Glade's Styles interface.
@@ -297,6 +183,7 @@ export interface StyleInput {
 /**
  * Convert StyleInput to the format expected by WASM.
  * Transforms camelCase to snake_case for Rust serde.
+ * Grid types are passed directly - Rust uses untagged serde to deserialize them.
  */
 export function styleToWasm(style: StyleInput): Record<string, unknown> {
   return {
@@ -313,24 +200,18 @@ export function styleToWasm(style: StyleInput): Record<string, unknown> {
     row_gap: style.rowGap,
     column_gap: style.columnGap,
 
-    // CSS Grid Container
-    grid_template_columns: style.gridTemplateColumns
-      ? convertGridTemplate(style.gridTemplateColumns)
-      : undefined,
-    grid_template_rows: style.gridTemplateRows
-      ? convertGridTemplate(style.gridTemplateRows)
-      : undefined,
-    grid_auto_columns: style.gridAutoColumns ? convertTrackSize(style.gridAutoColumns) : undefined,
-    grid_auto_rows: style.gridAutoRows ? convertTrackSize(style.gridAutoRows) : undefined,
+    // CSS Grid Container - passed directly, Rust handles via untagged serde
+    grid_template_columns: style.gridTemplateColumns,
+    grid_template_rows: style.gridTemplateRows,
+    grid_auto_columns: style.gridAutoColumns,
+    grid_auto_rows: style.gridAutoRows,
     grid_auto_flow: style.gridAutoFlow,
 
-    // CSS Grid Item
-    grid_column_start: style.gridColumnStart
-      ? convertGridPlacement(style.gridColumnStart)
-      : undefined,
-    grid_column_end: style.gridColumnEnd ? convertGridPlacement(style.gridColumnEnd) : undefined,
-    grid_row_start: style.gridRowStart ? convertGridPlacement(style.gridRowStart) : undefined,
-    grid_row_end: style.gridRowEnd ? convertGridPlacement(style.gridRowEnd) : undefined,
+    // CSS Grid Item - passed directly, Rust handles via untagged serde
+    grid_column_start: style.gridColumnStart,
+    grid_column_end: style.gridColumnEnd,
+    grid_row_start: style.gridRowStart,
+    grid_row_end: style.gridRowEnd,
 
     width: style.width,
     height: style.height,

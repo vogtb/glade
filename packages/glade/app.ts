@@ -170,8 +170,6 @@ export class GladeApp {
     }
   }
 
-  // ============ Entity Management ============
-
   private allocateEntityId(): EntityId {
     return this.nextEntityId++ as EntityId;
   }
@@ -237,8 +235,6 @@ export class GladeApp {
     this.entities.delete(handle.id);
   }
 
-  // ============ Observations ============
-
   observe<T>(
     handle: GladeHandle<T>,
     callback: (observed: Readonly<T>, cx: GladeContext) => void
@@ -286,8 +282,6 @@ export class GladeApp {
     return subscriberHandle;
   }
 
-  // ============ Focus ============
-
   newFocusHandle(windowId: WindowId): FocusHandle {
     const id = this.nextFocusId++ as FocusId;
     return new FocusHandle(id, windowId);
@@ -318,8 +312,6 @@ export class GladeApp {
     window?.restoreFocus();
   }
 
-  // ============ Scroll ============
-
   newScrollHandle(windowId: WindowId): ScrollHandle {
     const window = this.windows.get(windowId);
     if (!window) {
@@ -348,8 +340,6 @@ export class GladeApp {
     const window = this.windows.get(handle.windowId);
     window?.scrollBy(handle.id, deltaX, deltaY);
   }
-
-  // ============ Effect Queue ============
 
   queueEffect(effect: GladeEffect): void {
     this.pendingEffects.push(effect);
@@ -445,8 +435,6 @@ export class GladeApp {
     }
   }
 
-  // ============ Frame Loop ============
-
   private scheduleFrame(): void {
     this.frameId = this.platform.requestAnimationFrame((time) => {
       if (!this.running) {
@@ -517,8 +505,6 @@ export class GladeApp {
     this.themeManager.setThemeScheme(scheme);
     this.markAllWindowsDirty();
   }
-
-  // ============ Context Factory ============
 
   private createContext(): GladeAppContext {
     return new GladeAppContext(this);

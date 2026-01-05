@@ -49,9 +49,6 @@ import type { LayoutId } from "./layout.ts";
 import type { Size } from "./size.ts";
 import type { Theme } from "./theme.ts";
 
-// ============================================================================
-// Sizes
-// ============================================================================
 const DEFAULT_DIALOG_PADDING = 24;
 const DEFAULT_DIALOG_BORDER_RADIUS = 8;
 const DEFAULT_DIALOG_BORDER_WIDTH = 1;
@@ -66,10 +63,6 @@ const DEFAULT_BUTTON_BORDER_RADIUS = 6;
 const DEFAULT_HEADER_GAP = 8;
 const DEFAULT_FOOTER_GAP = 12;
 const DEFAULT_CONTENT_GAP = 16;
-
-// ============================================================================
-// Types
-// ============================================================================
 
 /**
  * Handler called when dialog open state changes.
@@ -169,10 +162,6 @@ export type DialogContentContext = {
   buttonPaddingY: number;
   buttonBorderRadius: number;
 };
-
-// ============================================================================
-// DialogManager
-// ============================================================================
 
 /**
  * Dialog manager for tracking and displaying dialogs.
@@ -283,10 +272,6 @@ export class DialogManager {
   }
 }
 
-// ============================================================================
-// DialogConfigBuilder
-// ============================================================================
-
 /**
  * Fluent builder for dialog configuration.
  */
@@ -339,10 +324,6 @@ export class DialogConfigBuilder {
 export function dialogConfig(): DialogConfigBuilder {
   return new DialogConfigBuilder();
 }
-
-// ============================================================================
-// DialogHeader
-// ============================================================================
 
 type DialogHeaderRequestState = {
   layoutId: LayoutId;
