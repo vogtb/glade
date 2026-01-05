@@ -1,12 +1,14 @@
 /**
  * WebGPU constants and utilities for cross-platform usage.
  *
- * In browser environments, these constants are available as globals (GPUBufferUsage, GPUShaderStage).
- * In native environments (Dawn), these globals don't exist, so we provide them here.
+ * In browser environments, these constants are available as globals
+ * (GPUBufferUsage, GPUShaderStage). In native environments (Dawn), these
+ * globals don't exist, so we provide them here.
  */
 
 import type { Clipboard } from "./clipboard";
 import type { EventTarget } from "./events";
+import type { TitleBarStyle } from "./platform";
 
 /**
  * Buffer usage flags for GPUBufferDescriptor.usage
@@ -108,5 +110,5 @@ export interface ContextOptions {
   // window title (only used on native platforms)
   title?: string;
   // macOS-only title bar style (ignored on browser)
-  titleBarStyle?: "standard" | "transparent" | "controlled";
+  titleBarStyle?: TitleBarStyle;
 }

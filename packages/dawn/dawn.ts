@@ -692,7 +692,8 @@ export function createStringView(str: string | null): Buffer {
   } else {
     const strBuffer = Buffer.from(str + "\0", "utf8");
     buffer.writeBigUInt64LE(BigInt(ptr(strBuffer)), 0);
-    buffer.writeBigUInt64LE(BigInt(strBuffer.length - 1), 8); // exclude null terminator
+    // exclude null terminator
+    buffer.writeBigUInt64LE(BigInt(strBuffer.length - 1), 8);
   }
   return buffer;
 }

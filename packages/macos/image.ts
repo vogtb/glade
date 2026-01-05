@@ -48,8 +48,9 @@ const coreGraphics = dlopen("/System/Library/Frameworks/CoreGraphics.framework/C
     ],
     returns: FFIType.ptr,
   },
-  // CGContextDrawImage takes CGRect by value. On ARM64, CGRect (4 doubles = 32 bytes)
-  // is passed in registers d0-d3. We pass the 4 components as separate f64 args.
+  // CGContextDrawImage takes CGRect by value. On ARM64,
+  // CGRect (4 doubles = 32 bytes) is passed in registers d0-d3. We pass
+  // the 4 components as separate f64 args.
   CGContextDrawImage: {
     args: [
       FFIType.ptr, // context
@@ -146,7 +147,8 @@ export function decodeImage(data: Uint8Array): DecodedImage {
 
           try {
             // Draw image into context (decodes and converts to RGBA)
-            // CGRect is passed as 4 separate f64 values (origin.x, origin.y, size.width, size.height)
+            // CGRect is passed as 4 separate f64 values (origin.x, origin.y,
+            // size.width, size.height)
             coreGraphics.symbols.CGContextDrawImage(context, 0.0, 0.0, width, height, cgImage);
 
             // Get pointer to bitmap data
@@ -156,15 +158,16 @@ export function decodeImage(data: Uint8Array): DecodedImage {
             }
 
             // Copy data from CG-owned buffer to our own Uint8Array.
-            // IMPORTANT: We must make a true copy because toArrayBuffer creates a view
-            // into native memory that becomes invalid after CGContextRelease.
+            // IMPORTANT: We must make a true copy because toArrayBuffer
+            // creates a view into native memory that becomes invalid after
+            // CGContextRelease.
             const bufferSize = bytesPerRow * height;
             const nativeView = new Uint8Array(toArrayBuffer(bitmapData, 0, bufferSize));
             const buffer = new Uint8Array(bufferSize);
             buffer.set(nativeView);
 
-            // CoreGraphics produces BGRA premultiplied, but we need RGBA non-premultiplied.
-            // The shader does its own premultiplication.
+            // CoreGraphics produces BGRA premultiplied, but we need RGBA
+            // non-premultiplied. The shader does its own premultiplication.
             bgraToRgba(buffer);
 
             return { width, height, data: buffer };
@@ -186,9 +189,8 @@ export function decodeImage(data: Uint8Array): DecodedImage {
 }
 
 /**
- * Convert BGRA premultiplied to RGBA non-premultiplied.
- * Swaps B and R channels, and unpremultiplies alpha.
- * Modifies buffer in-place.
+ * Convert BGRA premultiplied to RGBA non-premultiplied. Swaps B and R
+ * channels, and unpremultiplies alpha. Modifies buffer in-place.
  */
 function bgraToRgba(buffer: Uint8Array): void {
   const pixels = buffer.length / 4;

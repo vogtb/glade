@@ -17,6 +17,7 @@ import {
   type ColorSchemeProvider,
   type CompositionEvent,
   coreModsToGladeMods,
+  type GladePlatformRuntime,
   type KeyEvent,
   type RenderCallback,
   type TextInputEvent,
@@ -147,8 +148,6 @@ export interface DecodedImageData {
   height: number;
   data: Uint8Array;
 }
-
-type GladePlatformRuntime = "browser" | "macos";
 
 /**
  * Platform interface for window operations. This abstracts browser vs native

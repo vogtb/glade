@@ -14,8 +14,8 @@ export class FontVariant {
   }
 
   /**
-   * Create a FontVariant from base64-encoded font data.
-   * Used for embedded fonts loaded at compile time.
+   * Create a FontVariant from base64-encoded font data. Mostly used for
+   * embedded fonts loaded at compile time.
    */
   static fromBase64(base64Data: string): FontVariant {
     // Inline base64 decoding to avoid importing from @glade/utils
@@ -29,8 +29,8 @@ export class FontVariant {
   }
 
   /**
-   * Create a FontVariant from raw bytes.
-   * Used for fonts loaded dynamically at runtime (e.g., via fetch).
+   * Create a FontVariant from raw bytes. Probably used for fonts loaded
+   * dynamically at runtime (e.g., via fetch).
    */
   static fromBytes(bytes: Uint8Array): FontVariant {
     return new FontVariant(bytes);

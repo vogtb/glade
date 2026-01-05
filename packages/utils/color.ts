@@ -6,10 +6,9 @@ export type ColorObject = {
 };
 
 /**
- * RGBA color with components in 0-1 range.
- *
- * Accepts either a packed hex number (0xRRGGBB) or an object representation.
- * The engine normalizes to a ColorObject internally.
+ * RGBA color with components in 0-1 range. Accepts either a packed hex
+ * number (0xRRGGBB) or an object representation. The engine normalizes to a
+ * ColorObject internally.
  */
 export type Color = ColorObject | number;
 

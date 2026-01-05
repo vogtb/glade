@@ -1,10 +1,8 @@
 /**
  * @glade/shaper - WASM-based text shaping engine
  *
- * Provides text shaping and layout via cosmic-text,
- * compiled to WebAssembly for use in Glade.
- *
- * Uses Bun macros to embed WASM at build time, works in both
+ * Provides text shaping and layout via cosmic-text, compiled to WebAssembly
+ * for use in Glade. Uses Bun macros to embed WASM at build time, works in both
  * native (Bun) and browser environments.
  */
 
@@ -17,25 +15,11 @@ import type { FontId } from "../pkg/shaper";
 import { type InitOutput, initSync, TextShaper as WasmTextShaper } from "../pkg/shaper";
 
 // Embed WASM as base64 at build time via Bun macro
-const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
+const WASM_BASE64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
 
-/**
- * Initialize the WASM module synchronously.
- * Uses the embedded WASM binary - no network fetch required.
- */
-export function initShaper(): InitOutput {
-  const bytes = new TextEncoder().encode(wasmBase64).length;
-  log.info(`shaper embedded WASM binary is ${formatBytes(bytes)}`);
-  const wasmBytes = base64ToBytes(wasmBase64);
-  return initSync({ module: wasmBytes });
-}
-
-/**
- * Create a new text shaper instance.
- * Automatically initializes WASM if not already done.
- */
 export function createTextShaper(): TextShaper {
-  const wasmBytes = base64ToBytes(wasmBase64);
+  const wasmBytes = base64ToBytes(WASM_BASE64);
+  log.info(`shaper embedded WASM binary is ${formatBytes(wasmBytes.byteLength)}`);
   const module = initSync({ module: wasmBytes });
   return new TextShaper(module);
 }
@@ -48,7 +32,10 @@ export type { FontId, InitOutput };
  */
 export interface ShapedGlyph {
   glyphId: number;
-  /** cosmic-text's internal font ID - may differ from requested font due to fallback */
+  /**
+   * cosmic-text's internal font ID - may differ from requested font due
+   * to fallback
+   */
   cosmicFontId: number;
   x: number;
   y: number;
@@ -186,26 +173,26 @@ export class TextShaper {
   }
 
   /**
-   * Register a font from raw font data (TTF/OTF bytes).
-   * Returns a FontId that can be used to reference this font.
+   * Register a font from raw font data (TTF/OTF bytes). Returns a FontId
+   * that can be used to reference this font.
    */
   registerFont(fontData: Uint8Array): FontId {
     return this.inner.register_font(fontData);
   }
 
   /**
-   * Register a font with a custom name.
-   * This allows using any name to reference the font, regardless of its internal family name.
-   * The internal family name and weight are extracted from the font file and stored
-   * so that shaping uses the correct internal properties.
+   * Register a font with a custom name. Allows using any name to ref the font,
+   * regardless of its internal family name. The internal family name and
+   * weight are extracted from the font file and stored so that shaping uses
+   * the correct internal properties.
    */
   registerFontWithName(name: string, fontData: Uint8Array): FontId {
     return this.inner.register_font_with_name(name, fontData);
   }
 
   /**
-   * Get the internal font info for a registered name.
-   * Returns the internal family name and weight if found, or null if not found.
+   * Get the internal font info for a registered name. Returns the internal
+   * family name and weight if found, or null if not found.
    */
   getFontInfo(name: string): { family: string; weight: number } | null {
     return this.inner.get_font_info(name) as { family: string; weight: number } | null;
@@ -219,8 +206,8 @@ export class TextShaper {
   }
 
   /**
-   * Shape a single line of text.
-   * Returns shaped glyphs with positioning information.
+   * Shape a single line of text. Returns shaped glyphs with positioning
+   * information.
    */
   shapeLine(
     text: string,
@@ -331,9 +318,9 @@ export class TextShaper {
   }
 
   /**
-   * Rasterize a glyph at the given font size and weight.
-   * The weight parameter is used for variable fonts (e.g., 400 for regular, 700 for bold).
-   * Returns the rasterized glyph with alpha coverage values.
+   * Rasterize a glyph at the given font size and weight. Weight parameter is
+   * used for variable fonts (e.g., 400 for regular, 700 for bold). Returns
+   * the rasterized glyph with alpha coverage values.
    */
   rasterizeGlyph(
     fontId: FontId,
@@ -366,9 +353,9 @@ export class TextShaper {
   }
 
   /**
-   * Rasterize a glyph using cosmic-text's internal font ID.
-   * This is used when shaping falls back to a different font than requested.
-   * The weight parameter is used for variable fonts (e.g., 400 for regular, 700 for bold).
+   * Rasterize a glyph using cosmic-text's internal font ID. Used when shaping
+   * falls back to a different font than requested. Weight parameter is used
+   * for variable fonts (e.g., 400 for regular, 700 for bold).
    */
   rasterizeGlyphByCosmicId(
     cosmicFontId: number,

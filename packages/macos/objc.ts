@@ -1,6 +1,6 @@
 /**
- * Objective-C runtime bindings for macOS.
- * Provides low-level access to the Objective-C runtime for FFI calls.
+ * Objective-C runtime bindings for macOS. Provides low-level access to the
+ * Objective-C runtime for FFI calls.
  */
 
 import { dlopen, FFIType, type Pointer, ptr } from "bun:ffi";

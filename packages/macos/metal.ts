@@ -72,7 +72,8 @@ const classes = {
 export function createMetalLayerForView(nsView: Pointer): Pointer {
   // Following Dawn's pattern from utils_metal.mm:
   // 1. [view setWantsLayer:YES]
-  // 2. [view setLayer:[CAMetalLayer layer]]  -- use class method 'layer', not alloc/init
+  // 2. [view setLayer:[CAMetalLayer layer]]  -- use class method 'layer',
+  //    not alloc/init
   // 3. [[view layer] setContentsScale:[nsWindow backingScaleFactor]]
   // 4. Return [view layer]
 
@@ -111,9 +112,9 @@ export function createMetalLayerForView(nsView: Pointer): Pointer {
     throw new Error("Failed to get layer from view");
   }
 
-  // Set colorspace to sRGB for proper color management
-  // This ensures colors are displayed correctly and match browser WebGPU behavior
-  // Without this, macOS doesn't perform color management and colors may appear incorrect
+  // Set colorspace to sRGB for proper color management. This ensures colors
+  // are displayed correctly and match browser WebGPU behavior. Without this,
+  // macOS doesn't perform color management and colors may appear incorrect
   if (srgbNameCFString) {
     const srgbColorspace = coreGraphics.symbols.CGColorSpaceCreateWithName(srgbNameCFString);
     log.info(`metal layer cfString=${srgbNameCFString}`);

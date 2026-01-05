@@ -1,3 +1,4 @@
+import type { TitleBarStyle } from "@glade/core";
 import type { Pointer } from "bun:ffi";
 
 import { getSelector, objcSendOneBool, objcSendOneU64, objcSendReturnU64 } from "./objc";
@@ -15,9 +16,7 @@ const selectors = {
   setMovableByWindowBackground: getSelector("setMovableByWindowBackground:"),
 };
 
-export type MacOSTitleBarStyle = "standard" | "transparent" | "controlled";
-
-export function applyTitleBarStyle(nsWindow: Pointer, style: MacOSTitleBarStyle): void {
+export function applyTitleBarStyle(nsWindow: Pointer, style: TitleBarStyle): void {
   const rawMask = objcSendReturnU64.symbols.objc_msgSend(nsWindow, selectors.styleMask);
   const currentMask = typeof rawMask === "bigint" ? rawMask : BigInt(rawMask);
 

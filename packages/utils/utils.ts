@@ -2,7 +2,6 @@ export * from "./bytes";
 export * from "./clamp";
 export * from "./color";
 export * from "./hash";
-export * from "./misc";
 export * from "./perf";
 export * from "./rand";
 export * from "./string";

@@ -69,6 +69,8 @@
     "WGSL",
     "egui",
     "MSAA",
-    "fontdb"
+    "fontdb",
+    "autorelease",
+    "onuncapturederror"
   ]
 }

@@ -1,6 +1,6 @@
 /**
- * Platform-agnostic event types and listener interfaces.
- * Loosely based on GLFW events but designed to work across browser and native.
+ * Platform-agnostic event types and listener interfaces. Loosely based on
+ * GLFW events but designed to work across browser and native.
  */
 
 // Key action constants
@@ -147,8 +147,8 @@ export const CursorStyle = {
 export type CursorStyle = (typeof CursorStyle)[keyof typeof CursorStyle];
 
 /**
- * Event handler interface that contexts can implement.
- * Returns a cleanup function to remove the listener.
+ * Event handler interface that contexts can implement. Returns a cleanup
+ * function to remove the listener.
  */
 export interface EventTarget {
   onKey(callback: KeyCallback): () => void;

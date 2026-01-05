@@ -8,7 +8,9 @@ import type {
   CharEvent,
   Clipboard,
   ColorSchemeProvider,
+  CompositionEvent,
   CursorStyle,
+  KeyEvent,
   RenderCallback,
   TextInputEvent,
   WebGPUContext,
@@ -21,7 +23,12 @@ import {
   type Modifiers,
 } from "@glade/core";
 
-import { createWebGPUContext, type MacOSContextOptions, runWebGPURenderLoop } from "./context.ts";
+import {
+  createWebGPUContext,
+  type MacOSContextOptions,
+  type MacOSWebGPUContext,
+  runWebGPURenderLoop,
+} from "./context.ts";
 import { decodeImage } from "./image.ts";
 import { createColorSchemeProvider } from "./theme.ts";
 
@@ -78,8 +85,8 @@ class MacOSGladePlatform implements GladePlatform {
   }
 
   /**
-   * Tick the platform - should be called from the render loop.
-   * Processes pending animation frame callbacks.
+   * Tick the platform - should be called from the render loop. Processes
+   * pending animation frame callbacks.
    */
   tick(time: number): void {
     const callbacks = Array.from(this.animationFrameCallbacks.entries());
@@ -101,7 +108,7 @@ class MacOSGladePlatform implements GladePlatform {
    * Run the WebGPU render loop.
    */
   runRenderLoop(callback: RenderCallback): void {
-    const ctx = this.ctx as import("./context.ts").MacOSWebGPUContext;
+    const ctx = this.ctx as MacOSWebGPUContext;
     runWebGPURenderLoop(ctx, (time: number, _deltaTime: number) => {
       this.tick(time * 1000);
       return callback(time, _deltaTime);
@@ -120,8 +127,8 @@ interface MacOSWebGPUContextExt extends WebGPUContext {
 /**
  * Render target for MacOS/GLFW.
  *
- * Note: GLFW only allows one callback per event type per window.
- * We use a single shared cursor position tracker and dispatch to multiple listeners.
+ * NOTE: GLFW only allows one callback per event type per window. We use a
+ * single shared cursor position tracker and dispatch to multiple listeners.
  */
 class MacOSRenderTarget implements GladeRenderTarget {
   private ctx: MacOSWebGPUContextExt;
@@ -334,7 +341,7 @@ class MacOSRenderTarget implements GladeRenderTarget {
     });
   }
 
-  onKey(callback: (event: import("@glade/core").KeyEvent) => void): () => void {
+  onKey(callback: (event: KeyEvent) => void): () => void {
     return this.ctx.onKey((event) => {
       callback(event);
     });
@@ -352,23 +359,19 @@ class MacOSRenderTarget implements GladeRenderTarget {
     });
   }
 
-  onCompositionStart(
-    callback: (event: import("@glade/core").CompositionEvent) => void
-  ): () => void {
+  onCompositionStart(callback: (event: CompositionEvent) => void): () => void {
     return this.ctx.onCompositionStart((event) => {
       callback(event);
     });
   }
 
-  onCompositionUpdate(
-    callback: (event: import("@glade/core").CompositionEvent) => void
-  ): () => void {
+  onCompositionUpdate(callback: (event: CompositionEvent) => void): () => void {
     return this.ctx.onCompositionUpdate((event) => {
       callback(event);
     });
   }
 
-  onCompositionEnd(callback: (event: import("@glade/core").CompositionEvent) => void): () => void {
+  onCompositionEnd(callback: (event: CompositionEvent) => void): () => void {
     return this.ctx.onCompositionEnd((event) => {
       callback(event);
     });
@@ -414,8 +417,8 @@ export interface MacOSGladePlatformInstance extends GladePlatform {
 export type MacOSGladePlatformOptions = MacOSContextOptions;
 
 /**
- * Create a Glade platform for macOS.
- * This creates the WebGPU context and color scheme provider internally.
+ * Create a Glade platform for macOS. Creates the WebGPU context and color
+ * scheme provider internally.
  */
 export async function createGladePlatform(
   options: MacOSGladePlatformOptions = {}

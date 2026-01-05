@@ -1,18 +1,19 @@
 /**
- * Glade platform implementation for Browser.
- *
- * Bridges a WebGPUContext to Glade's GladePlatform interface.
+ * Glade platform implementation for Browser. Bridges a WebGPUContext to
+ * Glade's GladePlatform interface.
  */
 
 import {
   type CharEvent,
   type Clipboard,
   type ColorSchemeProvider,
+  type CompositionEvent,
   coreModsToGladeMods,
   type CursorStyle,
   type DecodedImageData,
   type GladePlatform,
   type GladeRenderTarget,
+  type KeyEvent,
   type Modifiers,
   type RenderCallback,
   type TextInputEvent,
@@ -158,7 +159,8 @@ class BrowserRenderTarget implements GladeRenderTarget {
   }
 
   destroy(): void {
-    // Handled by parent context
+    // Handled by parent context, also, there's not really much of a sense of
+    // having to "destroy" resources in the browser...
   }
 
   onMouseDown(
@@ -289,7 +291,7 @@ class BrowserRenderTarget implements GladeRenderTarget {
     });
   }
 
-  onKey(callback: (event: import("@glade/core").KeyEvent) => void): () => void {
+  onKey(callback: (event: KeyEvent) => void): () => void {
     return this.ctx.onKey((event) => {
       callback(event);
     });
@@ -307,23 +309,19 @@ class BrowserRenderTarget implements GladeRenderTarget {
     });
   }
 
-  onCompositionStart(
-    callback: (event: import("@glade/core").CompositionEvent) => void
-  ): () => void {
+  onCompositionStart(callback: (event: CompositionEvent) => void): () => void {
     return this.ctx.onCompositionStart((event) => {
       callback(event);
     });
   }
 
-  onCompositionUpdate(
-    callback: (event: import("@glade/core").CompositionEvent) => void
-  ): () => void {
+  onCompositionUpdate(callback: (event: CompositionEvent) => void): () => void {
     return this.ctx.onCompositionUpdate((event) => {
       callback(event);
     });
   }
 
-  onCompositionEnd(callback: (event: import("@glade/core").CompositionEvent) => void): () => void {
+  onCompositionEnd(callback: (event: CompositionEvent) => void): () => void {
     return this.ctx.onCompositionEnd((event) => {
       callback(event);
     });
@@ -368,8 +366,8 @@ export interface BrowserGladePlatformInstance extends GladePlatform {
 export type BrowserGladePlatformOptions = BrowserWebGPUContextOptions;
 
 /**
- * Create a Glade platform for the browser.
- * This creates the WebGPU context and color scheme provider internally.
+ * Create a Glade platform for the browser. This creates the WebGPU context
+ * and color scheme provider internally.
  */
 export async function createGladePlatform(
   options: BrowserGladePlatformOptions = {}

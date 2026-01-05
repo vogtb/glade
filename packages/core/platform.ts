@@ -1,8 +1,7 @@
 /**
- * Platform abstraction types for Glade.
- *
- * These interfaces define the contract between the Glade framework
- * and platform-specific implementations (browser, macOS).
+ * Platform abstraction types for Glade. These interfaces define the contract
+ * between the Glade framework and platform-specific implementations (browser,
+ * macOS).
  */
 
 import type { Clipboard } from "./clipboard.ts";
@@ -47,12 +46,16 @@ export interface DecodedImageData {
   data: Uint8Array;
 }
 
+export type GladePlatformRuntime = "browser" | "macos";
+
+export type TitleBarStyle = "standard" | "transparent" | "controlled";
+
 /**
- * Platform interface for window operations.
- * This abstracts browser vs native differences.
+ * Platform interface for window operations. This abstracts browser vs native
+ * differences.
  */
 export interface GladePlatform {
-  readonly runtime: "browser" | "macos";
+  readonly runtime: GladePlatformRuntime;
   readonly clipboard: Clipboard;
   readonly colorSchemeProvider: ColorSchemeProvider;
 

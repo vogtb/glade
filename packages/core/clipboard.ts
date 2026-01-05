@@ -1,8 +1,7 @@
 /**
- * Cross-platform clipboard contract.
- *
- * Implementations should provide async access to read and write plain text,
- * exposing capability flags so callers can gracefully degrade when unavailable.
+ * Cross-platform clipboard contract. Impl should provide async access to read
+ * and write plain text, exposing capability flags so callers can gracefully
+ * degrade when unavailable.
  */
 export type Clipboard = {
   /** True when the environment exposes any clipboard access. */

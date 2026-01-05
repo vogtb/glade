@@ -1,4 +1,4 @@
-import type { ContextOptions, RenderCallback, WebGPUContext } from "@glade/core";
+import type { ContextOptions, RenderCallback, TitleBarStyle, WebGPUContext } from "@glade/core";
 import {
   type CharCallback,
   type CloseCallback,
@@ -66,10 +66,10 @@ import {
   textureFormatToString,
   tickDevice,
 } from "./webgpu.ts";
-import { applyTitleBarStyle, type MacOSTitleBarStyle } from "./window_style.ts";
+import { applyTitleBarStyle } from "./window_style.ts";
 
-// Map CursorStyle to GLFW cursor shape constants
-// Returns null for cursors that need NSCursor handling
+// Map CursorStyle to GLFW cursor shape constants, returning null for cursors
+// that need NSCursor handling
 function cursorStyleToGLFWShape(style: CursorStyle): number | null {
   switch (style) {
     case CursorStyle.Default:
@@ -99,8 +99,8 @@ function cursorStyleToGLFWShape(style: CursorStyle): number | null {
   }
 }
 
-// Set cursor using native NSCursor API
-// Used for cursors not available in GLFW (grab, grabbing)
+// Set cursor using native NSCursor API. Used for cursors not available in
+// GLFW (grab, grabbing)
 function setNSCursor(style: CursorStyle): void {
   const NSCursor = getClass("NSCursor");
   let selectorName: string;
@@ -150,8 +150,9 @@ class CursorCache {
 
 export interface MacOSContextOptions extends ContextOptions {
   title?: string;
-  // "transparent" draws content under the title bar; leave space for traffic lights if needed.
-  titleBarStyle?: MacOSTitleBarStyle;
+  // "transparent" draws content under the title bar; leave space for traffic
+  // lights if needed.
+  titleBarStyle?: TitleBarStyle;
 }
 
 // WebGPU context interface
@@ -169,9 +170,13 @@ export interface MacOSWebGPUContext extends WebGPUContext {
   handleResize(): void;
 }
 
+// For macOS we need to multiply it in a similar way to Chrome to get desired
+// scroll effect.
+const SCROLL_SCALE = 3.5;
+
 /**
- * Creates a native WebGPU context for macOS using GLFW and Dawn.
- * This is an async function because WebGPU adapter/device creation is asynchronous.
+ * Creates a native WebGPU context for macOS using GLFW and Dawn. Async
+ * because WebGPU adapter/device creation is asynchronous.
  */
 export async function createWebGPUContext(
   options: MacOSContextOptions = {}
@@ -230,8 +235,8 @@ export async function createWebGPUContext(
     throw new Error("No supported surface formats");
   }
 
-  // Use the first (preferred) format from capabilities
-  // On macOS with Dawn, this is typically BGRA8Unorm (0x1b)
+  // Use the first (preferred) format from capabilities. On macOS with Dawn,
+  // this is typically BGRA8Unorm (0x1b)
   const preferredFormat = capabilities.formats[0]!;
   const preferredPresentMode =
     capabilities.presentModes.length > 0 ? capabilities.presentModes[0]! : undefined;
@@ -322,7 +327,8 @@ export async function createWebGPUContext(
     }
   };
 
-  // Fallback text input from GLFW char events (non-IME paths) and fan-out to listeners
+  // Fallback text input from GLFW char events (non-IME paths) and fan-out
+  // to listeners
   const charCleanup = glfw.setCharCallback(window, (_win, codepoint) => {
     const text = String.fromCodePoint(codepoint);
     emitTextInput(text, false);
@@ -554,11 +560,12 @@ export async function createWebGPUContext(
 
     onScroll(callback: ScrollCallback): () => void {
       const cleanup = glfw.setScrollCallback(window, (_win, deltaX, deltaY) => {
-        // GLFW: positive yoffset = scroll up (wheel toward user / trackpad swipe down in natural mode)
-        // Our convention: positive deltaY = scroll down (increase offset, see content below)
-        // So we negate the GLFW values. GLFW gives raw ticks (~1-3), scale up to match pixels.
-        const scale = 3.5;
-        callback({ deltaX: -deltaX * scale, deltaY: -deltaY * scale });
+        // GLFW: positive yoffset = scroll up (wheel toward user / trackpad
+        // swipe down in natural mode)
+        // Our convention: positive deltaY = scroll down (increase offset,
+        // see content below) o we negate the GLFW values. GLFW gives raw
+        // ticks (~1-3), scale up to match pixels.
+        callback({ deltaX: -deltaX * SCROLL_SCALE, deltaY: -deltaY * SCROLL_SCALE });
       });
       cleanups.push(cleanup);
       return () => {
@@ -597,7 +604,8 @@ export async function createWebGPUContext(
         if (focused !== 0 && imeHandle) {
           imeHandle.makeFirstResponder();
         } else if (focused === 0 && compositionActive) {
-          // Ensure we end any in-flight composition when focus leaves the window
+          // Ensure we end any in-flight composition when focus leaves
+          // the window
           emitComposition("end", "", 0, 0);
           compositionActive = false;
         }
@@ -656,8 +664,7 @@ export async function createWebGPUContext(
 }
 
 /**
- * Native render loop for macOS WebGPU context.
- * Time values are in seconds.
+ * Native render loop for macOS WebGPU context. Time values are in seconds.
  * Uses a timed loop to yield to the host event loop between frames.
  */
 export function runWebGPURenderLoop(ctx: MacOSWebGPUContext, callback: RenderCallback): void {
@@ -686,7 +693,8 @@ export function runWebGPURenderLoop(ctx: MacOSWebGPUContext, callback: RenderCal
 
     glfw.pollEvents();
 
-    // Yield to the host event loop between frames so async tasks (e.g., clipboard reads) can run.
+    // Yield to the host event loop between frames so async tasks
+    // (e.g., clipboard reads) can run.
     setTimeout(frame, 0);
   }
 

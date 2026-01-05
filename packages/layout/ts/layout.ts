@@ -1,11 +1,9 @@
 /**
  * @glade/layout - WASM-based Taffy layout engine
  *
- * Provides CSS flexbox/grid layout computation via Taffy,
- * compiled to WebAssembly for use in Glade.
- *
- * Uses Bun macros to embed WASM at build time, works in both
- * native (Bun) and browser environments.
+ * Provides CSS flexbox/grid layout computation via Taffy, compiled to
+ * WebAssembly for use in Glade. Uses Bun macros to embed WASM at build time,
+ * works in both native (Bun) and browser environments.
  */
 
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
@@ -19,8 +17,8 @@ import {
   TaffyLayoutEngine as WasmTaffyLayoutEngine,
 } from "../pkg/layout";
 
-// Embed WASM as base64 at build time via Bun macro
-const wasmBase64 = COMPTIME_embedAsBase64("../layout/pkg/layout_bg.wasm");
+// Embeded WASM as base64 at build time via Bun macro
+const WASM_BASE64 = COMPTIME_embedAsBase64("../layout/pkg/layout_bg.wasm");
 
 export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
   readonly module: InitOutput;
@@ -33,12 +31,10 @@ export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
 
 /**
  * Create a new layout engine instance.
- * Automatically initializes WASM if not already done.
  */
 export function createLayoutEngine(): TaffyLayoutEngine {
-  const bytes = new TextEncoder().encode(wasmBase64).length;
-  log.info(`layout engine embedded WASM binary is ${formatBytes(bytes)}`);
-  const wasmBytes = base64ToBytes(wasmBase64);
+  const wasmBytes = base64ToBytes(WASM_BASE64);
+  log.info(`layout engine embedded WASM binary is ${formatBytes(wasmBytes.byteLength)}`);
   const module = initSync({ module: wasmBytes });
   return new TaffyLayoutEngine(module);
 }
@@ -47,8 +43,8 @@ export function createLayoutEngine(): TaffyLayoutEngine {
 export type { InitOutput, LayoutBounds, LayoutId };
 
 /**
- * Callback type for measuring nodes during layout computation.
- * Called by Taffy when it needs the intrinsic size of a measurable node.
+ * Callback type for measuring nodes during layout computation. Called by
+ * Taffy when it needs the intrinsic size of a measurable node.
  */
 export type MeasureCallback = (
   measureId: number,
@@ -57,8 +53,6 @@ export type MeasureCallback = (
   availableWidth: number,
   availableHeight: number
 ) => { width: number; height: number };
-
-// ============ CSS Grid Types ============
 
 /**
  * Grid auto-flow direction for CSS Grid.
@@ -92,8 +86,7 @@ export type TrackSize =
 export type GridTemplate = number | TrackSize[];
 
 /**
- * Style input for layout computation.
- * Maps to Glade's Styles interface.
+ * Style input for layout computation. Maps to Glade's Styles interface.
  */
 export interface StyleInput {
   // Display & Flexbox
