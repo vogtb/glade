@@ -318,7 +318,7 @@ export class GlyphAtlas {
     // Enforce minimum font size for rasterization
     const minFontSize = 4;
     if (key.fontSize < minFontSize) {
-      console.debug(
+      log.debug(
         `Glyph font size ${key.fontSize}px is below minimum ${minFontSize}px, skipping: char="${glyphChar}"`
       );
       return null;
@@ -339,7 +339,7 @@ export class GlyphAtlas {
 
     if (!glyphData || glyphData.width === 0 || glyphData.height === 0) {
       // TODO: seeing this a lot in logs. fix.
-      // console.warn(
+      // log.warn(
       //   `Glyph rasterizer returned no data: char="${glyphChar}" glyphId=${key.glyphId} fontFamily="${fontFamily}" fontSize=${key.fontSize} cosmicFontId=${cosmicFontId ?? -1}`
       // );
       return null;
@@ -347,7 +347,7 @@ export class GlyphAtlas {
 
     // Ensure glyph data is not too large
     if (glyphData.width > this.config.width || glyphData.height > this.config.height) {
-      console.warn(
+      log.warn(
         `Glyph too large for atlas: ${glyphData.width}x${glyphData.height}, atlas size: ${this.config.width}x${this.config.height}`
       );
       return null;
@@ -922,7 +922,7 @@ export class TextSystem {
 
     const fontId = this.fontFamilyToId.get(fontFamily);
     if (!fontId) {
-      console.warn(`[TextSystem] Font not found: "${fontFamily}"`);
+      log.warn(`[TextSystem] Font not found: "${fontFamily}"`);
       return instances;
     }
 
@@ -1004,7 +1004,7 @@ export class TextSystem {
         }
 
         if (!cached) {
-          console.warn(
+          log.warn(
             `Failed to cache glyph: char="${char}" glyphId=${glyph.glyphId} cosmicFontId=${glyph.cosmicFontId} fontSize=${rasterFontSize} fontFamilies=${fallbackFamilies.join(" -> ")}`
           );
           continue;
@@ -1273,7 +1273,7 @@ export class TextPipeline {
     });
     device.popErrorScope().then((error) => {
       if (error) {
-        console.error("[TextPipeline] Render pipeline creation failed:", error.message ?? error);
+        log.error("TextPipeline: Render pipeline creation failed:", error.message ?? error);
       }
     });
   }

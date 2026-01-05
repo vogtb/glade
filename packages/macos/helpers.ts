@@ -68,7 +68,7 @@ function loadHelpersLib(): HelperLib | null {
       titlebar_drag_monitor_detach: { args: [FFIType.ptr], returns: FFIType.void },
     }) as unknown as HelperLib;
   } catch (err) {
-    console.warn("Failed to load Glade helper dylib; IME and titlebar drag disabled", err);
+    log.warn("Failed to load Glade helper dylib; IME and titlebar drag disabled", err);
     return null;
   }
   return cachedLib;

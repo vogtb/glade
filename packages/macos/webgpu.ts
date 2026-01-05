@@ -38,6 +38,7 @@ import {
   WGPUVertexFormat,
   WGPUVertexStepMode,
 } from "@glade/dawn";
+import { log } from "@glade/logging";
 import { FFIType, JSCallback, type Pointer, ptr, toArrayBuffer } from "bun:ffi";
 
 // Buffer usage flag mapping
@@ -1160,7 +1161,7 @@ export class DawnGPUCommandEncoder {
   ) {
     const qs = querySet as unknown as { _handle?: WGPUQuerySet | null };
     if (!qs._handle) {
-      console.warn("resolveQuerySet called with unsupported query set");
+      log.warn("resolveQuerySet called with unsupported query set");
       return;
     }
     dawn.wgpuCommandEncoderResolveQuerySet(
@@ -2576,8 +2577,8 @@ function ensureErrorCallback(): JSCallback {
           }
         }
 
-        console.error(`\n[DAWN ERROR] Type: ${typeName}`);
-        console.error(`[DAWN ERROR] Message: ${message}\n`);
+        log.error(`DAWN ERROR: Type: ${typeName}`);
+        log.error(`DAWN ERROR: Message: ${message}\n`);
       },
       {
         args: [FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.ptr],

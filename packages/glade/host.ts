@@ -14,6 +14,7 @@
  */
 
 import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
+import { log } from "@glade/logging";
 
 import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
@@ -750,14 +751,14 @@ export class HostTexturePipeline {
       const count = Math.min(primitives.length, available);
 
       if (count <= 0) {
-        console.warn(
+        log.warn(
           `HostTexturePipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${primitives.length} host textures`
         );
         continue;
       }
 
       if (count < primitives.length) {
-        console.warn(
+        log.warn(
           `HostTexturePipeline: buffer nearly full, rendering ${count}/${primitives.length} host textures`
         );
       }

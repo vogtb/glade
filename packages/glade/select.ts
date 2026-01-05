@@ -13,6 +13,7 @@
  * Uses content-based element keys to track elements across frame rebuilds.
  */
 
+import { log } from "@glade/logging";
 import { type Color, toColorObject } from "@glade/utils";
 
 import type { Bounds } from "./bounds.ts";
@@ -323,7 +324,7 @@ export class CrossElementSelectionManager {
       if (this.state.isActive) {
         const text = this.getSelectedText();
         if (text) {
-          window.getClipboard().writeText(text).catch(console.warn);
+          window.getClipboard().writeText(text).catch(log.warn);
         }
         return { stopPropagation: true, preventDefault: true };
       }

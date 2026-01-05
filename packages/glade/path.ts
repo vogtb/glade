@@ -9,6 +9,7 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
+import { log } from "@glade/logging";
 import { type Color, toColorObject } from "@glade/utils";
 
 import type { Bounds } from "./bounds.ts";
@@ -945,15 +946,13 @@ export class PathPipeline {
       const numIndices = path.indices.length;
 
       if (this.currentVertexOffset + numVertices > this.maxVertices) {
-        console.warn(
+        log.warn(
           `PathPipeline: vertex buffer full (${this.currentVertexOffset}/${this.maxVertices})`
         );
         break;
       }
       if (this.currentIndexOffset + numIndices > this.maxIndices) {
-        console.warn(
-          `PathPipeline: index buffer full (${this.currentIndexOffset}/${this.maxIndices})`
-        );
+        log.warn(`PathPipeline: index buffer full (${this.currentIndexOffset}/${this.maxIndices})`);
         break;
       }
 

@@ -9,6 +9,7 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
+import { log } from "@glade/logging";
 
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { ShadowPrimitive } from "./scene.ts";
@@ -328,7 +329,7 @@ export class ShadowPipeline {
     const count = Math.min(shadows.length, available);
 
     if (count <= 0) {
-      console.warn(
+      log.warn(
         `ShadowPipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${shadows.length} shadows`
       );
       return;

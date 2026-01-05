@@ -1,3 +1,4 @@
+import { log } from "@glade/logging";
 import type { FontStyleOptions } from "@glade/shaper";
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
@@ -974,7 +975,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       return false;
     }
     clipboard.writeText(text).catch((err) => {
-      console.warn("Clipboard write failed:", err);
+      log.warn("Clipboard write failed:", err);
     });
     return true;
   }
@@ -989,7 +990,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       return false;
     }
     clipboard.writeText(text).catch((err) => {
-      console.warn("Clipboard write failed:", err);
+      log.warn("Clipboard write failed:", err);
     });
     this.options.onChange?.(this.getState().value);
     return true;
@@ -1012,7 +1013,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
         this.revealCaret(window, cx);
       })
       .catch((err) => {
-        console.warn("Clipboard read failed:", err);
+        log.warn("Clipboard read failed:", err);
       });
     return true;
   }

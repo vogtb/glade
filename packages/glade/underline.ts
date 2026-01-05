@@ -6,6 +6,7 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
+import { log } from "@glade/logging";
 
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { UnderlinePrimitive } from "./scene.ts";
@@ -336,7 +337,7 @@ export class UnderlinePipeline {
     const count = Math.min(underlines.length, available);
 
     if (count <= 0) {
-      console.warn(
+      log.warn(
         `UnderlinePipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${underlines.length} underlines`
       );
       return;

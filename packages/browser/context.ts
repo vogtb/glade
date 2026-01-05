@@ -41,8 +41,8 @@ export interface BrowserWebGPUContext extends WebGPUContext {
 }
 
 /**
- * Creates a WebGPU context for browser rendering.
- * This is async because WebGPU adapter/device creation is asynchronous.
+ * Creates a WebGPU context for browser rendering. This is async because
+ * WebGPU adapter/device creation is asynchronous.
  */
 export async function createWebGPUContext(
   options: BrowserWebGPUContextOptions = {}
@@ -51,7 +51,8 @@ export async function createWebGPUContext(
 
   // If no custom canvas provided, make it fill the window
   const isFullscreen = !options.canvas;
-  // In fullscreen mode, always use actual window size (ignore passed width/height)
+  // In fullscreen mode, always use actual window size (ignore
+  // passed width/height)
   const logicalWidth = isFullscreen ? window.innerWidth : (options.width ?? 800);
   const logicalHeight = isFullscreen ? window.innerHeight : (options.height ?? 600);
 

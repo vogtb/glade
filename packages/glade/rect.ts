@@ -6,6 +6,7 @@
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
+import { log } from "@glade/logging";
 
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { RectPrimitive } from "./scene.ts";
@@ -463,14 +464,14 @@ export class RectPipeline {
     const count = Math.min(rects.length, available);
 
     if (count <= 0) {
-      console.warn(
+      log.warn(
         `RectPipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${rects.length} rects`
       );
       return;
     }
 
     if (count < rects.length) {
-      console.warn(`RectPipeline: buffer nearly full, rendering ${count}/${rects.length} rects`);
+      log.warn(`RectPipeline: buffer nearly full, rendering ${count}/${rects.length} rects`);
     }
 
     const startOffset = this.currentOffset;

@@ -5,6 +5,7 @@
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
+import { log } from "@glade/logging";
 
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { ClipBounds } from "./scene.ts";
@@ -642,7 +643,7 @@ export class ImagePipeline {
     const count = Math.min(images.length, available);
 
     if (count <= 0) {
-      console.warn(
+      log.warn(
         `ImagePipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${images.length} images`
       );
       return;

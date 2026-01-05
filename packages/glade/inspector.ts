@@ -697,7 +697,7 @@ export class Inspector {
   }
 
   /**
-   * Log selected element info to console.
+   * Log selected element info.
    */
   logSelectedElement(): void {
     const info = this.getSelectedElement();
