@@ -476,7 +476,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -542,7 +544,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -554,7 +558,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -571,7 +577,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -583,7 +591,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -595,7 +605,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -615,7 +627,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -627,7 +641,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 
@@ -639,7 +655,9 @@ export async function createWebGPUContext(
       return () => {
         cleanup();
         const idx = cleanups.indexOf(cleanup);
-        if (idx >= 0) cleanups.splice(idx, 1);
+        if (idx >= 0) {
+          cleanups.splice(idx, 1);
+        }
       };
     },
 

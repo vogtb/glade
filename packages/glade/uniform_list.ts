@@ -279,7 +279,9 @@ export class UniformList<T> extends GladeElement<
     // Only create layout for visible items
     for (let i = visibleRange.start; i < visibleRange.end; i++) {
       const item = this.items[i];
-      if (item === undefined) continue;
+      if (item === undefined) {
+        continue;
+      }
 
       const props: UniformListItemProps = {
         index: i,
@@ -289,7 +291,9 @@ export class UniformList<T> extends GladeElement<
 
       const element = this.context ? this.renderItemFn(item, props, this.context) : null;
 
-      if (!element) continue;
+      if (!element) {
+        continue;
+      }
 
       const childId = cx.allocateChildId();
       itemElementIds.push(childId);

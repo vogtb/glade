@@ -1255,7 +1255,9 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
           mouseDown: (event, window, _cx) => {
             const clickY = event.y - vScrollbar.trackBounds.y;
             const scrollState = window.getScrollState(scrollHandleId);
-            if (!scrollState) return;
+            if (!scrollState) {
+              return;
+            }
 
             // Check if click is on thumb or track
             if (isPointInThumb({ x: event.x, y: event.y }, vScrollbar.thumbBounds)) {
@@ -1304,7 +1306,9 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
           mouseDown: (event, window, _cx) => {
             const clickX = event.x - hScrollbar.trackBounds.x;
             const scrollState = window.getScrollState(scrollHandleId);
-            if (!scrollState) return;
+            if (!scrollState) {
+              return;
+            }
 
             // Check if click is on thumb or track
             if (isPointInThumb({ x: event.x, y: event.y }, hScrollbar.thumbBounds)) {
@@ -1474,7 +1478,9 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
     // Check visibility based on configuration
     const shouldShow = this.shouldShowScrollbars(cx, prepaintState, config);
-    if (!shouldShow) return;
+    if (!shouldShow) {
+      return;
+    }
 
     // Paint vertical scrollbar
     if (verticalScrollbar) {
@@ -1523,8 +1529,12 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     prepaintState: DivPrepaintState,
     config: ResolvedScrollbarConfig
   ): boolean {
-    if (config.visibility === "never") return false;
-    if (config.visibility === "always") return true;
+    if (config.visibility === "never") {
+      return false;
+    }
+    if (config.visibility === "always") {
+      return true;
+    }
 
     // For "hover" visibility, show when container or scrollbar is hovered
     if (config.visibility === "hover") {

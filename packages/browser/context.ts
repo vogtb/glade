@@ -134,10 +134,18 @@ export async function createWebGPUContext(
   // Helper to convert DOM modifier keys to our bitmask
   function getModifiers(e: KeyboardEvent | MouseEvent): number {
     let mods = 0;
-    if (e.shiftKey) mods |= ModifierKey.Shift;
-    if (e.ctrlKey) mods |= ModifierKey.Control;
-    if (e.altKey) mods |= ModifierKey.Alt;
-    if (e.metaKey) mods |= ModifierKey.Super;
+    if (e.shiftKey) {
+      mods |= ModifierKey.Shift;
+    }
+    if (e.ctrlKey) {
+      mods |= ModifierKey.Control;
+    }
+    if (e.altKey) {
+      mods |= ModifierKey.Alt;
+    }
+    if (e.metaKey) {
+      mods |= ModifierKey.Super;
+    }
     return mods;
   }
 

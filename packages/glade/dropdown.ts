@@ -515,7 +515,9 @@ export class GladeDropdown extends GladeContainerElement<
     const currentOpen = this.openValue;
 
     const triggerClickHandler: ClickHandler = (_event, _window, _cx) => {
-      if (isDisabled) return;
+      if (isDisabled) {
+        return;
+      }
       if (onOpenChange) {
         onOpenChange(!currentOpen);
       }

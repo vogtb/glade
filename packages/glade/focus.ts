@@ -196,7 +196,9 @@ export class FocusNavigator {
     let bestDistance = Infinity;
 
     for (let i = 0; i < this.elements.length; i++) {
-      if (i === currentIndex) continue;
+      if (i === currentIndex) {
+        continue;
+      }
 
       const element = this.elements[i]!;
       const center = {
@@ -221,7 +223,9 @@ export class FocusNavigator {
           break;
       }
 
-      if (!isInDirection) continue;
+      if (!isInDirection) {
+        continue;
+      }
 
       // Calculate distance (weighted by axis alignment)
       const dx = center.x - currentCenter.x;

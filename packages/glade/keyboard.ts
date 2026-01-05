@@ -365,15 +365,31 @@ export function formatKeystroke(keystroke: Keystroke, platform?: PlatformOS): st
   const parts: string[] = [];
 
   if (isMac) {
-    if (keystroke.modifiers.ctrl) parts.push(symbols["ctrl"] ?? "Ctrl");
-    if (keystroke.modifiers.alt) parts.push(symbols["alt"] ?? "Alt");
-    if (keystroke.modifiers.shift) parts.push(symbols["shift"] ?? "Shift");
-    if (keystroke.modifiers.meta) parts.push(symbols["meta"] ?? "Cmd");
+    if (keystroke.modifiers.ctrl) {
+      parts.push(symbols["ctrl"] ?? "Ctrl");
+    }
+    if (keystroke.modifiers.alt) {
+      parts.push(symbols["alt"] ?? "Alt");
+    }
+    if (keystroke.modifiers.shift) {
+      parts.push(symbols["shift"] ?? "Shift");
+    }
+    if (keystroke.modifiers.meta) {
+      parts.push(symbols["meta"] ?? "Cmd");
+    }
   } else {
-    if (keystroke.modifiers.ctrl) parts.push(symbols["ctrl"] ?? "Ctrl");
-    if (keystroke.modifiers.alt) parts.push(symbols["alt"] ?? "Alt");
-    if (keystroke.modifiers.shift) parts.push(symbols["shift"] ?? "Shift");
-    if (keystroke.modifiers.meta) parts.push(symbols["meta"] ?? "Win");
+    if (keystroke.modifiers.ctrl) {
+      parts.push(symbols["ctrl"] ?? "Ctrl");
+    }
+    if (keystroke.modifiers.alt) {
+      parts.push(symbols["alt"] ?? "Alt");
+    }
+    if (keystroke.modifiers.shift) {
+      parts.push(symbols["shift"] ?? "Shift");
+    }
+    if (keystroke.modifiers.meta) {
+      parts.push(symbols["meta"] ?? "Win");
+    }
   }
 
   const keySymbol = symbols[keystroke.key];

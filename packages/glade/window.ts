@@ -852,11 +852,15 @@ export class GladeWindow {
    * Update scroll position during scrollbar drag.
    */
   updateScrollbarDrag(currentMousePos: number): void {
-    if (!this.scrollbarDragState) return;
+    if (!this.scrollbarDragState) {
+      return;
+    }
 
     const newOffset = calculateDragScrollOffset(this.scrollbarDragState, currentMousePos);
     const scrollState = this.scrollStates.get(this.scrollbarDragState.scrollHandleId);
-    if (!scrollState) return;
+    if (!scrollState) {
+      return;
+    }
 
     if (this.scrollbarDragState.axis === "y") {
       this.setScrollOffset(this.scrollbarDragState.scrollHandleId, {

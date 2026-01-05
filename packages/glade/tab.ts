@@ -222,8 +222,12 @@ export class TabStopRegistry {
       if (a.config.index !== undefined && b.config.index !== undefined) {
         return a.config.index - b.config.index;
       }
-      if (a.config.index !== undefined) return -1;
-      if (b.config.index !== undefined) return 1;
+      if (a.config.index !== undefined) {
+        return -1;
+      }
+      if (b.config.index !== undefined) {
+        return 1;
+      }
 
       // Spatial order
       return a.tabIndex - b.tabIndex;

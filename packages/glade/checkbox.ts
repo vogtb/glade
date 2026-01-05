@@ -227,7 +227,9 @@ export class GladeCheckbox extends GladeElement<CheckboxRequestState, CheckboxPr
     const isDisabled = this.disabledValue;
 
     const clickHandler: ClickHandler = (_event, _window, _cx) => {
-      if (isDisabled) return;
+      if (isDisabled) {
+        return;
+      }
       if (onCheckedChangeHandler) {
         onCheckedChangeHandler(!currentChecked);
       }
@@ -388,7 +390,9 @@ export class GladeCheckbox extends GladeElement<CheckboxRequestState, CheckboxPr
       bounds,
       handlers: {
         click: (_event, _window, _cx) => {
-          if (isDisabled) return;
+          if (isDisabled) {
+            return;
+          }
           if (onCheckedChangeHandler) {
             onCheckedChangeHandler(!currentChecked);
           }

@@ -240,9 +240,15 @@ export class ListState {
    * Find the item index at a given Y position using binary search.
    */
   findItemAtY(y: number): number {
-    if (this.itemCount === 0) return 0;
-    if (y <= 0) return 0;
-    if (y >= this.totalHeight) return this.itemCount - 1;
+    if (this.itemCount === 0) {
+      return 0;
+    }
+    if (y <= 0) {
+      return 0;
+    }
+    if (y >= this.totalHeight) {
+      return this.itemCount - 1;
+    }
 
     let low = 0;
     let high = this.itemCount - 1;
@@ -289,7 +295,9 @@ export class ListState {
    * Scroll to a specific offset.
    */
   scrollTo(cx: GladeContext, offset: ListOffset): void {
-    if (!this.scrollHandleRef) return;
+    if (!this.scrollHandleRef) {
+      return;
+    }
 
     const itemY = this.getItemY(offset.itemIndex);
     const y = itemY + offset.offsetInItem;
@@ -301,7 +309,9 @@ export class ListState {
    * Scroll to reveal an item.
    */
   scrollToRevealItem(cx: GladeContext, index: number, viewportHeight: number): void {
-    if (!this.scrollHandleRef || index < 0 || index >= this.itemCount) return;
+    if (!this.scrollHandleRef || index < 0 || index >= this.itemCount) {
+      return;
+    }
 
     const currentOffset = cx.getScrollOffset(this.scrollHandleRef);
     const itemY = this.getItemY(index);
@@ -324,7 +334,9 @@ export class ListState {
    * Scroll by a pixel amount.
    */
   scrollBy(cx: GladeContext, pixels: number): void {
-    if (!this.scrollHandleRef) return;
+    if (!this.scrollHandleRef) {
+      return;
+    }
     cx.scrollBy(this.scrollHandleRef, 0, pixels);
   }
 
@@ -637,7 +649,9 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
 
     for (let i = visibleRange.start; i < visibleRange.end; i++) {
       const item = this.items[i];
-      if (item === undefined) continue;
+      if (item === undefined) {
+        continue;
+      }
 
       const props: ListItemProps = {
         index: i,
@@ -647,7 +661,9 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
 
       const element = this.context ? this.renderItemFn(item, props, this.context) : null;
 
-      if (!element) continue;
+      if (!element) {
+        continue;
+      }
 
       const childId = cx.allocateChildId();
       itemElementIds.push(childId);
@@ -880,7 +896,9 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
           mouseDown: (event, window, _cx) => {
             const clickY = event.y - vScrollbar.trackBounds.y;
             const scrollState = window.getScrollState(scrollHandleId);
-            if (!scrollState) return;
+            if (!scrollState) {
+              return;
+            }
 
             if (isPointInThumb({ x: event.x, y: event.y }, vScrollbar.thumbBounds)) {
               const dragState: ScrollbarDragState = {
@@ -926,7 +944,9 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
           mouseDown: (event, window, _cx) => {
             const clickX = event.x - hScrollbar.trackBounds.x;
             const scrollState = window.getScrollState(scrollHandleId);
-            if (!scrollState) return;
+            if (!scrollState) {
+              return;
+            }
 
             if (isPointInThumb({ x: event.x, y: event.y }, hScrollbar.thumbBounds)) {
               const dragState: ScrollbarDragState = {
@@ -1066,8 +1086,12 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
     prepaintState: ListPrepaintState,
     config: ResolvedScrollbarConfig
   ): boolean {
-    if (config.visibility === "never") return false;
-    if (config.visibility === "always") return true;
+    if (config.visibility === "never") {
+      return false;
+    }
+    if (config.visibility === "always") {
+      return true;
+    }
 
     if (config.visibility === "hover") {
       const containerHovered = prepaintState.hitbox

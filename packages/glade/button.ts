@@ -252,7 +252,9 @@ export class GladeButton extends GladeDiv {
 
     // Apply hover/active styles
     this.hover((s: StyleBuilder) => {
-      if (this.disabledValue) return s;
+      if (this.disabledValue) {
+        return s;
+      }
       if (!this.customBg) {
         s.bg(colors.bgHover);
       }
@@ -260,7 +262,9 @@ export class GladeButton extends GladeDiv {
     });
 
     this.active((s: StyleBuilder) => {
-      if (this.disabledValue) return s;
+      if (this.disabledValue) {
+        return s;
+      }
       if (!this.customBg) {
         s.bg(colors.bgActive);
       }

@@ -344,7 +344,9 @@ export class Inspector {
       const isHovered = elementId === this.state.hoveredElementId;
       const isSelected = elementId === this.state.selectedElementId;
 
-      if (isSelected || isHovered) continue;
+      if (isSelected || isHovered) {
+        continue;
+      }
 
       scene.addRect({
         x: bounds.x,
@@ -629,7 +631,9 @@ export class Inspector {
     }
 
     for (const line of lines) {
-      if (contentY > panelY + panelHeight - lineHeight) break;
+      if (contentY > panelY + panelHeight - lineHeight) {
+        break;
+      }
 
       const glyphs = textSystem.prepareGlyphInstances(
         line,
@@ -653,25 +657,51 @@ export class Inspector {
   formatStyles(styles: Partial<Styles>): string[] {
     const lines: string[] = [];
 
-    if (styles.display) lines.push(`display: ${styles.display}`);
-    if (styles.flexDirection) lines.push(`flex-direction: ${styles.flexDirection}`);
-    if (styles.alignItems) lines.push(`align-items: ${styles.alignItems}`);
-    if (styles.justifyContent) lines.push(`justify-content: ${styles.justifyContent}`);
-    if (styles.width !== undefined) lines.push(`width: ${styles.width}`);
-    if (styles.height !== undefined) lines.push(`height: ${styles.height}`);
-    if (styles.paddingTop !== undefined) lines.push(`padding-top: ${styles.paddingTop}`);
-    if (styles.paddingRight !== undefined) lines.push(`padding-right: ${styles.paddingRight}`);
-    if (styles.paddingBottom !== undefined) lines.push(`padding-bottom: ${styles.paddingBottom}`);
-    if (styles.paddingLeft !== undefined) lines.push(`padding-left: ${styles.paddingLeft}`);
-    if (styles.gap !== undefined) lines.push(`gap: ${styles.gap}`);
+    if (styles.display) {
+      lines.push(`display: ${styles.display}`);
+    }
+    if (styles.flexDirection) {
+      lines.push(`flex-direction: ${styles.flexDirection}`);
+    }
+    if (styles.alignItems) {
+      lines.push(`align-items: ${styles.alignItems}`);
+    }
+    if (styles.justifyContent) {
+      lines.push(`justify-content: ${styles.justifyContent}`);
+    }
+    if (styles.width !== undefined) {
+      lines.push(`width: ${styles.width}`);
+    }
+    if (styles.height !== undefined) {
+      lines.push(`height: ${styles.height}`);
+    }
+    if (styles.paddingTop !== undefined) {
+      lines.push(`padding-top: ${styles.paddingTop}`);
+    }
+    if (styles.paddingRight !== undefined) {
+      lines.push(`padding-right: ${styles.paddingRight}`);
+    }
+    if (styles.paddingBottom !== undefined) {
+      lines.push(`padding-bottom: ${styles.paddingBottom}`);
+    }
+    if (styles.paddingLeft !== undefined) {
+      lines.push(`padding-left: ${styles.paddingLeft}`);
+    }
+    if (styles.gap !== undefined) {
+      lines.push(`gap: ${styles.gap}`);
+    }
     if (styles.backgroundColor) {
       const c = styles.backgroundColor;
       lines.push(
         `background: rgba(${(c.r * 255) | 0}, ${(c.g * 255) | 0}, ${(c.b * 255) | 0}, ${c.a.toFixed(2)})`
       );
     }
-    if (styles.borderRadius !== undefined) lines.push(`border-radius: ${styles.borderRadius}`);
-    if (styles.borderWidth !== undefined) lines.push(`border-width: ${styles.borderWidth}`);
+    if (styles.borderRadius !== undefined) {
+      lines.push(`border-radius: ${styles.borderRadius}`);
+    }
+    if (styles.borderWidth !== undefined) {
+      lines.push(`border-width: ${styles.borderWidth}`);
+    }
 
     return lines;
   }

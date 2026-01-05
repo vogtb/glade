@@ -84,9 +84,15 @@ export class GladeRenderer {
   }
 
   private normalizeSampleCount(requested: number): number {
-    if (!requested || requested <= 1) return 1;
-    if (requested >= 8) return 8;
-    if (requested >= 4) return 4;
+    if (!requested || requested <= 1) {
+      return 1;
+    }
+    if (requested >= 8) {
+      return 8;
+    }
+    if (requested >= 4) {
+      return 4;
+    }
     return 1;
   }
 

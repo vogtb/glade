@@ -174,7 +174,9 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
     const context = this.context;
 
     const clickHandler: ClickHandler = (_event, _window, _cx) => {
-      if (isDisabled) return;
+      if (isDisabled) {
+        return;
+      }
       if (context?.onValueChange) {
         context.onValueChange(tabValue);
       }
@@ -296,7 +298,9 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
       bounds,
       handlers: {
         click: (_event, _window, _cx) => {
-          if (isDisabled) return;
+          if (isDisabled) {
+            return;
+          }
           if (context?.onValueChange) {
             context.onValueChange(tabValue);
           }

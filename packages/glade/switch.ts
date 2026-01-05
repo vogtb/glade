@@ -215,7 +215,9 @@ export class GladeSwitch extends GladeElement<SwitchRequestState, SwitchPrepaint
     const isDisabled = this.disabledValue;
 
     const clickHandler: ClickHandler = (_event, _window, _cx) => {
-      if (isDisabled) return;
+      if (isDisabled) {
+        return;
+      }
       if (onCheckedChangeHandler) {
         onCheckedChangeHandler(!currentChecked);
       }
@@ -328,7 +330,9 @@ export class GladeSwitch extends GladeElement<SwitchRequestState, SwitchPrepaint
       bounds,
       handlers: {
         click: (_event, _window, _cx) => {
-          if (isDisabled) return;
+          if (isDisabled) {
+            return;
+          }
           if (onCheckedChangeHandler) {
             onCheckedChangeHandler(!currentChecked);
           }

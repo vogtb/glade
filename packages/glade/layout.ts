@@ -240,9 +240,15 @@ export class GladeLayoutEngine {
   private convertStyle(style: Partial<Styles>): StyleInput {
     const result: StyleInput = {};
 
-    if (style.display !== undefined) result.display = style.display;
-    if (style.flexDirection !== undefined) result.flexDirection = style.flexDirection;
-    if (style.flexWrap !== undefined) result.flexWrap = style.flexWrap;
+    if (style.display !== undefined) {
+      result.display = style.display;
+    }
+    if (style.flexDirection !== undefined) {
+      result.flexDirection = style.flexDirection;
+    }
+    if (style.flexWrap !== undefined) {
+      result.flexWrap = style.flexWrap;
+    }
 
     // Handle flex shorthand (e.g., "1 1 0%", "1 1 auto", "none")
     if (style.flex !== undefined) {
@@ -251,53 +257,115 @@ export class GladeLayoutEngine {
         result.flexShrink = 0;
       } else {
         const parts = style.flex.split(" ");
-        if (parts.length >= 1) result.flexGrow = parseFloat(parts[0]!);
-        if (parts.length >= 2) result.flexShrink = parseFloat(parts[1]!);
+        if (parts.length >= 1) {
+          result.flexGrow = parseFloat(parts[0]!);
+        }
+        if (parts.length >= 2) {
+          result.flexShrink = parseFloat(parts[1]!);
+        }
         // TODO: flexBasis from shorthand is typically "0%" or "auto" - we
         // ignore for now, but I should come back and double check this
         // assumption...
       }
     }
 
-    if (style.flexGrow !== undefined) result.flexGrow = style.flexGrow;
-    if (style.flexShrink !== undefined) result.flexShrink = style.flexShrink;
-    if (typeof style.flexBasis === "number") result.flexBasis = style.flexBasis;
-    if (style.alignItems !== undefined) result.alignItems = style.alignItems;
-    if (style.justifyContent !== undefined) result.justifyContent = style.justifyContent;
-    if (style.alignSelf !== undefined) result.alignSelf = style.alignSelf;
-    if (style.gap !== undefined) result.gap = style.gap;
-    if (style.rowGap !== undefined) result.rowGap = style.rowGap;
-    if (style.columnGap !== undefined) result.columnGap = style.columnGap;
+    if (style.flexGrow !== undefined) {
+      result.flexGrow = style.flexGrow;
+    }
+    if (style.flexShrink !== undefined) {
+      result.flexShrink = style.flexShrink;
+    }
+    if (typeof style.flexBasis === "number") {
+      result.flexBasis = style.flexBasis;
+    }
+    if (style.alignItems !== undefined) {
+      result.alignItems = style.alignItems;
+    }
+    if (style.justifyContent !== undefined) {
+      result.justifyContent = style.justifyContent;
+    }
+    if (style.alignSelf !== undefined) {
+      result.alignSelf = style.alignSelf;
+    }
+    if (style.gap !== undefined) {
+      result.gap = style.gap;
+    }
+    if (style.rowGap !== undefined) {
+      result.rowGap = style.rowGap;
+    }
+    if (style.columnGap !== undefined) {
+      result.columnGap = style.columnGap;
+    }
 
     // CSS Grid Container
     if (style.gridTemplateColumns !== undefined)
       result.gridTemplateColumns = style.gridTemplateColumns;
-    if (style.gridTemplateRows !== undefined) result.gridTemplateRows = style.gridTemplateRows;
-    if (style.gridAutoColumns !== undefined) result.gridAutoColumns = style.gridAutoColumns;
-    if (style.gridAutoRows !== undefined) result.gridAutoRows = style.gridAutoRows;
-    if (style.gridAutoFlow !== undefined) result.gridAutoFlow = style.gridAutoFlow;
+    if (style.gridTemplateRows !== undefined) {
+      result.gridTemplateRows = style.gridTemplateRows;
+    }
+    if (style.gridAutoColumns !== undefined) {
+      result.gridAutoColumns = style.gridAutoColumns;
+    }
+    if (style.gridAutoRows !== undefined) {
+      result.gridAutoRows = style.gridAutoRows;
+    }
+    if (style.gridAutoFlow !== undefined) {
+      result.gridAutoFlow = style.gridAutoFlow;
+    }
 
     // CSS Grid Item
-    if (style.gridColumnStart !== undefined) result.gridColumnStart = style.gridColumnStart;
-    if (style.gridColumnEnd !== undefined) result.gridColumnEnd = style.gridColumnEnd;
-    if (style.gridRowStart !== undefined) result.gridRowStart = style.gridRowStart;
-    if (style.gridRowEnd !== undefined) result.gridRowEnd = style.gridRowEnd;
+    if (style.gridColumnStart !== undefined) {
+      result.gridColumnStart = style.gridColumnStart;
+    }
+    if (style.gridColumnEnd !== undefined) {
+      result.gridColumnEnd = style.gridColumnEnd;
+    }
+    if (style.gridRowStart !== undefined) {
+      result.gridRowStart = style.gridRowStart;
+    }
+    if (style.gridRowEnd !== undefined) {
+      result.gridRowEnd = style.gridRowEnd;
+    }
 
-    if (typeof style.width === "number") result.width = style.width;
-    if (typeof style.height === "number") result.height = style.height;
-    if (typeof style.minWidth === "number") result.minWidth = style.minWidth;
-    if (typeof style.maxWidth === "number") result.maxWidth = style.maxWidth;
-    if (typeof style.minHeight === "number") result.minHeight = style.minHeight;
-    if (typeof style.maxHeight === "number") result.maxHeight = style.maxHeight;
+    if (typeof style.width === "number") {
+      result.width = style.width;
+    }
+    if (typeof style.height === "number") {
+      result.height = style.height;
+    }
+    if (typeof style.minWidth === "number") {
+      result.minWidth = style.minWidth;
+    }
+    if (typeof style.maxWidth === "number") {
+      result.maxWidth = style.maxWidth;
+    }
+    if (typeof style.minHeight === "number") {
+      result.minHeight = style.minHeight;
+    }
+    if (typeof style.maxHeight === "number") {
+      result.maxHeight = style.maxHeight;
+    }
 
     // Percentage-based sizing
-    if (typeof style.widthPercent === "number") result.widthPercent = style.widthPercent;
-    if (typeof style.heightPercent === "number") result.heightPercent = style.heightPercent;
+    if (typeof style.widthPercent === "number") {
+      result.widthPercent = style.widthPercent;
+    }
+    if (typeof style.heightPercent === "number") {
+      result.heightPercent = style.heightPercent;
+    }
 
-    if (style.paddingTop !== undefined) result.paddingTop = style.paddingTop;
-    if (style.paddingRight !== undefined) result.paddingRight = style.paddingRight;
-    if (style.paddingBottom !== undefined) result.paddingBottom = style.paddingBottom;
-    if (style.paddingLeft !== undefined) result.paddingLeft = style.paddingLeft;
+    if (style.paddingTop !== undefined) {
+      result.paddingTop = style.paddingTop;
+    }
+    if (style.paddingRight !== undefined) {
+      result.paddingRight = style.paddingRight;
+    }
+    if (style.paddingBottom !== undefined) {
+      result.paddingBottom = style.paddingBottom;
+    }
+    if (style.paddingLeft !== undefined) {
+      result.paddingLeft = style.paddingLeft;
+    }
 
     if (style.marginTop === "auto") {
       result.marginTopAuto = true;
@@ -320,11 +388,21 @@ export class GladeLayoutEngine {
       result.marginLeft = style.marginLeft;
     }
 
-    if (style.position !== undefined) result.position = style.position;
-    if (style.top !== undefined) result.top = style.top;
-    if (style.right !== undefined) result.right = style.right;
-    if (style.bottom !== undefined) result.bottom = style.bottom;
-    if (style.left !== undefined) result.left = style.left;
+    if (style.position !== undefined) {
+      result.position = style.position;
+    }
+    if (style.top !== undefined) {
+      result.top = style.top;
+    }
+    if (style.right !== undefined) {
+      result.right = style.right;
+    }
+    if (style.bottom !== undefined) {
+      result.bottom = style.bottom;
+    }
+    if (style.left !== undefined) {
+      result.left = style.left;
+    }
 
     if (style.overflow !== undefined && style.overflow !== "auto") {
       result.overflow = style.overflow;
@@ -336,10 +414,14 @@ export class GladeLayoutEngine {
       result.overflowY = style.overflowY;
     }
 
-    if (style.borderWidth !== undefined) result.borderWidth = style.borderWidth;
+    if (style.borderWidth !== undefined) {
+      result.borderWidth = style.borderWidth;
+    }
 
     // Aspect ratio
-    if (style.aspectRatio !== undefined) result.aspectRatio = style.aspectRatio;
+    if (style.aspectRatio !== undefined) {
+      result.aspectRatio = style.aspectRatio;
+    }
 
     // Handle percentage-based width/height/maxWidth/maxHeight strings
     if (typeof style.width === "string" && style.width.endsWith("%")) {

@@ -166,7 +166,9 @@ export class GladeRadioGroupItem extends GladeElement<
     const groupContext = this.groupContext;
 
     const clickHandler: ClickHandler = (_event, _window, _cx) => {
-      if (isDisabled) return;
+      if (isDisabled) {
+        return;
+      }
       if (groupContext?.onValueChange) {
         groupContext.onValueChange(itemValue);
       }
@@ -271,7 +273,9 @@ export class GladeRadioGroupItem extends GladeElement<
       bounds,
       handlers: {
         click: (_event, _window, _cx) => {
-          if (isDisabled) return;
+          if (isDisabled) {
+            return;
+          }
           if (groupContext?.onValueChange) {
             groupContext.onValueChange(itemValue);
           }

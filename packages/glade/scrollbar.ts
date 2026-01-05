@@ -162,10 +162,14 @@ export function thumbPositionToScrollOffset(
   viewportSize: number
 ): number {
   const maxScroll = contentSize - viewportSize;
-  if (maxScroll <= 0) return 0;
+  if (maxScroll <= 0) {
+    return 0;
+  }
 
   const maxThumbPosition = trackLength - thumbSize;
-  if (maxThumbPosition <= 0) return 0;
+  if (maxThumbPosition <= 0) {
+    return 0;
+  }
 
   const scrollRatio = thumbPosition / maxThumbPosition;
   return Math.max(0, Math.min(scrollRatio * maxScroll, maxScroll));
@@ -217,7 +221,9 @@ export function calculateDragScrollOffset(
   const mouseDelta = currentMousePos - dragState.startMousePos;
   const maxThumbTravel = dragState.trackLength - dragState.thumbSize;
 
-  if (maxThumbTravel <= 0) return dragState.startOffset;
+  if (maxThumbTravel <= 0) {
+    return dragState.startOffset;
+  }
 
   const scrollDelta = (mouseDelta / maxThumbTravel) * dragState.maxScroll;
   const newOffset = dragState.startOffset + scrollDelta;
@@ -334,7 +340,11 @@ export function getThumbColor(
   isHovered: boolean,
   isDragging: boolean
 ): ColorObject {
-  if (isDragging) return config.thumbActiveColor;
-  if (isHovered) return config.thumbHoverColor;
+  if (isDragging) {
+    return config.thumbActiveColor;
+  }
+  if (isHovered) {
+    return config.thumbHoverColor;
+  }
   return config.thumbColor;
 }

@@ -1875,7 +1875,9 @@ export class DawnGPUDevice {
     let attrIndex = 0;
     for (let i = 0; i < numVertexBuffers; i++) {
       const buffer = vertexBuffers[i];
-      if (!buffer) continue;
+      if (!buffer) {
+        continue;
+      }
 
       const attributes = buffer.attributes ? Array.from(buffer.attributes) : [];
       const bufferOffset = i * vertexBufferLayoutSize;

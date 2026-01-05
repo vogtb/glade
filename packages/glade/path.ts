@@ -264,7 +264,9 @@ export class PathBuilder {
     let vertexOffset = 0;
 
     for (const points of subpaths) {
-      if (points.length < 3) continue;
+      if (points.length < 3) {
+        continue;
+      }
 
       const indices = triangulate(points);
       for (const idx of indices) {
@@ -503,7 +505,9 @@ function flattenArc(
   }
 
   let sq = (rxSq * rySq - rxSq * y1pSq - rySq * x1pSq) / (rxSq * y1pSq + rySq * x1pSq);
-  if (sq < 0) sq = 0;
+  if (sq < 0) {
+    sq = 0;
+  }
   const coef = (largeArc !== sweep ? 1 : -1) * Math.sqrt(sq);
 
   const cxp = (coef * rx * y1p) / ry;
@@ -547,8 +551,12 @@ function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
   const lenU = Math.sqrt(ux * ux + uy * uy);
   const lenV = Math.sqrt(vx * vx + vy * vy);
   let cosVal = dot / (lenU * lenV);
-  if (cosVal > 1) cosVal = 1;
-  if (cosVal < -1) cosVal = -1;
+  if (cosVal > 1) {
+    cosVal = 1;
+  }
+  if (cosVal < -1) {
+    cosVal = -1;
+  }
   return sign * Math.acos(cosVal);
 }
 
@@ -642,7 +650,9 @@ function isEar(
 
   // Check if any other vertex is inside the triangle
   for (const idx of remaining) {
-    if (idx === prev || idx === curr || idx === next) continue;
+    if (idx === prev || idx === curr || idx === next) {
+      continue;
+    }
     if (pointInTriangle(points[idx]!, a, b, c)) {
       return false;
     }
@@ -940,7 +950,9 @@ export class PathPipeline {
     let indexCount = 0;
 
     for (const path of paths) {
-      if (path.vertices.length === 0 || path.indices.length === 0) continue;
+      if (path.vertices.length === 0 || path.indices.length === 0) {
+        continue;
+      }
 
       const numVertices = path.vertices.length;
       const numIndices = path.indices.length;

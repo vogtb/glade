@@ -105,9 +105,13 @@ export function clearDropdownState(dropdownId: string): void {
 export function isSubmenuContentVisible(dropdownId: string, path: SubmenuPath): boolean {
   const state = getDropdownState(dropdownId);
   const { openPath } = state;
-  if (openPath.length < path.length) return false;
+  if (openPath.length < path.length) {
+    return false;
+  }
   for (let i = 0; i < path.length; i++) {
-    if (openPath[i] !== path[i]) return false;
+    if (openPath[i] !== path[i]) {
+      return false;
+    }
   }
   return true;
 }
@@ -336,7 +340,9 @@ export function createSafePolygon(
 }
 
 export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
-  if (polygon.length < 3) return false;
+  if (polygon.length < 3) {
+    return false;
+  }
   let inside = false;
   const n = polygon.length;
 
@@ -450,11 +456,21 @@ type DropdownMenuChildPrepaintEntry =
   | { kind: "label"; state: DropdownLabelPrepaintState };
 
 function getMenuItemKind(item: MenuItemElement): DropdownMenuItemKind {
-  if (item instanceof GladeDropdownItem) return "item";
-  if (item instanceof GladeDropdownCheckbox) return "checkbox";
-  if (item instanceof GladeDropdownRadio) return "radio";
-  if (item instanceof GladeDropdownSub) return "sub";
-  if (item instanceof GladeDropdownSeparator) return "separator";
+  if (item instanceof GladeDropdownItem) {
+    return "item";
+  }
+  if (item instanceof GladeDropdownCheckbox) {
+    return "checkbox";
+  }
+  if (item instanceof GladeDropdownRadio) {
+    return "radio";
+  }
+  if (item instanceof GladeDropdownSub) {
+    return "sub";
+  }
+  if (item instanceof GladeDropdownSeparator) {
+    return "separator";
+  }
   return "label";
 }
 
@@ -1378,7 +1394,9 @@ export class GladeDropdownSub
   }
 
   private getSubmenuPath(): SubmenuPath {
-    if (!this.context) return [this.submenuId];
+    if (!this.context) {
+      return [this.submenuId];
+    }
     return [...this.context.currentPath, this.submenuId];
   }
 
@@ -1517,7 +1535,9 @@ export class GladeDropdownSub
     };
 
     const mouseLeaveHandler: MouseHandler = (event, window, handlerCx) => {
-      if (!context || !dropdownId) return;
+      if (!context || !dropdownId) {
+        return;
+      }
       const winId = window.id;
       const cursor = { x: event.x, y: event.y };
       cancelSubmenuOpen(dropdownId, submenuPath);
@@ -1914,7 +1934,9 @@ export class GladeDropdownMenuContent extends GladeContainerElement<
 
   private findNextFocusable(currentIndex: number, direction: 1 | -1): number {
     const focusable = this.getFocusableItems();
-    if (focusable.length === 0) return -1;
+    if (focusable.length === 0) {
+      return -1;
+    }
 
     if (currentIndex === -1) {
       return direction === 1 ? focusable[0]!.index : focusable[focusable.length - 1]!.index;
@@ -1936,7 +1958,9 @@ export class GladeDropdownMenuContent extends GladeContainerElement<
   }
 
   private handleTypeahead(char: string): void {
-    if (!this.context) return;
+    if (!this.context) {
+      return;
+    }
 
     const now = Date.now();
     const TYPEAHEAD_TIMEOUT = 500;
@@ -1964,13 +1988,19 @@ export class GladeDropdownMenuContent extends GladeContainerElement<
   }
 
   private activateFocusedItem(): void {
-    if (!this.context) return;
+    if (!this.context) {
+      return;
+    }
 
     const focusedIndex = this.context.state.focusedIndex;
-    if (focusedIndex === -1 || focusedIndex >= this.menuItems.length) return;
+    if (focusedIndex === -1 || focusedIndex >= this.menuItems.length) {
+      return;
+    }
 
     const item = this.menuItems[focusedIndex];
-    if (!item || !(item as DropdownMenuItem).isFocusable()) return;
+    if (!item || !(item as DropdownMenuItem).isFocusable()) {
+      return;
+    }
 
     if (item instanceof GladeDropdownItem) {
       if (this.context.onOpenChange) {
@@ -2091,7 +2121,9 @@ export class GladeDropdownMenuContent extends GladeContainerElement<
     const activateFocusedItem = this.activateFocusedItem.bind(this);
 
     const keyDownHandler: KeyHandler = (event, _window, _cx) => {
-      if (!context) return;
+      if (!context) {
+        return;
+      }
 
       const key = event.code;
 
