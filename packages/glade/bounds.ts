@@ -123,13 +123,11 @@ function boundsIntersects(a: Bounds, b: Bounds): boolean {
 }
 
 /**
- * BoundsTree for spatial indexing and draw order assignment.
- *
- * The tree automatically assigns draw orders based on spatial relationships:
- * - Overlapping primitives get consecutive draw orders
- * - Non-overlapping primitives can share the same draw order
- *
- * This ensures correct z-stacking without manual z-index management for most cases.
+ * BoundsTree for spatial indexing and draw order assignment. The tree automatically assigns draw
+ * orders based on spatial relationships. Overlapping primitives get
+ * consecutive draw orders. Non-overlapping primitives can share the same
+ * draw order. This ensures correct z-stacking without manual z-index
+ * management for most cases.
  */
 export class BoundsTree {
   private root: number | null = null;
@@ -146,13 +144,9 @@ export class BoundsTree {
   }
 
   /**
-   * Insert bounds into the tree and get its draw order.
-   *
-   * The draw order is computed as max(overlapping orders) + 1,
-   * ensuring correct z-stacking for overlapping elements.
-   *
-   * @param newBounds - The bounds to insert
-   * @returns The assigned draw order
+   * Insert bounds into the tree and get its draw order. The draw order is
+   * computed as max(overlapping orders) + 1, ensuring correct z-stacking
+   * for overlapping elements.
    */
   insert(newBounds: Bounds): DrawOrder {
     if (newBounds.width <= 0 || newBounds.height <= 0) {
@@ -224,7 +218,8 @@ export class BoundsTree {
   }
 
   /**
-   * Find the maximum draw order among all nodes that intersect the given bounds.
+   * Find the maximum draw order among all nodes that intersect the given
+   * bounds.
    */
   private findMaxOrder(index: number, bounds: Bounds, maxOrder: DrawOrder): DrawOrder {
     const node = this.nodes[index]!;
@@ -242,9 +237,8 @@ export class BoundsTree {
 
     const leftNode = this.nodes[node.left]!;
     const rightNode = this.nodes[node.right]!;
-    const leftMax = leftNode.type === "leaf" ? leftNode.order : (leftNode as InternalNode).maxOrder;
-    const rightMax =
-      rightNode.type === "leaf" ? rightNode.order : (rightNode as InternalNode).maxOrder;
+    const leftMax = leftNode.type === "leaf" ? leftNode.order : leftNode.maxOrder;
+    const rightMax = rightNode.type === "leaf" ? rightNode.order : rightNode.maxOrder;
 
     if (leftMax > rightMax) {
       maxOrder = this.findMaxOrder(node.left, bounds, maxOrder);
@@ -268,9 +262,8 @@ export class BoundsTree {
     const rightNode = this.nodes[right]!;
 
     const bounds = boundsUnion(leftNode.bounds, rightNode.bounds);
-    const leftMax = leftNode.type === "leaf" ? leftNode.order : (leftNode as InternalNode).maxOrder;
-    const rightMax =
-      rightNode.type === "leaf" ? rightNode.order : (rightNode as InternalNode).maxOrder;
+    const leftMax = leftNode.type === "leaf" ? leftNode.order : leftNode.maxOrder;
+    const rightMax = rightNode.type === "leaf" ? rightNode.order : rightNode.maxOrder;
     const maxOrder = Math.max(leftMax, rightMax);
 
     const index = this.nodes.length;

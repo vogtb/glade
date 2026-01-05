@@ -9,6 +9,34 @@ import { coreModsToGladeMods } from "@glade/core";
 
 import type { Modifiers } from "./dispatch.ts";
 
+export type Platform = "macos" | "windows" | "linux";
+
+/**
+ * Detect current platform.
+ */
+export function detectPlatform(): Platform {
+  if (typeof globalThis !== "undefined" && "navigator" in globalThis) {
+    const nav = globalThis.navigator as Navigator;
+    if (/Mac|iPhone|iPad|iPod/.test(nav.userAgent)) {
+      return "macos";
+    }
+    if (/Win/.test(nav.userAgent)) {
+      return "windows";
+    }
+    return "linux";
+  }
+  if (typeof globalThis !== "undefined" && "process" in globalThis) {
+    const proc = (globalThis as Record<string, unknown>).process as { platform?: string };
+    if (proc.platform === "darwin") {
+      return "macos";
+    }
+    if (proc.platform === "win32") {
+      return "windows";
+    }
+  }
+  return "linux";
+}
+
 /**
  * Common key codes (GLFW-compatible).
  */
@@ -109,6 +137,46 @@ export const Key = {
 } as const;
 
 export type KeyCode = (typeof Key)[keyof typeof Key];
+
+/**
+ * Mac-style symbols for modifier and special keys.
+ */
+const MAC_KEY_SYMBOLS: Partial<Record<KeyCode | string, string>> = {
+  meta: "\u2318",
+  shift: "\u21E7",
+  alt: "\u2325",
+  ctrl: "\u2303",
+  [Key.Enter]: "\u21A9",
+  [Key.Backspace]: "\u232B",
+  [Key.Delete]: "\u2326",
+  [Key.Escape]: "\u238B",
+  [Key.Tab]: "\u21E5",
+  [Key.Up]: "\u2191",
+  [Key.Down]: "\u2193",
+  [Key.Left]: "\u2190",
+  [Key.Right]: "\u2192",
+  [Key.Space]: "\u2423",
+};
+
+/**
+ * Windows/Linux style symbols for keys.
+ */
+const WINDOWS_KEY_SYMBOLS: Partial<Record<KeyCode | string, string>> = {
+  meta: "Win",
+  shift: "Shift",
+  alt: "Alt",
+  ctrl: "Ctrl",
+  [Key.Enter]: "Enter",
+  [Key.Backspace]: "Backspace",
+  [Key.Delete]: "Del",
+  [Key.Escape]: "Esc",
+  [Key.Tab]: "Tab",
+  [Key.Up]: "\u2191",
+  [Key.Down]: "\u2193",
+  [Key.Left]: "\u2190",
+  [Key.Right]: "\u2192",
+  [Key.Space]: "Space",
+};
 
 /**
  * Keystroke representation for keybinding matching.
@@ -236,23 +304,6 @@ export function matchesKeystroke(event: KeyEvent, keystroke: Keystroke): boolean
 }
 
 /**
- * Format a keystroke as a human-readable string.
- */
-export function formatKeystroke(keystroke: Keystroke): string {
-  const parts: string[] = [];
-
-  if (keystroke.modifiers.ctrl) parts.push("Ctrl");
-  if (keystroke.modifiers.alt) parts.push("Alt");
-  if (keystroke.modifiers.shift) parts.push("Shift");
-  if (keystroke.modifiers.meta) parts.push("Cmd");
-
-  const keyName = keyCodeToName(keystroke.key);
-  if (keyName) parts.push(keyName);
-
-  return parts.join("+");
-}
-
-/**
  * Convert a key code to a display name.
  */
 function keyCodeToName(code: KeyCode): string | null {
@@ -296,4 +347,57 @@ function keyCodeToName(code: KeyCode): string | null {
   };
 
   return names[code] ?? null;
+}
+
+/**
+ * Format a keystroke as a human-readable string.
+ *
+ * @param keystroke The keystroke to format
+ * @param platform Optional platform for OS-specific symbols (auto-detected if not provided)
+ * @returns Formatted string like "⌘S" (macOS) or "Ctrl+S" (Windows/Linux)
+ */
+export function formatKeystroke(keystroke: Keystroke, platform?: Platform): string {
+  const plat = platform ?? detectPlatform();
+  const isMac = plat === "macos";
+  const symbols = isMac ? MAC_KEY_SYMBOLS : WINDOWS_KEY_SYMBOLS;
+
+  const parts: string[] = [];
+
+  if (isMac) {
+    if (keystroke.modifiers.ctrl) parts.push(symbols["ctrl"] ?? "Ctrl");
+    if (keystroke.modifiers.alt) parts.push(symbols["alt"] ?? "Alt");
+    if (keystroke.modifiers.shift) parts.push(symbols["shift"] ?? "Shift");
+    if (keystroke.modifiers.meta) parts.push(symbols["meta"] ?? "Cmd");
+  } else {
+    if (keystroke.modifiers.ctrl) parts.push(symbols["ctrl"] ?? "Ctrl");
+    if (keystroke.modifiers.alt) parts.push(symbols["alt"] ?? "Alt");
+    if (keystroke.modifiers.shift) parts.push(symbols["shift"] ?? "Shift");
+    if (keystroke.modifiers.meta) parts.push(symbols["meta"] ?? "Win");
+  }
+
+  const keySymbol = symbols[keystroke.key];
+  const keyName = keySymbol ?? keyCodeToName(keystroke.key);
+  if (keyName) {
+    parts.push(keyName);
+  }
+
+  if (isMac) {
+    return parts.join("");
+  }
+  return parts.join("+");
+}
+
+/**
+ * Format a keystroke string directly (convenience function).
+ *
+ * @param keystrokeStr Keystroke string like "meta+s" or "ctrl+shift+a"
+ * @param platform Optional platform for OS-specific symbols
+ * @returns Formatted string or null if parsing fails
+ */
+export function formatKeystrokeString(keystrokeStr: string, platform?: Platform): string | null {
+  const keystroke = parseKeystroke(keystrokeStr);
+  if (!keystroke) {
+    return null;
+  }
+  return formatKeystroke(keystroke, platform);
 }

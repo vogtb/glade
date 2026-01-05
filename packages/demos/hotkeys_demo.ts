@@ -1,16 +1,13 @@
 import {
+  type ActionHandler,
   button,
   div,
-  formatHotkey,
+  formatKeystrokeString,
   type GladeView,
   type GladeViewContext,
   h2,
-  Hotkey,
-  hotkey,
-  HotkeyDebugger,
-  type HotkeyDisposable,
-  hotkeys,
-  isHotkeyPressed,
+  type KeyBindingHandle,
+  KeymapDebugger,
   log,
   mono,
   text,
@@ -23,8 +20,8 @@ import type { Demo, DemoItem } from "./demo";
 // Track demo state for hotkey actions
 let actionCounter = 0;
 let lastAction = "None";
-let activeHotkeys: HotkeyDisposable[] = [];
-let hotkeyDebugEnabled = false;
+let activeBindings: KeyBindingHandle[] = [];
+let keymapDebugEnabled = false;
 let notifications: Array<{ id: number; message: string; timestamp: number }> = [];
 let nextNotificationId = 0;
 
@@ -38,133 +35,163 @@ function addNotification(message: string) {
 }
 
 function resetDemo() {
-  // Clean up existing hotkeys
-  activeHotkeys.forEach((h) => h.dispose());
-  activeHotkeys = [];
+  // Clean up existing bindings
+  activeBindings.forEach((h) => h.unbind());
+  activeBindings = [];
 
   // Reset state
   actionCounter = 0;
   lastAction = "None";
   notifications = [];
-  hotkeyDebugEnabled = false;
+  keymapDebugEnabled = false;
 }
 
 function setupDemoHotkeys(cx: GladeViewContext<GladeView>) {
   // Clean up any existing hotkeys
   resetDemo();
 
-  // Single hotkey binding
-  const saveHotkey = hotkey([Hotkey.Meta, Hotkey.S], (_cx, _window) => {
-    lastAction = "Save triggered";
-    actionCounter++;
-    addNotification(`Save action triggered (count: ${actionCounter})`);
-    cx.notify();
-  });
-  activeHotkeys.push(saveHotkey);
+  const window = cx.window;
+  const keymap = window.getKeymap();
 
-  // Multiple hotkeys at once
-  const editorHotkeys = hotkeys(
-    {
-      "meta+z": (_cx, _window) => {
-        lastAction = "Undo triggered";
-        actionCounter++;
-        addNotification(`Undo action triggered`);
-        cx.notify();
-      },
-      "meta+shift+z": (_cx, _window) => {
-        lastAction = "Redo triggered";
-        actionCounter++;
-        addNotification(`Redo action triggered`);
-        cx.notify();
-      },
-      "meta+a": (_cx, _window) => {
-        lastAction = "Select All triggered";
-        actionCounter++;
-        addNotification(`Select All triggered`);
-        cx.notify();
-      },
-      "meta+c": (_cx, _window) => {
-        lastAction = "Copy triggered";
-        actionCounter++;
-        addNotification(`Copy triggered`);
-        cx.notify();
-      },
-      "meta+v": (_cx, _window) => {
-        lastAction = "Paste triggered";
-        actionCounter++;
-        addNotification(`Paste triggered`);
-        cx.notify();
-      },
-    },
-    { description: "Editor shortcuts" }
+  const createHandler = (action: string, notify: () => void): ActionHandler => {
+    return () => {
+      lastAction = action;
+      actionCounter++;
+      addNotification(action);
+      notify();
+    };
+  };
+
+  // Single hotkey binding
+  const saveBinding = keymap.bind(
+    "meta+s",
+    createHandler("Save triggered", () => cx.notify())
   );
-  activeHotkeys.push(editorHotkeys);
+  if (saveBinding) {
+    activeBindings.push(saveBinding);
+  }
+
+  // Editor hotkeys
+  const undoBinding = keymap.bind(
+    "meta+z",
+    createHandler("Undo triggered", () => cx.notify())
+  );
+  if (undoBinding) {
+    activeBindings.push(undoBinding);
+  }
+
+  const redoBinding = keymap.bind(
+    "meta+shift+z",
+    createHandler("Redo triggered", () => cx.notify())
+  );
+  if (redoBinding) {
+    activeBindings.push(redoBinding);
+  }
+
+  const selectAllBinding = keymap.bind(
+    "meta+a",
+    createHandler("Select All triggered", () => cx.notify())
+  );
+  if (selectAllBinding) {
+    activeBindings.push(selectAllBinding);
+  }
+
+  const copyBinding = keymap.bind(
+    "meta+c",
+    createHandler("Copy triggered", () => cx.notify())
+  );
+  if (copyBinding) {
+    activeBindings.push(copyBinding);
+  }
+
+  const pasteBinding = keymap.bind(
+    "meta+v",
+    createHandler("Paste triggered", () => cx.notify())
+  );
+  if (pasteBinding) {
+    activeBindings.push(pasteBinding);
+  }
 
   // Navigation hotkeys
-  const navHotkeys = hotkeys({
-    "meta+left": (_cx, _window) => {
-      lastAction = "Navigate Back";
-      addNotification(`Navigate back`);
-      cx.notify();
-    },
-    "meta+right": (_cx, _window) => {
-      lastAction = "Navigate Forward";
-      addNotification(`Navigate forward`);
-      cx.notify();
-    },
-    "meta+up": (_cx, _window) => {
-      lastAction = "Navigate Up";
-      addNotification(`Navigate up`);
-      cx.notify();
-    },
-    "meta+down": (_cx, _window) => {
-      lastAction = "Navigate Down";
-      addNotification(`Navigate down`);
-      cx.notify();
-    },
-  });
-  activeHotkeys.push(navHotkeys);
+  const navLeftBinding = keymap.bind(
+    "meta+left",
+    createHandler("Navigate Back", () => cx.notify())
+  );
+  if (navLeftBinding) {
+    activeBindings.push(navLeftBinding);
+  }
+
+  const navRightBinding = keymap.bind(
+    "meta+right",
+    createHandler("Navigate Forward", () => cx.notify())
+  );
+  if (navRightBinding) {
+    activeBindings.push(navRightBinding);
+  }
+
+  const navUpBinding = keymap.bind(
+    "meta+up",
+    createHandler("Navigate Up", () => cx.notify())
+  );
+  if (navUpBinding) {
+    activeBindings.push(navUpBinding);
+  }
+
+  const navDownBinding = keymap.bind(
+    "meta+down",
+    createHandler("Navigate Down", () => cx.notify())
+  );
+  if (navDownBinding) {
+    activeBindings.push(navDownBinding);
+  }
 
   // Function keys
-  const fnHotkeys = hotkeys({
-    f1: (_cx, _window) => {
-      lastAction = "Help opened";
-      addNotification(`Help (F1)`);
-      cx.notify();
-    },
-    f2: (_cx, _window) => {
-      lastAction = "Rename triggered";
-      addNotification(`Rename (F2)`);
-      cx.notify();
-    },
-    f3: (_cx, _window) => {
-      lastAction = "Search triggered";
-      addNotification(`Search (F3)`);
-      cx.notify();
-    },
-  });
-  activeHotkeys.push(fnHotkeys);
+  const f1Binding = keymap.bind(
+    "f1",
+    createHandler("Help (F1)", () => cx.notify())
+  );
+  if (f1Binding) {
+    activeBindings.push(f1Binding);
+  }
+
+  const f2Binding = keymap.bind(
+    "f2",
+    createHandler("Rename (F2)", () => cx.notify())
+  );
+  if (f2Binding) {
+    activeBindings.push(f2Binding);
+  }
+
+  const f3Binding = keymap.bind(
+    "f3",
+    createHandler("Search (F3)", () => cx.notify())
+  );
+  if (f3Binding) {
+    activeBindings.push(f3Binding);
+  }
 
   // Debug hotkey
-  const debugHotkey = hotkey([Hotkey.Meta, Hotkey.Shift, Hotkey.D], (_cx, _window) => {
-    hotkeyDebugEnabled = !hotkeyDebugEnabled;
-    if (hotkeyDebugEnabled) {
-      HotkeyDebugger.enableLogging();
-      addNotification(`Debug mode enabled`);
+  const debugBinding = keymap.bind("meta+shift+d", () => {
+    keymapDebugEnabled = !keymapDebugEnabled;
+    if (keymapDebugEnabled) {
+      KeymapDebugger.enableLogging();
+      addNotification("Debug mode enabled");
     } else {
-      HotkeyDebugger.disableLogging();
-      addNotification(`Debug mode disabled`);
+      KeymapDebugger.disableLogging();
+      addNotification("Debug mode disabled");
     }
     cx.notify();
   });
-  activeHotkeys.push(debugHotkey);
+  if (debugBinding) {
+    activeBindings.push(debugBinding);
+  }
 }
 
 export const HOTKEYS_DEMO: Demo = {
   name: "Hotkeys",
   renderElement: (cx, _state): DemoItem[] => {
     // Initialize hotkeys if not already done
-    if (activeHotkeys.length === 0) {
+    if (activeBindings.length === 0) {
       setupDemoHotkeys(cx);
     }
 
@@ -172,14 +199,15 @@ export const HOTKEYS_DEMO: Demo = {
     const theme = cx.getTheme();
 
     // Check if Shift is currently pressed (for UI indication)
-    const shiftPressed = isHotkeyPressed([Hotkey.Shift]);
+    const keymap = cx.window.getKeymap();
+    const shiftPressed = keymap.isModifierPressed("shift");
 
     // Format some common hotkeys for display
-    const saveFormat = formatHotkey([Hotkey.Meta, Hotkey.S]);
-    const undoFormat = formatHotkey([Hotkey.Meta, Hotkey.Z]);
-    const redoFormat = formatHotkey([Hotkey.Meta, Hotkey.Shift, Hotkey.Z]);
-    const selectAllFormat = formatHotkey([Hotkey.Meta, Hotkey.A]);
-    const debugFormat = formatHotkey([Hotkey.Meta, Hotkey.Shift, Hotkey.D]);
+    const saveFormat = formatKeystrokeString("meta+s") ?? "Meta+S";
+    const undoFormat = formatKeystrokeString("meta+z") ?? "Meta+Z";
+    const redoFormat = formatKeystrokeString("meta+shift+z") ?? "Meta+Shift+Z";
+    const selectAllFormat = formatKeystrokeString("meta+a") ?? "Meta+A";
+    const debugFormat = formatKeystrokeString("meta+shift+d") ?? "Meta+Shift+D";
 
     const elements: DemoItem[] = [
       text("Keyboard shortcuts with type-safe bindings and OS-specific formatting"),
@@ -218,9 +246,9 @@ export const HOTKEYS_DEMO: Demo = {
             .children(
               text("Debug Mode:"),
               div()
-                .child(mono(hotkeyDebugEnabled ? "Enabled" : "Disabled"))
+                .child(mono(keymapDebugEnabled ? "Enabled" : "Disabled"))
                 .textColor(
-                  hotkeyDebugEnabled ? theme.semantic.status.warning : theme.semantic.text.muted
+                  keymapDebugEnabled ? theme.semantic.status.warning : theme.semantic.text.muted
                 ),
               text(`(Press ${debugFormat} to toggle)`)
             )
@@ -281,8 +309,8 @@ export const HOTKEYS_DEMO: Demo = {
                   hotkeyRow(undoFormat, "Undo", theme),
                   hotkeyRow(redoFormat, "Redo", theme),
                   hotkeyRow(selectAllFormat, "Select All", theme),
-                  hotkeyRow(formatHotkey([Hotkey.Meta, Hotkey.C]), "Copy", theme),
-                  hotkeyRow(formatHotkey([Hotkey.Meta, Hotkey.V]), "Paste", theme)
+                  hotkeyRow(formatKeystrokeString("meta+c") ?? "Meta+C", "Copy", theme),
+                  hotkeyRow(formatKeystrokeString("meta+v") ?? "Meta+V", "Paste", theme)
                 )
             ),
 
@@ -298,10 +326,22 @@ export const HOTKEYS_DEMO: Demo = {
                 .gridCols(2)
                 .gap(8)
                 .children(
-                  hotkeyRow(formatHotkey([Hotkey.Meta, Hotkey.Left]), "Navigate Back", theme),
-                  hotkeyRow(formatHotkey([Hotkey.Meta, Hotkey.Right]), "Navigate Forward", theme),
-                  hotkeyRow(formatHotkey([Hotkey.Meta, Hotkey.Up]), "Navigate Up", theme),
-                  hotkeyRow(formatHotkey([Hotkey.Meta, Hotkey.Down]), "Navigate Down", theme)
+                  hotkeyRow(
+                    formatKeystrokeString("meta+left") ?? "Meta+Left",
+                    "Navigate Back",
+                    theme
+                  ),
+                  hotkeyRow(
+                    formatKeystrokeString("meta+right") ?? "Meta+Right",
+                    "Navigate Forward",
+                    theme
+                  ),
+                  hotkeyRow(formatKeystrokeString("meta+up") ?? "Meta+Up", "Navigate Up", theme),
+                  hotkeyRow(
+                    formatKeystrokeString("meta+down") ?? "Meta+Down",
+                    "Navigate Down",
+                    theme
+                  )
                 )
             ),
 
@@ -317,9 +357,9 @@ export const HOTKEYS_DEMO: Demo = {
                 .gridCols(2)
                 .gap(8)
                 .children(
-                  hotkeyRow(formatHotkey([Hotkey.F1]), "Help", theme),
-                  hotkeyRow(formatHotkey([Hotkey.F2]), "Rename", theme),
-                  hotkeyRow(formatHotkey([Hotkey.F3]), "Search", theme)
+                  hotkeyRow(formatKeystrokeString("f1") ?? "F1", "Help", theme),
+                  hotkeyRow(formatKeystrokeString("f2") ?? "F2", "Rename", theme),
+                  hotkeyRow(formatKeystrokeString("f3") ?? "F3", "Search", theme)
                 )
             )
         ),
@@ -338,19 +378,19 @@ export const HOTKEYS_DEMO: Demo = {
               setupDemoHotkeys(cx);
               cx.notify();
             }),
-          button("List All Hotkeys")
+          button("List All Bindings")
             .outline()
             .onClick(() => {
-              const allBindings = HotkeyDebugger.listAll();
-              log.info("all registered hotkeys:", allBindings);
-              addNotification(`Listed ${allBindings.length} hotkeys in console`);
+              const allBindings = KeymapDebugger.listAll(keymap);
+              log.info("all registered key bindings:", allBindings);
+              addNotification(`Listed ${allBindings.length} bindings in console`);
               cx.notify();
             }),
           button("Find Conflicts")
             .outline()
             .onClick(() => {
-              const conflicts = HotkeyDebugger.findConflicts();
-              log.info("Hotkey conflicts:", conflicts);
+              const conflicts = KeymapDebugger.findConflicts(keymap);
+              log.info("Key binding conflicts:", conflicts);
               const conflictCount = conflicts.size;
               addNotification(
                 conflictCount > 0
@@ -371,33 +411,34 @@ export const HOTKEYS_DEMO: Demo = {
           codeExample(
             "Simple Binding",
             theme,
-            `const saveHotkey = hotkey([Hotkey.Meta, Hotkey.S], (cx, window) => {
+            `const keymap = window.getKeymap();
+const handle = keymap.bind("meta+s", (cx, window) => {
   console.log("Save triggered");
 });
 
 // Clean up when done
-saveHotkey.dispose();`
+handle.unbind();`
           ),
           codeExample(
-            "Multiple Bindings",
+            "Named Action",
             theme,
-            `const editorHotkeys = hotkeys({
-  "meta+s": () => save(),
-  "meta+z": () => undo(),
-  "meta+shift+z": () => redo(),
+            `keymap.bind("meta+s", {
+  name: "file:save",
+  label: "Save File",
+  handler: (cx, window) => save()
 });`
           ),
           codeExample(
-            "Check if Pressed",
+            "Check Modifiers",
             theme,
-            `if (isHotkeyPressed([Hotkey.Shift])) {
+            `if (keymap.isModifierPressed("shift")) {
   // Multi-select behavior
 }`
           ),
           codeExample(
             "Format for Display",
             theme,
-            `const formatted = formatHotkey([Hotkey.Meta, Hotkey.S]);
+            `const formatted = formatKeystrokeString("meta+s");
 // Returns "⌘S" on Mac, "Ctrl+S" on Windows`
           )
         ),

@@ -1,10 +1,11 @@
-export type { Action, KeyBinding } from "./actions";
+export type { Action, ActionHandler, BindTarget, KeyBinding, KeyBindingHandle } from "./actions";
 export {
   ActionRegistry,
   BuiltinActions,
   createDefaultKeymap,
   KeyDispatcher,
   Keymap,
+  KeymapDebugger,
 } from "./actions";
 export type { AnchoredFitMode, AnchoredPositionMode, Corner, Edges } from "./anchored";
 export { anchored, AnchoredElement, edges } from "./anchored";
@@ -218,19 +219,6 @@ export {
 } from "./hitbox";
 export type { RenderTexture, WebGPUHost, WebGPUHostInput } from "./host";
 export { createRenderTexture, HostTexturePipeline, webgpuHost, WebGPUHostElement } from "./host";
-export {
-  formatHotkey,
-  Hotkey,
-  hotkey,
-  type HotkeyCombo,
-  HotkeyDebugger,
-  type HotkeyDisposable,
-  type HotkeyHandler,
-  HotkeyManager,
-  type HotkeyOptions,
-  hotkeys,
-  isHotkeyPressed,
-} from "./hotkeys";
 export type { IconName } from "./icon";
 export { GladeIcon, icon } from "./icon";
 export type { EntityId, FocusId, ScrollHandleId, WindowId } from "./id";
@@ -245,8 +233,15 @@ export {
 } from "./input";
 export type { ElementDebugInfo, InspectorState } from "./inspector";
 export { createInspector, createInspectorState, Inspector, INSPECTOR_COLORS } from "./inspector";
-export type { Keystroke } from "./keyboard";
-export { formatKeystroke, Key, matchesKeystroke, parseKeystroke } from "./keyboard";
+export type { Keystroke, Platform } from "./keyboard";
+export {
+  detectPlatform,
+  formatKeystroke,
+  formatKeystrokeString,
+  Key,
+  matchesKeystroke,
+  parseKeystroke,
+} from "./keyboard";
 export type { AvailableSpace, AvailableSpaceValue, LayoutId } from "./layout";
 export { definite, GladeLayoutEngine, maxContent, minContent } from "./layout";
 export { GladeLink, link } from "./link";

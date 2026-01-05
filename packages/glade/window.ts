@@ -76,12 +76,6 @@ import {
 } from "./hitbox.ts";
 import type { WebGPUHost, WebGPUHostInput } from "./host.ts";
 import { HostTexturePipeline } from "./host.ts";
-import {
-  getModifierHotkeys,
-  HotkeyManager,
-  keyCodeToHotkey,
-  setGlobalHotkeyManager,
-} from "./hotkeys.ts";
 import type { EntityId, FocusId, ScrollHandleId, WindowId } from "./id.ts";
 import {
   type DecodedImage,
@@ -276,9 +270,8 @@ export class GladeWindow {
 
   // Key dispatch
   private actionRegistry = new ActionRegistry();
-  private keymap = createDefaultKeymap();
+  private keymap: Keymap;
   private keyDispatcher: KeyDispatcher;
-  private hotkeyManager: HotkeyManager;
 
   // Renderer
   private renderer: GladeRenderer;
@@ -403,12 +396,11 @@ export class GladeWindow {
     this.hostTexturePipeline = new HostTexturePipeline(device, format, 100, sampleCount);
     this.renderer.setHostTexturePipeline(this.hostTexturePipeline);
 
+    // Initialize keymap with action registry for direct handler binding
+    this.keymap = createDefaultKeymap(this.actionRegistry);
+
     // Initialize key dispatcher
     this.keyDispatcher = new KeyDispatcher(this.keymap, this.actionRegistry);
-
-    // Initialize hotkey manager and set as global
-    this.hotkeyManager = new HotkeyManager(this.actionRegistry, this.keymap);
-    setGlobalHotkeyManager(this.hotkeyManager);
 
     // Initialize inspector
     this.inspector = new Inspector();
@@ -996,13 +988,6 @@ export class GladeWindow {
    */
   getTheme(): Theme {
     return this.getContext().getTheme();
-  }
-
-  /**
-   * Get the hotkey manager for this window.
-   */
-  getHotkeyManager(): HotkeyManager {
-    return this.hotkeyManager;
   }
 
   // ============ Drag and Drop ============
@@ -2134,17 +2119,8 @@ export class GladeWindow {
   private handleKeyEvent(event: KeyEvent): void {
     const cx = this.getContext();
 
-    // Update hotkey manager's pressed keys tracking
-    const hotkey = keyCodeToHotkey(event.key);
-    if (hotkey) {
-      const isPressed = event.action === 1; // KeyAction.Press
-      this.hotkeyManager.updatePressedKeys(hotkey, isPressed);
-    }
-    // Also track modifier keys
-    const modifiers = getModifierHotkeys(event.mods);
-    for (const mod of modifiers) {
-      this.hotkeyManager.updatePressedKeys(mod, event.action === 1);
-    }
+    // Update keymap's modifier state tracking
+    this.keymap.updateModifiers(event);
 
     // Handle Tab navigation
     if (event.action === 1) {

@@ -518,8 +518,6 @@ export class GladeApp {
   }
 }
 
-// ============ Context Implementations ============
-
 class GladeAppContext implements GladeContext {
   constructor(protected app: GladeApp) {}
 
