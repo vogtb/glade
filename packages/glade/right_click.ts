@@ -31,13 +31,11 @@ import {
   DEFAULT_MENU_BORDER_RADIUS,
   DEFAULT_MENU_PADDING,
   DEFAULT_SHORTCUT_FONT_SIZE,
-  type DropdownAlign,
   type DropdownMenuContentPrepaintState,
   type DropdownMenuContentRequestState,
   type DropdownMenuContext,
   type DropdownMenuState,
   type DropdownOpenChangeHandler,
-  type DropdownSide,
   GladeDropdownCheckbox,
   GladeDropdownItem,
   GladeDropdownLabel,
@@ -81,11 +79,6 @@ export class GladeRightClickMenu extends GladeContainerElement<
   private disabledValue = false;
   private menuItems: MenuItemElement[] = [];
   private positionValue: Position = { x: 0, y: 0 };
-
-  // TODO: we need to use these. currently a bug
-  private sideValue: DropdownSide = "bottom";
-  private alignValue: DropdownAlign = "start";
-  private sideOffsetValue = 4;
   private windowMarginValue = 8;
 
   private menuBgColor: ColorObject | null = null;
@@ -155,21 +148,6 @@ export class GladeRightClickMenu extends GladeContainerElement<
         this.menuItems.push(item);
       }
     }
-    return this;
-  }
-
-  side(v: DropdownSide): this {
-    this.sideValue = v;
-    return this;
-  }
-
-  align(v: DropdownAlign): this {
-    this.alignValue = v;
-    return this;
-  }
-
-  sideOffset(v: number): this {
-    this.sideOffsetValue = v;
     return this;
   }
 
@@ -473,12 +451,10 @@ export function rightClickSub(label: string): GladeDropdownSub {
 }
 
 export type {
-  DropdownAlign,
   DropdownMenuContentPrepaintState,
   DropdownMenuContentRequestState,
   DropdownMenuContext,
   DropdownMenuState,
   DropdownOpenChangeHandler,
-  DropdownSide,
   MenuItemElement,
 };
