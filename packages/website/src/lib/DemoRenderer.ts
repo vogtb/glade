@@ -1,9 +1,10 @@
 import { ALL_DEMOS, type Demo, type DemoState } from "@glade/demos/library";
-import { FontFamily, FontVariant } from "@glade/fonts";
 import {
   createListState,
   div,
   type FocusHandle,
+  FontFamily,
+  FontVariant,
   GladeApp,
   type GladeView,
   type GladeViewContext,
@@ -13,7 +14,7 @@ import {
   TextInputController,
   type WindowId,
 } from "@glade/glade";
-import { type BrowserGladePlatformInstance, createGladePlatform } from "@glade/platform";
+import { type BrowserGladePlatformInstance, createGladePlatform } from "@glade/glade/platform";
 
 const FONT_BASE_URL = "/fonts";
 

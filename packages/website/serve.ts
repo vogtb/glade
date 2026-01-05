@@ -1,5 +1,3 @@
-import { log } from "@glade/logging";
-
 const PORT = 3001;
 
 const MIME_TYPES: Record<string, string> = {
@@ -50,4 +48,4 @@ const server = Bun.serve({
   },
 });
 
-log.info(`website server running at http://localhost:${server.port}`);
+console.info(`website server running at http://localhost:${server.port}`);

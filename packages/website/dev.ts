@@ -1,4 +1,3 @@
-import { log } from "@glade/logging";
 import { spawn } from "bun";
 import { watch } from "fs";
 
@@ -36,15 +35,15 @@ async function buildJS(): Promise<boolean> {
     });
     if (!result.success) {
       for (const msg of result.logs) {
-        log.error(msg.message);
+        console.error(msg.message);
       }
       return false;
     }
     const duration = (performance.now() - start).toFixed(0);
-    log.info(`built JS in ${duration}ms`);
+    console.info(`built JS in ${duration}ms`);
     return true;
   } catch (err) {
-    log.error("JS build failed:", err);
+    console.error("JS build failed:", err);
     return false;
   }
 }
@@ -70,14 +69,14 @@ async function buildCSS(): Promise<boolean> {
     const exitCode = await proc.exited;
     if (exitCode !== 0) {
       const stderr = await new Response(proc.stderr).text();
-      log.error("CSS build failed:", stderr);
+      console.error("CSS build failed:", stderr);
       return false;
     }
     const duration = (performance.now() - start).toFixed(0);
-    log.info(`built CSS in ${duration}ms`);
+    console.info(`built CSS in ${duration}ms`);
     return true;
   } catch (err) {
-    log.error("CSS build failed:", err);
+    console.error("CSS build failed:", err);
     return false;
   }
 }
@@ -87,7 +86,7 @@ async function build(): Promise<void> {
 }
 
 // Initial build
-log.info("starting initial build...");
+console.info("starting initial build...");
 await build();
 
 // Start server
@@ -121,7 +120,7 @@ const server = Bun.serve({
   },
 });
 
-log.info(`dev server running at http://localhost:${server.port}`);
+console.info(`dev server running at http://localhost:${server.port}`);
 
 // Watch for changes
 let rebuildTimeout: Timer | null = null;
@@ -133,7 +132,7 @@ function scheduleRebuild(changedFile: string): void {
   }
   rebuildTimeout = setTimeout(async () => {
     rebuildTimeout = null;
-    log.info(`file changed: ${changedFile}`);
+    console.info(`file changed: ${changedFile}`);
     if (changedFile.endsWith(".css")) {
       await buildCSS();
     } else {
@@ -165,11 +164,11 @@ for (const pkg of packagesToWatch) {
   }
 }
 
-log.info("watching for changes...");
+console.info("watching for changes...");
 
 // Keep process alive
 process.on("SIGINT", () => {
-  log.info("shutting down...");
+  console.info("shutting down...");
   srcWatcher.close();
   server.stop();
   process.exit(0);

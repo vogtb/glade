@@ -71,6 +71,7 @@
     "MSAA",
     "fontdb",
     "autorelease",
-    "onuncapturederror"
+    "onuncapturederror",
+    "lucide"
   ]
 }

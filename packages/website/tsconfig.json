@@ -17,7 +17,12 @@
     "noImplicitOverride": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["@webgpu/types"]
+    "types": ["@webgpu/types"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "baseUrl": "."
   },
-  "include": ["./**/*.ts", "./**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "website.ts"],
+  "exclude": ["**/comptime.ts", "**/comptime/**"]
 }
