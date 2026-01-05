@@ -1,8 +1,8 @@
 /**
  * Scene graph and GPU primitives for Glade.
  *
- * The scene collects all rendering primitives for a frame, organized
- * into layers for proper z-ordering (painter's algorithm).
+ * The scene collects all rendering primitives for a frame, organized into
+ * layers for proper z-ordering (painter's algorithm).
  *
  * Rendering uses interleaved batch iteration: primitives are yielded in
  * draw order, batched by contiguous runs of the same type. This ensures
@@ -32,9 +32,9 @@ export type PrimitiveType =
   | "hostTextures";
 
 /**
- * A batch of primitives of the same type, yielded in draw order.
- * Used for interleaved rendering where different primitive types
- * are rendered in their correct z-order.
+ * A batch of primitives of the same type, yielded in draw order. Used for
+ * interleaved rendering where different primitive types are rendered in their
+ * correct z-order.
  */
 export type PrimitiveBatch =
   | { type: "shadows"; primitives: ShadowPrimitive[] }
@@ -55,9 +55,9 @@ type TaggedPrimitive = {
 };
 
 /**
- * Iterator that yields batches of primitives in draw order.
- * Groups contiguous runs of the same type to minimize GPU pipeline switches
- * while maintaining correct z-ordering.
+ * Iterator that yields batches of primitives in draw order. Groups contiguous
+ * runs of the same type to minimize GPU pipeline switches while maintaining
+ * correct z-ordering.
  *
  * This enables proper layering for overlays: a dialog backdrop (rect) will
  * render AFTER main UI text if its draw order is higher, even though rects
@@ -106,8 +106,8 @@ export class BatchIterator {
   }
 
   /**
-   * Get the next batch of contiguous primitives of the same type.
-   * Returns null when no more batches remain.
+   * Get the next batch of contiguous primitives of the same type. Returns
+   * null when no more batches remain.
    */
   next(): PrimitiveBatch | null {
     if (this.currentIndex >= this.allPrimitives.length) {
@@ -159,8 +159,8 @@ export class BatchIterator {
 }
 
 /**
- * Clip bounds for shader-based clipping.
- * When present, fragments outside these bounds are discarded.
+ * Clip bounds for shader-based clipping. When present, fragments outside
+ * these bounds are discarded.
  */
 export interface ClipBounds {
   x: number;
@@ -214,8 +214,8 @@ export interface ShadowPrimitive {
 }
 
 /**
- * Glyph primitive for text rendering.
- * Compatible with GlyphInstance from text.ts.
+ * Glyph primitive for text rendering. Compatible with GlyphInstance from
+ * text.ts.
  */
 export interface GlyphPrimitive {
   x: number;
@@ -233,8 +233,8 @@ export interface GlyphPrimitive {
 }
 
 /**
- * Text primitive for high-level text rendering.
- * Used to queue text that will be shaped and converted to glyphs.
+ * Text primitive for high-level text rendering. Used to queue text that will
+ * be shaped and converted to glyphs.
  */
 export interface TextPrimitive {
   text: string;
@@ -248,8 +248,8 @@ export interface TextPrimitive {
 }
 
 /**
- * Image primitive for rendering textures.
- * Matches ImageInstance from image.ts for GPU rendering.
+ * Image primitive for rendering textures. Matches ImageInstance from
+ * image.ts for GPU rendering.
  */
 export interface ImagePrimitive {
   /** Screen position X */
@@ -285,13 +285,16 @@ export interface ImagePrimitive {
 export interface PathVertex {
   x: number;
   y: number;
-  /** Edge distance for antialiasing (0.0 = on edge, 1.0 = interior). Optional, defaults to 1.0 */
+  /**
+   * Edge distance for antialiasing (0.0 = on edge, 1.0 = interior). Optional,
+   * defaults to 1.0
+   */
   edgeDist?: number;
 }
 
 /**
- * Path primitive for vector rendering.
- * Paths are tessellated into triangles for GPU rendering.
+ * Path primitive for vector rendering. Paths are tessellated into triangles
+ * for GPU rendering.
  */
 export interface PathPrimitive {
   vertices: PathVertex[];
@@ -305,8 +308,8 @@ export interface PathPrimitive {
 }
 
 /**
- * Host texture primitive for rendering WebGPU host content.
- * Used to embed custom WebGPU rendering within Glade UI.
+ * Host texture primitive for rendering WebGPU host content. Used to embed
+ * custom WebGPU rendering within Glade UI.
  */
 export interface HostTexturePrimitive {
   /** The texture view to sample from */
@@ -332,8 +335,8 @@ export interface HostTexturePrimitive {
 }
 
 /**
- * Underline primitive for text decoration rendering.
- * Supports both solid and wavy (spell-check) underlines.
+ * Underline primitive for text decoration rendering. Supports both solid and
+ * wavy (spell-check) underlines.
  */
 export interface UnderlinePrimitive {
   x: number;
@@ -366,8 +369,8 @@ export interface SceneLayer {
 }
 
 /**
- * Stacking context entry on the layer stack.
- * Used to track stacking context z-index offsets for proper ordering.
+ * Stacking context entry on the layer stack. Used to track stacking context
+ * z-index offsets for proper ordering.
  */
 interface StackingContext {
   /** Base draw order for this stacking context */
@@ -377,9 +380,9 @@ interface StackingContext {
 }
 
 /**
- * Scene collects all primitives for a frame.
- * Uses BoundsTree for spatial indexing and automatic draw order assignment.
- * Layers provide z-ordering (painter's algorithm).
+ * Scene collects all primitives for a frame. Uses BoundsTree for spatial
+ * indexing and automatic draw order assignment. Layers provide z-ordering
+ * (painter's algorithm: https://en.wikipedia.org/wiki/Painter%27s_algorithm).
  */
 export class GladeScene {
   private layers: SceneLayer[] = [];
@@ -390,9 +393,10 @@ export class GladeScene {
   private layerStack: StackingContext[] = [];
 
   /**
-   * Base order added to all primitives when in overlay mode.
-   * This ensures overlays (tooltips, popovers, modals) render on top of all normal content.
-   * Value of 1,500,000 is higher than any normal stacking context (max ~1,000,000).
+   * Base order added to all primitives when in overlay mode. This ensures
+   * overlays (tooltips, popovers, modals) render on top of all normal content.
+   * Value of 1,500,000 is higher than any normal stacking
+   * context (max ~1,000,000).
    */
   private overlayBaseOrder = 0;
 
@@ -407,8 +411,8 @@ export class GladeScene {
    * @param priority - Overlay priority (0=tooltips, 1=popovers/menus, 2=modals)
    */
   beginOverlay(priority: number): void {
-    // Base of 1,500,000 ensures we're above all normal stacking contexts
-    // Each priority level adds 100,000 to ensure proper ordering between overlay types
+    // Base of 1,500,000 ensures we're above all normal stacking contexts. Each
+    // priority level adds 100,000 to ensure proper ordering between overlay types
     this.overlayBaseOrder = 1500000 + priority * 100000;
   }
 
@@ -420,8 +424,9 @@ export class GladeScene {
   }
 
   /**
-   * Assign draw order for a primitive based on its bounds and current stacking context.
-   * Uses BoundsTree for spatial indexing - overlapping primitives get sequential orders.
+   * Assign draw order for a primitive based on its bounds and current
+   * stacking context. Uses BoundsTree for spatial indexing - overlapping
+   * primitives get sequential orders.
    */
   private assignDrawOrder(bounds: Bounds): DrawOrder {
     const spatialOrder = this.primitiveBounds.insert(bounds);
@@ -442,8 +447,8 @@ export class GladeScene {
   }
 
   /**
-   * Get the current clip bounds from the clip stack.
-   * Returns null if no clipping is active.
+   * Get the current clip bounds from the clip stack. Returns null if no
+   * clipping is active.
    */
   private getCurrentClipBounds(): ClipBounds | undefined {
     if (this.clipStack.length === 0) {
@@ -504,8 +509,8 @@ export class GladeScene {
   }
 
   /**
-   * Get the current transform from the transform stack.
-   * Returns identity if no transform is active.
+   * Get the current transform from the transform stack. Returns identity if
+   * no transform is active.
    */
   getCurrentTransform(): TransformationMatrix {
     if (this.transformStack.length === 0) {
@@ -515,8 +520,8 @@ export class GladeScene {
   }
 
   /**
-   * Push a transform onto the transform stack.
-   * The new transform is composed with the current transform.
+   * Push a transform onto the transform stack. The new transform is
+   * composed with the current transform.
    */
   pushTransform(transform: TransformationMatrix): void {
     const current = this.getCurrentTransform();
@@ -557,8 +562,8 @@ export class GladeScene {
   }
 
   /**
-   * Push a stacking context for proper z-ordering.
-   * Creates a new stacking context with the given bounds and optional z-index.
+   * Push a stacking context for proper z-ordering. Creates a new stacking
+   * context with the given bounds and optional z-index.
    *
    * Stacking contexts are created automatically for:
    * - Elements with z-index set
@@ -582,7 +587,8 @@ export class GladeScene {
   }
 
   /**
-   * Get the current stacking context z-index, or 0 if not in a stacking context.
+   * Get the current stacking context z-index, or 0 if not in a
+   * stacking context.
    */
   getCurrentZIndex(): number {
     if (this.layerStack.length === 0) {
@@ -662,8 +668,8 @@ export class GladeScene {
   }
 
   /**
-   * Add a glyph with a fixed draw order (bypasses BoundsTree).
-   * Useful for overlay content that should always be on top.
+   * Add a glyph with a fixed draw order (bypasses BoundsTree). Useful for
+   * overlay content that should always be on top.
    */
   addGlyphWithOrder(glyph: GlyphPrimitive, order: DrawOrder): void {
     const bounds = { x: glyph.x, y: glyph.y, width: glyph.width, height: glyph.height };
@@ -853,9 +859,9 @@ export class GladeScene {
   }
 
   /**
-   * Create a batch iterator for rendering primitives in draw order.
-   * The iterator yields batches of contiguous same-type primitives,
-   * enabling correct z-ordering for overlays while minimizing pipeline switches.
+   * Create a batch iterator for rendering primitives in draw order. The
+   * iterator yields batches of contiguous same-type primitives, enabling
+   * correct z-ordering for overlays while minimizing pipeline switches.
    */
   createBatchIterator(): BatchIterator {
     return new BatchIterator(this.layers);

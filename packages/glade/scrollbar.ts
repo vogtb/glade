@@ -1,8 +1,7 @@
 /**
- * Scrollbar rendering and interaction for Glade.
- *
- * Provides scrollbar configuration, thumb position calculations,
- * and rendering utilities for scroll containers.
+ * Scrollbar rendering and interaction for Glade. Provides scrollbar
+ * configuration, thumb position calculations, and rendering utilities for
+ * scroll containers.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -173,8 +172,8 @@ export function thumbPositionToScrollOffset(
 }
 
 /**
- * Calculate scroll offset from a track click position.
- * Centers the thumb at the click position.
+ * Calculate scroll offset from a track click position. Centers the thumb at
+ * the click position.
  *
  * @param clickPosition - Click position relative to track start
  * @param thumbSize - Size of the thumb

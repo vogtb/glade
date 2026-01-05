@@ -1,7 +1,9 @@
 /**
- * CrossElementSelectionManager - Manages text selection across multiple GladeTextElement instances.
+ * CrossElementSelectionManager - Manages text selection across multiple
+ * GladeTextElement instances.
  *
- * This manager tracks selection state that can span multiple text elements, handling:
+ * This manager tracks selection state that can span multiple text elements,
+ * handling:
  * - Element registration during prepaint phase
  * - Mouse-based selection gestures
  * - Keyboard commands (copy, select all)
@@ -126,7 +128,7 @@ export class CrossElementSelectionManager {
 
   /**
    * Called at the end of each frame to validate selection.
-   * Note: computeVisualOrder() is now called before painting, not here.
+   * NOTE: computeVisualOrder() is now called before painting, not here.
    */
   endFrame(): void {
     // Validate that selected elements still exist
@@ -186,7 +188,8 @@ export class CrossElementSelectionManager {
 
   /**
    * Compute visual order of registered elements (top-to-bottom, left-to-right).
-   * Must be called after all elements are registered and before getSelectionRanges().
+   * Must be called after all elements are registered and before
+   * getSelectionRanges().
    */
   computeVisualOrder(): void {
     const elements = Array.from(this.registry.values());
@@ -298,9 +301,8 @@ export class CrossElementSelectionManager {
       return;
     }
 
-    // Keep selection active but mark as not dragging
-    // (we keep isActive true so selection remains visible)
-
+    // Keep selection active but mark as not dragging (we keep isActive true
+    // so selection remains visible)
     cx.markWindowDirty(window.id);
     return { stopPropagation: true, preventDefault: true };
   }

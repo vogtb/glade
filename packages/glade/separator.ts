@@ -1,8 +1,7 @@
 /**
- * Separator element - a visual separator for content.
- *
- * Similar to shadcn's Separator component, provides a thin line
- * that visually or semantically separates content.
+ * Separator element - a visual separator for content. Similar to shadcn's
+ * Separator component, provides a thin line that visually or semantically
+ * separates content.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -31,8 +30,8 @@ type SeparatorRequestState = {
 /**
  * A separator element that renders a thin line to separate content.
  *
- * Horizontal separators span full width with 1px height.
- * Vertical separators span full height with 1px width.
+ * Horizontal separators span full width with 1px height. Vertical separators
+ * span full height with 1px width.
  */
 export class GladeSeparator extends GladeElement<SeparatorRequestState, NoState> {
   private orientation: SeparatorOrientation = "horizontal";
@@ -41,8 +40,8 @@ export class GladeSeparator extends GladeElement<SeparatorRequestState, NoState>
   private marginValue = 0;
 
   /**
-   * Set the separator orientation to vertical.
-   * Vertical separators are useful in flex row layouts.
+   * Set the separator orientation to vertical. Vertical separators are
+   * useful in flex row layouts.
    */
   vertical(): this {
     this.orientation = "vertical";
@@ -50,8 +49,8 @@ export class GladeSeparator extends GladeElement<SeparatorRequestState, NoState>
   }
 
   /**
-   * Set the separator orientation to horizontal (default).
-   * Horizontal separators are useful in flex column layouts.
+   * Set the separator orientation to horizontal (default). Horizontal
+   * separators are useful in flex column layouts.
    */
   horizontal(): this {
     this.orientation = "horizontal";
@@ -76,9 +75,8 @@ export class GladeSeparator extends GladeElement<SeparatorRequestState, NoState>
   }
 
   /**
-   * Set margin on both sides of the separator.
-   * For horizontal: top and bottom margin.
-   * For vertical: left and right margin.
+   * Set margin on both sides of the separator. For horizontal: top and bottom
+   * margin. For vertical: left and right margin.
    */
   margin(px: number): this {
     this.marginValue = px;

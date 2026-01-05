@@ -1,3 +1,8 @@
+/**
+ * Right-Click Menu is basically a context menu, but we use the term context
+ * heavily in this codebase, so we call it a "Right Click Menu" instead.
+ */
+
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
 
 import { AnchoredElement } from "./anchored.ts";
@@ -84,6 +89,7 @@ export class GladeRightClickMenu extends GladeContainerElement<
     typeaheadTimestamp: 0,
   };
 
+  // TODO: we need to use these. currently a bug
   private sideValue: DropdownSide = "bottom";
   private alignValue: DropdownAlign = "start";
   private sideOffsetValue = 4;
@@ -304,8 +310,8 @@ export class GladeRightClickMenu extends GladeContainerElement<
   }
 
   /**
-   * Build the menu element wrapped in anchored + deferred.
-   * For right-click menus, we use the click position directly.
+   * Build the menu element wrapped in anchored + deferred. For right-click
+   * menus, we use the click position directly.
    */
   private buildMenuElement(theme: Theme): {
     deferred: DeferredElement;

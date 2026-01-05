@@ -67,6 +67,7 @@
     "toggleable",
     "antialiasing",
     "WGSL",
-    "egui"
+    "egui",
+    "MSAA"
   ]
 }

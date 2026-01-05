@@ -1,7 +1,6 @@
 /**
- * Main render orchestration for Glade.
- *
- * Coordinates GPU pipelines and renders scenes to the screen.
+ * Main render orchestration for Glade. Coordinates GPU pipelines and renders
+ * scenes to the screen.
  */
 
 import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
@@ -281,8 +280,10 @@ export class GladeRenderer {
    * Render a scene to a texture view.
    * @param width - Logical width for UI coordinate system
    * @param height - Logical height for UI coordinate system
-   * @param framebufferWidth - Optional physical framebuffer width (defaults to width)
-   * @param framebufferHeight - Optional physical framebuffer height (defaults to height)
+   * @param framebufferWidth - Optional physical framebuffer width
+   *        (defaults to width)
+   * @param framebufferHeight - Optional physical framebuffer height
+   *        (defaults to height)
    */
   render(
     scene: GladeScene,
@@ -308,8 +309,8 @@ export class GladeRenderer {
       log.info(`logical=${width}x${height}, fb=${fbWidth}x${fbHeight}, dpr=${dpr}`);
     }
 
-    // Update viewport uniform with framebuffer size and scale factor
-    // The shader will use framebuffer coordinates, and we scale positions by DPR
+    // Update viewport uniform with framebuffer size and scale factor. The
+    // shader will use framebuffer coordinates, and we scale positions by DPR.
     this.updateViewport(fbWidth, fbHeight, dpr);
 
     // Ensure depth and MSAA color textures exist
@@ -345,8 +346,8 @@ export class GladeRenderer {
       },
     });
 
-    // Set viewport to full framebuffer but scale coordinates
-    // This ensures we render to the full texture
+    // Set viewport to full framebuffer but scale coordinates. This ensures we
+    // render to the full texture
     pass.setViewport(0, 0, fbWidth, fbHeight, 0, 1);
 
     // Reset all pipeline offsets for interleaved rendering
@@ -358,9 +359,9 @@ export class GladeRenderer {
     this.imagePipeline?.beginFrame();
     this.hostTexturePipeline?.beginFrame();
 
-    // Render primitives in draw order using batch iteration.
-    // This ensures correct layering for overlays: a dialog backdrop (rect)
-    // will render AFTER main UI content if its draw order is higher.
+    // Render primitives in draw order using batch iteration. This ensures
+    // correct layering for overlays: a dialog backdrop (rect) will
+    // render AFTER main UI content if its draw order is higher.
     const batchIterator = scene.createBatchIterator();
     let batch: PrimitiveBatch | null;
 

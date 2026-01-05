@@ -1,9 +1,8 @@
 /**
- * Rectangle rendering pipeline for Glade.
- *
- * Renders rounded rectangles with optional borders using instanced rendering.
- * Each rectangle is a quad (2 triangles) with instance data for position,
- * size, color, corner radius, and border.
+ * Rectangle rendering pipeline for Glade. Renders rounded rectangles with
+ * optional borders using instanced rendering. Each rectangle is a
+ * quad (2 triangles) with instance data for position, size, color, corner
+ * radius, and border.
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
@@ -14,7 +13,7 @@ import type { RectPrimitive } from "./scene.ts";
 /**
  * WGSL shader for rectangle rendering with SDF-based rounded corners.
  */
-const RECT_SHADER = /* wgsl */ `
+const RECT_SHADER = `
 struct Uniforms {
   viewport_size: vec2<f32>,
   scale: f32,
@@ -292,11 +291,9 @@ const FLOATS_PER_INSTANCE = 32;
 const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
 
 /**
- * Rectangle rendering pipeline.
- *
- * Supports interleaved batch rendering where renderBatch() can be called
- * multiple times per frame. Call beginFrame() at the start of each frame
- * to reset the instance buffer offset.
+ * Rectangle rendering pipeline. Supports interleaved batch rendering where
+ * renderBatch() can be called multiple times per frame. Call beginFrame()
+ * at the start of each frame to reset the instance buffer offset.
  */
 export class RectPipeline {
   private pipeline: GPURenderPipeline;
@@ -408,7 +405,8 @@ export class RectPipeline {
     // corner_border (corner_radius, border_width, z_index, is_dashed)
     this.instanceData[offset + 12] = rect.cornerRadius;
     this.instanceData[offset + 13] = rect.borderWidth;
-    this.instanceData[offset + 14] = rect.order ?? index; // z_index from global draw order
+    // z_index from global draw order
+    this.instanceData[offset + 14] = rect.order ?? index;
     this.instanceData[offset + 15] = rect.borderDashed ?? 0;
 
     // clip_bounds (x, y, width, height)
@@ -439,17 +437,17 @@ export class RectPipeline {
   }
 
   /**
-   * Reset the instance buffer offset for a new frame.
-   * Must be called before the first renderBatch() call each frame.
+   * Reset the instance buffer offset for a new frame. MUST be called before
+   * the first renderBatch() call each frame.
    */
   beginFrame(): void {
     this.currentOffset = 0;
   }
 
   /**
-   * Render a batch of rects at the current buffer offset.
-   * Can be called multiple times per frame for interleaved rendering.
-   * The batch is rendered in order (no internal sorting).
+   * Render a batch of rects at the current buffer offset. Can be called
+   * multiple times per frame for interleaved rendering. The batch is rendered
+   * in order (no internal sorting).
    */
   renderBatch(
     pass: GPURenderPassEncoder,
