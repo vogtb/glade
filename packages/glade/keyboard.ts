@@ -8,12 +8,20 @@ import { coreModsToGladeMods } from "@glade/core";
 
 import type { Modifiers } from "./dispatch.ts";
 
-export type Platform = "macos" | "windows" | "linux";
+export type PlatformOS = "macos" | "windows" | "linux";
 
 /**
  * Detect current platform.
  */
-export function detectPlatform(): Platform {
+export function detectPlatformOS(): PlatformOS {
+  if (typeof globalThis !== "undefined" && "process" in globalThis) {
+    if (process.platform === "darwin") {
+      return "macos";
+    }
+    if (process.platform === "win32") {
+      return "windows";
+    }
+  }
   if (typeof globalThis !== "undefined" && "navigator" in globalThis) {
     const nav = globalThis.navigator as Navigator;
     if (/Mac|iPhone|iPad|iPod/.test(nav.userAgent)) {
@@ -24,15 +32,7 @@ export function detectPlatform(): Platform {
     }
     return "linux";
   }
-  if (typeof globalThis !== "undefined" && "process" in globalThis) {
-    const proc = (globalThis as Record<string, unknown>).process as { platform?: string };
-    if (proc.platform === "darwin") {
-      return "macos";
-    }
-    if (proc.platform === "win32") {
-      return "windows";
-    }
-  }
+
   return "linux";
 }
 
@@ -357,8 +357,8 @@ function keyCodeToName(code: KeyCode): string | null {
  *        (auto-detected if not provided)
  * @returns Formatted string like "⌘S" (macOS) or "Ctrl+S" (Windows/Linux)
  */
-export function formatKeystroke(keystroke: Keystroke, platform?: Platform): string {
-  const plat = platform ?? detectPlatform();
+export function formatKeystroke(keystroke: Keystroke, platform?: PlatformOS): string {
+  const plat = platform ?? detectPlatformOS();
   const isMac = plat === "macos";
   const symbols = isMac ? MAC_KEY_SYMBOLS : WINDOWS_KEY_SYMBOLS;
 
@@ -395,7 +395,7 @@ export function formatKeystroke(keystroke: Keystroke, platform?: Platform): stri
  * @param platform Optional platform for OS-specific symbols
  * @returns Formatted string or null if parsing fails
  */
-export function formatKeystrokeString(keystrokeStr: string, platform?: Platform): string | null {
+export function formatKeystrokeString(keystrokeStr: string, platform?: PlatformOS): string | null {
   const keystroke = parseKeystroke(keystrokeStr);
   if (!keystroke) {
     return null;

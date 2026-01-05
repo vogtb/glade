@@ -505,7 +505,7 @@ export function createDefaultKeymap(actionRegistry?: ActionRegistry): Keymap {
     { key: "meta+q", action: BuiltinActions.Quit },
 
     // Debug
-    { key: "i", action: BuiltinActions.ToggleInspector },
+    { key: "meta+i", action: BuiltinActions.ToggleInspector },
   ]);
 
   return keymap;

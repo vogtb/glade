@@ -217,9 +217,9 @@ export {
 } from "./input";
 export type { ElementDebugInfo, InspectorState } from "./inspector";
 export { createInspector, createInspectorState, Inspector, INSPECTOR_COLORS } from "./inspector";
-export type { Keystroke, Platform } from "./keyboard";
+export type { Keystroke, PlatformOS as Platform } from "./keyboard";
 export {
-  detectPlatform,
+  detectPlatformOS as detectPlatform,
   formatKeystroke,
   formatKeystrokeString,
   Key,

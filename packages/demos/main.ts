@@ -2,10 +2,12 @@ import {
   createListState,
   div,
   type FocusHandle,
+  formatKeystrokeString,
   type GladeView,
   type GladeViewContext,
   h1,
   type ListState,
+  mono,
   type ScrollHandle,
   text,
   TextInputController,
@@ -417,7 +419,18 @@ export class MainView implements GladeView {
               .itemsCenter()
               .justifyEnd()
               .bg(theme.semantic.window.background)
-              .child(text("Titlebar Area").size(11).color(theme.semantic.text.muted))
+              .child(
+                div()
+                  .flex()
+                  .flexRow()
+                  .wMax(100)
+                  .gap(10)
+                  .justifyEnd()
+                  .children(
+                    text("Inspector:").size(12).color(theme.semantic.text.muted),
+                    mono(formatKeystrokeString("meta+i")!).size(12)
+                  )
+              )
           : null,
         div()
           .flex()
