@@ -60,7 +60,7 @@ export interface TextInputOptions {
   focusHandle?: FocusHandle;
   tabIndex?: number;
   padding?: { x: number; y: number };
-  caretBlinkInterval?: number;
+  caretBlinkIntervalSeconds?: number;
   width?: number;
   scrollHandle?: ScrollHandle;
   scrollViewport?: Bounds;
@@ -459,9 +459,11 @@ export interface TextDecorationOptions {
   compositionColor?: ColorObject;
   caretColor?: ColorObject;
   caretThickness?: number;
-  caretBlinkInterval?: number;
+  caretBlinkIntervalSeconds?: number;
   time?: number;
 }
+
+const TRANSPARENT: ColorObject = { r: 0, g: 0, b: 0, a: 0 };
 
 export function renderTextDecorations(scene: GladeScene, options: TextDecorationOptions): void {
   const {
@@ -473,12 +475,10 @@ export function renderTextDecorations(scene: GladeScene, options: TextDecoration
     selectionColor,
     compositionColor,
     caretColor,
-    caretThickness = 1,
-    caretBlinkInterval = 0.8,
+    caretThickness = 2,
+    caretBlinkIntervalSeconds = 1.2,
     time = 0,
   } = options;
-
-  const transparent: ColorObject = { r: 0, g: 0, b: 0, a: 0 };
 
   // Render selection rectangles
   if (selectionColor && !selection.isEmpty) {
@@ -492,7 +492,7 @@ export function renderTextDecorations(scene: GladeScene, options: TextDecoration
         color: selectionColor,
         cornerRadius: 2,
         borderWidth: 0,
-        borderColor: transparent,
+        borderColor: TRANSPARENT,
       });
     }
   }
@@ -518,7 +518,7 @@ export function renderTextDecorations(scene: GladeScene, options: TextDecoration
 
   // Render caret with blinking
   if (caretColor) {
-    const blinkPhase = (time % caretBlinkInterval) / caretBlinkInterval;
+    const blinkPhase = (time % caretBlinkIntervalSeconds) / caretBlinkIntervalSeconds;
     const visible = blinkPhase < 0.5;
     if (visible) {
       const caret = editorCaretRect(document, selection.focus, caretThickness);
@@ -530,7 +530,7 @@ export function renderTextDecorations(scene: GladeScene, options: TextDecoration
         color: caretColor,
         cornerRadius: 0,
         borderWidth: 0,
-        borderColor: transparent,
+        borderColor: TRANSPARENT,
       });
     }
   }
@@ -545,7 +545,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
   private fontWeight = 400;
   private lineHeight: number | null = null;
   private padding = { x: 8, y: 6 };
-  private caretBlinkInterval = 0.8;
+  private caretBlinkIntervalSeconds = 1.2;
   private handlers: EventHandlers = {};
 
   private scrollPadding = 8;
@@ -559,8 +559,8 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     if (options.padding) {
       this.padding = options.padding;
     }
-    if (options.caretBlinkInterval !== undefined) {
-      this.caretBlinkInterval = options.caretBlinkInterval;
+    if (options.caretBlinkIntervalSeconds !== undefined) {
+      this.caretBlinkIntervalSeconds = options.caretBlinkIntervalSeconds;
     }
     if (options.scrollPadding !== undefined) {
       this.scrollPadding = options.scrollPadding;
@@ -609,7 +609,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
   }
 
   caretBlink(interval: number): this {
-    this.caretBlinkInterval = interval;
+    this.caretBlinkIntervalSeconds = interval;
     return this;
   }
 
@@ -1285,7 +1285,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       compositionColor,
       caretColor: focused ? caretColor : undefined,
       caretThickness: this.options.caretThickness,
-      caretBlinkInterval: this.caretBlinkInterval,
+      caretBlinkIntervalSeconds: this.caretBlinkIntervalSeconds,
       time: performance.now() / 1000,
     });
   }

@@ -99,8 +99,8 @@ export class GladeLayoutEngine {
   }
 
   /**
-   * Request layout for a measurable element (e.g., text).
-   * The measureId is used during layout to call back for measurement.
+   * Request layout for a measurable element (e.g., text). The measureId is
+   * used during layout to call back for measurement.
    */
   requestMeasurableLayout(style: Partial<Styles>, measureId: number): LayoutId {
     const styleInput = this.convertStyle(style);
@@ -179,8 +179,8 @@ export class GladeLayoutEngine {
   }
 
   /**
-   * Get the computed bounds for a layout node.
-   * Returns absolute bounds (accumulated from parent offsets).
+   * Get the computed bounds for a layout node. Returns absolute bounds
+   * (accumulated from parent offsets).
    */
   layoutBounds(layoutId: LayoutId): Bounds {
     const cached = this.absoluteBoundsCache.get(layoutId);
@@ -253,7 +253,9 @@ export class GladeLayoutEngine {
         const parts = style.flex.split(" ");
         if (parts.length >= 1) result.flexGrow = parseFloat(parts[0]!);
         if (parts.length >= 2) result.flexShrink = parseFloat(parts[1]!);
-        // flexBasis from shorthand is typically "0%" or "auto" - we ignore for now
+        // TODO: flexBasis from shorthand is typically "0%" or "auto" - we
+        // ignore for now, but I should come back and double check this
+        // assumption...
       }
     }
 

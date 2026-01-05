@@ -1,10 +1,7 @@
 /**
- * List - Virtual scrolling for variable-height items.
- *
- * Uses a height cache with lazy measurement for efficient handling
- * of lists with items of varying heights.
- *
- * Inspired by GPUI's list element with ListState.
+ * List - Virtual scrolling for variable-height items. Uses a height cache
+ * with lazy measurement for efficient handling of lists with items of
+ * varying heights. Inspired by GPUI's list element with ListState.
  */
 
 import { type Color, toColorObject } from "@glade/utils";
@@ -42,8 +39,8 @@ import {
 import type { Styles } from "./styles.ts";
 
 /**
- * Alignment for list items (top-aligned or bottom-aligned).
- * Bottom alignment is useful for chat UIs.
+ * Alignment for list items (top-aligned or bottom-aligned). Bottom alignment
+ * is useful for chat UIs.
  */
 export type ListAlignment = "top" | "bottom";
 
@@ -91,8 +88,8 @@ interface ItemHeightEntry {
 }
 
 /**
- * ListState manages the state of a variable-height virtual list.
- * Can be used standalone or with the List element.
+ * ListState manages the state of a variable-height virtual list. Can be used
+ * standalone or with the List element.
  */
 export class ListState {
   private heights: ItemHeightEntry[] = [];
@@ -516,8 +513,8 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
   }
 
   /**
-   * Set a callback to measure item height from item data.
-   * This is called for items that haven't been measured yet.
+   * Set a callback to measure item height from item data. This is called for
+   * items that haven't been measured yet.
    */
   measureItem(fn: ListMeasureItem<T>): this {
     this.measureItemFn = fn;
@@ -666,9 +663,10 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
       });
     }
 
-    // Create an inner measurement container that holds items for height computation
-    // This container is positioned absolutely so it doesn't affect the outer container's flex sizing
-    // Items are stacked vertically to get their natural heights computed
+    // Create an inner measurement container that holds items for height
+    // computation. This container is positioned absolutely so it doesn't
+    // affect the outer container's flex sizing Items are stacked vertically
+    // to get their natural heights computed
     const itemLayoutIds = renderedItems.map((item) => item.layoutId);
     const measureContainerLayoutId = cx.requestLayout(
       {
@@ -682,7 +680,8 @@ export class List<T> extends GladeElement<ListRequestState, ListPrepaintState> {
       itemLayoutIds
     );
 
-    // Outer container uses our styles but with position:relative to contain the absolute child
+    // Outer container uses our styles but with position:relative to
+    // contain the absolute child
     const layoutId = cx.requestLayout({ ...this.styles, position: "relative" }, [
       measureContainerLayoutId,
     ]);

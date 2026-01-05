@@ -38,10 +38,6 @@ export const DEFAULT_INDICATOR_WIDTH = 20;
 export const DEFAULT_SUBMENU_DELAY = 150;
 export const DEFAULT_SUBMENU_CLOSE_DELAY = 100;
 
-// ============================================================================ //
-// Global Submenu State                                                         //
-// ============================================================================ //
-
 export type SubmenuPath = string[];
 
 export type DropdownSubmenuState = {
@@ -318,17 +314,13 @@ export function shouldDeferSubmenuClose(
   );
 }
 
-// ============================================================================ //
-// Safe Polygon                                                                 //
-// ============================================================================ //
-
 export type Point = { x: number; y: number };
 
 export function createSafePolygon(
   _triggerBounds: Bounds,
   submenuBounds: Bounds,
   cursorPosition: Point,
-  side: "left" | "right"
+  side: HorizontalSize
 ): Point[] {
   if (side === "right") {
     return [
@@ -364,16 +356,13 @@ export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
   return inside;
 }
 
-// ============================================================================ //
-// Types                                                                         //
-// ============================================================================ //
-
 export type DropdownOpenChangeHandler = (open: boolean) => void;
 export type DropdownSelectHandler = () => void;
 export type DropdownCheckedChangeHandler = (checked: boolean) => void;
 export type DropdownValueChangeHandler = (value: string) => void;
 export type DropdownSide = "top" | "bottom" | "left" | "right";
 export type DropdownAlign = "start" | "center" | "end";
+export type HorizontalSize = "left" | "right";
 
 export type DropdownMenuState = {
   focusedIndex: number;
@@ -420,10 +409,6 @@ export type DropdownMenuContext = {
   itemPaddingY: number;
   indicatorWidth: number;
 };
-
-// ============================================================================ //
-// Menu Items                                                                   //
-// ============================================================================ //
 
 export interface DropdownMenuItem {
   isFocusable(): boolean;

@@ -1,7 +1,6 @@
 /**
- * Link element - a clickable text link that opens URLs.
- *
- * Styled like a traditional HTML anchor tag with blue color and underline on hover.
+ * Link element - a clickable text link that opens URLs. Styled like a
+ * traditional HTML anchor tag with blue color and underline on hover.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -49,10 +48,8 @@ type LinkPrepaintState = {
 };
 
 /**
- * A link element that renders clickable text.
- *
- * Opens URLs in the default browser when clicked.
- * In browser environments, opens in a new tab.
+ * A link element that renders clickable text. Opens URLs in the default
+ * browser when clicked. In browser environments, opens in a new tab.
  */
 export class GladeLink extends GladeElement<LinkRequestState, LinkPrepaintState> {
   private textContent: string;

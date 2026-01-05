@@ -52,7 +52,6 @@ export const INPUTS_DEMO: Demo = {
           })
             .size(16)
             .pad(4)
-            .caretBlink(0.7)
         ),
       div().p(10),
       div()
