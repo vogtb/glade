@@ -7,7 +7,7 @@
 
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
-import { base64ToBytes } from "@glade/utils";
+import { base64ToBytes, formatBytes } from "@glade/utils";
 
 import { type InitOutput, initSync, SvgTessellator as WasmSvgTessellator } from "../pkg/svg";
 
@@ -24,7 +24,7 @@ export class SvgTessellator extends WasmSvgTessellator {
 
 export function createSvgTessellator(): SvgTessellator {
   const bytes = new TextEncoder().encode(wasmBase64).length;
-  log.info(`SVG embedded WASM binary is ${bytes / 1000} kb`);
+  log.info(`SVG embedded WASM binary is ${formatBytes(bytes)}`);
   const wasmBytes = base64ToBytes(wasmBase64);
   const module = initSync({ module: wasmBytes });
   return new SvgTessellator(module);

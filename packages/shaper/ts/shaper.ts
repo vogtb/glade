@@ -10,7 +10,7 @@
 
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
-import { base64ToBytes } from "@glade/utils";
+import { base64ToBytes, formatBytes } from "@glade/utils";
 
 import type { FontId } from "../pkg/shaper";
 import { type InitOutput, initSync, TextShaper as WasmTextShaper } from "../pkg/shaper";
@@ -24,7 +24,7 @@ const wasmBase64 = COMPTIME_embedAsBase64("../shaper/pkg/shaper_bg.wasm");
  */
 export function initShaper(): InitOutput {
   const bytes = new TextEncoder().encode(wasmBase64).length;
-  log.info(`shaper embedded WASM binary is ${bytes / 1000} kb`);
+  log.info(`shaper embedded WASM binary is ${formatBytes(bytes)}`);
   const wasmBytes = base64ToBytes(wasmBase64);
   return initSync({ module: wasmBytes });
 }

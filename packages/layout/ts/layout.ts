@@ -10,7 +10,7 @@
 
 import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
-import { base64ToBytes } from "@glade/utils";
+import { base64ToBytes, formatBytes } from "@glade/utils";
 
 import type { LayoutBounds, LayoutId } from "../pkg/layout";
 import {
@@ -36,8 +36,8 @@ export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
  * Automatically initializes WASM if not already done.
  */
 export function createLayoutEngine(): TaffyLayoutEngine {
-  const kb = new TextEncoder().encode(wasmBase64).length / 1000;
-  log.info(`layout engine embedded WASM binary is ${kb} kb`);
+  const bytes = new TextEncoder().encode(wasmBase64).length;
+  log.info(`layout engine embedded WASM binary is ${formatBytes(bytes)}`);
   const wasmBytes = base64ToBytes(wasmBase64);
   const module = initSync({ module: wasmBytes });
   return new TaffyLayoutEngine(module);

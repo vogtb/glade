@@ -1,8 +1,6 @@
 /**
- * GladeApp - the central state owner for Glade applications.
- *
- * GladeApp owns all entities, manages the effect queue, and coordinates
- * the render cycle across windows.
+ * GladeApp - the central state owner for Glade applications. Owns all
+ * entities, manages the effect queue, and coordinates the render cycle.
  */
 
 import type { ColorScheme, ColorSchemeProvider } from "@glade/core";
@@ -27,9 +25,6 @@ import type { ScrollOffset } from "./scroll.ts";
 import { createThemeFonts, type Theme, ThemeManager } from "./theme.ts";
 import { type GladePlatform, GladeWindow, type WindowOptions } from "./window.ts";
 
-/**
- * Options for creating a GladeApp.
- */
 export interface GladeAppOptions {
   platform: GladePlatform;
   fonts: FontFamily[];
