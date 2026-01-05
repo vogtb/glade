@@ -1,8 +1,11 @@
 /**
- * Shadow rendering pipeline for Glade.
+ * Shadow rendering pipeline for Glade. Renders soft shadows using Gaussian
+ * blur approximation via SDF. Shadows are rendered before rectangles so they
+ * appear behind content.
  *
- * Renders soft shadows using Gaussian blur approximation via SDF.
- * Shadows are rendered before rectangles so they appear behind content.
+ * NOTE: Gaussian would give us better shadows, but for GUIs you generally don't
+ * need them. We're trying to visually indicate layers, not depth of those
+ * layers.
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
@@ -13,7 +16,7 @@ import type { ShadowPrimitive } from "./scene.ts";
 /**
  * WGSL shader for shadow rendering with Gaussian blur approximation.
  */
-const SHADOW_SHADER = /* wgsl */ `
+const SHADOW_SHADER = `
 struct Uniforms {
   viewport_size: vec2<f32>,
   scale: f32,
@@ -300,16 +303,16 @@ export class ShadowPipeline {
   }
 
   /**
-   * Reset the instance buffer offset for a new frame.
-   * Must be called before the first renderBatch() call each frame.
+   * Reset the instance buffer offset for a new frame. Must be called before
+   * the first renderBatch() call each frame.
    */
   beginFrame(): void {
     this.currentOffset = 0;
   }
 
   /**
-   * Render a batch of shadows at the current buffer offset.
-   * Can be called multiple times per frame for interleaved rendering.
+   * Render a batch of shadows at the current buffer offset. Can be called
+   * multiple times per frame for interleaved rendering.
    */
   renderBatch(
     pass: GPURenderPassEncoder,
@@ -354,7 +357,8 @@ export class ShadowPipeline {
       // params (corner_radius, blur, z_index, 0)
       this.instanceData[offset + 8] = shadow.cornerRadius;
       this.instanceData[offset + 9] = shadow.blur;
-      this.instanceData[offset + 10] = shadow.order ?? startOffset + i; // z_index from global draw order
+      // z_index from global draw order
+      this.instanceData[offset + 10] = shadow.order ?? startOffset + i;
       this.instanceData[offset + 11] = 0;
 
       // clip_bounds (x, y, width, height)

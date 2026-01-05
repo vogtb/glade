@@ -1,10 +1,9 @@
 /**
- * Switch component - a control that allows the user to toggle between on and off states.
- *
- * Visually distinct from a checkbox, the switch shows a track with a sliding thumb.
- * Commonly used for settings that take effect immediately.
- *
- * Follows accessibility patterns similar to Radix UI / Base UI switch components.
+ * Switch component - a control that allows the user to toggle between on
+ * and off states. Visually distinct from a checkbox, the switch shows a
+ * track with a sliding thumb. Commonly used for settings that take effect
+ * immediately. Follows accessibility patterns similar to Radix UI switch
+ * component.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -62,10 +61,8 @@ type SwitchPrepaintState = {
 export type SwitchChangeHandler = (checked: boolean) => void;
 
 /**
- * A switch element that renders a toggleable on/off control.
- *
- * Displays a track with a sliding thumb that moves between
- * left (off) and right (on) positions.
+ * A switch element that renders a toggleable on/off control. Displays a track
+ * with a sliding thumb that moves between left (off) and right (on) positions.
  */
 export class GladeSwitch extends GladeElement<SwitchRequestState, SwitchPrepaintState> {
   private widthValue: number = DEFAULT_WIDTH;

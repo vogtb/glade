@@ -1,8 +1,7 @@
 /**
- * UniformList - Virtual scrolling for fixed-height items.
- *
- * Renders only visible items for efficient handling of large lists.
- * All items must have the same height.
+ * UniformList - Virtual scrolling for fixed-height items. Renders only visible
+ * items for efficient handling of large lists. All items must have the same
+ * height.
  *
  * Inspired by GPUI's uniform_list.
  */
@@ -218,7 +217,8 @@ export class UniformList<T> extends GladeElement<
         newY = itemTop;
         break;
       case "center":
-        // Would need viewport height, use persistent state in real implementation
+        // Would need viewport height, use persistent state in better impl.
+        // TODO: better impl
         newY = itemTop;
         break;
       case "bottom":
@@ -266,8 +266,8 @@ export class UniformList<T> extends GladeElement<
       ? cx.getScrollOffset(this.scrollHandleRef)
       : { x: 0, y: 0 };
 
-    // We need viewport height to compute visible range, but we don't have it yet.
-    // Use a placeholder; actual visible range is refined in prepaint.
+    // We need viewport height to compute visible range, but we don't have
+    // it yet. Use a placeholder; actual visible range is refined in prepaint.
     const estimatedViewportHeight = 600;
 
     const visibleRange = this.calculateVisibleRange(scrollOffset.y, estimatedViewportHeight);
@@ -304,9 +304,10 @@ export class UniformList<T> extends GladeElement<
       itemRequestStates.push({ element, requestState: result.requestState });
     }
 
-    // Create an inner measurement container that holds items for proper width computation
-    // This container is positioned absolutely so it doesn't affect the outer container's flex sizing
-    // Items get correct parent width constraint from this container
+    // Create an inner measurement container that holds items for proper
+    // width computation. This container is positioned absolutely so it
+    // doesn't affect the outer container's flex sizing. Items get correct
+    // parent width constraint from this container
     const measureContainerLayoutId = cx.requestLayout(
       {
         position: "absolute",
@@ -319,7 +320,8 @@ export class UniformList<T> extends GladeElement<
       itemLayoutIds
     );
 
-    // Outer container uses our styles but with position:relative to contain the absolute child
+    // Outer container uses our styles but with position:relative to contain
+    // the absolute child
     const layoutId = cx.requestLayout({ ...this.styles, position: "relative" }, [
       measureContainerLayoutId,
     ]);

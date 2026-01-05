@@ -1,7 +1,6 @@
 /**
- * Style types for Glade elements.
- *
- * Provides a Tailwind-like styling API for layout and visual properties.
+ * Style types for Glade elements. Provides a Tailwind-like styling API for
+ * layout and visual properties.
  */
 
 import { type CursorStyle } from "@glade/core/events.ts";
@@ -86,8 +85,6 @@ export type BorderStyle = "solid" | "dashed";
  * - "pre-line": Preserve newlines, collapse other whitespace, wrap text
  */
 export type WhitespaceMode = "normal" | "nowrap" | "pre" | "pre-wrap" | "pre-line";
-
-// ============ CSS Grid Types ============
 
 /**
  * Grid auto-flow direction and packing algorithm.

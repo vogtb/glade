@@ -10,8 +10,10 @@ export type ThemeFonts = {
 };
 
 /**
- * Create theme fonts from a list of loaded font families.
- * Expects fonts named "Inter", "JetBrains Mono", and "Noto Color Emoji".
+ * Create theme fonts from a list of loaded font families. Expects the fonts
+ * "Inter", "JetBrains Mono", and "Noto Color Emoji".
+ *
+ * TODO: we really shouldn't DIRECTLY depend on these for the default theme...
  */
 export function createThemeFonts(fonts: FontFamily[]): ThemeFonts {
   const findFont = (name: string) => fonts.find((f) => f.name === name);

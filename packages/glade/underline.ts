@@ -229,11 +229,9 @@ const DEFAULT_WAVELENGTH = 4;
 const DEFAULT_AMPLITUDE = 1;
 
 /**
- * Underline rendering pipeline.
- *
- * Supports interleaved batch rendering where renderBatch() can be called
- * multiple times per frame. Call beginFrame() at the start of each frame
- * to reset the instance buffer offset.
+ * Underline rendering pipeline. Supports interleaved batch rendering where
+ * renderBatch() can be called multiple times per frame. Call beginFrame() at
+ * the start of each frame to reset the instance buffer offset.
  */
 export class UnderlinePipeline {
   private pipeline: GPURenderPipeline;
@@ -313,16 +311,16 @@ export class UnderlinePipeline {
   }
 
   /**
-   * Reset the instance buffer offset for a new frame.
-   * Must be called before the first renderBatch() call each frame.
+   * Reset the instance buffer offset for a new frame. Must be called before
+   * the first renderBatch() call each frame.
    */
   beginFrame(): void {
     this.currentOffset = 0;
   }
 
   /**
-   * Render a batch of underlines at the current buffer offset.
-   * Can be called multiple times per frame for interleaved rendering.
+   * Render a batch of underlines at the current buffer offset. Can be called
+   * multiple times per frame for interleaved rendering.
    */
   renderBatch(
     pass: GPURenderPassEncoder,
@@ -370,7 +368,8 @@ export class UnderlinePipeline {
       this.instanceData[offset + 8] = wavelength;
       this.instanceData[offset + 9] = amplitude;
       this.instanceData[offset + 10] = isWavy;
-      this.instanceData[offset + 11] = underline.order ?? startOffset + i; // z_index from global draw order
+      // z_index from global draw order
+      this.instanceData[offset + 11] = underline.order ?? startOffset + i;
 
       // clip_bounds
       const clip = underline.clipBounds;

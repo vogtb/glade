@@ -6,6 +6,9 @@
  * 1. requestLayout - build layout tree
  * 2. prepaint - post-layout processing
  * 3. paint - emit GPU primitives
+ *
+ * NOTE: Currently I have _some_ code that supports multiple windows, but at
+ * the moment I can only confirm that only apps with one windows work.
  */
 
 import {
@@ -123,7 +126,8 @@ function normalizeMouseButton(button: number, mods: Modifiers): number {
   return button;
 }
 
-// Priority 3 sits above dialogs (0-2) while staying under the 2,000,000 depth range.
+// Priority 3 sits above dialogs (0-2) while staying under the 2,000,000
+// depth range.
 const FPS_OVERLAY_PRIORITY = 3;
 
 /**
@@ -144,12 +148,14 @@ export interface DecodedImageData {
   data: Uint8Array;
 }
 
+type GladePlatformRuntime = "browser" | "macos";
+
 /**
- * Platform interface for window operations.
- * This abstracts browser vs native differences.
+ * Platform interface for window operations. This abstracts browser vs native
+ * differences.
  */
 export interface GladePlatform {
-  readonly runtime: "browser" | "macos";
+  readonly runtime: GladePlatformRuntime;
   readonly clipboard: Clipboard;
   readonly colorSchemeProvider: ColorSchemeProvider;
 

@@ -1,11 +1,9 @@
 /**
  * Tabs components - a set of layered content sections, known as tab panels,
- * that display one panel at a time based on the selected tab trigger.
- *
- * The Tabs component is the parent container that manages selection state.
- * Tab components define individual tabs with triggers and content.
- *
- * Follows accessibility and API patterns similar to Radix UI / Base UI tabs.
+ * that display one panel at a time based on the selected tab trigger. The Tabs
+ * component is the parent container that manages selection state. Tab
+ * components define individual tabs with triggers and content. Follows
+ * accessibility and API patterns similar to Radix UI / Base UI tabs.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -43,8 +41,8 @@ const DEFAULT_INDICATOR_HEIGHT = 2;
 export type TabValueChangeHandler = (value: string) => void;
 
 /**
- * Context passed from Tabs to Tab.
- * Used internally to communicate selection state and styling.
+ * Context passed from Tabs to Tab. Used internally to communicate selection
+ * state and styling.
  */
 type TabsContext = {
   value: string | null;
@@ -64,10 +62,6 @@ type TabsContext = {
   triggerPaddingY: number;
   indicatorHeight: number;
 };
-
-// ============================================================================
-// Tab (individual tab with trigger and content)
-// ============================================================================
 
 /**
  * Request layout state for tab trigger.
@@ -317,8 +311,8 @@ class GladeTabTrigger extends GladeElement<TabTriggerRequestState, TabTriggerPre
 }
 
 /**
- * A tab panel containing both a trigger (label) and content.
- * Used as a child of Tabs to define individual tabs.
+ * A tab panel containing both a trigger (label) and content. Used as a child
+ * of Tabs to define individual tabs.
  */
 export class GladeTab {
   private tabValue: string;
@@ -390,10 +384,6 @@ export class GladeTab {
     return trigger;
   }
 }
-
-// ============================================================================
-// Tabs (container)
-// ============================================================================
 
 /**
  * Request layout state for tabs container.
@@ -470,8 +460,6 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
   private contentPaddingValue: number = 16;
   private borderRadiusValue: number = 0;
 
-  // ============ Layout Styles ============
-
   /**
    * Set width.
    */
@@ -512,8 +500,6 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
     return this;
   }
 
-  // ============ Tabs Specific ============
-
   /**
    * Set the currently selected tab value (controlled mode).
    */
@@ -547,8 +533,6 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
     }
     return this;
   }
-
-  // ============ Trigger Styling ============
 
   /**
    * Set the background color for inactive triggers.
@@ -621,8 +605,6 @@ export class GladeTabs extends GladeContainerElement<TabsRequestState, TabsPrepa
     this.indicatorHeightValue = v;
     return this;
   }
-
-  // ============ Content Styling ============
 
   /**
    * Set the border color.

@@ -1,9 +1,9 @@
 /**
- * Table components (table, thead, tbody, tfoot, tr, th, td) built on the Glade grid layout.
- *
- * Implements an HTML-like table model using Taffy's grid sizing so columns align across rows.
- * Sections and rows are structural; all layout work is coordinated by the table element,
- * which flattens cells into a single grid.
+ * Table components (table, thead, tbody, tfoot, tr, th, td) built on the
+ * Glade grid layout. Implements an HTML-like table model using Taffy's grid
+ * sizing so columns align across rows. Sections and rows are structural; all
+ * layout work is coordinated by the table element, which flattens cells into
+ * a single grid.
  */
 
 import type { Bounds } from "./bounds.ts";
@@ -101,7 +101,8 @@ export class GladeTable extends GladeContainerElement<TableRequestState, TablePr
   }
 
   /**
-   * Merge additional styles for the table container (background, border, sizing, etc).
+   * Merge additional styles for the table container (background, border,
+   * sizing, etc).
    */
   style(styles: Partial<Styles>): this {
     this.styles = { ...this.styles, ...styles };

@@ -355,8 +355,9 @@ export class GlyphAtlas {
 
     const atlasPos = this.allocate(glyphData.width, glyphData.height);
     if (!atlasPos) {
-      // Atlas is full - don't clear mid-frame as it invalidates existing glyph instances.
-      // Instead, skip this glyph. The atlas should be cleared between frames if needed.
+      // Atlas is full - don't clear mid-frame as it invalidates existing
+      // glyph instances. Instead, skip this glyph. The atlas should be
+      // cleared between frames if needed.
       log.warn("Glyph atlas full, skipping glyph:", glyphChar);
       return null;
     }
@@ -558,8 +559,8 @@ export class TextSystem {
   }
 
   /**
-   * Set the device pixel ratio for high-DPI text rendering.
-   * Call this when the window's DPR changes.
+   * Set the device pixel ratio for high-DPI text rendering. Call this when
+   * the window's DPR changes.
    */
   setDevicePixelRatio(dpr: number): void {
     this._devicePixelRatio = dpr;
@@ -583,9 +584,6 @@ export class TextSystem {
    * which automatically matches the correct variant based on FontStyle.style.
    * The internal font family name and weight are automatically extracted
    * so that fonts with different weights are correctly matched during shaping.
-   *
-   * In browser environments, fonts are also registered with the CSS FontFace API
-   * so that Canvas 2D can use them for rasterization.
    */
   registerFontFamily(family: FontFamily): void {
     const name = family.name;
@@ -615,7 +613,8 @@ export class TextSystem {
           (document.fonts as FontFaceSet & { add(font: FontFace): void }).add(loadedFace);
         })
         .catch((err) => {
-          console.warn(`[glade/text] failed to load font "${name}" for browser:`, err);
+          log.warn(`failed to load font "${name}" for browser:`, err);
+          throw err;
         });
 
       if (family.italic) {
@@ -626,7 +625,8 @@ export class TextSystem {
             (document.fonts as FontFaceSet & { add(font: FontFace): void }).add(loadedFace);
           })
           .catch((err) => {
-            console.warn(`[glade/text] failed to load italic font "${name}" for browser:`, err);
+            log.warn(`failed to load italic font "${name}" for browser:`, err);
+            throw err;
           });
       }
     }
@@ -774,7 +774,8 @@ export class TextSystem {
           effectiveMaxWidth,
           effectiveStyle
         );
-        // For empty text, layoutText returns no lines - create a fallback empty line
+        // For empty text, layoutText returns no lines - create a fallback
+        // empty line
         lines =
           layoutResult.lines.length > 0
             ? layoutResult.lines
@@ -827,9 +828,9 @@ export class TextSystem {
   }
 
   /**
-   * Prepare glyph instances for rendering.
-   * Rasterizes any missing glyphs and returns GPU-ready instances.
-   * Glyphs are rasterized at fontSize * devicePixelRatio for crisp high-DPI text.
+   * Prepare glyph instances for rendering. Rasterizes any missing glyphs and
+   * returns GPU-ready instances. Glyphs are rasterized at
+   * fontSize * devicePixelRatio for crisp high-DPI text.
    */
   prepareGlyphInstances(
     text: string,
@@ -861,11 +862,11 @@ export class TextSystem {
           effectiveMaxWidth,
           effectiveStyle
         );
-        // For empty text, layoutText returns no lines - create a fallback empty line
+        // For empty text, layoutText returns no lines - fallback to empty line
         if (layoutResult.lines.length > 0) {
           // Normalize y values so the first line starts at y=0.
-          // cosmic-text's line_y includes baseline offset which we don't want here
-          // since baselineY calculation already adds lineHeight.
+          // cosmic-text's line_y includes baseline offset which we don't
+          // want here since baselineY calculation already adds lineHeight.
           const firstLine = layoutResult.lines[0];
           const firstLineY = firstLine ? firstLine.y : 0;
           glyphLines = layoutResult.lines.map((line) => ({
@@ -900,7 +901,8 @@ export class TextSystem {
         },
       ];
     }
-    // cosmic-text reports glyph cluster bounds in UTF-8 byte offsets; map them to UTF-16 indices.
+    // cosmic-text reports glyph cluster bounds in UTF-8 byte offsets; map
+    // them to UTF-16 indices.
     const byteToUtf16Index = new Map<number, number>();
 
     let byteOffset = 0;
@@ -929,9 +931,9 @@ export class TextSystem {
     const fallbackFamilies = this.buildFallbackFamilies(fontFamily);
 
     for (const line of glyphLines) {
-      // Center text vertically within line height.
-      // The baseline is positioned such that text (ascent + descent = fontSize)
-      // is centered within the lineHeight.
+      // Center text vertically within line height. The baseline is positioned
+      // such that text (ascent + descent = fontSize) is centered within the
+      // lineHeight. so...
       // baselineY = top + (lineHeight - fontSize) / 2 + ascent
       // where ascent ≈ 0.8 * fontSize, so:
       // baselineY = top + (lineHeight + fontSize * 0.6) / 2
@@ -1011,7 +1013,7 @@ export class TextSystem {
         const atlasSize = this.atlas.getSize();
 
         // Y positioning: baseline is at line offset + lineHeight
-        // bearingY is the distance from baseline to top of glyph
+        // So bearingY is the distance from baseline to top of glyph
         instances.push({
           x: x + glyph.x + cached.bearingX / dpr,
           y: baselineY - cached.bearingY / dpr,
@@ -1047,8 +1049,8 @@ export class TextSystem {
 }
 
 /**
- * WGSL shader for text/glyph rendering.
- * Similar to rect shader but samples from glyph atlas.
+ * WGSL shader for text/glyph rendering. Similar to rect shader but samples
+ * from glyph atlas.
  */
 const TEXT_SHADER = /* wgsl */ `
 struct Uniforms {
@@ -1154,7 +1156,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 }
 `;
 
-const FLOATS_PER_GLYPH = 20; // 4 (pos_size) + 4 (atlas_rect) + 4 (color) + 4 (params) + 4 (clip_bounds)
+// 4 (pos_size) + 4 (atlas_rect) + 4 (color) + 4 (params) + 4 (clip_bounds)
+const FLOATS_PER_GLYPH = 20;
 const BYTES_PER_GLYPH = FLOATS_PER_GLYPH * 4;
 
 /**
@@ -1173,7 +1176,9 @@ export class TextPipeline {
   private bindGroup: GPUBindGroup | null = null;
   private sampler: GPUSampler;
 
-  /** Current offset in the instance buffer for interleaved rendering. */
+  /**
+   * Current offset in the instance buffer for interleaved rendering.
+   */
   private currentOffset = 0;
 
   constructor(
@@ -1295,16 +1300,16 @@ export class TextPipeline {
   }
 
   /**
-   * Reset the instance buffer offset for a new frame.
-   * Must be called before the first renderBatch() call each frame.
+   * Reset the instance buffer offset for a new frame. Must be called before
+   * the first renderBatch() call each frame.
    */
   beginFrame(): void {
     this.currentOffset = 0;
   }
 
   /**
-   * Render a batch of glyph instances at the current buffer offset.
-   * Can be called multiple times per frame for interleaved rendering.
+   * Render a batch of glyph instances at the current buffer offset. Can be
+   * called multiple times per frame for interleaved rendering.
    */
   renderBatch(pass: GPURenderPassEncoder, glyphs: GlyphInstance[]): void {
     if (glyphs.length === 0 || !this.bindGroup) {
@@ -1316,14 +1321,14 @@ export class TextPipeline {
     const count = Math.min(glyphs.length, available);
 
     if (count <= 0) {
-      console.warn(
+      log.warn(
         `TextPipeline: buffer full (${this.currentOffset}/${this.maxInstances}), skipping ${glyphs.length} glyphs`
       );
       return;
     }
 
     if (count < glyphs.length) {
-      console.warn(`TextPipeline: buffer nearly full, rendering ${count}/${glyphs.length} glyphs`);
+      log.warn(`TextPipeline: buffer nearly full, rendering ${count}/${glyphs.length} glyphs`);
     }
 
     const startOffset = this.currentOffset;
@@ -1349,7 +1354,8 @@ export class TextPipeline {
       this.instanceData[offset + 11] = a;
 
       const hasClip = glyph.clipBounds ? 1 : 0;
-      this.instanceData[offset + 12] = glyph.order ?? startOffset + i; // z_index from global draw order
+      // z_index from global draw order
+      this.instanceData[offset + 12] = glyph.order ?? startOffset + i;
       this.instanceData[offset + 13] = hasClip;
       this.instanceData[offset + 14] = glyph.isColor ? 1 : 0;
       this.instanceData[offset + 15] = 0;
@@ -1406,7 +1412,8 @@ const GPUShaderStage = {
 } as const;
 
 /**
- * State model for text input elements. Rendering and event wiring live elsewhere.
+ * State model for text input elements. Rendering and event wiring live
+ * elsewhere.
  */
 export type SelectionRange = {
   start: number;
@@ -1414,8 +1421,8 @@ export type SelectionRange = {
 };
 
 /**
- * Common interface for any state that supports text selection.
- * Used by both TextInputState (editable) and TextSelectionState (read-only).
+ * Common interface for any state that supports text selection. Used by both
+ * TextInputState (editable) and TextSelectionState (read-only).
  */
 export interface SelectableState {
   /** The text content to select within */
@@ -1427,8 +1434,9 @@ export interface SelectableState {
 }
 
 /**
- * Lightweight selection state for non-editable selectable text.
- * Unlike TextInputState, this has no editing capabilities (no composition, history, etc.)
+ * Lightweight selection state for non-editable selectable text. Unlike
+ * TextInputState, this has no editing capabilities (no composition,
+ * history, etc.)
  */
 export type TextSelectionState = {
   /** The text content (immutable - selection only) */
@@ -1505,8 +1513,8 @@ export type TextHitTestResult = {
  * Cached text layout that can be reused for hit testing, caret computation,
  * selection rendering, and glyph rendering.
  *
- * Create once when text or layout parameters change, then reuse for all operations.
- * This avoids recomputing layout multiple times per frame.
+ * Create once when text or layout parameters change, then reuse for all
+ * operations. This avoids recomputing layout multiple times per frame.
  */
 export type CachedTextLayout = {
   /** The text that was laid out (with composition applied if any) */
@@ -1533,8 +1541,8 @@ export type CachedTextLayout = {
 };
 
 /**
- * Create a cached text layout for a string.
- * Call once when text changes, then reuse for hit testing, caret, selection, etc.
+ * Create a cached text layout for a string. Call once when text changes,
+ * then reuse for hit testing, caret, selection, etc.
  */
 export function createCachedTextLayout(
   text: string,
@@ -1750,7 +1758,8 @@ function layoutDecoratedLines(
   const safeFontSize = fontSize > 0 ? fontSize : 1;
   const effectiveStyle: FontStyle = { ...style, family: fontFamily };
   const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
-  // The underlying shaper panics on non-positive or non-finite widths; clamp to at least 1px when provided.
+  // The underlying shaper panics on non-positive or non-finite widths; clamp
+  // to at least 1px when provided.
   const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
   const effectiveLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
   const shaper = getSharedTextShaper();
@@ -1766,11 +1775,12 @@ function layoutDecoratedLines(
         effectiveMaxWidth,
         effectiveStyle
       );
-      // For empty text, layoutText returns no lines - create a fallback empty line
+      // For empty text, layoutText returns no lines - create a fallback
+      // empty line
       if (layoutResult.lines.length > 0) {
         // Normalize y values so the first line starts at y=0.
-        // cosmic-text's line_y includes baseline offset which we don't want here
-        // since baselineY calculation already adds lineHeight.
+        // cosmic-text's line_y includes baseline offset which we don't
+        // want here since baselineY calculation already adds lineHeight.
         const firstLine = layoutResult.lines[0];
         const firstLineY = firstLine ? firstLine.y : 0;
         lines = layoutResult.lines.map((line) => ({
@@ -1942,8 +1952,8 @@ export function hitTestText(
 }
 
 /**
- * Hit test using a pre-computed cached layout.
- * More efficient than hitTestText when layout is reused.
+ * Hit test using a pre-computed cached layout. More efficient than hitTestText
+ * when layout is reused.
  *
  * @param layout - Cached text layout from createCachedTextLayout()
  * @param point - Point in TEXT-LOCAL coordinates
@@ -2256,8 +2266,8 @@ export function selectAll(state: TextInputState): void {
   state.preferredCaretX = null;
 }
 
-// ============ SelectableState functions ============
-// These work with both TextSelectionState and TextInputState (via the text property)
+// NOTE: SelectableState functions work with both TextSelectionState and
+// TextInputState (via the text property)
 
 /**
  * Move selection left for selectable state.
@@ -2794,8 +2804,8 @@ export function computeCaretRect(
 }
 
 /**
- * Compute range rectangles using a pre-computed cached layout.
- * More efficient than computeRangeRects when layout is reused.
+ * Compute range rectangles using a pre-computed cached layout. More efficient
+ * than computeRangeRects when layout is reused.
  *
  * @param layout - Cached text layout from createCachedTextLayout()
  * @param range - Selection range to compute rectangles for
@@ -2838,8 +2848,8 @@ export function computeRangeRectsWithLayout(
 }
 
 /**
- * Compute caret rectangle using a pre-computed cached layout.
- * More efficient than computeCaretRect when layout is reused.
+ * Compute caret rectangle using a pre-computed cached layout. More efficient
+ * than computeCaretRect when layout is reused.
  *
  * @param layout - Cached text layout from createCachedTextLayout()
  * @param caretIndex - Character index for caret position
@@ -2870,9 +2880,9 @@ export function computeCaretRectWithLayout(
   }
 
   const caretX = caretXAtIndex(targetLine, layout.byteToUtf16Index, caretIndex, textLength);
-  // Position caret to align with where glyphs are rendered.
-  // Glyphs are vertically centered within line height, so caret should be too.
-  // The caret top = line.y + (lineHeight - fontSize) / 2
+  // Position caret to align with where glyphs are rendered. Glyphs are
+  // vertically centered within line height, so caret should be too. The caret
+  // top = line.y + (lineHeight - fontSize) / 2
   const caretTop = targetLine.y + (targetLine.lineHeight - layout.fontSize) / 2;
   return {
     x: caretX,
@@ -2916,7 +2926,8 @@ export function caretPrimitive(
     }
   }
   const thickness = Math.max(1, opts?.thickness ?? 1);
-  // Align caret to the text baseline by offsetting its top to the line's y position.
+  // Align caret to the text baseline by offsetting its top to the
+  // line's y position.
   const caretY = caretRect.y;
   return {
     x: caretRect.x,
@@ -2964,8 +2975,8 @@ export function selectionPrimitives(
 }
 
 /**
- * Compute selection primitives using an optional cached layout.
- * If layout is provided, uses it; otherwise computes a new layout.
+ * Compute selection primitives using an optional cached layout. If layout
+ * is provided, uses it; otherwise computes a new layout.
  */
 export function selectionPrimitivesWithLayout(
   state: TextInputState,
@@ -3006,8 +3017,8 @@ export function selectionPrimitivesWithLayout(
 }
 
 /**
- * Compute composition underlines using an optional cached layout.
- * If layout is provided, uses it; otherwise computes a new layout.
+ * Compute composition underlines using an optional cached layout. When layout
+ * is provided, uses it; otherwise computes a new layout.
  */
 export function compositionUnderlinesWithLayout(
   state: TextInputState,
@@ -3062,8 +3073,8 @@ export function compositionUnderlinesWithLayout(
 }
 
 /**
- * Compute caret primitive using an optional cached layout.
- * If layout is provided, uses it; otherwise computes a new layout.
+ * Compute caret primitive using an optional cached layout. If layout is
+ * provided, uses it; otherwise computes a new layout.
  */
 export function caretPrimitiveWithLayout(
   state: TextInputState,

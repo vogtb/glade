@@ -1,8 +1,8 @@
 /**
  * SVG rendering for Glade.
  *
- * Uses WASM-based tessellation via Lyon for high-quality path rendering.
- * Parses SVG content and renders via the PathPipeline with color tinting.
+ * Uses WASM-based tessellation via Lyon for high-quality path rendering, and
+ * parses SVG content and renders via the PathPipeline with color tinting.
  *
  * Features:
  * - Global mesh caching to avoid re-tessellation
@@ -50,8 +50,8 @@ interface CachedPathData {
 }
 
 /**
- * Global SVG mesh cache.
- * Keyed by SVG content hash + display size for efficient reuse.
+ * Global SVG mesh cache. Keyed by SVG content hash + display size for
+ * efficient reuse.
  */
 class SvgMeshCache {
   private cache = new Map<string, CachedPathData[]>();
@@ -132,8 +132,8 @@ interface SvgPrepaintState {
 }
 
 /**
- * Convert WASM mesh to cached path data format.
- * Vertices now include edge distance for antialiasing (3 floats per vertex: x, y, edgeDist).
+ * Convert WASM mesh to cached path data format. Vertices now include edge
+ * distance for antialiasing (3 floats per vertex: x, y, edgeDist).
  */
 function meshToCachedPath(mesh: TessellatedMesh): CachedPathData {
   const vertices: Array<{ x: number; y: number; edgeDist: number }> = [];
@@ -289,8 +289,10 @@ export function svg(content: string): SvgElement {
 }
 
 /**
- * Common SVG icon paths for convenience.
- * These are Material Design-style icons in 24x24 viewBox.
+ * Common SVG icon paths for convenience. These are Material Design-style
+ * icons in 24x24 viewBox.
+ *
+ * TODO: these look terrible.
  */
 export const SvgIcons = {
   check: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",

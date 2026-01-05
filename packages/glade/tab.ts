@@ -11,11 +11,18 @@ import type { FocusId } from "./id.ts";
  * Configuration for a tab stop.
  */
 export interface TabStopConfig {
-  /** Explicit tab order index. Lower values are focused first. Default: spatial order. */
+  /**
+   * Explicit tab order index. Lower values are focused first. Default:
+   * spatial order.
+   */
   index?: number;
-  /** Group name for focus grouping. Tab navigates within group first. */
+  /**
+   * Group name for focus grouping. Tab navigates within group first.
+   */
   group?: string;
-  /** Focus on mouse down (before click). Default: false. */
+  /**
+   * Focus on mouse down (before click). Default: false.
+   */
   focusOnPress?: boolean;
 }
 
@@ -31,8 +38,7 @@ export interface TabStop {
 }
 
 /**
- * Tab stop registry for a window.
- * Manages tab order and focus navigation.
+ * Tab stop registry for a window. Manages tab order and focus navigation.
  */
 export class TabStopRegistry {
   private tabStops: TabStop[] = [];
@@ -94,8 +100,8 @@ export class TabStopRegistry {
   }
 
   /**
-   * Get the next focusable element via Tab key.
-   * If in a group, navigates within group first, then to next group.
+   * Get the next focusable element via Tab key. If in a group, navigates
+   * within group first, then to next group.
    */
   getNextFocus(currentFocusId: FocusId | null, currentGroup: string | null): FocusId | null {
     if (this.tabStops.length === 0) {
@@ -199,8 +205,8 @@ export class TabStopRegistry {
   }
 
   /**
-   * Calculate tab index based on spatial position (reading order).
-   * Top-to-bottom, left-to-right.
+   * Calculate tab index based on spatial position (reading order). Orders are
+   * top-to-bottom, left-to-right.
    */
   private calculateSpatialTabIndex(bounds: Bounds): number {
     // Start with Y position, then X position
@@ -226,15 +232,15 @@ export class TabStopRegistry {
 }
 
 /**
- * Focus context for element hierarchies.
- * Elements can belong to context scopes (Editor, TextInput, etc).
+ * Focus context for element hierarchies. Elements can belong to context
+ * scopes (Editor, TextInput, etc).
  */
 export class FocusContextManager {
   private focusContexts: Map<FocusId, string[]> = new Map();
 
   /**
-   * Set the context chain for a focus ID.
-   * Contexts form a hierarchy from root to leaf.
+   * Set the context chain for a focus ID. Contexts form a hierarchy from
+   * root to leaf.
    */
   setContextChain(focusId: FocusId, contexts: string[]): void {
     this.focusContexts.set(focusId, [...contexts]);
@@ -279,8 +285,8 @@ export class FocusContextManager {
 }
 
 /**
- * Focus restoration for modal/overlay support.
- * Stores focus state when opening modals, restores when closing.
+ * Focus restoration for modal/overlay support. Stores focus state when
+ * opening modals, restores when closing.
  */
 export class FocusRestoration {
   private stack: (FocusId | null)[] = [];

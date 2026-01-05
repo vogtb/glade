@@ -1,8 +1,6 @@
 /**
- * Tooltip system for Glade.
- *
- * Provides delayed tooltip display with positioning and hover support.
- * Inspired by GPUI's tooltip system.
+ * Tooltip system for Glade. Provides delayed tooltip display with
+ * positioning and hover support. Inspired by egui's and GPUI's tooltip system.
  */
 
 import type { Bounds } from "./bounds.ts";
@@ -41,10 +39,9 @@ export const DEFAULT_TOOLTIP_CONFIG: TooltipConfig = {
 };
 
 /**
- * Builder function for creating tooltip content.
- * Called when tooltip should be displayed.
+ * Builder function for creating tooltip content. Called when tooltip
+ * should be displayed.
  */
-
 export type TooltipBuilder = (cx: GladeContext) => AnyGladeElement;
 
 /**
@@ -100,8 +97,8 @@ export class TooltipManager {
   }
 
   /**
-   * Update tooltip state based on current hover.
-   * Returns true if tooltip visibility changed.
+   * Update tooltip state based on current hover. Returns true if tooltip
+   * visibility changed.
    */
   update(hoveredHitboxId: HitboxId | null, now: number, cx: GladeContext): boolean {
     const previouslyVisible = this.activeTooltip?.visible ?? false;
