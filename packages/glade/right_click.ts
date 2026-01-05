@@ -82,13 +82,6 @@ export class GladeRightClickMenu extends GladeContainerElement<
   private menuItems: MenuItemElement[] = [];
   private positionValue: Position = { x: 0, y: 0 };
 
-  private menuState: DropdownMenuState = {
-    focusedIndex: -1,
-    openSubmenuId: null,
-    typeaheadBuffer: "",
-    typeaheadTimestamp: 0,
-  };
-
   // TODO: we need to use these. currently a bug
   private sideValue: DropdownSide = "bottom";
   private alignValue: DropdownAlign = "start";

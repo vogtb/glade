@@ -93,13 +93,6 @@ export class GladeDropdown extends GladeContainerElement<
   private triggerElement: GladeContainerElement<any, any> | null = null;
   private menuItems: MenuItemElement[] = [];
 
-  private menuState: DropdownMenuState = {
-    focusedIndex: -1,
-    openSubmenuId: null,
-    typeaheadBuffer: "",
-    typeaheadTimestamp: 0,
-  };
-
   private sideValue: DropdownSide = "bottom";
   private alignValue: DropdownAlign = "start";
   private sideOffsetValue = 4;

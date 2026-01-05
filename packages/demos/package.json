@@ -14,12 +14,12 @@
   "scripts": {
     "lint": "eslint . --fix",
     "format": "prettier --write .",
-    "dev:demos:native": "bun ./demos.ts",
-    "dev:demos:web": "bun build ./demos.ts --target=browser --outdir=./dist --minify --sourcemap=inline && bun ./serve.ts",
-    "build:demos:native": "bun build ./demos.ts --compile --sourcemap=inline --outfile=./dist/demos",
-    "build:demos:web": "bun build ./demos.ts --target=browser --outdir=./dist --minify",
-    "run:demos:native": "bun build ./demos.ts --compile --sourcemap=inline --outfile=./dist/demos && ./dist/demos",
-    "run:demos:web": "bun build ./demos.ts --target=browser --outdir=./dist --minify --sourcemap=inline && open 'http://localhost:3000/index.html' && bun ./serve.ts",
+    "dev:demos:macos": "bun ./demos.ts",
+    "dev:demos:browser": "bun build ./demos.ts --target=browser --outdir=./dist --minify --sourcemap=inline && bun ./serve.ts",
+    "build:demos:macos": "bun build ./demos.ts --compile --sourcemap=inline --outfile=./dist/glade.demos.bin",
+    "build:demos:browser": "bun build ./demos.ts --target=browser --outdir=./dist --minify",
+    "run:demos:macos": "bun build ./demos.ts --compile --sourcemap=inline --outfile=./dist/glade.demos.bin && ./dist/glade.demos.bin",
+    "run:demos:browser": "bun build ./demos.ts --target=browser --outdir=./dist --minify --sourcemap=inline && open 'http://localhost:3000/index.html' && bun ./serve.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "nuke": "rm -rf node_modules"
