@@ -1,8 +1,7 @@
 /**
- * Entity system for Glade.
- *
- * Entities are state objects owned by GladeApp. Handles provide indirect
- * access to entities - they're inert without a context.
+ * Entity system for Glade. Entities are state objects owned by GladeApp.
+ * Handles provide indirect access to entities - they're inert without
+ * a context.
  */
 
 import type { GladeContext, GladeEntityContext, GladeReadContext } from "./context.ts";
@@ -11,9 +10,9 @@ import type { EntityId, FocusId, ScrollHandleId, WindowId } from "./id.ts";
 import type { ScrollOffset } from "./scroll.ts";
 
 /**
- * A handle to an entity owned by GladeApp.
- * Handles are inert - they provide no direct access to state.
- * Must be combined with a context to read or update.
+ * A handle to an entity owned by GladeApp. Handles are inert - they
+ * provide no direct access to state. Must be combined with a context to
+ * read or update.
  */
 export class GladeHandle<T> {
   constructor(readonly id: EntityId) {}
@@ -60,8 +59,7 @@ export type ObserverCallback = (cx: GladeContext) => void;
 export type SubscriberCallback<E> = (event: E, cx: GladeContext) => void;
 
 /**
- * Handle returned when observing an entity.
- * Can be used to stop observing.
+ * Handle returned when observing an entity. Can be used to stop observing.
  */
 export class ObserverHandle {
   constructor(
@@ -72,8 +70,8 @@ export class ObserverHandle {
 }
 
 /**
- * Handle returned when subscribing to entity events.
- * Can be used to unsubscribe.
+ * Handle returned when subscribing to entity events. Can be used to
+ * unsubscribe.
  */
 export class SubscriberHandle {
   constructor(

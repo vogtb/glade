@@ -63,13 +63,6 @@ export class GladeFps {
   private labelColor: ColorObject = rgb(gray.x400);
 
   /**
-   * Get the current FPS value.
-   */
-  getFps(): number {
-    return this.currentFps;
-  }
-
-  /**
    * Record a frame. Call this once per frame to track frame times.
    */
   recordFrame(): void {

@@ -1,15 +1,14 @@
 /**
- * Focus management for Glade.
- *
- * Handles focus state, focus navigation, and focus-related events.
+ * Focus management for Glade. Handles focus state, focus navigation, and
+ * focus-related events.
  */
 
 import type { FocusHandle } from "./entity.ts";
 import type { FocusId } from "./id.ts";
 
 /**
- * Focus stack for a window.
- * Manages which elements are focused and their z-order.
+ * Focus stack for a window. Manages which elements are focused and
+ * their z-order.
  */
 export class FocusStack {
   private stack: FocusId[] = [];
@@ -248,8 +247,8 @@ export class FocusNavigator {
 }
 
 /**
- * Focus context string for keybinding scope.
- * Contexts form a hierarchy for key dispatch.
+ * Focus context string for keybinding scope. Contexts form a hierarchy for
+ * key dispatch.
  */
 export type FocusContext = string;
 

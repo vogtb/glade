@@ -34,12 +34,11 @@ const iconNames = [
 export const ICON_DEMO: Demo = {
   name: "Icon",
   renderElement: (_cx, _state): DemoItem[] => [
-    text("Icon").size(32),
-    text("Simple icon component wrapping SVG icons").size(16),
+    text("Simple icon component wrapping SVG icons"),
     separator(),
 
     // Icon grid
-    text("Available Icons").size(18),
+    text("Available Icons"),
     div()
       .flex()
       .flexWrap()
@@ -61,7 +60,7 @@ export const ICON_DEMO: Demo = {
       ),
 
     // Sizes
-    text("Icon Sizes").size(18),
+    text("Icon Sizes"),
     div()
       .flex()
       .flexRow()
@@ -97,7 +96,7 @@ export const ICON_DEMO: Demo = {
       ),
 
     // Colors
-    text("Icon Colors").size(18),
+    text("Icon Colors"),
     div()
       .flex()
       .flexRow()
@@ -114,7 +113,7 @@ export const ICON_DEMO: Demo = {
       ),
 
     // Usage in buttons
-    text("Icons in Buttons").size(18),
+    text("Icons in Buttons"),
     div()
       .flex()
       .flexRow()
