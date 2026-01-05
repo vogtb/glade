@@ -62,7 +62,7 @@ let sharedTextShaper: TextShaper | null = null;
  * This is set by TextSystem when it initializes, ensuring all text operations
  * use the same shaper with the same registered fonts.
  */
-function getSharedTextShaper(): TextShaper {
+export function getSharedTextShaper(): TextShaper {
   if (!sharedTextShaper) {
     sharedTextShaper = createTextShaper();
   }

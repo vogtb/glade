@@ -142,8 +142,8 @@ export class FocusHandle {
 }
 
 /**
- * Handle for managing scroll state.
- * Provides external control over a scroll container's offset.
+ * Handle for managing scroll state. Provides external control over a
+ * scroll container's offset.
  */
 export class ScrollHandle {
   constructor(

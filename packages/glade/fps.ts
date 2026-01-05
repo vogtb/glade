@@ -1,15 +1,12 @@
 /**
- * FPS (Frames Per Second) overlay component for Glade.
+ * FPS (Frames Per Second) overlay component for Glade. Displays a real-time
+ * performance monitor showing bar graph of the last 80 frames (potential
+ * FPS at each frame), current FPS number in monospace font.
  *
- * Displays a real-time performance monitor showing:
- * - Bar graph of the last 80 frames (potential FPS at each frame)
- * - Current FPS number in monospace font
- *
- * Features:
- * - Configurable corner positioning (top-left, top-right, bottom-left, bottom-right)
- * - Renders as overlay on top of all content (managed by GladeWindow)
- * - Does not capture hit events (click-through)
- * - Automatically tracks frame times (no manual tick() call needed)
+ * It is configurable corner positioning (top-left, top-right, bottom-left,
+ * bottom-right).Renders as overlay on top of all content (managed by
+ * GladeWindow). Does not capture hit events (click-through). Automatically
+ * tracks frame times (no manual tick() call needed)
  */
 
 import { type ColorObject, gray, red, rgb } from "@glade/utils";
@@ -42,10 +39,8 @@ export interface FpsConfig {
 }
 
 /**
- * FPS overlay painter.
- *
- * Tracks frame times and paints a bar graph with current FPS.
- * This is a simple class - not a GladeElement. It is managed and
+ * FPS overlay painter. Tracks frame times and paints a bar graph with
+ * current FPS. This is a simple class - not a GladeElement. It is managed and
  * rendered directly by GladeWindow.
  */
 export class GladeFps {

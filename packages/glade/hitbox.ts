@@ -1,8 +1,6 @@
 /**
- * Hitbox system for Glade.
- *
- * Provides explicit hitbox tracking with occlusion behavior,
- * similar to GPUI's hitbox system.
+ * Hitbox system for Glade. Provides explicit hitbox tracking with occlusion
+ * behavior, similar to GPUI's hitbox system.
  */
 
 import type { Bounds } from "./bounds.ts";
@@ -22,14 +20,14 @@ export enum HitboxBehavior {
   Normal = "normal",
 
   /**
-   * All hitboxes behind this one will be ignored for hover and scroll.
-   * Use for modal overlays that should block all interaction.
+   * All hitboxes behind this one will be ignored for hover and scroll. Use for
+   * modal overlays that should block all interaction.
    */
   BlockMouse = "block-mouse",
 
   /**
-   * Hitboxes behind this one won't receive hover, but can still scroll.
-   * Use for overlays that should allow scrolling underlying content.
+   * Hitboxes behind this one won't receive hover, but can still scroll. Use
+   * for overlays that should allow scrolling underlying content.
    */
   BlockMouseExceptScroll = "block-mouse-except-scroll",
 }
@@ -87,8 +85,8 @@ export function createHitboxFrame(): HitboxFrame {
 }
 
 /**
- * Insert a hitbox into the frame.
- * Returns the created hitbox for later reference.
+ * Insert a hitbox into the frame. Returns the created hitbox for later
+ * reference.
  */
 export function insertHitbox(
   frame: HitboxFrame,
@@ -110,8 +108,8 @@ export function insertHitbox(
 }
 
 /**
- * Perform a hit test at the given position.
- * Returns hitbox IDs from front-to-back order with occlusion applied.
+ * Perform a hit test at the given position. Returns hitbox IDs from
+ * front-to-back order with occlusion applied.
  */
 export function performHitTest(frame: HitboxFrame, x: number, y: number): HitTest {
   const result: HitTest = {
@@ -205,18 +203,16 @@ export function isHitboxHovered(hitTest: HitTest, id: HitboxId): boolean {
 }
 
 /**
- * Check if a hitbox ID should handle scroll events.
- * All hitboxes in the hit test can handle scroll (not just hovered ones).
+ * Check if a hitbox ID should handle scroll events. All hitboxes in the hit
+ * test can handle scroll (not just hovered ones).
  */
 export function shouldHitboxHandleScroll(hitTest: HitTest, id: HitboxId): boolean {
   return hitTest.ids.includes(id);
 }
 
-// ============ Group Hitboxes ============
-
 /**
- * Group hitbox tracking for group hover effects.
- * Collects all hitboxes per group for the frame.
+ * Group hitbox tracking for group hover effects. Collects all hitboxes per
+ * group for the frame.
  */
 export class GroupHitboxes {
   private groups = new Map<string, HitboxId[]>();

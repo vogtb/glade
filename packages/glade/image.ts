@@ -1,8 +1,7 @@
 /**
- * Image rendering system for Glade.
- *
- * Provides polychrome (RGBA) image atlas management and GPU rendering.
- * Inspired by Zed's GPUI polychrome sprite system.
+ * Image rendering system for Glade. Provides polychrome (RGBA) image atlas
+ * management and GPU rendering. Inspired by Zed's GPUI polychrome sprite
+ * system.
  */
 
 import { GPUBufferUsage, GPUTextureUsage } from "@glade/core/webgpu";
@@ -81,10 +80,9 @@ const DEFAULT_ATLAS_CONFIG: ImageAtlasConfig = {
 };
 
 /**
- * Image atlas for caching RGBA images.
- *
- * Uses a simple row-based packing algorithm similar to GlyphAtlas.
- * Supports polychrome (full color) images with optional opacity.
+ * Image atlas for caching RGBA images. Uses a simple row-based packing
+ * algorithm similar to GlyphAtlas. Supports polychrome (full color) images
+ * with optional opacity.
  */
 export class ImageAtlas {
   private texture: GPUTexture;
@@ -126,8 +124,8 @@ export class ImageAtlas {
   }
 
   /**
-   * Upload an image to the atlas and return its tile.
-   * Returns existing tile if image was already uploaded.
+   * Upload an image to the atlas and return its tile. Returns existing tile
+   * if image was already uploaded.
    */
   uploadImage(image: DecodedImage): ImageTile {
     const imageId = this.nextImageId++ as ImageId;
@@ -221,16 +219,14 @@ export class ImageAtlas {
   }
 }
 
-// ============ Content-Addressable Image Cache ============
-
 /**
  * Cache key derived from content hash of image bytes.
  */
 export type ImageCacheKey = string & { readonly __imageCacheKeyBrand: unique symbol };
 
 /**
- * FNV-1a hash for fast content-based deduplication.
- * Returns a hex string suitable for use as a cache key.
+ * FNV-1a hash for fast content-based deduplication. Returns a hex string
+ * suitable for use as a cache key.
  */
 export function hashBytes(data: Uint8Array): ImageCacheKey {
   // FNV-1a 32-bit hash
@@ -244,12 +240,10 @@ export function hashBytes(data: Uint8Array): ImageCacheKey {
 }
 
 /**
- * Image cache using object identity.
- *
- * Wraps an ImageAtlas and caches tiles by DecodedImage object reference.
- * The same DecodedImage object will always return the same tile.
- * This avoids expensive per-frame hashing while still providing deduplication
- * when the same image object is reused across renders.
+ * Image cache using object identity. Wraps an ImageAtlas and caches tiles by
+ * DecodedImage object reference. The same DecodedImage object will always
+ * return the same tile. This avoids expensive per-frame hashing while still
+ * providing deduplication when the same image object is reused across renders.
  */
 export class ImageCache {
   private cache = new WeakMap<DecodedImage, ImageTile>();
@@ -257,11 +251,10 @@ export class ImageCache {
   constructor(private atlas: ImageAtlas) {}
 
   /**
-   * Get or insert an image into the cache.
-   * If this exact DecodedImage object has been seen before, returns the cached tile.
-   * Otherwise, uploads the image and caches the tile.
-   *
-   * Uses object identity (not content hash) for O(1) lookup performance.
+   * Get or insert an image into the cache. If this exact DecodedImage object
+   * has been seen before, returns the cached tile. Otherwise, uploads the
+   * image and caches the tile. Uses object identity (not content hash)
+   * for O(1) lookup performance.
    */
   getOrInsert(image: DecodedImage): ImageTile {
     const cached = this.cache.get(image);
@@ -289,9 +282,9 @@ export class ImageCache {
   }
 
   /**
-   * Clear the cache by creating a new WeakMap.
-   * With WeakMap, entries are automatically garbage collected
-   * when DecodedImage objects are no longer referenced elsewhere.
+   * Clear the cache by creating a new WeakMap. With WeakMap, entries are
+   * automatically garbage collected when DecodedImage objects are no longer
+   * referenced elsewhere.
    */
   clear(): void {
     this.cache = new WeakMap();
@@ -314,8 +307,8 @@ export class ImageCache {
 }
 
 /**
- * WGSL shader for image/polychrome sprite rendering.
- * Supports rounded corners, opacity, grayscale, clipping, and transforms.
+ * WGSL shader for image/polychrome sprite rendering. Supports rounded corners,
+ * opacity, grayscale, clipping, and transforms.
  */
 const IMAGE_SHADER = /* wgsl */ `
 struct Uniforms {
@@ -503,11 +496,10 @@ const FLOATS_PER_IMAGE = 28;
 const BYTES_PER_IMAGE = FLOATS_PER_IMAGE * 4;
 
 /**
- * Image rendering pipeline using instanced rendering.
- *
- * Supports interleaved batch rendering where renderBatch() can be called
- * multiple times per frame. Call beginFrame() at the start of each frame
- * to reset the instance buffer offset.
+ * Image rendering pipeline using instanced rendering. Supports interleaved
+ * batch rendering where renderBatch() can be called multiple times per frame.
+ * Call beginFrame() at the start of each frame to reset the instance
+ * buffer offset.
  */
 export class ImagePipeline {
   private pipeline: GPURenderPipeline;
@@ -629,16 +621,16 @@ export class ImagePipeline {
   }
 
   /**
-   * Reset the instance buffer offset for a new frame.
-   * Must be called before the first renderBatch() call each frame.
+   * Reset the instance buffer offset for a new frame. Must be called before
+   * the first renderBatch() call each frame.
    */
   beginFrame(): void {
     this.currentOffset = 0;
   }
 
   /**
-   * Render a batch of image instances at the current buffer offset.
-   * Can be called multiple times per frame for interleaved rendering.
+   * Render a batch of image instances at the current buffer offset. Can be
+   * called multiple times per frame for interleaved rendering.
    */
   renderBatch(pass: GPURenderPassEncoder, images: ImageInstance[]): void {
     if (images.length === 0 || !this.bindGroup) {

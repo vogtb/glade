@@ -13,6 +13,19 @@ import type {
   TextInputHandler,
 } from "./dispatch.ts";
 import {
+  caretRect as editorCaretRect,
+  type CompositionState,
+  createSelection,
+  type DocumentOffset,
+  type HitTestResult,
+  offset,
+  pointToOffset,
+  selectionRects,
+  type TextDocument,
+  TextEditor,
+  type TextSelection,
+} from "./editor.ts";
+import {
   GladeElement,
   type PaintContext,
   type PrepaintContext,
@@ -24,47 +37,7 @@ import type { Hitbox } from "./hitbox.ts";
 import { Key } from "./keyboard.ts";
 import type { LayoutId } from "./layout.ts";
 import { GladeScene } from "./scene.ts";
-import {
-  beginComposition,
-  type CachedTextLayout,
-  cancelComposition,
-  caretPrimitiveWithLayout,
-  commitComposition,
-  compositionUnderlinesWithLayout,
-  computeCaretRectWithLayout,
-  createCachedTextLayout,
-  createTextInputState,
-  cutSelectedText,
-  deleteBackward,
-  deleteForward,
-  getSelectedText,
-  hitTestWithLayout,
-  insertText,
-  moveLeft,
-  moveRight,
-  moveToEnd,
-  moveToStart,
-  moveWordLeft,
-  moveWordRight,
-  type PointerSelectionSession,
-  redo,
-  selectAll,
-  selectionPrimitivesWithLayout,
-  type SelectionRange,
-  selectLineAtHit,
-  selectWordAtHit,
-  setFocused,
-  setPreferredCaretX,
-  setSelection,
-  startPointerSelection,
-  type TextHitTestResult,
-  type TextInputState,
-  type TextInputStateInit,
-  undo,
-  updateComposition,
-  updatePointerSelection,
-  valueWithComposition,
-} from "./text.ts";
+import type { SelectionRange } from "./text.ts";
 import type { GladeWindow } from "./window.ts";
 
 export const TEXT_INPUT_CONTEXT = "glade:text-input";
@@ -121,271 +94,443 @@ interface TextInputPersistentState {
   controller: TextInputController;
 }
 
+/**
+ * State initialization options for TextInputController.
+ */
+export type TextInputStateInit = {
+  value?: string;
+  selectionStart?: number;
+  selectionEnd?: number;
+  isFocused?: boolean;
+  multiline?: boolean;
+  historyLimit?: number;
+};
+
+/**
+ * Compatibility state object that mimics the old TextInputState interface.
+ * Used by GladeTextInput and renderTextDecorations.
+ */
+export type TextInputState = {
+  value: string;
+  selection: SelectionRange;
+  composition: CompositionState;
+  isFocused: boolean;
+  multiline: boolean;
+  preferredCaretX: number | null;
+};
+
+/**
+ * TextInputController wraps TextEditor to provide text input functionality.
+ * This is an adapter that bridges the old API with the new TextEditor implementation.
+ */
 export class TextInputController {
-  readonly state: TextInputState;
-  focusHandle: FocusHandle | null;
-  pointerSelection: PointerSelectionSession | null;
-
-  // Layout cache - avoids recomputing layout multiple times per frame
-  private cachedLayout: CachedTextLayout | null = null;
-  private layoutCacheKey: string = "";
-
-  // Content bounds from last prepaint - used for multiline height calculation
+  readonly editor: TextEditor;
+  focusHandle: FocusHandle | null = null;
   contentBounds: Bounds | null = null;
 
+  private _fontSize = 14;
+  private _lineHeight = 16.8;
+  private _fontFamily = "Inter";
+  private _maxWidth: number | undefined;
+
   constructor(init: TextInputStateInit = {}) {
-    this.state = createTextInputState(init);
-    this.focusHandle = null;
-    this.pointerSelection = null;
+    const text = init.value ?? "";
+    this.editor = new TextEditor({
+      text,
+      fontSize: 14,
+      lineHeight: 16.8,
+      fontFamily: "Inter",
+      multiline: init.multiline ?? false,
+      historyLimit: init.historyLimit,
+    });
+
+    // Set initial selection if provided
+    if (init.selectionStart !== undefined || init.selectionEnd !== undefined) {
+      const start = init.selectionStart ?? text.length;
+      const end = init.selectionEnd ?? start;
+      this.editor.setSelection(createSelection(offset(start), offset(end)));
+    }
+
+    if (init.isFocused) {
+      this.editor.setFocused(true);
+    }
   }
 
   /**
-   * Get or create cached layout for current text and parameters.
-   * The layout is cached and reused until text or parameters change.
+   * Compatibility getter that returns a state object matching the old TextInputState interface.
    */
-  getLayout(
+  get state(): TextInputState {
+    const sel = this.editor.selection;
+    return {
+      value: this.editor.text,
+      selection: { start: sel.start, end: sel.end },
+      composition: this.editor.composition,
+      isFocused: this.editor.isFocused,
+      multiline: this.editor.multiline,
+      preferredCaretX: this.editor.preferredCaretX,
+    };
+  }
+
+  /**
+   * Get the TextDocument for layout and hit testing.
+   */
+  get document(): TextDocument {
+    return this.editor.document;
+  }
+
+  /**
+   * Get the display document (includes composition text).
+   * Use for hit testing and caret/selection rendering.
+   * Note: Layout params must be set via updateLayoutParams() before accessing this.
+   */
+  get displayDocument(): TextDocument {
+    return this.editor.displayDocument;
+  }
+
+  /**
+   * Update layout parameters. Call this when font size, line height, etc. change.
+   */
+  updateLayoutParams(
     fontSize: number,
     lineHeight: number,
     fontFamily: string,
     maxWidth?: number,
     style?: FontStyle
-  ): CachedTextLayout {
-    const text = valueWithComposition(this.state);
-    const key = `${text}|${fontSize}|${lineHeight}|${fontFamily}|${maxWidth ?? ""}`;
-
-    if (this.cachedLayout && this.layoutCacheKey === key) {
-      return this.cachedLayout;
-    }
-
-    this.cachedLayout = createCachedTextLayout(
-      text,
-      fontSize,
-      lineHeight,
-      fontFamily,
-      maxWidth,
-      style
-    );
-    this.layoutCacheKey = key;
-    return this.cachedLayout;
-  }
-
-  /**
-   * Invalidate the cached layout. Call after text changes.
-   */
-  invalidateLayout(): void {
-    this.cachedLayout = null;
-    this.layoutCacheKey = "";
+  ): void {
+    this._fontSize = fontSize;
+    this._lineHeight = lineHeight;
+    this._fontFamily = fontFamily;
+    this._maxWidth = maxWidth;
+    this.editor.setLayoutParams({ fontSize, lineHeight, fontFamily, maxWidth, style });
   }
 
   setValue(value: string): void {
-    this.state.value = value;
-    this.state.selection = { start: value.length, end: value.length };
-    this.state.composition = null;
-    this.state.preferredCaretX = null;
-    this.invalidateLayout();
+    this.editor.setText(value);
   }
 
   setSelection(range: SelectionRange): void {
-    setSelection(this.state, range);
+    this.editor.setSelection(createSelection(offset(range.start), offset(range.end)));
   }
 
   setFocused(focused: boolean): void {
-    setFocused(this.state, focused);
+    this.editor.setFocused(focused);
   }
 
   setPreferredCaretX(x: number | null): void {
-    setPreferredCaretX(this.state, x);
+    this.editor.setPreferredCaretX(x);
   }
 
   insertText(text: string): void {
-    insertText(this.state, text);
-    this.invalidateLayout();
+    this.editor.insertText(text);
   }
 
   deleteBackward(): void {
-    deleteBackward(this.state);
-    this.invalidateLayout();
+    this.editor.deleteBackward();
   }
 
   deleteForward(): void {
-    deleteForward(this.state);
-    this.invalidateLayout();
+    this.editor.deleteForward();
   }
 
   moveLeft(extendSelection: boolean): void {
-    moveLeft(this.state, extendSelection);
+    this.editor.moveLeft(extendSelection);
   }
 
   moveRight(extendSelection: boolean): void {
-    moveRight(this.state, extendSelection);
+    this.editor.moveRight(extendSelection);
   }
 
   moveWordLeft(extendSelection: boolean): void {
-    moveWordLeft(this.state, extendSelection);
+    this.editor.moveWordLeft(extendSelection);
   }
 
   moveWordRight(extendSelection: boolean): void {
-    moveWordRight(this.state, extendSelection);
+    this.editor.moveWordRight(extendSelection);
   }
 
   moveToStart(extendSelection: boolean): void {
-    moveToStart(this.state, extendSelection);
+    this.editor.moveToStart(extendSelection);
   }
 
   moveToEnd(extendSelection: boolean): void {
-    moveToEnd(this.state, extendSelection);
+    this.editor.moveToEnd(extendSelection);
+  }
+
+  moveUp(extendSelection: boolean): void {
+    this.editor.moveUp(extendSelection);
+  }
+
+  moveDown(extendSelection: boolean): void {
+    this.editor.moveDown(extendSelection);
   }
 
   selectAll(): void {
-    selectAll(this.state);
+    this.editor.selectAll();
   }
 
   undo(): boolean {
-    const result = undo(this.state);
-    if (result) {
-      this.invalidateLayout();
-    }
-    return result;
+    return this.editor.undo();
   }
 
   redo(): boolean {
-    const result = redo(this.state);
-    if (result) {
-      this.invalidateLayout();
-    }
-    return result;
+    return this.editor.redo();
   }
 
   beginComposition(): void {
-    beginComposition(this.state);
-    this.invalidateLayout();
+    this.editor.beginComposition();
   }
 
   updateComposition(text: string): void {
-    updateComposition(this.state, text);
-    this.invalidateLayout();
+    this.editor.updateComposition(text);
   }
 
   commitComposition(text: string): void {
-    commitComposition(this.state, text);
-    this.invalidateLayout();
+    this.editor.commitComposition(text);
   }
 
   cancelComposition(): void {
-    cancelComposition(this.state);
-    this.invalidateLayout();
+    this.editor.cancelComposition();
   }
 
+  /**
+   * Start a pointer selection gesture.
+   */
   startPointerSelection(
-    text: string,
-    hit: TextHitTestResult,
+    hit: HitTestResult,
     opts: { shiftExtend: boolean; clickCount: number }
   ): void {
-    this.pointerSelection = startPointerSelection(this.state, text, hit, opts);
+    const mode = opts.clickCount >= 3 ? "line" : opts.clickCount === 2 ? "word" : "caret";
+
+    if (opts.shiftExtend) {
+      // Shift+click: extend from existing anchor to hit position
+      const anchor = this.editor.selection.anchor;
+      this.editor.setSelection(createSelection(anchor, hit.offset));
+      // Still set up gesture for potential drag
+      this._gesture = { mode: "caret", anchorOffset: anchor };
+    } else if (mode === "caret") {
+      // Single click: set caret at hit position
+      this.editor.setSelection(createSelection(hit.offset));
+      this._gesture = { mode: "caret", anchorOffset: hit.offset };
+    } else if (mode === "word") {
+      // Double click: select word
+      const wordStartOffset = this.findWordStart(hit.offset);
+      const wordEndOffset = this.findWordEnd(hit.offset);
+      this.editor.setSelection(createSelection(wordStartOffset, wordEndOffset));
+      this._gesture = { mode: "word", anchorStart: wordStartOffset, anchorEnd: wordEndOffset };
+    } else {
+      // Triple click: select line
+      const lineStart = hit.line.startOffset;
+      const lineEnd = hit.line.endOffset;
+      this.editor.setSelection(createSelection(lineStart, lineEnd));
+      this._gesture = { mode: "line", anchorStart: lineStart, anchorEnd: lineEnd };
+    }
   }
 
-  updatePointerSelection(text: string, hit: TextHitTestResult): void {
-    if (!this.pointerSelection) {
+  private _gesture: {
+    mode: "caret" | "word" | "line";
+    anchorOffset?: DocumentOffset;
+    anchorStart?: DocumentOffset;
+    anchorEnd?: DocumentOffset;
+  } | null = null;
+
+  private findWordStart(off: DocumentOffset): DocumentOffset {
+    const text = this.editor.text;
+    let pos = off as number;
+    while (pos > 0 && this.isWordChar(text[pos - 1] ?? "")) {
+      pos--;
+    }
+    return offset(pos);
+  }
+
+  private findWordEnd(off: DocumentOffset): DocumentOffset {
+    const text = this.editor.text;
+    let pos = off as number;
+    while (pos < text.length && this.isWordChar(text[pos] ?? "")) {
+      pos++;
+    }
+    return offset(pos);
+  }
+
+  private isWordChar(char: string): boolean {
+    if (char.length === 0) {
+      return false;
+    }
+    const code = char.codePointAt(0);
+    if (code === undefined) {
+      return false;
+    }
+    // Alphanumeric
+    if (code >= 48 && code <= 57) {
+      return true;
+    }
+    if (code >= 65 && code <= 90) {
+      return true;
+    }
+    if (code >= 97 && code <= 122) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Update a pointer selection gesture.
+   */
+  updatePointerSelection(hit: HitTestResult): void {
+    if (!this._gesture) {
       return;
     }
-    updatePointerSelection(this.state, text, hit, this.pointerSelection);
+
+    if (this._gesture.mode === "caret") {
+      // Extend from anchor to current position
+      const anchor = this._gesture.anchorOffset ?? hit.offset;
+      this.editor.setSelection(createSelection(anchor, hit.offset));
+    } else if (this._gesture.mode === "word") {
+      // Extend by word
+      const focusStart = this.findWordStart(hit.offset);
+      const focusEnd = this.findWordEnd(hit.offset);
+      const anchorStart = this._gesture.anchorStart ?? focusStart;
+      const anchorEnd = this._gesture.anchorEnd ?? focusEnd;
+      const start = Math.min(anchorStart, focusStart) as DocumentOffset;
+      const end = Math.max(anchorEnd, focusEnd) as DocumentOffset;
+      if (hit.offset < anchorStart) {
+        this.editor.setSelection(createSelection(anchorEnd, start));
+      } else {
+        this.editor.setSelection(createSelection(anchorStart, end));
+      }
+    } else if (this._gesture.mode === "line") {
+      // Extend by line
+      const lineStart = hit.line.startOffset;
+      const lineEnd = hit.line.endOffset;
+      const anchorStart = this._gesture.anchorStart ?? lineStart;
+      const anchorEnd = this._gesture.anchorEnd ?? lineEnd;
+      const start = Math.min(anchorStart, lineStart) as DocumentOffset;
+      const end = Math.max(anchorEnd, lineEnd) as DocumentOffset;
+      if (hit.offset < anchorStart) {
+        this.editor.setSelection(createSelection(anchorEnd, start));
+      } else {
+        this.editor.setSelection(createSelection(anchorStart, end));
+      }
+    }
   }
 
+  /**
+   * End a pointer selection gesture.
+   */
   endPointerSelection(): void {
-    this.pointerSelection = null;
+    this._gesture = null;
+  }
+
+  /**
+   * Check if a pointer selection gesture is active.
+   */
+  hasActiveGesture(): boolean {
+    return this._gesture !== null;
+  }
+
+  /**
+   * Get the selected text.
+   */
+  getSelectedText(): string {
+    return this.editor.getSelectedText();
+  }
+
+  /**
+   * Cut the selected text and return it.
+   */
+  cutSelectedText(): string {
+    return this.editor.cutSelectedText();
+  }
+
+  /**
+   * Hit test a point in content-local coordinates.
+   */
+  hitTest(point: { x: number; y: number }): HitTestResult {
+    return pointToOffset(this.displayDocument, point);
   }
 }
 
 export interface TextDecorationOptions {
   x: number;
   y: number;
-  fontSize: number;
-  lineHeight: number;
-  fontFamily: string;
-  maxWidth?: number;
-  style?: FontStyle;
-  selectionColor?: Color;
-  compositionColor?: Color;
-  caretColor?: Color;
+  document: TextDocument;
+  selection: TextSelection;
+  composition: CompositionState;
+  selectionColor?: ColorObject;
+  compositionColor?: ColorObject;
+  caretColor?: ColorObject;
   caretThickness?: number;
   caretBlinkInterval?: number;
   time?: number;
-  /** Optional cached layout to use for decoration positioning */
-  layout?: CachedTextLayout;
 }
 
-export function renderTextDecorations(
-  scene: GladeScene,
-  state: TextInputState,
-  options: TextDecorationOptions
-): void {
+export function renderTextDecorations(scene: GladeScene, options: TextDecorationOptions): void {
   const {
     x,
     y,
-    fontSize,
-    lineHeight,
-    fontFamily,
-    maxWidth,
-    style,
+    document,
+    selection,
+    composition,
     selectionColor,
     compositionColor,
     caretColor,
-    caretThickness,
-    caretBlinkInterval,
-    time,
-    layout,
+    caretThickness = 1,
+    caretBlinkInterval = 0.8,
+    time = 0,
   } = options;
 
-  if (selectionColor) {
-    const rects = selectionPrimitivesWithLayout(
-      state,
-      selectionColor,
-      fontSize,
-      lineHeight,
-      fontFamily,
-      { maxWidth, style, layout }
-    );
+  const transparent: ColorObject = { r: 0, g: 0, b: 0, a: 0 };
+
+  // Render selection rectangles
+  if (selectionColor && !selection.isEmpty) {
+    const rects = selectionRects(document, selection);
     for (const rect of rects) {
       scene.addRect({
-        ...rect,
         x: rect.x + x,
         y: rect.y + y,
+        width: rect.width,
+        height: rect.height,
+        color: selectionColor,
+        cornerRadius: 2,
+        borderWidth: 0,
+        borderColor: transparent,
       });
     }
   }
 
-  if (compositionColor) {
-    const underlines = compositionUnderlinesWithLayout(
-      state,
-      compositionColor,
-      fontSize,
-      lineHeight,
-      fontFamily,
-      { maxWidth, style, layout }
+  // Render composition underline
+  if (compositionColor && composition) {
+    const compSelection = createSelection(
+      composition.start,
+      offset(composition.start + composition.text.length)
     );
-    for (const underline of underlines) {
+    const rects = selectionRects(document, compSelection);
+    for (const rect of rects) {
       scene.addUnderline({
-        ...underline,
-        x: underline.x + x,
-        y: underline.y + y,
+        x: rect.x + x,
+        y: rect.y + y + rect.height - 2,
+        width: rect.width,
+        color: compositionColor,
+        thickness: 1,
+        style: "solid",
       });
     }
   }
 
+  // Render caret with blinking
   if (caretColor) {
-    const caret = caretPrimitiveWithLayout(state, caretColor, fontSize, lineHeight, fontFamily, {
-      maxWidth,
-      style,
-      thickness: caretThickness,
-      time,
-      blinkInterval: caretBlinkInterval,
-      layout,
-    });
-    if (caret) {
+    const blinkPhase = (time % caretBlinkInterval) / caretBlinkInterval;
+    const visible = blinkPhase < 0.5;
+    if (visible) {
+      const caret = editorCaretRect(document, selection.focus, caretThickness);
       scene.addRect({
-        ...caret,
         x: caret.x + x,
         y: caret.y + y,
+        width: caret.width,
+        height: caret.height,
+        color: caretColor,
+        cornerRadius: 0,
+        borderWidth: 0,
+        borderColor: transparent,
       });
     }
   }
@@ -434,7 +579,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
 
   multiline(enabled: boolean): this {
     this.options.multiline = enabled;
-    this.controller.state.multiline = enabled;
+    this.controller.editor.multiline = enabled;
     return this;
   }
 
@@ -523,7 +668,9 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     if (this.options.value !== undefined && this.options.value !== state.value) {
       this.controller.setValue(this.options.value);
     }
-    state.multiline = this.options.multiline ?? state.multiline;
+    if (this.options.multiline !== undefined) {
+      this.controller.editor.multiline = this.options.multiline;
+    }
     cx.setPersistentState<TextInputPersistentState>({ controller: this.controller });
   }
 
@@ -534,7 +681,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     return Math.max(this.controller.contentBounds.width, 1);
   }
 
-  private hitTestPoint(point: { x: number; y: number }): TextHitTestResult | null {
+  private hitTestPoint(point: { x: number; y: number }): HitTestResult | null {
     if (!this.controller.contentBounds) {
       return null;
     }
@@ -553,17 +700,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
         Math.max(this.controller.contentBounds.height, 0)
       )
     );
-    const local = { x: localX, y: localY };
-    const maxWidth = this.contentMaxWidth();
-    const fontFamily = this.effectiveFontFamily();
-    // Use cached layout for efficient hit testing
-    const layout = this.controller.getLayout(
-      this.fontSize,
-      this.getLineHeight(),
-      fontFamily,
-      maxWidth
-    );
-    return hitTestWithLayout(layout, local);
+    return this.controller.hitTest({ x: localX, y: localY });
   }
 
   private exceedsMaxLength(text: string): boolean {
@@ -580,20 +717,10 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     if (!this.controller.contentBounds) {
       return null;
     }
-    const state = this.getState();
-    const maxWidth = this.contentMaxWidth();
-    const fontFamily = this.effectiveFontFamily();
-    // Use cached layout for efficient caret computation
-    const layout = this.controller.getLayout(
-      this.fontSize,
-      this.getLineHeight(),
-      fontFamily,
-      maxWidth
+    const caret = editorCaretRect(
+      this.controller.displayDocument,
+      this.controller.editor.selection.focus
     );
-    const caret = computeCaretRectWithLayout(layout, state.selection.end, state.value.length);
-    if (!caret) {
-      return null;
-    }
     return {
       x: this.controller.contentBounds.x + caret.x,
       y: this.controller.contentBounds.y + caret.y,
@@ -640,25 +767,23 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     const fontFamily = this.fontFamily ?? themeFonts.sans.name;
     this.resolvedFontFamily = fontFamily;
 
+    // Update editor layout parameters
+    const maxWidth = this.contentMaxWidth();
+    this.controller.updateLayoutParams(this.fontSize, lineHeight, fontFamily, maxWidth);
+
     // Height calculation: for multiline, we need to measure actual content height
     // For single-line, it's just one line of text
     let layoutHeight: number;
     if (state.multiline) {
-      const displayText = valueWithComposition(state);
+      const displayText = this.controller.editor.displayText;
       if (
         displayText.length > 0 &&
         this.controller.contentBounds &&
         this.controller.contentBounds.width > 0
       ) {
-        // Use cached layout from previous frame to estimate line count
-        const layout = this.controller.getLayout(
-          this.fontSize,
-          lineHeight,
-          fontFamily,
-          this.controller.contentBounds.width
-        );
-        // Calculate height from actual line layout
-        const lineCount = layout.lines.length;
+        // Use document from editor to get line count
+        const doc = this.controller.document;
+        const lineCount = doc.lines.length;
         layoutHeight = lineCount * lineHeight + this.padding.y * 2;
       } else {
         // Empty multiline or first frame - use single line height
@@ -686,7 +811,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
 
     // Handle placeholder layout if needed
     let placeholderLayoutId: LayoutId | null = null;
-    if (this.options.placeholder && valueWithComposition(state).length === 0) {
+    if (this.options.placeholder && this.controller.editor.displayText.length === 0) {
       placeholderLayoutId = cx.requestLayout({ height: layoutHeight }, []);
     }
 
@@ -828,41 +953,19 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     window: GladeWindow,
     cx: GladeContext
   ): void {
-    const state = this.getState();
-    if (!state.multiline) {
+    if (!this.getState().multiline) {
       return;
     }
-    const maxWidth = this.contentMaxWidth();
-    const fontFamily = this.effectiveFontFamily();
-    // Use cached layout for efficient caret computation
-    const layout = this.controller.getLayout(
-      this.fontSize,
-      this.getLineHeight(),
-      fontFamily,
-      maxWidth
-    );
-    const caret = computeCaretRectWithLayout(layout, state.selection.end, state.value.length);
-    if (!caret) {
-      return;
+    if (direction === -1) {
+      this.controller.moveUp(extendSelection);
+    } else {
+      this.controller.moveDown(extendSelection);
     }
-    const targetX = state.preferredCaretX ?? caret.x;
-    const targetY = direction === -1 ? caret.y - 1 : caret.y + caret.height + 1;
-    const hit = this.hitTestPoint({
-      x: (this.controller.contentBounds?.x ?? 0) + targetX,
-      y: (this.controller.contentBounds?.y ?? 0) + targetY,
-    });
-    if (!hit) {
-      return;
-    }
-    const anchor = extendSelection ? state.selection.start : hit.index;
-    state.selection = { start: anchor, end: hit.index };
-    state.composition = null;
-    state.preferredCaretX = targetX;
     this.markDirty(cx, window);
   }
 
   private copySelection(window: GladeWindow): boolean {
-    const text = getSelectedText(this.getState());
+    const text = this.controller.getSelectedText();
     if (!text) {
       return false;
     }
@@ -877,8 +980,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
   }
 
   private cutSelection(window: GladeWindow): boolean {
-    const state = this.getState();
-    const text = cutSelectedText(state);
+    const text = this.controller.cutSelectedText();
     if (!text) {
       return false;
     }
@@ -889,7 +991,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     clipboard.writeText(text).catch((err) => {
       console.warn("Clipboard write failed:", err);
     });
-    this.options.onChange?.(state.value);
+    this.options.onChange?.(this.getState().value);
     return true;
   }
 
@@ -1062,15 +1164,13 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     if (this.controller.focusHandle) {
       cx.focus(this.controller.focusHandle);
     }
-    const state = this.getState();
-    setFocused(state, true);
+    this.controller.setFocused(true);
     const hit = this.hitTestPoint({ x: event.x, y: event.y });
     if (hit) {
-      this.controller.startPointerSelection(valueWithComposition(state), hit, {
+      this.controller.startPointerSelection(hit, {
         shiftExtend: event.modifiers.shift,
         clickCount: 1,
       });
-      setPreferredCaretX(state, hit.caretX);
       this.revealCaret(window, cx);
     }
     this.markDirty(cx, window);
@@ -1079,18 +1179,17 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
 
   private handleMouseMove: MouseHandler = (event, window, cx) => {
     const hit = this.hitTestPoint({ x: event.x, y: event.y });
-    if (!hit || !this.controller.pointerSelection) {
+    if (!hit || !this.controller.hasActiveGesture()) {
       return;
     }
-    this.controller.updatePointerSelection(valueWithComposition(this.getState()), hit);
-    setPreferredCaretX(this.getState(), hit.caretX);
+    this.controller.updatePointerSelection(hit);
     this.revealCaret(window, cx);
     this.markDirty(cx, window);
     return { stopPropagation: true, preventDefault: true };
   };
 
   private handleMouseUp: MouseHandler = (_event, window, cx) => {
-    if (this.controller.pointerSelection) {
+    if (this.controller.hasActiveGesture()) {
       this.controller.endPointerSelection();
       this.revealCaret(window, cx);
       this.markDirty(cx, window);
@@ -1107,13 +1206,11 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     if (!hit) {
       return;
     }
-    const text = valueWithComposition(this.getState());
-    if (event.clickCount >= 3) {
-      selectLineAtHit(this.getState(), hit);
-    } else {
-      selectWordAtHit(this.getState(), text, hit);
-    }
-    setPreferredCaretX(this.getState(), hit.caretX);
+    // For double/triple click, use the editor's gesture system
+    this.controller.startPointerSelection(hit, {
+      shiftExtend: false,
+      clickCount: event.clickCount,
+    });
     this.controller.endPointerSelection();
     this.revealCaret(window, cx);
     this.markDirty(cx, window);
@@ -1141,7 +1238,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     const focused = this.controller.focusHandle
       ? cx.isFocused(this.controller.focusHandle)
       : state.isFocused;
-    setFocused(state, focused);
+    this.controller.setFocused(focused);
 
     const colors = prepaintState.colors;
     const textColor = colors.text;
@@ -1155,7 +1252,7 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
     const contentX = bounds.x + this.padding.x;
     const contentY = bounds.y + this.padding.y;
 
-    const displayValue = valueWithComposition(state);
+    const displayValue = this.controller.editor.displayText;
     const textToRender = displayValue.length > 0 ? displayValue : (this.options.placeholder ?? "");
     const isPlaceholder = displayValue.length === 0 && !!this.options.placeholder;
 
@@ -1176,28 +1273,20 @@ export class GladeTextInput extends GladeElement<TextInputRequestState, TextInpu
       maxWidth,
     });
 
-    // Get cached layout for consistent decoration positioning
-    const layout = this.controller.getLayout(
-      this.fontSize,
-      this.getLineHeight(),
-      fontFamily,
-      maxWidth
-    );
+    const doc = this.controller.displayDocument;
 
-    renderTextDecorations(cx.scene, state, {
+    renderTextDecorations(cx.scene, {
       x: contentX,
       y: contentY,
-      fontSize: this.fontSize,
-      lineHeight,
-      fontFamily,
-      maxWidth,
+      document: doc,
+      selection: this.controller.editor.selection,
+      composition: this.controller.editor.composition,
       selectionColor,
       compositionColor,
       caretColor: focused ? caretColor : undefined,
       caretThickness: this.options.caretThickness,
       caretBlinkInterval: this.caretBlinkInterval,
       time: performance.now() / 1000,
-      layout,
     });
   }
 

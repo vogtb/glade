@@ -1,7 +1,6 @@
 /**
- * Keyboard event types for Glade.
- *
- * Extends the core event types with Glade-specific functionality.
+ * Keyboard event types for Glade. Extends the core event types with
+ * Glade-specific functionality.
  */
 
 import type { KeyEvent } from "@glade/core";
@@ -171,6 +170,7 @@ const WINDOWS_KEY_SYMBOLS: Partial<Record<KeyCode | string, string>> = {
   [Key.Delete]: "Del",
   [Key.Escape]: "Esc",
   [Key.Tab]: "Tab",
+  // TODO: just use the actual characters so it's clear.
   [Key.Up]: "\u2191",
   [Key.Down]: "\u2193",
   [Key.Left]: "\u2190",
@@ -353,7 +353,8 @@ function keyCodeToName(code: KeyCode): string | null {
  * Format a keystroke as a human-readable string.
  *
  * @param keystroke The keystroke to format
- * @param platform Optional platform for OS-specific symbols (auto-detected if not provided)
+ * @param platform Optional platform for OS-specific symbols
+ *        (auto-detected if not provided)
  * @returns Formatted string like "⌘S" (macOS) or "Ctrl+S" (Windows/Linux)
  */
 export function formatKeystroke(keystroke: Keystroke, platform?: Platform): string {

@@ -1,13 +1,12 @@
 /**
- * Element base classes and View trait for Glade.
- *
- * Elements are lightweight, declarative descriptions of UI.
- * They're created fresh each render and converted to GPU primitives.
+ * Element base classes and View trait for Glade.  Elements are lightweight,
+ * declarative descriptions of UI. They're created fresh each render and
+ * converted to GPU primitives.
  *
  * Three-phase lifecycle (inspired by GPUI):
- * 1. requestLayout() - Create layout nodes, return LayoutId + RequestLayoutState
- * 2. prepaint() - Run after layout computation, return PrepaintState
- * 3. paint() - Emit GPU primitives using PrepaintState
+ * 1. requestLayout() Create layout nodes, return LayoutId + RequestLayoutState
+ * 2. prepaint() Run after layout computation, return PrepaintState
+ * 3. paint() Emit GPU primitives using PrepaintState
  */
 
 import { type Color, type ColorObject, rgb, toColorObject } from "@glade/utils";
@@ -34,8 +33,8 @@ import type { TransformationMatrix } from "./transform.ts";
 import type { GladeWindow as _GladeWindow } from "./window.ts";
 
 /**
- * Content mask for clipping regions.
- * Clips content to the specified bounds with optional rounded corners.
+ * Content mask for clipping regions. Clips content to the specified bounds
+ * with optional rounded corners.
  */
 export interface ContentMask {
   bounds: Bounds;
@@ -73,29 +72,24 @@ export interface RequestLayoutResult<R> {
   requestState: R;
 }
 
-// ============ View Traits ============
-
 /**
- * A view is an entity that can render a tree of elements.
- * Analogous to a React component or GPUI View.
+ * A view is an entity that can render a tree of elements. Analogous to a
+ * React component or GPUI View.
  */
 export interface GladeView {
   render(cx: GladeViewContext<this>): AnyGladeElement;
 }
 
 /**
- * Marker for stateless components that are consumed on render.
- * Similar to GPUI's RenderOnce.
+ * Marker for stateless components that are consumed on render. Similar to
+ * GPUI's RenderOnce.
  */
 export interface GladeRenderOnce {
   render(cx: GladeViewContext<never>): AnyGladeElement;
 }
 
-// ============ Phase Contexts ============
-
 /**
- * Context for the requestLayout phase.
- * Creates layout nodes in the Taffy tree.
+ * Context for the requestLayout phase. Creates layout nodes in the Taffy tree.
  */
 export interface RequestLayoutContext {
   /**
@@ -104,20 +98,20 @@ export interface RequestLayoutContext {
   readonly elementId: GlobalElementId;
 
   /**
-   * Request layout for an element with the given styles and children.
-   * Returns a layout ID that can be used to get computed bounds.
+   * Request layout for an element with the given styles and children. Returns
+   * a layout ID that can be used to get computed bounds.
    */
   requestLayout(styles: Partial<Styles>, childLayoutIds: LayoutId[]): LayoutId;
 
   /**
-   * Request layout for a measurable element (e.g., text).
-   * The measureId is used during layout to call back for measurement.
+   * Request layout for a measurable element (e.g., text). The measureId is
+   * used during layout to call back for measurement.
    */
   requestMeasurableLayout(styles: Partial<Styles>, measureId: number): LayoutId;
 
   /**
-   * Register text for measurement during layout.
-   * Returns a measure ID that will be used in the callback.
+   * Register text for measurement during layout. Returns a measure ID that
+   * will be used in the callback.
    */
   registerTextMeasure(data: {
     text: string;
@@ -161,8 +155,8 @@ export interface RequestLayoutContext {
   allocateChildId(): GlobalElementId;
 
   /**
-   * Get the current scroll offset for a scroll handle.
-   * Allows virtual lists to know scroll position during layout.
+   * Get the current scroll offset for a scroll handle. Allows virtual lists
+   * to know scroll position during layout.
    */
   getScrollOffset(handle: ScrollHandle): ScrollOffset;
 
@@ -178,8 +172,8 @@ export interface RequestLayoutContext {
 }
 
 /**
- * Context for the prepaint phase.
- * Runs after layout computation, before painting.
+ * Context for the prepaint phase. Runs after layout computation,
+ * before painting.
  */
 export interface PrepaintContext {
   /**
@@ -218,8 +212,8 @@ export interface PrepaintContext {
   withElementId(elementId: GlobalElementId): PrepaintContext;
 
   /**
-   * Insert a hitbox for the current frame.
-   * Returns the hitbox for later hover/active checking.
+   * Insert a hitbox for the current frame. Returns the hitbox for later
+   * hover/active checking.
    */
   insertHitbox(bounds: Bounds, behavior?: HitboxBehavior, cursor?: CursorStyle): Hitbox;
 
@@ -240,8 +234,8 @@ export interface PrepaintContext {
   ): void;
 
   /**
-   * Update the content and viewport size for a scroll handle.
-   * This allows proper scroll offset clamping.
+   * Update the content and viewport size for a scroll handle. This allows
+   * proper scroll offset clamping.
    */
   updateScrollContentSize(
     handle: ScrollHandle,
@@ -262,9 +256,10 @@ export interface PrepaintContext {
   registerDeferredDraw?(entry: DeferredDrawEntry): void;
 
   /**
-   * Register an element for deferred layout processing.
-   * The element will get a separate layout pass with window dimensions after the main tree prepaint.
-   * This allows overlay content (menus, dialogs) to be laid out with full window space.
+   * Register an element for deferred layout processing. The element will get
+   * a separate layout pass with window dimensions after the main tree
+   * prepaint. This allows overlay content (menus, dialogs) to be laid out
+   * with full window space.
    */
   registerDeferredLayout?(entry: DeferredLayoutEntry): void;
 
@@ -279,16 +274,16 @@ export interface PrepaintContext {
   registerTabStop?(focusId: FocusId, bounds: Bounds, config: TabStopConfig): void;
 
   /**
-   * Get the computed wrap width for a text element.
-   * Returns the effectiveMaxWidth that was used during measurement.
-   * This ensures prepaint uses the exact same wrap constraint as measurement.
+   * Get the computed wrap width for a text element. Returns the
+   * effectiveMaxWidth that was used during measurement. This ensures prepaint
+   * uses the exact same wrap constraint as measurement.
    */
   getComputedWrapWidth?(measureId: number): number | undefined;
 
   /**
-   * Compute layout for a floating element (like a submenu) that is not part of the main layout tree.
-   * This runs a separate layout computation for the given layout ID.
-   * Returns the computed bounds.
+   * Compute layout for a floating element (like a submenu) that is not part
+   * of the main layout tree. This runs a separate layout computation for the
+   * given layout ID. Returns the computed bounds.
    */
   computeFloatingLayout?(
     layoutId: LayoutId,
@@ -304,8 +299,8 @@ export interface PrepaintContext {
 }
 
 /**
- * Context for the paint phase.
- * Provides access to scene graph and state queries.
+ * Context for the paint phase. Provides access to scene graph and
+ * state queries.
  */
 export interface PaintContext {
   /** The scene to paint primitives into. */
@@ -394,8 +389,8 @@ export interface PaintContext {
   paintPath(path: PathBuilder, color: Color): void;
 
   /**
-   * Paint a cached path (pre-tessellated vertices and indices).
-   * Vertices include optional edgeDist for antialiasing (0.0 = edge, 1.0 = interior).
+   * Paint a cached path (pre-tessellated vertices and indices). Vertices
+   * include optional edgeDist for antialiasing (0.0 = edge, 1.0 = interior).
    */
   paintCachedPath(
     vertices: Array<{ x: number; y: number; edgeDist?: number }>,
@@ -458,15 +453,15 @@ export interface PaintContext {
   withElementId(elementId: GlobalElementId): PaintContext;
 
   /**
-   * Execute a callback with content clipped to the given mask.
-   * Content painted inside the callback will be clipped to the mask bounds.
+   * Execute a callback with content clipped to the given mask. Content
+   * painted inside the callback will be clipped to the mask bounds.
    */
   withContentMask(mask: ContentMask, callback: () => void): void;
 
   /**
-   * Execute a callback with a transform applied.
-   * Primitives painted inside the callback will have the transform applied.
-   * Transforms are composed (multiplied) with any existing transform.
+   * Execute a callback with a transform applied. Primitives painted inside
+   * the callback will have the transform applied. Transforms are composed
+   * (multiplied) with any existing transform.
    */
   withTransform(transform: TransformationMatrix, callback: () => void): void;
 
@@ -486,9 +481,10 @@ export interface PaintContext {
   isGroupActive(groupName: string): boolean;
 
   /**
-   * Execute a callback within a stacking context.
-   * Stacking contexts are created for elements with z-index, transforms, or opacity < 1.
-   * All primitives painted inside the callback use the stacking context for z-ordering.
+   * Execute a callback within a stacking context. Stacking contexts are
+   * created for elements with z-index, transforms, or opacity < 1. All
+   * primitives painted inside the callback use the stacking context
+   * for z-ordering.
    *
    * @param bounds - The bounds of the stacking context
    * @param zIndex - The z-index for this stacking context
@@ -497,9 +493,9 @@ export interface PaintContext {
   withStackingContext(bounds: Bounds, zIndex: number, callback: () => void): void;
 
   /**
-   * Get the computed wrap width for a text element by its measure ID.
-   * Returns the effectiveMaxWidth that was used during measurement.
-   * This ensures paint uses the exact same wrap constraint as measurement.
+   * Get the computed wrap width for a text element by its measure ID. Returns
+   * the effectiveMaxWidth that was used during measurement. This ensures paint
+   * uses the exact same wrap constraint as measurement.
    */
   getComputedWrapWidth(measureId: number): number | undefined;
 
@@ -515,19 +511,18 @@ export interface PaintContext {
   getImageTile(image: DecodedImage): ImageTile;
 }
 
-// ============ Element Base Classes ============
-
 /**
- * Base class for all Glade elements.
- * Elements are lightweight, declarative descriptions of UI.
- * They're created fresh each render and converted to GPU primitives.
+ * Base class for all Glade elements. Elements are lightweight, declarative
+ * descriptions of UI. They're created fresh each render and converted to GPU
+ * primitives.
  *
  * Three-phase lifecycle:
  * 1. requestLayout() - Create layout nodes, return state for prepaint
  * 2. prepaint() - Post-layout processing, return state for paint
  * 3. paint() - Emit GPU primitives
  *
- * @typeParam RequestLayoutState - State returned from requestLayout, passed to prepaint
+ * @typeParam RequestLayoutState - State returned from requestLayout,
+ *                                 passed to prepaint
  * @typeParam PrepaintState - State returned from prepaint, passed to paint
  */
 export abstract class GladeElement<RequestLayoutState = NoState, PrepaintState = NoState> {
@@ -564,10 +559,8 @@ export abstract class GladeElement<RequestLayoutState = NoState, PrepaintState =
     return this.constructor.name;
   }
   /**
-   * Phase 1: Request layout.
-   *
-   * Create Taffy nodes for this element and its children.
-   * Returns a LayoutId plus any state needed for prepaint.
+   * Phase 1: Request layout. Create Taffy nodes for this element and its
+   * children. Returns a LayoutId plus any state needed for prepaint.
    */
   abstract requestLayout(cx: RequestLayoutContext): RequestLayoutResult<RequestLayoutState>;
 
@@ -619,7 +612,6 @@ export abstract class GladeContainerElement<
   /**
    * Add a child element.
    */
-
   child(element: AnyGladeElement | string | number): this {
     if (typeof element === "string" || typeof element === "number") {
       this._children.push(new GladeTextElement(String(element)));
@@ -632,7 +624,6 @@ export abstract class GladeContainerElement<
   /**
    * Add multiple children.
    */
-
   children(...elements: Array<AnyGladeElement | string | number | null | undefined>): this {
     for (const el of elements) {
       if (el != null) {
@@ -645,7 +636,6 @@ export abstract class GladeContainerElement<
   /**
    * Add multiple children (nullable-friendly).
    */
-
   children_(...elements: Array<AnyGladeElement | string | number | null | undefined>): this {
     for (const el of elements) {
       if (el != null) {
@@ -658,16 +648,14 @@ export abstract class GladeContainerElement<
   /**
    * Get the child elements.
    */
-
   getChildren(): readonly AnyGladeElement[] {
     return this._children;
   }
 }
 
-// ============ Text Element ============
-
 /**
- * Request layout state for text element - carries measureId from layout to prepaint.
+ * Request layout state for text element - carries measureId from layout
+ * to prepaint.
  */
 interface TextRequestLayoutState {
   measureId: number;
@@ -688,10 +676,9 @@ interface TextPrepaintState {
 }
 
 /**
- * Simple text element with optional selection support.
- *
- * By default, text is not selectable. Call `.selectable()` to enable selection.
- * By default, text wraps to fit its parent container. Call `.noWrap()` to disable.
+ * Simple text element with optional selection support. By default, text is
+ * not selectable. Call `.selectable()` to enable selection. By default, text
+ * wraps to fit its parent container. Call `.noWrap()` to disable.
  */
 export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextPrepaintState> {
   private textColor: ColorObject = { r: 1, g: 1, b: 1, a: 1 };
@@ -782,8 +769,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   }
 
   /**
-   * Disable text wrapping. Text will extend to its natural width.
-   * Also sets whitespace mode to "nowrap" which collapses newlines.
+   * Disable text wrapping. Text will extend to its natural width. Also sets
+   * whitespace mode to "nowrap" which collapses newlines.
    */
   noWrap(): this {
     this.noWrapValue = true;
@@ -811,8 +798,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
    * Expand to fill the parent's available width (flex-grow 1 with auto basis).
    */
   block(): this {
-    // Using flexGrow/basis lets this participate in flex layouts without forcing flexDirection.
-    // This mirrors a block-level feel in row contexts.
+    // Using flexGrow/basis lets this participate in flex layouts without
+    // forcing flexDirection. This mirrors a block-level feel in row contexts.
     // We avoid flexShrink override to keep default shrink behavior.
     this.maxWidthValue = this.maxWidthValue ?? 1_000_000;
     return this;
@@ -840,8 +827,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   }
 
   /**
-   * Enable text selection for this element.
-   * When enabled, users can select text with mouse and copy with Cmd+C.
+   * Enable text selection for this element. When enabled, users can select
+   * text with mouse and copy with Cmd+C.
    */
   selectable(): this {
     this.isSelectable = true;
@@ -947,8 +934,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       underlineSpace: this.getUnderlineSpace(),
     });
 
-    // Create a measurable leaf node - Taffy will call back during layout
-    // to get the actual size based on available space from parent
+    // Create a measurable leaf node - Taffy will call back during layout to
+    // get the actual size based on available space from parent
     const layoutId = cx.requestMeasurableLayout(
       {
         // If maxWidth is set, use it as a max constraint
@@ -957,7 +944,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       measureId
     );
 
-    // Pass measureId through state so paint can retrieve the computed wrap width
+    // Pass measureId through state so paint can retrieve the computed
+    // wrap width
     return { layoutId, requestState: { measureId, fontFamily } };
   }
 
@@ -1010,8 +998,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
     // Normalize whitespace before rendering
     const normalizedText = normalizeWhitespace(this.textContent, this.whitespaceMode);
 
-    // Retrieve the wrap width that was computed during measurement.
-    // This ensures paint uses the EXACT same constraint as measurement.
+    // Retrieve the wrap width that was computed during measurement. This
+    // ensures paint uses the EXACT same constraint as measurement.
     let wrapWidth: number | undefined;
     if (this.noWrapValue || this.whitespaceMode === "nowrap" || this.whitespaceMode === "pre") {
       // Explicitly disabled wrapping
@@ -1021,8 +1009,8 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
       wrapWidth = cx.getComputedWrapWidth(prepaintState.measureId);
     }
 
-    // Selection rendering is handled by CrossElementSelectionManager
-    // Just render the text glyphs
+    // Selection rendering is handled by CrossElementSelectionManager Just
+    // render the text glyphs.
     cx.paintGlyphs(normalizedText, bounds, prepaintState.textColor, {
       fontSize: this.fontSize,
       fontFamily,
@@ -1065,11 +1053,9 @@ export function text(content: string): GladeTextElement {
   return new GladeTextElement(content);
 }
 
-// ============ Image Element ============
-
 /**
- * Image element for rendering decoded images.
- * Images are automatically cached and deduplicated by content.
+ * Image element for rendering decoded images. Images are automatically
+ * cached and deduplicated by content.
  *
  * Provides a Tailwind-like sizing API consistent with GladeDiv:
  * - .w(), .wFull(), .wMin(), .wMax() for width control
@@ -1097,8 +1083,6 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
     super();
     this.aspectRatio = image.width / image.height;
   }
-
-  // ============ Sizing Methods (Tailwind-like, consistent with GladeDiv) ============
 
   /** Set width */
   w(v: number | string): this {
@@ -1155,8 +1139,6 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
     return this;
   }
 
-  // ============ Object Fit ============
-
   /** Set object-fit behavior */
   objectFit(fit: ObjectFit): this {
     this.objectFitValue = fit;
@@ -1181,8 +1163,6 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
     return this;
   }
 
-  // ============ Visual Effects ============
-
   /** Set the corner radius for rounded image corners */
   rounded(radius: number): this {
     this.cornerRadiusValue = radius;
@@ -1201,8 +1181,6 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
     return this;
   }
 
-  // ============ Lifecycle ============
-
   requestLayout(cx: RequestLayoutContext): RequestLayoutResult<NoState> {
     const hasExplicitWidth = this.styles.width !== undefined;
     const hasExplicitHeight = this.styles.height !== undefined;
@@ -1214,7 +1192,8 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
     };
 
     // Only use aspectRatio when we need Taffy to calculate a missing dimension
-    // If both dimensions are set, we want the exact box size (object-fit handles rendering)
+    // If both dimensions are set, we want the exact box size
+    // (object-fit handles rendering)
     if (hasExplicitWidth && hasExplicitHeight) {
       // Both dimensions set - use exact box, no aspect ratio
     } else if (hasExplicitWidth || hasExplicitHeight) {
@@ -1250,7 +1229,8 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
       renderBounds.height > bounds.height;
 
     if (needsClipping && this.cornerRadiusValue > 0) {
-      // Clip to element bounds with corner radius, then paint image without corner radius
+      // Clip to element bounds with corner radius, then paint image
+      // without corner radius
       cx.withContentMask({ bounds, cornerRadius: this.cornerRadiusValue }, () => {
         cx.paintImage(tile, renderBounds, {
           cornerRadius: 0,
@@ -1371,8 +1351,8 @@ export class GladeImageElement extends GladeElement<NoState, NoState> {
 }
 
 /**
- * Factory function to create an image element from decoded image data.
- * The image is automatically cached and deduplicated by content.
+ * Factory function to create an image element from decoded image data. The
+ * image is automatically cached and deduplicated by content.
  */
 export function img(image: DecodedImage): GladeImageElement {
   return new GladeImageElement(image);

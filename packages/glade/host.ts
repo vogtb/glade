@@ -7,6 +7,10 @@
  * - WebGPUHost: Interface for custom WebGPU rendering
  * - WebGPUHostElement: Glade element for embedding hosts in the layout
  * - HostTexturePipeline: GPU pipeline for rendering host textures
+ *
+ * This is a VERY unorthodox way of accomplishing host-rendering but it's fun
+ * to be able to put little WebGPU demos within our app, and we can take a small
+ * perf penalty for a fun feature.
  */
 
 import { GPUBufferUsage, GPUShaderStage, GPUTextureUsage } from "@glade/core/webgpu";
@@ -22,10 +26,6 @@ import {
 } from "./element.ts";
 import { PREMULTIPLIED_ALPHA_BLEND } from "./renderer.ts";
 import type { HostTexturePrimitive } from "./scene.ts";
-
-// =============================================================================
-// RenderTexture
-// =============================================================================
 
 /**
  * A GPU texture that can be used as a render target and then sampled.
@@ -136,10 +136,6 @@ export function createRenderTexture(
   return new RenderTextureImpl(device, width, height, format);
 }
 
-// =============================================================================
-// WebGPUHost Interface
-// =============================================================================
-
 /**
  * Input state passed to WebGPU hosts each frame.
  */
@@ -161,23 +157,20 @@ export interface WebGPUHostInput {
 }
 
 /**
- * Interface for custom WebGPU rendering within Glade.
- *
- * Implementations render to an offscreen texture which Glade then
- * composites into the UI.
+ * Interface for custom WebGPU rendering within Glade. Implementations render
+ * to an offscreen texture which Glade then composites into the UI.
  */
 export interface WebGPUHost {
   /**
-   * Called when the element bounds change.
-   * Implementations should resize their render texture.
+   * Called when the element bounds change. Implementations should resize
+   * their render texture.
    */
   resize(width: number, height: number): void;
 
   /**
-   * Render to the offscreen texture.
-   *
-   * Called each frame before Glade's main render pass.
-   * Use the provided command encoder to record render/compute passes.
+   * Render to the offscreen texture. Called each frame before Glade's main
+   * render pass. Use the provided command encoder to record render/compute
+   * passes.
    *
    * @param input - Frame input state (time, mouse, dimensions)
    * @param encoder - Command encoder to record GPU commands
@@ -190,8 +183,7 @@ export interface WebGPUHost {
   getTexture(): RenderTexture;
 
   /**
-   * Cleanup GPU resources.
-   * Called when the element is removed from the UI.
+   * Cleanup GPU resources. Called when the element is removed from the UI.
    */
   destroy(): void;
 }
@@ -205,10 +197,6 @@ export type WebGPUHostFactory = (
   initialWidth: number,
   initialHeight: number
 ) => WebGPUHost;
-
-// =============================================================================
-// WebGPUHostElement
-// =============================================================================
 
 /**
  * Request layout state for WebGPUHostElement.
@@ -377,13 +365,9 @@ export function webgpuHost(host: WebGPUHost, width: number, height: number): Web
   return new WebGPUHostElement(host, width, height);
 }
 
-// =============================================================================
-// HostTexturePipeline
-// =============================================================================
-
 /**
- * WGSL shader for host texture rendering.
- * Supports rounded corners, opacity, clipping, and transforms.
+ * WGSL shader for host texture rendering. Supports rounded corners, opacity,
+ * clipping, and transforms.
  */
 const HOST_TEXTURE_SHADER = /* wgsl */ `
 struct Uniforms {
@@ -559,11 +543,9 @@ const FLOATS_PER_INSTANCE = 24;
 const BYTES_PER_INSTANCE = FLOATS_PER_INSTANCE * 4;
 
 /**
- * Host texture rendering pipeline.
- *
- * Unlike ImagePipeline which uses an atlas, this pipeline renders
- * individual textures from WebGPU hosts. It caches bind groups per
- * unique texture view to avoid recreation each frame.
+ * Host texture rendering pipeline. Unlike ImagePipeline which uses an atlas,
+ * this pipeline renders individual textures from WebGPU hosts. It caches bind
+ * groups per unique texture view to avoid recreation each frame.
  *
  * Supports interleaved batch rendering where renderBatch() can be called
  * multiple times per frame. Call beginFrame() at the start of each frame
@@ -708,8 +690,8 @@ export class HostTexturePipeline {
   }
 
   /**
-   * Clear the bind group cache.
-   * Call this when textures are recreated (e.g., on resize).
+   * Clear the bind group cache. Call this when textures are
+   * recreated (e.g., on resize).
    */
   clearBindGroupCache(): void {
     this.bindGroupCache.clear();
@@ -723,18 +705,18 @@ export class HostTexturePipeline {
   }
 
   /**
-   * Reset the instance buffer offset for a new frame.
-   * Must be called before the first renderBatch() call each frame.
+   * Reset the instance buffer offset for a new frame. Must be called before
+   * the first renderBatch() call each frame.
    */
   beginFrame(): void {
     this.currentOffset = 0;
   }
 
   /**
-   * Render a batch of host texture primitives at the current buffer offset.
-   * Can be called multiple times per frame for interleaved rendering.
+   * Render a batch of host texture primitives at the current buffer offset. Can
+   * be called multiple times per frame for interleaved rendering.
    *
-   * Note: Unlike other pipelines, host textures must be grouped by texture view
+   * Unlike other pipelines, host textures must be grouped by texture view
    * since each texture requires a different bind group. This method handles
    * a batch that may contain multiple textures.
    */

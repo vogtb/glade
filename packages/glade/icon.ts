@@ -1,7 +1,6 @@
 /**
- * Icon element - a simple wrapper for common SVG icons.
- *
- * Provides a convenient API for rendering icons with consistent sizing.
+ * Icon element - a simple wrapper for common SVG icons. Provides a convenient
+ * API for rendering icons with consistent sizing.
  */
 
 import { SvgElement, SvgIcons } from "./svg.ts";

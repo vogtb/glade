@@ -19,7 +19,9 @@
  * VisualPoint: Pixel coordinates relative to document origin (TEXT-LOCAL space)
  */
 
-import { createTextShaper, type FontStyle, type ShapedGlyph, type TextShaper } from "@glade/shaper";
+import { type FontStyle, type ShapedGlyph, type TextShaper } from "@glade/shaper";
+
+import { getSharedTextShaper } from "./text.ts";
 
 // ============================================================================
 // Coordinate Types
@@ -498,13 +500,10 @@ export function wordEnd(text: string, index: number): DocumentOffset {
 // Shared Shaper
 // ============================================================================
 
-let sharedShaper: TextShaper | null = null;
-
+// Use the shared shaper from text.ts to avoid WASM re-entrancy issues.
+// The WASM shaper has global state that can't handle multiple instances.
 function getShaper(): TextShaper {
-  if (!sharedShaper) {
-    sharedShaper = createTextShaper();
-  }
-  return sharedShaper;
+  return getSharedTextShaper();
 }
 
 // ============================================================================
@@ -577,6 +576,18 @@ export function createTextDocument(
         lineHeight: safeLineHeight,
       },
     ];
+  }
+
+  // Normalize Y values so the first line starts at y=0.
+  // cosmic-text's line_y includes baseline offset which we don't want here.
+  if (shapedLines.length > 0) {
+    const firstLineY = shapedLines[0]?.y ?? 0;
+    if (firstLineY !== 0) {
+      shapedLines = shapedLines.map((line) => ({
+        ...line,
+        y: line.y - firstLineY,
+      }));
+    }
   }
 
   // Build byte-to-char mapping once
@@ -864,6 +875,7 @@ export function selectionRects(doc: TextDocument, selection: TextSelection): Tex
 
 /**
  * Compute caret rectangle.
+ * The caret is vertically centered within the line height to align with glyph rendering.
  */
 export function caretRect(
   doc: TextDocument,
@@ -872,11 +884,15 @@ export function caretRect(
 ): TextRect {
   const line = lineAtOffset(doc, off);
   const x = xAtOffset(line, off);
+  // Position caret to align with where glyphs are rendered.
+  // Glyphs are vertically centered within line height, so caret should be too.
+  // The caret top = line.y + (lineHeight - fontSize) / 2
+  const caretTop = line.y + (doc.lineHeight - doc.fontSize) / 2;
   return {
     x,
-    y: line.y,
+    y: caretTop,
     width: caretWidth,
-    height: line.height,
+    height: doc.fontSize, // Use fontSize for caret height, not full lineHeight
   };
 }
 
@@ -913,6 +929,8 @@ export class TextEditor {
   private _preferredColumn: number | null = null;
   private _gesture: SelectionGesture | null = null;
   private _history: EditorHistory;
+  private _multiline: boolean = false;
+  private _isFocused: boolean = false;
 
   // Layout parameters (cached for document recreation)
   private _fontSize: number;
@@ -929,6 +947,7 @@ export class TextEditor {
     maxWidth?: number;
     style?: FontStyle;
     historyLimit?: number;
+    multiline?: boolean;
   }) {
     const text = options.text ?? "";
     this._fontSize = options.fontSize;
@@ -951,6 +970,7 @@ export class TextEditor {
       future: [],
       limit: options.historyLimit ?? 100,
     };
+    this._multiline = options.multiline ?? false;
   }
 
   // --------------------------------------------------------------------------
@@ -981,6 +1001,36 @@ export class TextEditor {
     return this._gesture;
   }
 
+  get multiline(): boolean {
+    return this._multiline;
+  }
+
+  set multiline(value: boolean) {
+    this._multiline = value;
+  }
+
+  get isFocused(): boolean {
+    return this._isFocused;
+  }
+
+  setFocused(focused: boolean): void {
+    this._isFocused = focused;
+    if (!focused) {
+      this._composition = null;
+    }
+  }
+
+  /**
+   * Alias for preferredColumn for compatibility with TextInputController.
+   */
+  get preferredCaretX(): number | null {
+    return this._preferredColumn;
+  }
+
+  setPreferredCaretX(x: number | null): void {
+    this._preferredColumn = x;
+  }
+
   /**
    * Get the text with composition applied (for display).
    */
@@ -991,6 +1041,24 @@ export class TextEditor {
     const prefix = this._document.text.slice(0, this._composition.start);
     const suffix = this._document.text.slice(this._composition.end);
     return `${prefix}${this._composition.text}${suffix}`;
+  }
+
+  /**
+   * Get a TextDocument built from displayText (includes composition).
+   * Use this for hit testing, caret positioning, and selection rendering.
+   */
+  get displayDocument(): TextDocument {
+    if (!this._composition) {
+      return this._document;
+    }
+    return createTextDocument(
+      this.displayText,
+      this._fontSize,
+      this._lineHeight,
+      this._fontFamily,
+      this._maxWidth,
+      this._style
+    );
   }
 
   // --------------------------------------------------------------------------

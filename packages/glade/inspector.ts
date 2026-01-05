@@ -1,25 +1,25 @@
 /**
  * Inspector/Debug Mode for Glade.
  *
- * Provides visual debugging tools inspired by browser DevTools and GPUI's inspector:
+ * Provides visual debugging tools inspired by browser DevTools, egui, and
+ * GPUI's inspector:
  * - Element bounds visualization with colored outlines
  * - Element selection for inspection
  * - Computed styles display
  * - Element tree navigation
  */
 
-// eslint-disable-next-line simple-import-sort/imports
 import { log } from "@glade/logging";
 import type { ColorObject } from "@glade/utils";
 
+import type { Bounds } from "./bounds.ts";
 import type { HitTestNode } from "./dispatch.ts";
 import type { GlobalElementId } from "./element.ts";
+import type { Point } from "./point.ts";
 import type { GladeScene } from "./scene.ts";
 import type { Styles } from "./styles.ts";
 import type { TextSystem } from "./text.ts";
 import type { Theme } from "./theme.ts";
-import type { Point } from "./point.ts";
-import type { Bounds } from "./bounds.ts";
 
 /**
  * Debug info attached to elements during render.
@@ -122,8 +122,8 @@ export class Inspector {
   }
 
   /**
-   * Pre-warm glyph atlas with characters used by the inspector.
-   * Call this once when inspector is first enabled to avoid blinking.
+   * Pre-warm glyph atlas with characters used by the inspector. Call this
+   * once when inspector is first enabled to avoid blinking.
    */
   warmUpGlyphs(_textSystem: TextSystem): void {
     // Disabled for debugging
@@ -477,9 +477,9 @@ export class Inspector {
    * Render element IDs near their bounds.
    */
   private renderElementIds(_scene: GladeScene): void {
-    // Note: Text rendering in inspector would require access to the text system.
-    // For now, element IDs are shown in the info panel when selected.
-    // A full implementation would render small labels at element corners.
+    // Note: Text rendering in inspector would require access to the text
+    // system. For now, element IDs are shown in the info panel when selected.
+    // A better implementation would render lil labels at element corners.
   }
 
   /**
@@ -709,8 +709,8 @@ export class Inspector {
   }
 
   /**
-   * Build debug info tree from hit test tree.
-   * This extracts element information from the rendered tree.
+   * Build debug info tree from hit test tree. This extracts element
+   * information from the rendered tree.
    */
   buildFromHitTestTree(
     roots: HitTestNode[],

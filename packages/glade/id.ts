@@ -1,4 +1,7 @@
-// Branded types for type-safe IDs
+/*
+ * Branded types for type-safe IDs
+ */
+
 declare const __entityIdBrand: unique symbol;
 export type EntityId = number & { [__entityIdBrand]: true };
 

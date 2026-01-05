@@ -64,6 +64,9 @@
     "libgladehelpers",
     "Vogt",
     "backronym",
-    "toggleable"
+    "toggleable",
+    "antialiasing",
+    "WGSL",
+    "egui"
   ]
 }
