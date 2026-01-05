@@ -141,20 +141,20 @@ export type KeyCode = (typeof Key)[keyof typeof Key];
  * Mac-style symbols for modifier and special keys.
  */
 const MAC_KEY_SYMBOLS: Partial<Record<KeyCode | string, string>> = {
-  meta: "\u2318",
-  shift: "\u21E7",
-  alt: "\u2325",
-  ctrl: "\u2303",
-  [Key.Enter]: "\u21A9",
-  [Key.Backspace]: "\u232B",
-  [Key.Delete]: "\u2326",
-  [Key.Escape]: "\u238B",
-  [Key.Tab]: "\u21E5",
-  [Key.Up]: "\u2191",
-  [Key.Down]: "\u2193",
-  [Key.Left]: "\u2190",
-  [Key.Right]: "\u2192",
-  [Key.Space]: "\u2423",
+  meta: "⌘",
+  shift: "⇧",
+  alt: "⌥",
+  ctrl: "⌃",
+  [Key.Enter]: "↩",
+  [Key.Backspace]: "⌫",
+  [Key.Delete]: "⌦",
+  [Key.Escape]: "⎋",
+  [Key.Tab]: "⇥",
+  [Key.Up]: "↑",
+  [Key.Down]: "↓",
+  [Key.Left]: "←",
+  [Key.Right]: "→",
+  [Key.Space]: "␣",
 };
 
 /**
@@ -170,11 +170,10 @@ const WINDOWS_KEY_SYMBOLS: Partial<Record<KeyCode | string, string>> = {
   [Key.Delete]: "Del",
   [Key.Escape]: "Esc",
   [Key.Tab]: "Tab",
-  // TODO: just use the actual characters so it's clear.
-  [Key.Up]: "\u2191",
-  [Key.Down]: "\u2193",
-  [Key.Left]: "\u2190",
-  [Key.Right]: "\u2192",
+  [Key.Up]: "↑",
+  [Key.Down]: "↓",
+  [Key.Left]: "←",
+  [Key.Right]: "→",
   [Key.Space]: "Space",
 };
 
