@@ -1,10 +1,9 @@
 /**
- * RadioGroup and RadioGroupItem components - a set of checkable buttons where only one can be checked at a time.
- *
- * The RadioGroup is the parent container that manages selection state.
- * RadioGroupItems are the individual radio buttons within the group.
- *
- * Follows accessibility patterns similar to Radix UI radio group components.
+ * RadioGroup and RadioGroupItem components - a set of checkable buttons where
+ * only one can be checked at a time. The RadioGroup is the parent container
+ * that manages selection state. RadioGroupItems are the individual radio
+ * buttons within the group. Follows accessibility patterns similar to
+ * Radix UI radio group components, and HTML radio in general.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -38,8 +37,8 @@ const DEFAULT_SIZE = 18;
 export type RadioValueChangeHandler = (value: string) => void;
 
 /**
- * Context passed from RadioGroup to RadioGroupItem.
- * This is used internally to communicate selection state.
+ * Context passed from RadioGroup to RadioGroupItem. This is used internally
+ * to communicate selection state.
  */
 type RadioGroupContext = {
   value: string | null;
@@ -53,10 +52,6 @@ type RadioGroupContext = {
   hoverBorder: ColorObject;
   disabledOpacity: number;
 };
-
-// ============================================================================
-// RadioGroupItem
-// ============================================================================
 
 /**
  * Request layout state for radio item.
@@ -74,10 +69,9 @@ type RadioItemPrepaintState = {
 };
 
 /**
- * A radio button item within a RadioGroup.
- *
- * Must be used as a child of RadioGroup. The item's `value` property
- * is compared against the group's `value` to determine checked state.
+ * A radio button item within a RadioGroup. Must be used as a child of
+ * RadioGroup. The item's `value` property is compared against the
+ * group's `value` to determine checked state.
  */
 export class GladeRadioGroupItem extends GladeElement<
   RadioItemRequestState,
@@ -291,10 +285,6 @@ export class GladeRadioGroupItem extends GladeElement<
   }
 }
 
-// ============================================================================
-// RadioGroup
-// ============================================================================
-
 /**
  * Request layout state for radio group.
  */
@@ -317,10 +307,9 @@ type RadioGroupPrepaintState = {
 };
 
 /**
- * A radio group container that manages selection state for radio items.
- *
- * Only one item in the group can be selected at a time.
- * Selection is controlled via the `value` and `onValueChange` props.
+ * A radio group container that manages selection state for radio items. Only
+ * one item in the group can be selected at a time. Selection is controlled
+ * via the `value` and `onValueChange` props.
  */
 export class GladeRadioGroup extends GladeContainerElement<
   RadioGroupRequestState,
@@ -337,8 +326,6 @@ export class GladeRadioGroup extends GladeContainerElement<
   private checkedBgColor: ColorObject | null = null;
   private borderColorValue: ColorObject | null = null;
   private indicatorColorValue: ColorObject | null = null;
-
-  // ============ Layout Styles ============
 
   /**
    * Enable flex display.
@@ -382,8 +369,6 @@ export class GladeRadioGroup extends GladeContainerElement<
     this.styles.paddingLeft = v;
     return this;
   }
-
-  // ============ RadioGroup Specific ============
 
   /**
    * Set the currently selected value (controlled mode).

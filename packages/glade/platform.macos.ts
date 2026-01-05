@@ -10,3 +10,6 @@ export {
 
 // Unified type alias for cross-platform code
 export type GladePlatformOptions = MacOSGladePlatformOptions;
+
+// TODO: getting the following err on this file...
+// File ignored because of a matching ignore pattern. Use "--no-ignore" to disable file ignore settings or use "--no-warn-ignored" to suppress this warning. (eslint)

@@ -1,8 +1,11 @@
 /**
- * Path rendering for Glade.
+ * Path rendering for Glade. Provides a PathBuilder API for creating vector
+ * paths and a GPU pipeline for rendering them. Paths are tessellated into
+ * triangles using ear clipping.
  *
- * Provides a PathBuilder API for creating vector paths and a GPU pipeline
- * for rendering them. Paths are tessellated into triangles using ear clipping.
+ * NOTE/TODO: I wrote this very fast, and uses a couple of different libraries
+ * for references, but there are likely parts of this file that are straight-up
+ * wrong.
  */
 
 import { GPUBufferUsage } from "@glade/core/webgpu";
@@ -158,13 +161,15 @@ export class PathBuilder {
     return this.ellipse(cx, cy, r, r);
   }
 
+  // (4/3) * tan(pi/8) - magic number for cubic Bezier circle approximation
+  private static CUBIC_BEZIER_CIRCLE_APPROX = 0.5522847498;
+
   /**
    * Add an ellipse to the path using cubic Bezier approximation.
    */
   ellipse(cx: number, cy: number, rx: number, ry: number): this {
-    const k = 0.5522847498; // (4/3) * tan(pi/8) - magic number for cubic Bezier circle approximation
-    const kx = rx * k;
-    const ky = ry * k;
+    const kx = rx * PathBuilder.CUBIC_BEZIER_CIRCLE_APPROX;
+    const ky = ry * PathBuilder.CUBIC_BEZIER_CIRCLE_APPROX;
 
     this.moveTo(cx + rx, cy);
     this.cubicTo(cx + rx, cy + ky, cx + kx, cy + ry, cx, cy + ry);
@@ -183,7 +188,8 @@ export class PathBuilder {
       return this;
     }
     const angleStep = (Math.PI * 2) / sides;
-    const startAngle = -Math.PI / 2; // Start at top
+    // Start at top
+    const startAngle = -Math.PI / 2;
 
     for (let i = 0; i < sides; i++) {
       const angle = startAngle + i * angleStep;
@@ -285,8 +291,8 @@ export class PathBuilder {
   }
 
   /**
-   * Flatten the path commands into separate subpaths.
-   * Each subpath starts with a moveTo and ends with close or the next moveTo.
+   * Flatten the path commands into separate subpaths. Each subpath starts
+   * with a moveTo and ends with close or the next moveTo.
    */
   private flattenToSubpaths(): Array<Array<{ x: number; y: number }>> {
     const subpaths: Array<Array<{ x: number; y: number }>> = [];
@@ -546,8 +552,8 @@ function vectorAngle(ux: number, uy: number, vx: number, vy: number): number {
 }
 
 /**
- * Triangulate a simple polygon using ear clipping algorithm.
- * Returns indices into the points array.
+ * Triangulate a simple polygon using ear clipping algorithm. Returns indices
+ * into the points array.
  */
 function triangulate(points: Array<{ x: number; y: number }>): number[] {
   const n = points.length;
@@ -680,13 +686,10 @@ export function path(): PathBuilder {
   return new PathBuilder();
 }
 
-// ============ Path Pipeline ============
-
 /**
- * WGSL shader for path rendering with antialiasing.
- *
- * Uses edge distance interpolation for smooth AA at triangle edges.
- * Edge distance of 0.0 = on edge (semi-transparent), 1.0 = interior (opaque).
+ * WGSL shader for path rendering with antialiasing. Uses edge distance
+ * interpolation for smooth AA at triangle edges. Edge distance
+ * of 0.0 = on edge (semi-transparent), 1.0 = interior (opaque).
  */
 const PATH_SHADER = /* wgsl */ `
 struct Uniforms {
@@ -813,11 +816,9 @@ const FLOATS_PER_VERTEX = 24;
 const BYTES_PER_VERTEX = FLOATS_PER_VERTEX * 4;
 
 /**
- * Path rendering pipeline.
- *
- * Supports interleaved batch rendering where renderBatch() can be called
- * multiple times per frame. Call beginFrame() at the start of each frame
- * to reset the buffer offsets.
+ * Path rendering pipeline. Supports interleaved batch rendering where
+ * renderBatch() can be called multiple times per frame. Call beginFrame()
+ * at the start of each frame to reset the buffer offsets.
  */
 export class PathPipeline {
   private pipeline: GPURenderPipeline;
@@ -910,8 +911,8 @@ export class PathPipeline {
   }
 
   /**
-   * Reset the buffer offsets for a new frame.
-   * Must be called before the first renderBatch() call each frame.
+   * Reset the buffer offsets for a new frame. Must be called before the
+   * first renderBatch() call each frame.
    */
   beginFrame(): void {
     this.currentVertexOffset = 0;
@@ -920,8 +921,8 @@ export class PathPipeline {
   }
 
   /**
-   * Render a batch of paths at the current buffer offset.
-   * Can be called multiple times per frame for interleaved rendering.
+   * Render a batch of paths at the current buffer offset. Can be called
+   * multiple times per frame for interleaved rendering.
    */
   renderBatch(
     pass: GPURenderPassEncoder,

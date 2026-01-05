@@ -1,7 +1,8 @@
 /**
- * Mouse event types for Glade.
+ * Mouse event types for Glade. Extends the core event types with Glade-specific
+ * functionality.
  *
- * Extends the core event types with Glade-specific functionality.
+ * TODO: consider overlap between this and the core types / code.
  */
 
 import type { CursorMoveEvent, MouseButton, MouseButtonEvent } from "@glade/core";
@@ -58,8 +59,8 @@ export class MouseState {
   }
 
   /**
-   * Update button state from mouse button event.
-   * Returns click count if this was a click (button release).
+   * Update button state from mouse button event. Returns click count if
+   * this was a click (button release).
    */
   handleMouseButton(event: MouseButtonEvent, now: number): number {
     const isPress = event.action === 1; // KeyAction.Press

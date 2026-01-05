@@ -1,11 +1,9 @@
 /**
- * Popover system for Glade.
+ * Popover system for Glade. Provides overlay popups that don't affect layout.
+ * Uses a manager pattern similar to tooltips - elements register during
+ * prepaint and the manager handles rendering in the deferred pass.
  *
- * Provides overlay popups that don't affect layout. Uses a manager pattern
- * similar to tooltips - elements register during prepaint and the manager
- * handles rendering in the deferred pass.
- *
- * Key behavior:
+ * Behavior:
  * - Trigger element registers with PopoverManager during prepaint
  * - Manager tracks which popover is active
  * - Active popover is rendered in deferred pass (after normal elements)
@@ -106,8 +104,8 @@ export class PopoverManager {
 
     // If this popover is open, set it as active
     if (registration.open) {
-      // Only one popover can be active at a time
-      // If a different popover becomes active, close the previous one
+      // Only one popover can be active at a time. If a different popover
+      // becomes active, close the previous one
       if (this.activePopover && this.activePopover.registration.id !== registration.id) {
         const previousOnClose = this.activePopover.registration.onClose;
         if (previousOnClose) {
@@ -129,9 +127,8 @@ export class PopoverManager {
   }
 
   /**
-   * Clear all registrations (called each frame).
-   * Also clears active popover - if the component still exists,
-   * it will re-register during prepaint.
+   * Clear all registrations (called each frame). Also clears active popover.
+   * If the component still exists, it will re-register during prepaint.
    */
   clearRegistrations(): void {
     this.registrations.clear();
@@ -157,8 +154,8 @@ export class PopoverManager {
     this.activePopover.anchorPosition = position;
     this.activePopover.anchorCorner = corner;
 
-    // We don't know the popover size yet - that will be determined during layout
-    // The anchored element will handle final positioning
+    // We don't know the popover size yet - that will be determined during
+    // layout. The anchored element will handle final positioning
     this.activePopover.bounds = {
       x: position.x,
       y: position.y,
@@ -242,8 +239,8 @@ export class PopoverManager {
   }
 
   /**
-   * Handle click event for dismissing popovers.
-   * Returns true if click was outside the popover and it should be dismissed.
+   * Handle click event for dismissing popovers. Returns true if click was
+   * outside the popover and it should be dismissed.
    */
   handleClick(clickPosition: Point, popoverBounds: Bounds | null): boolean {
     if (!this.activePopover || !popoverBounds) {

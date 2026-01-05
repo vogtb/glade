@@ -22,6 +22,7 @@ import type { Hitbox } from "./hitbox.ts";
 import { HitboxBehavior } from "./hitbox.ts";
 import type { WindowId } from "./id.ts";
 import type { LayoutId } from "./layout.ts";
+import type { Point } from "./point.ts";
 import type { Size } from "./size.ts";
 
 export const DEFAULT_FONT_SIZE = 14;
@@ -313,8 +314,6 @@ export function shouldDeferSubmenuClose(
     isCursorMovingTowardSubmenu(dropdownId, submenuId)
   );
 }
-
-export type Point = { x: number; y: number };
 
 export function createSafePolygon(
   _triggerBounds: Bounds,
@@ -825,10 +824,6 @@ export class GladeDropdownItem
   }
 }
 
-// ============================================================================ //
-// Checkbox                                                                     //
-// ============================================================================ //
-
 type DropdownCheckboxRequestState = {
   layoutId: LayoutId;
   labelSize: Size;
@@ -1058,10 +1053,6 @@ export class GladeDropdownCheckbox
   }
 }
 
-// ============================================================================ //
-// Radio                                                                         //
-// ============================================================================ //
-
 type DropdownRadioRequestState = {
   layoutId: LayoutId;
   labelSize: Size;
@@ -1286,10 +1277,6 @@ export class GladeDropdownRadio
   }
 }
 
-// ============================================================================ //
-// Radio Group                                                                  //
-// ============================================================================ //
-
 export class GladeDropdownRadioGroup {
   private valueInternal = "";
   private onValueChangeHandler: DropdownValueChangeHandler | null = null;
@@ -1322,10 +1309,6 @@ export class GladeDropdownRadioGroup {
     return this.radioItems;
   }
 }
-
-// ============================================================================ //
-// Submenu                                                                      //
-// ============================================================================ //
 
 type DropdownSubRequestState = {
   layoutId: LayoutId;
@@ -1705,10 +1688,6 @@ export class GladeDropdownSub
   }
 }
 
-// ============================================================================ //
-// Separator                                                                    //
-// ============================================================================ //
-
 type DropdownSeparatorRequestState = {
   layoutId: LayoutId;
 };
@@ -1772,10 +1751,6 @@ export class GladeDropdownSeparator
     return null;
   }
 }
-
-// ============================================================================ //
-// Label                                                                        //
-// ============================================================================ //
 
 type DropdownLabelRequestState = {
   layoutId: LayoutId;
@@ -1884,10 +1859,6 @@ export class GladeDropdownLabel
     return null;
   }
 }
-
-// ============================================================================ //
-// Menu content                                                                 //
-// ============================================================================ //
 
 export type MenuItemElement =
   | GladeDropdownItem
@@ -2284,10 +2255,6 @@ export class GladeDropdownMenuContent extends GladeContainerElement<
     };
   }
 }
-
-// ============================================================================ //
-// Root Context Helper                                                          //
-// ============================================================================ //
 
 export function buildRootMenuContext(
   dropdownId: string,

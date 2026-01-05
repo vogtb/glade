@@ -1,12 +1,11 @@
 /**
- * Monospace text helpers that mimic HTML <code> and <pre> semantics.
- *
- * - Inline code mirrors HTML's inline behavior: whitespace collapses and wraps.
- * - Block pre mirrors HTML's preformatted behavior: whitespace and newlines are preserved,
- *   tabs expand to the next tab stop, and wrapping is optional.
- *
- * Tabs are expanded to spaces to match the browser's default tab-size: 8 rule,
- * and CRLF/CR newlines are normalized to LF to mirror the DOM's line break handling.
+ * Monospace text helpers that mimic HTML <code> and <pre> semantics. Inline
+ * code mirrors HTML's inline behavior: whitespace collapses and wraps. Block
+ * pre mirrors HTML's preformatted behavior: whitespace and newlines are
+ * preserved, tabs expand to the next tab stop, and wrapping is optional. Tabs
+ * are expanded to spaces to match the browser's default tab-size: 8 rule, and
+ * CRLF/CR newlines are normalized to LF to mirror the DOM's line break
+ * handling.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -109,8 +108,8 @@ function normalizeLineEndings(content: string): string {
 }
 
 /**
- * Collapse whitespace the same way the browser handles inline code:
- * tabs/newlines become spaces and consecutive spaces collapse.
+ * Collapse whitespace the same way the browser handles inline code.
+ * Tabs/newlines become spaces and consecutive spaces collapse.
  */
 function collapseInlineWhitespace(content: string): string {
   const newlineNormalized = normalizeLineEndings(content);
@@ -120,8 +119,8 @@ function collapseInlineWhitespace(content: string): string {
 }
 
 /**
- * Expand tabs to the next tab stop using the provided tab size.
- * Newlines reset the column counter.
+ * Expand tabs to the next tab stop using the provided tab size. Newlines reset
+ * the column counter.
  */
 function expandTabsToSpaces(content: string, tabSize: number): string {
   const normalizedTabSize = tabSize > 0 ? tabSize : 1;

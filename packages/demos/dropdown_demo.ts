@@ -1,5 +1,5 @@
 import {
-  colors,
+  button,
   div,
   dropdown,
   dropdownItem,
@@ -40,14 +40,12 @@ export const DROPDOWN_DEMO: Demo = {
         div()
           .flex()
           .flexRow()
+          .flexShrink()
           .gap(8)
           .itemsCenter()
-          .px(16)
           .py(10)
-          .bg(colors.gray.x700)
-          .rounded(6)
           .cursorPointer()
-          .children(text("Open Menu"), icon("arrowDown", 14))
+          .children(button("Open Menu").child(icon("arrowDown", 14)))
       )
       .items(
         dropdownItem("New File").onSelect(() => {
@@ -84,12 +82,9 @@ export const DROPDOWN_DEMO: Demo = {
           .flexRow()
           .gap(8)
           .itemsCenter()
-          .px(16)
           .py(10)
-          .bg(colors.gray.x700)
-          .rounded(6)
           .cursorPointer()
-          .children(text("Actions"), icon("arrowDown", 14))
+          .children(button("Actions").child(icon("arrowDown", 14)))
       )
       .items(
         dropdownLabel("Edit"),
@@ -136,12 +131,9 @@ export const DROPDOWN_DEMO: Demo = {
           .flexRow()
           .gap(8)
           .itemsCenter()
-          .px(16)
           .py(10)
-          .bg(colors.gray.x700)
-          .rounded(6)
           .cursorPointer()
-          .children(icon("settings", 16), text("Settings"), icon("arrowDown", 14))
+          .children(button("Settings").child(icon("arrowDown", 14)))
       )
       .items(
         dropdownItem("Profile").onSelect(() => {
@@ -181,12 +173,9 @@ export const DROPDOWN_DEMO: Demo = {
           .flexRow()
           .gap(8)
           .itemsCenter()
-          .px(16)
           .py(10)
-          .bg(colors.gray.x700)
-          .rounded(6)
           .cursorPointer()
-          .children(text("File Menu"), icon("arrowDown", 14))
+          .children(button("File Menu").child(icon("arrowDown", 14)))
       )
       .items(
         dropdownItem("New").onSelect(() => {
