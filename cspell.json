@@ -63,6 +63,7 @@
     "Titlebar",
     "libgladehelpers",
     "Vogt",
-    "backronym"
+    "backronym",
+    "toggleable"
   ]
 }

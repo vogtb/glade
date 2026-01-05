@@ -8,17 +8,6 @@ async function embedAsBase64(path: string): Promise<string> {
   return Buffer.from(buffer).toString("base64");
 }
 
-/**
- * Bun macro to embed environment variables at build time.
- */
-async function embedEnvVar(name: string, defaultValue?: string): Promise<string> {
-  const value = process.env[name] ?? defaultValue;
-  if (!value) {
-    throw new Error(`comptime process.env.${name} is not set, no default provided`);
-  }
-  return value;
-}
-
 const BUILD_TIME: { value: null | string } = {
   value: null,
 };
@@ -26,7 +15,7 @@ const BUILD_TIME: { value: null | string } = {
 /**
  * Bun macro to embed the current build time as an ISO string.
  */
-async function embedBuildTime(): Promise<string> {
+function embedBuildTime(): string {
   BUILD_TIME.value = BUILD_TIME.value ?? new Date().toISOString();
   return BUILD_TIME.value!;
 }
@@ -43,14 +32,6 @@ async function embedBuildTime(): Promise<string> {
 export const COMPTIME_embedAsBase64 = embedAsBase64 as unknown as (p: string) => string;
 
 /**
- * Embeds an environment variable value at compile time, defaulting to a specific value.
- */
-export const COMPTIME_envVar = embedEnvVar as unknown as (
-  name: string,
-  defaultValue?: string
-) => string;
-
-/**
  * Embeds the current build time as an ISO string at compile time.
  */
-export const COMPTIME_buildTime = embedBuildTime as unknown as () => string;
+export const COMPTIME_buildDateTime = embedBuildTime as unknown as () => string;

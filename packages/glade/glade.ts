@@ -14,13 +14,7 @@ export { GladeApp } from "./app";
 export type { Bounds } from "./bounds";
 export { boundsIntersect, boundsIsEmpty } from "./bounds";
 export { boundsContains, BoundsTree } from "./bounds";
-export {
-  BufferFactory,
-  BufferPool,
-  DynamicBuffer,
-  StagingBuffer,
-  UniformBufferManager,
-} from "./buffers";
+export { BufferPool } from "./buffers";
 export * from "./button";
 export {
   canvas,

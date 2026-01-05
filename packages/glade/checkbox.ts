@@ -1,8 +1,8 @@
 /**
- * Checkbox component - a control that allows the user to toggle between checked and unchecked states.
- *
- * Supports controlled and uncontrolled modes, indeterminate state, and custom styling.
- * Follows accessibility patterns similar to Radix UI / Base UI checkbox components.
+ * Checkbox component - a control that allows the user to toggle between
+ * checked and unchecked states. Supports controlled and uncontrolled modes,
+ * indeterminate state, and custom styling. Follows accessibility patterns
+ * similar to Radix UI / Base UI checkbox components.
  */
 
 import { type Color, type ColorObject, toColorObject } from "@glade/utils";
@@ -62,10 +62,9 @@ export type CheckedState = boolean | "indeterminate";
 export type CheckedChangeHandler = (checked: boolean) => void;
 
 /**
- * A checkbox element that renders a toggleable check box.
- *
- * Supports three visual states: unchecked, checked, and indeterminate.
- * Can be used in controlled or uncontrolled mode.
+ * A checkbox element that renders a toggleable check box. Supports three
+ * visual states: unchecked, checked, and indeterminate. Can be used in
+ * controlled or uncontrolled mode.
  */
 export class GladeCheckbox extends GladeElement<CheckboxRequestState, CheckboxPrepaintState> {
   private sizeValue: number = DEFAULT_SIZE;
@@ -106,8 +105,8 @@ export class GladeCheckbox extends GladeElement<CheckboxRequestState, CheckboxPr
   }
 
   /**
-   * Set the indeterminate state.
-   * When true, displays a horizontal line instead of a checkmark.
+   * Set the indeterminate state. When true, displays a horizontal line
+   * instead of a checkmark.
    */
   indeterminate(v: boolean): this {
     this.indeterminateValue = v;

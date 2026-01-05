@@ -38,7 +38,8 @@ function noStatePrepaint(): void {
 }
 
 /**
- * A lightweight element that forwards directly to user-provided paint callbacks.
+ * A lightweight element that forwards directly to user-provided paint
+ * callbacks.
  */
 export class CanvasElement<T> extends GladeElement<NoState, T> {
   private styles: Partial<Styles>;

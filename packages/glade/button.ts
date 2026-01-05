@@ -1,10 +1,8 @@
 /**
  * Button component - an interactive control that triggers actions when clicked.
- *
- * Supports multiple variants (default, destructive, outline, secondary, ghost, link),
- * sizes (default, sm, lg, icon), and states (hover, active, focused, disabled).
- *
- * Built as a composition of div() and text() elements.
+ * Supports multiple variants (default, destructive, outline, secondary, ghost,
+ * link), sizes (default, sm, lg, icon), and states (hover, active, focused,
+ * disabled). Built as a composition of div() and text() elements.
  */
 
 import type { Color, ColorObject } from "@glade/utils";
@@ -210,64 +208,12 @@ export class GladeButton extends GladeDiv {
   }
 
   /**
-   * Build the final element tree with theme-aware colors.
-   * This is called internally during requestLayout.
-   */
-  private buildContent(theme: Theme): void {
-    const colors = getButtonColors(theme, this.variantValue);
-    const config = SIZE_CONFIGS[this.sizeValue];
-
-    // Apply background color (unless custom)
-    if (!this.customBg && colors.bg.a > 0) {
-      super.bg(colors.bg);
-    }
-
-    // Apply border for outline variant
-    if (colors.border && !this.customBorderColor) {
-      this.border(1);
-      super.borderColor(colors.border);
-    }
-
-    // Apply hover styles
-    this.hover((s: StyleBuilder) => {
-      if (this.disabledValue) return s;
-      if (!this.customBg) {
-        s.bg(colors.bgHover);
-      }
-      return s;
-    });
-
-    // Apply active styles
-    this.active((s: StyleBuilder) => {
-      if (this.disabledValue) return s;
-      if (!this.customBg) {
-        s.bg(colors.bgActive);
-      }
-      return s;
-    });
-
-    // Add label text if present (and not already added)
-    if (this.labelText && !this.labelElement) {
-      const textColor = this.customTextColor ?? colors.text;
-      this.labelElement = text(this.labelText)
-        .size(config.fontSize)
-        .weight(500)
-        .color(textColor)
-        .noWrap();
-      super.child(this.labelElement);
-    } else if (this.labelElement && this.labelText) {
-      // Update existing label's color
-      const textColor = this.customTextColor ?? colors.text;
-      this.labelElement.color(textColor);
-    }
-  }
-
-  /**
    * Override requestLayout to build content with theme colors.
    */
   override requestLayout(cx: RequestLayoutContext) {
     // Get theme from persistent state or use a default approach
-    // For now, we'll build content lazily - the theme will be applied in prepaint
+    // For now, we'll build content lazily - the theme will be applied in
+    // prepaint
 
     // Add label if needed (without theme colors for now)
     if (this.labelText && !this.labelElement) {
@@ -281,6 +227,8 @@ export class GladeButton extends GladeDiv {
 
   /**
    * Override prepaint to apply theme-aware colors.
+   *
+   * TODO: we should be able to type requestState.
    */
   override prepaint(cx: PrepaintContext, bounds: Bounds, requestState: unknown) {
     const theme = cx.getWindow().getTheme();
