@@ -9,7 +9,6 @@ import { type Color, toColorObject } from "@glade/utils";
 import type { Bounds } from "./bounds.ts";
 import type {
   ClickHandler,
-  DragStartHandler,
   EventHandlers,
   HitTestNode,
   KeyHandler,
@@ -17,7 +16,6 @@ import type {
   ScrollHandler,
   TextInputHandler,
 } from "./dispatch.ts";
-import type { CanDropPredicate, DropHandler } from "./drag.ts";
 import {
   type AnyGladeElement,
   GladeContainerElement,
@@ -105,7 +103,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   private hoverStyles: Partial<Styles> | null = null;
   private activeStyles: Partial<Styles> | null = null;
   private focusedStyles: Partial<Styles> | null = null;
-  private dragOverStyles: Partial<Styles> | null = null;
   private groupHoverStylesMap: Map<string, Partial<Styles>> = new Map();
   private groupActiveStylesMap: Map<string, Partial<Styles>> = new Map();
   private handlers: EventHandlers = {};
@@ -114,7 +111,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   private keyContextValue: string | null = null;
   private hitboxBehaviorValue: HitboxBehavior = HitboxBehavior.Normal;
   private groupNameValue: string | null = null;
-  private isDropTarget = false;
   private tooltipBuilderFn: TooltipBuilder | null = null;
   private tooltipConfigValue: TooltipConfig = DEFAULT_TOOLTIP_CONFIG;
   private tabStopConfigValue: TabStopConfig | null = null;
@@ -862,42 +858,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
   }
 
   /**
-   * Make this element draggable. Handler is called on mouse down and
-   * should return a DragPayload if drag should start.
-   */
-  onDragStart<T>(handler: DragStartHandler<T>): this {
-    this.handlers.dragStart = handler as DragStartHandler;
-    return this;
-  }
-
-  /**
-   * Make this element a drop target. Handler is called when a dragged item
-   * is dropped on this element.
-   */
-  onDrop<T>(handler: DropHandler<T>): this {
-    this.handlers.drop = handler as DropHandler;
-    this.isDropTarget = true;
-    return this;
-  }
-
-  /**
-   * Set a predicate to determine if this element can accept a drop. Only
-   * called if onDrop is set.
-   */
-  canDrop<T>(predicate: CanDropPredicate<T>): this {
-    this.handlers.canDrop = predicate as CanDropPredicate;
-    return this;
-  }
-
-  /**
-   * Apply styles when a drag is over this drop target and can be dropped.
-   */
-  dragOver(f: (s: StyleBuilder) => StyleBuilder): this {
-    this.dragOverStyles = f(new StyleBuilder()).build();
-    return this;
-  }
-
-  /**
    * Add a tooltip to this element.
    * @param builder Function that creates the tooltip content element.
    * @param config Optional tooltip configuration or builder function.
@@ -1101,12 +1061,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
 
     // Create hitbox for this element (pass cursor for platform cursor updates)
     const hitbox = cx.insertHitbox(bounds, this.hitboxBehaviorValue, this.styles.cursor);
-
-    // Register as drop target if this element handles drops
-    if (this.isDropTarget && this.handlers.drop) {
-      const canDrop = this.handlers.canDrop ? true : true;
-      cx.registerDropTarget(hitbox.id, canDrop);
-    }
 
     // Register tooltip if this element has one
     if (this.tooltipBuilderFn) {
@@ -1447,11 +1401,6 @@ export class GladeDiv extends GladeContainerElement<DivRequestLayoutState, DivPr
     }
     if (isFocused && this.focusedStyles) {
       effectiveStyles = { ...effectiveStyles, ...this.focusedStyles };
-    }
-
-    // Apply drag-over styles if this is a drop target and drag is over it
-    if (this.isDropTarget && this.dragOverStyles && hitbox && cx.canDropOnHitbox(hitbox)) {
-      effectiveStyles = { ...effectiveStyles, ...this.dragOverStyles };
     }
 
     // Determine if we need a stacking context

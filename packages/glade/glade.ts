@@ -85,16 +85,6 @@ export {
 } from "./dispatch";
 export { div, GladeDiv } from "./div";
 export type {
-  ActiveDrag,
-  CanDropPredicate,
-  DragHandler,
-  DragId,
-  DragPayload,
-  DropHandler,
-  DropTarget,
-} from "./drag";
-export { dragPayload, dragPayloadWithPreview, DragTracker } from "./drag";
-export type {
   DropdownAlign,
   DropdownCheckedChangeHandler,
   DropdownMenuContentPrepaintState,

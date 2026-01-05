@@ -1,6 +1,5 @@
 import type { Bounds } from "./bounds.ts";
 import type { GladeContext } from "./context.ts";
-import type { CanDropPredicate, DragPayload, DropHandler } from "./drag.ts";
 import type { FocusHandle, ScrollHandle } from "./entity.ts";
 import type { FocusId } from "./id.ts";
 import type { Point } from "./point.ts";
@@ -161,16 +160,6 @@ export type ScrollHandler = (
 ) => EventResult | void;
 
 /**
- * Handler that starts a drag operation.
- * Returns the drag payload if drag should start, null otherwise.
- */
-export type DragStartHandler<T = unknown> = (
-  event: GladeMouseEvent,
-  window: GladeWindow,
-  cx: GladeContext
-) => DragPayload<T> | null;
-
-/**
  * Event handlers that can be attached to elements.
  */
 export interface EventHandlers {
@@ -187,9 +176,6 @@ export interface EventHandlers {
   compositionStart?: CompositionHandler;
   compositionUpdate?: CompositionHandler;
   compositionEnd?: CompositionHandler;
-  dragStart?: DragStartHandler;
-  drop?: DropHandler;
-  canDrop?: CanDropPredicate;
 }
 
 /**

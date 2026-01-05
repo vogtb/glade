@@ -229,12 +229,6 @@ export interface PrepaintContext {
   addGroupHitbox(groupName: string, hitboxId: HitboxId): void;
 
   /**
-   * Register a drop target for drag and drop.
-   * Called during prepaint for elements with onDrop handlers.
-   */
-  registerDropTarget(hitboxId: HitboxId, canDrop: boolean): void;
-
-  /**
    * Register a tooltip for an element.
    */
   registerTooltip(
@@ -490,21 +484,6 @@ export interface PaintContext {
    * Check if a group is active (hovered with mouse down).
    */
   isGroupActive(groupName: string): boolean;
-
-  /**
-   * Check if there's an active drag operation.
-   */
-  isDragging(): boolean;
-
-  /**
-   * Check if this element (by hitbox) is being dragged over.
-   */
-  isDragOver(hitbox: Hitbox): boolean;
-
-  /**
-   * Check if the current drag can be dropped on this element.
-   */
-  canDropOnHitbox(hitbox: Hitbox): boolean;
 
   /**
    * Execute a callback within a stacking context.

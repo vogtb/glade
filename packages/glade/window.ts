@@ -52,7 +52,6 @@ import {
   type GladeKeyEvent,
   hitTest,
 } from "./dispatch.ts";
-import { type ActiveDrag, type DragPayload, DragTracker } from "./drag.ts";
 import type {
   GladeView,
   GlobalElementId,
@@ -250,15 +249,6 @@ export class GladeWindow {
   private groupHitboxes = new GroupHitboxes();
   private currentContentMask: ContentMask | null = null;
   private currentCursor: CursorStyle = CursorStyle.Default;
-
-  // Drag and drop
-  private dragTracker = new DragTracker();
-  private dropTargetHitboxes = new Map<HitboxId, { canDrop: boolean }>();
-  private pendingDragStart: {
-    hitboxId: HitboxId;
-    position: Point;
-    handler: (event: GladeMouseEvent, window: GladeWindow, cx: GladeContext) => DragPayload | null;
-  } | null = null;
 
   // Tooltips
   private tooltipManager = new TooltipManager();
@@ -990,36 +980,6 @@ export class GladeWindow {
     return this.getContext().getTheme();
   }
 
-  // ============ Drag and Drop ============
-
-  /**
-   * Get the drag tracker for this window.
-   */
-  getDragTracker(): DragTracker {
-    return this.dragTracker;
-  }
-
-  /**
-   * Check if there's an active drag.
-   */
-  isDragging(): boolean {
-    return this.dragTracker.isDragging();
-  }
-
-  /**
-   * Get the active drag state.
-   */
-  getActiveDrag<T = unknown>(): ActiveDrag<T> | null {
-    return this.dragTracker.getActiveDrag<T>();
-  }
-
-  /**
-   * Register a drop target for this frame.
-   */
-  registerDropTarget(hitboxId: HitboxId, canDrop: boolean): void {
-    this.dropTargetHitboxes.set(hitboxId, { canDrop });
-  }
-
   /**
    * Register a tab stop for keyboard navigation.
    */
@@ -1043,33 +1003,6 @@ export class GladeWindow {
     const currentGroup =
       currentFocusId !== null ? this.tabStopRegistry.getGroup(currentFocusId) : null;
     return this.tabStopRegistry.getPrevFocus(currentFocusId, currentGroup);
-  }
-
-  /**
-   * Check if a hitbox is a valid drop target for the current drag.
-   */
-  canDropOnHitbox(hitboxId: HitboxId): boolean {
-    if (!this.dragTracker.isDragging()) {
-      return false;
-    }
-    const target = this.dropTargetHitboxes.get(hitboxId);
-    if (!target) {
-      return false;
-    }
-    if (!this.isHitboxIdHovered(hitboxId)) {
-      return false;
-    }
-    return target.canDrop;
-  }
-
-  /**
-   * Check if a hitbox is being dragged over.
-   */
-  isDragOver(hitboxId: HitboxId): boolean {
-    if (!this.dragTracker.isDragging()) {
-      return false;
-    }
-    return this.isHitboxIdHovered(hitboxId);
   }
 
   // ============ Tooltips ============
@@ -1419,8 +1352,6 @@ export class GladeWindow {
     // Reset hitbox frame for new frame
     this.hitboxFrame = createHitboxFrame();
     this.groupHitboxes.clear();
-    // Clear drop targets from previous frame
-    this.dropTargetHitboxes.clear();
     // Clear tooltip registrations from previous frame
     this.tooltipManager.clearRegistrations();
     // Clear tab stops from previous frame
@@ -1789,32 +1720,6 @@ export class GladeWindow {
           return; // Don't dispatch other events during scrollbar drag
         }
 
-        // Update drag position if active
-        if (this.pendingDragStart || this.dragTracker.getActiveDrag()) {
-          const isDragging = this.dragTracker.updatePosition({ x, y });
-          if (this.pendingDragStart && isDragging) {
-            // Start the actual drag now that threshold is exceeded
-            const cx = this.getContext();
-            const event: GladeMouseEvent = {
-              x: this.pendingDragStart.position.x,
-              y: this.pendingDragStart.position.y,
-              button: 0,
-              modifiers: { shift: false, ctrl: false, alt: false, meta: false },
-            };
-            const payload = this.pendingDragStart.handler(event, this, cx);
-            if (payload) {
-              this.dragTracker.startPotentialDrag(
-                this.pendingDragStart.position,
-                this.id,
-                payload,
-                this.pendingDragStart.hitboxId
-              );
-              this.dragTracker.updatePosition({ x, y });
-            }
-            this.pendingDragStart = null;
-          }
-        }
-
         const event: GladeMouseEvent = {
           x,
           y,
@@ -1899,22 +1804,6 @@ export class GladeWindow {
         const event: GladeMouseEvent = { x, y, button: normalizedButton, modifiers: mods };
         const path = hitTest(this.hitTestTree, { x, y });
 
-        // Check for drag start handlers on hit path
-        for (let i = path.length - 1; i >= 0; i--) {
-          const node = path[i]!;
-          if (node.handlers.dragStart && normalizedButton === 0) {
-            // Store pending drag - we'll start actual drag when threshold is exceeded
-            this.pendingDragStart = {
-              hitboxId: 0 as HitboxId,
-              position: { x, y },
-              handler: node.handlers.dragStart,
-            };
-            // Also start tracking with the tracker
-            this.dragTracker.startPotentialDrag({ x, y }, this.id, { data: null }, null);
-            break;
-          }
-        }
-
         if (normalizedButton === 0) {
           this.focusFromPath(path, "mouseDown");
         }
@@ -1965,29 +1854,6 @@ export class GladeWindow {
             }
           }
         }
-
-        // Handle drop if dragging
-        if (this.dragTracker.isDragging()) {
-          const drag = this.dragTracker.getActiveDrag();
-          if (drag) {
-            // Find drop target in path
-            for (let i = path.length - 1; i >= 0; i--) {
-              const node = path[i]!;
-              if (node.handlers.drop) {
-                const cx = this.getContext();
-                const canDrop = node.handlers.canDrop
-                  ? node.handlers.canDrop(drag.payload.data, cx)
-                  : true;
-                if (canDrop) {
-                  node.handlers.drop(drag.payload.data, { x, y }, this, cx);
-                  break;
-                }
-              }
-            }
-          }
-          this.dragTracker.endDrag();
-        }
-        this.pendingDragStart = null;
 
         dispatchMouseEvent("mouseUp", event, path, this, this.getContext());
       });
@@ -2305,7 +2171,6 @@ export class GladeWindow {
     const createPrepaintContext = this.createPrepaintContext.bind(this);
     const insertHitboxFn = this.insertHitbox.bind(this);
     const addGroupHitboxFn = this.addGroupHitbox.bind(this);
-    const registerDropTargetFn = this.registerDropTarget.bind(this);
     const registerTooltipFn = this.registerTooltip.bind(this);
     const registerTabStopFn = this.registerTabStop.bind(this);
 
@@ -2342,10 +2207,6 @@ export class GladeWindow {
 
       addGroupHitbox: (groupName: string, hitboxId: HitboxId): void => {
         addGroupHitboxFn(groupName, hitboxId);
-      },
-
-      registerDropTarget: (hitboxId: HitboxId, canDrop: boolean): void => {
-        registerDropTargetFn(hitboxId, canDrop);
       },
 
       registerTooltip: (
@@ -2700,18 +2561,6 @@ export class GladeWindow {
 
       isGroupActive: (groupName: string): boolean => {
         return this.isGroupActive(groupName);
-      },
-
-      isDragging: (): boolean => {
-        return this.isDragging();
-      },
-
-      isDragOver: (hitbox: Hitbox): boolean => {
-        return this.isDragOver(hitbox.id);
-      },
-
-      canDropOnHitbox: (hitbox: Hitbox): boolean => {
-        return this.canDropOnHitbox(hitbox.id);
       },
 
       withStackingContext: (bounds: Bounds, zIndex: number, callback: () => void): void => {
