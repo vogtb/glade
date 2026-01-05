@@ -29,6 +29,8 @@ rustup target add wasm32-unknown-unknown
 echo "Done adding targets for rust"
 
 echo "Installing libs..."
+mkdir -p "$LIBS_DIR"
+
 GLFW_DYLIB="$LIBS_DIR/libglfw.dylib"
 if [ -f "$GLFW_DYLIB" ]; then
     echo "libglfw.dylib already exists, skipping download"
@@ -45,4 +47,14 @@ else
     rm -rf "$TEMP_DIR"
     echo "Downloaded libglfw.dylib to $GLFW_DYLIB"
 fi
+
+DAWN_DYLIB="$LIBS_DIR/libwebgpu_dawn.dylib"
+if [ -f "$DAWN_DYLIB" ]; then
+    echo "libwebgpu_dawn.dylib already exists, skipping download"
+else
+    echo "Downloading libwebgpu_dawn.dylib..."
+    gh release download "vendor-dawn-v0.0.1" --repo "vogtb/glade" --pattern "libwebgpu_dawn.dylib" --dir "$LIBS_DIR" --clobber
+    echo "Downloaded libwebgpu_dawn.dylib to $DAWN_DYLIB"
+fi
+
 echo "Done installing libs"

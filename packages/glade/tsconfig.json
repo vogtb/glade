@@ -18,6 +18,5 @@
     "noUnusedParameters": false,
     "types": ["@webgpu/types", "@types/bun"]
   },
-  "include": ["./**/*.ts"],
-  "exclude": ["./platform.browser.ts", "./platform.macos.ts"]
+  "include": ["./**/*.ts"]
 }
