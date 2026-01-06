@@ -1,0 +1,55 @@
+---
+
+---
+
+<section id="how-it-works" class="py-20 border-b border-gray-100 bg-gray-50 scroll-mt-8">
+  <div class="mx-auto max-w-4xl px-3">
+    <h2 class="font-mono text-sm tracking-wider text-gray-400 mb-8">
+      02 — README.md
+    </h2>
+    <div class="flex flex-col gap-6 text-gray-700 leading-relaxed">
+      <p>
+        This started as an experiment with Bun's FFI feature. You can link against dynamic libraries and compile JavaScript into a single executable for a target host OS and architecture. You can also use Bun's embedded file system to put dynamically linked libraries inside of the static binary.
+      </p>
+      <p>
+        It started with OpenGL and WebGL for basic graphics programming—write the same code that would run natively when building for an operating system as it would if compiling for the browser.
+      </p>
+
+      <img
+        src="/assets/render_life_cycle.png"
+        alt="Render cycle diagram showing requestLayout, prepaint, and paint phases"
+        class="w-full rounded-lg border border-gray-200"
+      />
+
+      <p>
+        Then it moved to WebGPU, which in the browser is fairly easy, but a little trickier for native. Setting up Google's Dawn implementation of the WebGPU spec was straightforward enough—pre-build the Dawn library, dynamically linked library, and then link against that for native deployments, then wrap the native and browser versions with those different versions of WebGPU. Same code runs natively or in the browser.
+      </p>
+      <p class="text-[#155dfc]">
+        This is not production ready. This is something built to see if it could be done. And it's been fun.
+      </p>
+
+      <p>
+        Once the basics were working (multicolor triangle rendering), the next step was considering the abstractions needed—the interface to conform to on a browser or native environment to provide minimum functionality. Things like keyboard input events, mouse events, window events, and resize events.
+      </p>
+      <p>
+        On the browser, these are normal and standard—document resize listener for window resize, for example.
+      </p>
+      <p>
+        For native, GLFW was used (GL for Windows, I think it stands for). It lets you start up a window in Windows, Linux, or macOS, and have a render loop to respond to keyboard events, mouse events, window resizes, and that sort of thing. It gives you a surface for OpenGL, WebGL, or in this case, WebGPU interactions.
+      </p>
+      <p>
+        A minimal interface for these interactions and events was written, then implemented in two different packages—one for web (responding to normal browser events) and one for native (responding to GLFW events), pushing those through the render loop and having the same render loop work for both platforms.
+      </p>
+
+      <img
+        src="/assets/detailed_render_life_cycle.png"
+        alt="Render flow diagram showing tessellation and GPU rendering pipeline"
+        class="w-full rounded-lg border border-gray-200"
+      />
+
+      <p>
+        With that in place, work started on the normal graphical user interface things: layouts, drawing rectangles, drawing rounded rectangles, drawing borders, padding, margins, flexbox layouts, CSS grid-like layouts, font rendering (including glyph caching and font layout), rendering emojis, drawing shapes with a raw canvas API, and parsing and rendering SVGs (mostly). These are the basic building blocks needed to build higher level components like text input, toggles, switches, radio checkboxes, dropdowns, tooltips, buttons, and so on. But to get all these things working, you first need some idea of how to handle your render cycle. The render cycle is roughly modeled on the ZGPU Rust library used for the Zed text editor. This worked well.
+      </p>
+    </div>
+  </div>
+</section>

@@ -3,46 +3,22 @@ import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import Hero from "../components/Hero.astro";
 import Footer from "../components/Footer.astro";
-import Features from "../components/sections/Features.astro";
-import Readme from "../components/sections/Readme.astro";
-import GettingStarted from "../components/sections/GettingStarted.astro";
-import CoreConcepts from "../components/sections/CoreConcepts.astro";
-import AppSection from "../components/sections/AppSection.astro";
-import ComponentsSection from "../components/sections/ComponentsSection.astro";
-import DemosSection from "../components/sections/DemosSection.astro";
+import Overview from "../components/sections/Overview.astro";
+import HowItWorks from "../components/sections/HowItWorks.astro";
+import SpecSheet from "../components/sections/SpecSheet.astro";
 import Faq from "../components/sections/Faq.astro";
 ---
 
 <Layout title="Glade - TypeScript WebGPU GUI Library">
-  <div class="min-h-screen bg-[#f5f5f4]">
+  <div class="min-h-screen bg-white">
     <Header />
-    <div class="flex min-h-screen flex-col p-2">
-      <div class="mx-auto flex w-full max-w-270 flex-col py-8">
-        <div
-          class="rounded bg-white px-4 pb-36 pt-16 lg:pt-28"
-          style="box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);"
-        >
-          <div class="mx-auto flex max-w-200 flex-col gap-8 pt-2">
-            <div class="flex flex-col gap-8">
-              <Hero />
-
-              <div class="flex flex-col gap-16">
-                <hr class="mt-1 bg-gray-300" />
-
-                <Features />
-                <Readme />
-                <GettingStarted />
-                <CoreConcepts />
-                <AppSection />
-                <ComponentsSection />
-                <DemosSection />
-                <Faq />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <main>
+      <Hero />
+      <Overview />
+      <HowItWorks />
+      <SpecSheet />
+      <Faq />
+    </main>
     <Footer />
   </div>
 </Layout>

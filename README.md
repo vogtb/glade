@@ -2,15 +2,15 @@
 
 ***Glade is a cross-platform GUI library for Typescript that uses WebGPU to render apps at 120fps, for browsers and native macOS.***
 
+https://glade.graphics
+
 ![Cross-platform demos](assets/x-platform-demos.png)
 
-Glade is a library for writing cross-platform graphical applications with TypeScript and JavaScript. It uses WebGPU and includes an application framework and component library (text, inputs, flexbox layouts, etc.), all drawn using WebGPU.
+Glade is a library for writing cross-platform graphical applications with TypeScript and JavaScript. It uses WebGPU and includes an application framework and component library (text, inputs, flexbox layouts, etc.), all drawn using WebGPU. For browsers, it renders to a canvas element. For native macOS, it renders to a GLFW window via Google's Dawn WebGPU implementation. Glade is a backronym for GL-assisted Drawing environment, which seemed like a fun name when this project started, because it originally used WebGL/OpenGL. It now uses WebGPU, but the name stuck.
 
-For browsers, it renders to a canvas element. For native macOS, it renders to a GLFW window via Google's Dawn WebGPU implementation.
+https://glade.graphics
 
-(Glade is a backronym for GL-assisted Drawing environment, which seemed like a fun name when this project started, because it originally used WebGL/OpenGL. It now uses WebGPU, but the name stuck.)
-
---
+---
 
 # Development + Contributing
 
