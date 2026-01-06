@@ -15,10 +15,10 @@ export type PlatformOS = "macos" | "windows" | "linux";
  */
 export function detectPlatformOS(): PlatformOS {
   if (typeof globalThis !== "undefined" && "process" in globalThis) {
-    if (process.platform === "darwin") {
+    if ((globalThis as any).process.platform === "darwin") {
       return "macos";
     }
-    if (process.platform === "win32") {
+    if ((globalThis as any).process.platform === "win32") {
       return "windows";
     }
   }

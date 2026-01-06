@@ -1,0 +1,46 @@
+---
+import SectionTag from "../SectionTag.astro";
+import DiagramPlaceholder from "../DiagramPlaceholder.astro";
+import ImagePlaceholder from "../ImagePlaceholder.astro";
+---
+
+<section id="readme" class="scroll-mt-24 flex flex-col gap-6">
+  <SectionTag>PREAMBLE</SectionTag>
+  <h2 class="-mt-4 mb-4">README.md</h2>
+  <h3>Here's how Glade was built and how it works</h3>
+  <p class="text-gray-600">
+    I started building this basically because I thought Bun's FFI feature was really cool. You can link against dynamic libraries and compile JavaScript into a single executable given a target host OS and architecture. On top of that, you can use Bun's embedded file system so that you can actually put the dynamically linked libraries inside of the static binary. Combining these two things give you a lot of power, and I started to play around with it.
+  </p>
+  <p class="text-gray-600">
+    At first I was using OpenGL and WebGL for basic graphics programming. So you could work around in OpenGL2, which is mostly, you know, WebGL. And write the exact same code that would run natively when building for an operating system as it would if you're compiling it for the browser.
+  </p>
+  <p class="text-gray-600">
+    Then I started to use WebGPU, which in the browser is fairly easy, but a little bit trickier for native. I actually found that it wasn't a huge amount of work, though, to set up Google's Dawn implementation of the WebGPU spec, which lets me pre-build the Dawn library, dynamically linked library, and then link against that for native deployments, and then basically wrap the native and browser versions of my code base with those different versions of WebGPU. So you can write the exact same code and have it run natively or in the browser.
+  </p>
+  <DiagramPlaceholder />
+  <p class="text-gray-600">
+    You'll notice that so far I haven't really mentioned whether this is production ready. It's not production ready. This is just something I was goofing around with to see if I could do it. And it's been a lot of fun.
+  </p>
+  <p class="text-gray-600">
+    Once I got the basics working and had a sort of you know multicolor triangle rendering I started to consider the abstractions that you'd need or rather the interface you'd need to conform to on a browser or a native environment in order to provide the minimum functionality. Things like keyboard input events, mouse events, window events, and resize events, those sorts of things.
+  </p>
+  <DiagramPlaceholder />
+  <p class="text-gray-600">
+    On the browser, these are fairly normal and standard, and I was just able to patch in, you know, document resize listener for window resize, for example.
+  </p>
+  <p class="text-gray-600">
+    For native, I actually used GLFW, which is a GL for Windows, I think it stands for. It basically lets you start up a window in Windows, Linux, or Mac OS X, and have a render loop that you can use to respond to keyboard events and mouse events and window resizes and that sort of thing. And then it just gives you a surface upon which you can do OpenGL or WebGL, or in our case, WebGPU interactions.
+  </p>
+  <p class="text-gray-600">
+    So I was able to write a minimal interface for these interactions, these events, and then inside of two different packages, write the implementation of those in the web, you know, just responding to normal browser events and in native responding to GLFW events, and pushing those through the render loop and having the same render loop work for both platforms.
+  </p>
+  <p class="text-gray-600">
+    With that in place, I started working on how we would do the normal graphical user interface things like layouts for starters, drawing rectangles, drawing rounded rectangles, drawing borders, doing padding, doing margins, doing flexbox layouts, and CSS grid like layouts, and doing font rendering, including all of the glyph caching and font layout stuff, and rendering emojis, and drawing shapes with like a raw canvas API and parsing SVGs and rendering SVGs, parentheses mostly. These are all the basic building blocks that you need in order to build the higher level components like text input or toggles or switches or radio checkboxes or drop downs and tool tips and buttons and so on and so forth. But in order to get all these things working, you first have to have some idea of how you're going to handle your render cycle. I roughly model my render cycle based upon Z GPU Rust library that they use for the Zed text editor. And this served me pretty well.
+  </p>
+  <ImagePlaceholder />
+  <span class="text-sm text-gray-800 italic">
+    <span class="text-black font-medium">†</span> Glade is a backronym for{" "}
+    <strong>GL-assisted Drawing environment</strong>, which seemed like a fun name when I started this project, because it originally used WebGL/OpenGL. It now uses WebGPU, but I like the name, so I'm keeping it.
+  </span>
+  <hr class="mt-10 bg-gray-300" />
+</section>

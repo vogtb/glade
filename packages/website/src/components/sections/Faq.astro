@@ -1,0 +1,43 @@
+---
+import SectionTag from "../SectionTag.astro";
+---
+
+<section id="faq" class="scroll-mt-24 flex flex-col gap-6">
+  <SectionTag>FAQ</SectionTag>
+  <h2 class="-mt-4 mb-4">Frequently Asked Questions</h2>
+
+  <h3>Is Glade production-ready?</h3>
+  <p class="text-gray-600">
+    No. No, it is not. I built this mostly as a way to learn about WebGPU, GUIs, graphics programming, and how different rendering modes and painting lifecycles for UIs work. That being said, with a small team of engineers knowledgeable in graphics programming, you could probably get this production ready in about two and a half weeks.
+  </p>
+
+  <h3>Is Glade actively maintained?</h3>
+  <p class="text-gray-600">
+    Not really. I plan on updating it here and there and generally trying to improve it, but I'm not putting a significant amount of time or effort into this library. If you have a change, please go ahead and feel free to submit a PR and email me at <a href="mailto:benjvogt@gmail.com">benjvogt@gmail.com</a>. I'll try my best to take a look at it.
+  </p>
+
+  <h3>Do I have to use Bun?</h3>
+  <p class="text-gray-600">
+    At the moment, yes. While I could author the FFI and dynamically linked libraries as Node modules, it's more work than the current Bun setup. Also, when it comes to embedding, Bun makes it way easier than Node does. At the moment I'm not really interested in rewriting this whole thing just so I can accommodate Node. Bun seems to work pretty well, and I like it.
+  </p>
+
+  <h3>Does Glade support Apple emojis?</h3>
+  <p class="text-gray-600">
+    Technically, yes. I've actually tried this and have been able to embed the Apple emoji TTF file, and it renders perfectly. However, that is a 200 megabyte file, which is challenging to embed or load in a web deployment or a native deployment. And more importantly, that is a copyrighted file. The way Apple does it, their custom renderer will actually fetch individual PNGs and render them on the frontend. So they're sort of getting around this and doing it efficiently and maybe a little bit legally nebulously. But it is possible. If you want to do that, that's up to you.
+  </p>
+
+  <h3>Does Glade support Windows or Linux?</h3>
+  <p class="text-gray-600">
+    At the moment, no. But GLFW and Dawn both support Windows and Linux, so it really wouldn't be a significant amount of work to add packages like we do with macOS and simply implement the interface for event handling, window handling, and all of the other native functions like clipboard and text selection. The reason I didn't do that is just because it's a lot of work and I don't have a Windows machine, and it's actually a significant amount of scaffolding to set up to even test that out.
+  </p>
+
+  <h3>Why did you choose WebGPU?</h3>
+  <p class="text-gray-600">
+    Initially I worked with OpenGL/WebGL. But WebGPU has come a long way and has a lot of interesting features. And it's a little bit easier to use, in my opinion. That being said, there's really nothing specific at the application level or component level that requires WebGPU. So in theory, if we wanted to in the future, we could swap out the macOS platform implementation with Metal or something like that, and then only use WebGPU for the browser. This would create perhaps a larger surface area for the platform interface, which we would have to implement on those respective platforms (native and web), but it's certainly possible. Writing native shader code in Metal or WebGPU or OpenGL or whatever you'd like to use for Windows and Linux is definitely possible, and there's an increasing number of GUI libraries that do this. But it seemed a little challenging for a first pass or a first attempt at this library.
+  </p>
+
+  <h3>Have you built any applications with this library?</h3>
+  <p class="text-gray-600">
+    No. I've mostly been working through the components and elements, trying them out as I go. Again, this is not really production ready.
+  </p>
+</section>

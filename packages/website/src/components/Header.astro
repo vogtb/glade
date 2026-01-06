@@ -1,0 +1,255 @@
+---
+
+---
+
+<header class="fixed z-9999 flex w-full items-center justify-center">
+  <div class="mt-4 flex w-11/12 gap-6 rounded-2xl border border-solid border-gray-700 bg-gray-800 p-1 shadow-xl md:w-fit">
+    <div class="flex h-9 w-full items-center justify-between gap-0 md:justify-start">
+      <a href="/" class="mr-2 flex h-9 items-center gap-2">
+        <div class="flex h-9 items-center gap-2 rounded-lg bg-orange-500 px-3 pt-0 pr-3.5 pb-0 pl-3 py-0">
+          <span class="leading-6.5 text-white text-[32px]">⚘</span>
+          <span class="font-medium text-white">Glade</span>
+        </div>
+      </a>
+
+      <!-- Mobile menu button -->
+      <label for="mobile-menu-toggle" class="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-700/80 cursor-pointer md:hidden" aria-label="Open menu">
+        <svg width="16" height="16" viewBox="0 0 20 20">
+          <path fill="transparent" stroke-width="2" stroke="white" stroke-linecap="square" d="M 2 2.5 L 20 2.5"></path>
+          <path fill="transparent" stroke-width="2" stroke="white" stroke-linecap="square" d="M 2 9.423 L 20 9.423"></path>
+          <path fill="transparent" stroke-width="2" stroke="white" stroke-linecap="square" d="M 2 16.346 L 20 16.346"></path>
+        </svg>
+      </label>
+
+      <!-- Desktop navigation -->
+      <nav class="hidden md:flex items-center">
+        <div class="relative group">
+          <button class="inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-2 text-white transition-colors hover:bg-gray-700/80 gap-1">
+            Docs
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-hover:rotate-180">
+              <path d="m6 9 6 6 6-6"></path>
+            </svg>
+          </button>
+          <div class="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            <ul class="w-70 p-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl">
+              <li>
+                <a href="#readme" class="flex flex-row items-start gap-3 select-none rounded-md p-2 no-underline outline-none transition-colors hover:bg-gray-700/80">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-white">README.md</div>
+                    <p class="text-xs leading-relaxed text-gray-400">Project overview</p>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="#getting-started" class="flex flex-row items-start gap-3 select-none rounded-md p-2 no-underline outline-none transition-colors hover:bg-gray-700/80">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-white">Start Here</div>
+                    <p class="text-xs leading-relaxed text-gray-400">Quick start guide</p>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="#core-concepts" class="flex flex-row items-start gap-3 select-none rounded-md p-2 no-underline outline-none transition-colors hover:bg-gray-700/80">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"></path><path d="M22 10v6"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path></svg>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-white">Core Concepts</div>
+                    <p class="text-xs leading-relaxed text-gray-400">Learn the fundamentals</p>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="#app" class="flex flex-row items-start gap-3 select-none rounded-md p-2 no-underline outline-none transition-colors hover:bg-gray-700/80">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-white">App</div>
+                    <p class="text-xs leading-relaxed text-gray-400">Application structure</p>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="#components" class="flex flex-row items-start gap-3 select-none rounded-md p-2 no-underline outline-none transition-colors hover:bg-gray-700/80">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-white">Components</div>
+                    <p class="text-xs leading-relaxed text-gray-400">UI elements and layouts</p>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="#demos" class="flex flex-row items-start gap-3 select-none rounded-md p-2 no-underline outline-none transition-colors hover:bg-gray-700/80">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-400"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-white">Demos</div>
+                    <p class="text-xs leading-relaxed text-gray-400">Interactive examples</p>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a href="#faq" class="flex flex-row items-start gap-3 select-none rounded-md p-2 no-underline outline-none transition-colors hover:bg-gray-700/80">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div class="text-sm text-white">FAQ</div>
+                    <p class="text-xs leading-relaxed text-gray-400">Common questions</p>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <a
+          href="https://github.com/vogtb/glade"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-2 text-white transition-colors hover:bg-gray-700/80 hover:text-white focus:bg-gray-700/80 focus:text-white focus:outline-none disabled:pointer-events-none disabled:opacity-50"
+        >
+          Github ↗
+        </a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile menu (checkbox-based toggle) -->
+<input type="checkbox" id="mobile-menu-toggle" class="hidden peer" />
+
+<div class="fixed inset-0 z-10000 md:hidden invisible peer-checked:visible">
+  <label for="mobile-menu-toggle" class="absolute inset-0 bg-black/50"></label>
+
+  <div class="absolute left-0 right-0 top-4 mx-auto w-11/12 rounded-2xl border border-solid border-gray-700 bg-gray-800 shadow-xl">
+    <div class="flex w-full items-center justify-between p-1">
+      <a href="/" class="mr-2 flex h-9 items-center gap-2">
+        <div class="flex h-9 items-center gap-2 rounded-lg bg-orange-500 px-3">
+          <span class="leading-6.5 text-white text-[32px]">⚘</span>
+          <span class="font-medium text-white">Glade</span>
+        </div>
+      </a>
+      <label for="mobile-menu-toggle" class="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-gray-700/80 cursor-pointer" aria-label="Close menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </label>
+    </div>
+
+    <div class="flex flex-col gap-1 p-2">
+      <details class="rounded-2xl bg-gray-700/50">
+        <summary class="flex items-center justify-between p-4 text-white hover:bg-gray-700/80 rounded-2xl transition-colors cursor-pointer list-none">
+          <span>Docs</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform details-open:rotate-90">
+            <path d="m9 18 6-6-6-6"></path>
+          </svg>
+        </summary>
+        <div class="flex flex-col gap-1 px-2 pb-2">
+          <a href="#readme" class="mobile-menu-link flex items-start gap-3 rounded-xl p-3 text-white hover:bg-gray-700/80 transition-colors">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div>README.md</div>
+              <p class="text-sm text-gray-400">Project overview</p>
+            </div>
+          </a>
+          <a href="#getting-started" class="mobile-menu-link flex items-start gap-3 rounded-xl p-3 text-white hover:bg-gray-700/80 transition-colors">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div>Start Here</div>
+              <p class="text-sm text-gray-400">Quick start guide</p>
+            </div>
+          </a>
+          <a href="#core-concepts" class="mobile-menu-link flex items-start gap-3 rounded-xl p-3 text-white hover:bg-gray-700/80 transition-colors">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"></path><path d="M22 10v6"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path></svg>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div>Core Concepts</div>
+              <p class="text-sm text-gray-400">Learn the fundamentals</p>
+            </div>
+          </a>
+          <a href="#app" class="mobile-menu-link flex items-start gap-3 rounded-xl p-3 text-white hover:bg-gray-700/80 transition-colors">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div>App</div>
+              <p class="text-sm text-gray-400">Application structure</p>
+            </div>
+          </a>
+          <a href="#components" class="mobile-menu-link flex items-start gap-3 rounded-xl p-3 text-white hover:bg-gray-700/80 transition-colors">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div>Components</div>
+              <p class="text-sm text-gray-400">UI elements and layouts</p>
+            </div>
+          </a>
+          <a href="#demos" class="mobile-menu-link flex items-start gap-3 rounded-xl p-3 text-white hover:bg-gray-700/80 transition-colors">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-400"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div>Demos</div>
+              <p class="text-sm text-gray-400">Interactive examples</p>
+            </div>
+          </a>
+          <a href="#faq" class="mobile-menu-link flex items-start gap-3 rounded-xl p-3 text-white hover:bg-gray-700/80 transition-colors">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg>
+            </div>
+            <div class="flex flex-col gap-1">
+              <div>FAQ</div>
+              <p class="text-sm text-gray-400">Common questions</p>
+            </div>
+          </a>
+        </div>
+      </details>
+
+      <a
+        href="https://github.com/vogtb/glade"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-center justify-between rounded-2xl bg-gray-700/50 p-4 text-white hover:bg-gray-700/80 transition-colors"
+      >
+        <span>Github</span>
+        <span class="text-[20px]">↗</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Close mobile menu when clicking on any link
+  document.querySelectorAll(".mobile-menu-link").forEach((link) => {
+    link.addEventListener("click", () => {
+      const toggle = document.getElementById("mobile-menu-toggle") as HTMLInputElement;
+      if (toggle) {
+        toggle.checked = false;
+      }
+    });
+  });
+</script>
+
+<style>
+  details[open] summary svg {
+    transform: rotate(90deg);
+  }
+</style>

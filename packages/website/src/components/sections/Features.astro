@@ -1,0 +1,98 @@
+---
+import SectionTag from "../SectionTag.astro";
+---
+
+<section id="features" class="scroll-mt-24 flex flex-col gap-6">
+  <SectionTag>Highlights</SectionTag>
+  <h2 class="-mt-4 mb-4">Glade Features</h2>
+  <p class="text-gray-600">
+    Here are some cool things about Glade. (Or at least things that were hard to build.)
+  </p>
+  <div class="grid grid-cols-1 gap-12 md:grid-cols-3">
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">01</span>
+      <h4 class="text-lg font-medium">Typescript (mostly)</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Uses WASM for layouts, font rendering, glyphs and SVGs. Everything else is TypeScript.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">02</span>
+      <h4 class="text-lg font-medium">Cross platform</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Runs on macOS and web. Write your Typescript once, and it'll run on a browser or macOS with no modifications.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">03</span>
+      <h4 class="text-lg font-medium">Native WebGPU</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Uses Google's Dawn implementation of WebGPU when building for native.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">04</span>
+      <h4 class="text-lg font-medium">Static Binary Builds</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Compiles JS to single statically executable binary using Bun's FFI and file embedding.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">05</span>
+      <h4 class="text-lg font-medium">Font Rendering</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Full-featured font rendering using rustybuzz (Rust impl of harfbuzz) for full TTF rendering.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">06</span>
+      <h4 class="text-lg font-medium">Emoji Support</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Uses Noto Color Emoji by default, but you can use whatever full-color emoji font you'd like. Supports font fallbacks for missing characters.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">07</span>
+      <h4 class="text-lg font-medium">Elements & Components</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Elements like divs, text, and links. Also buttons, tooltips, tabs, scrollbars, dialogs, images, checkboxes, radios, toggles, and more.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">08</span>
+      <h4 class="text-lg font-medium">Tailwind-ish Styling</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Style elements and components using Tailwind-like utilities directly on the elements and components.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">09</span>
+      <h4 class="text-lg font-medium">Text Features</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Text editing works out of the box. Cross-element selection, text input, range selection, select-all, and copy-and-paste via clipboard APIs.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">10</span>
+      <h4 class="text-lg font-medium">SVG</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Renders SVGs fairly well, as far as I can tell. Vector graphics support for scalable, crisp visuals at any resolution.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">11</span>
+      <h4 class="text-lg font-medium">Flexbox & Grids</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Full flexbox support, and CSS-grid-like features via the Taffy library.
+      </p>
+    </div>
+    <div class="col-span-1 flex flex-col gap-2">
+      <span class="font-mono text-lg text-orange-500">12</span>
+      <h4 class="text-lg font-medium">Custom Cursors</h4>
+      <p class="text-base leading-relaxed text-gray-600">
+        Pointers, text, default, and more. Basically, anything you can do with Tailwind's cursor classes.
+      </p>
+    </div>
+  </div>
+  <hr class="mt-10 bg-gray-300" />
+</section>

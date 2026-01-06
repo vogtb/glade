@@ -429,8 +429,8 @@ class DemoView implements GladeView {
 export class DemoRenderer {
   private app: GladeApp;
   private view: DemoView;
-  private platform: BrowserGladePlatformInstance;
-  private gladeWindow: GladeWindow;
+  private _platform: BrowserGladePlatformInstance;
+  private _gladeWindow: GladeWindow;
   private windowId: WindowId;
 
   static async create(
@@ -469,8 +469,8 @@ export class DemoRenderer {
   ) {
     this.app = app;
     this.view = view;
-    this.platform = platform;
-    this.gladeWindow = gladeWindow;
+    this._platform = platform;
+    this._gladeWindow = gladeWindow;
     this.windowId = gladeWindow.id;
   }
 

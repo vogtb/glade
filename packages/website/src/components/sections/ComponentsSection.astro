@@ -1,0 +1,17 @@
+---
+import SectionTag from "../SectionTag.astro";
+import { DemoButtons } from "../react/DemoButtons";
+import { LiveDemo } from "../react/LiveDemo";
+---
+
+<section id="components" class="scroll-mt-24 flex flex-col gap-6">
+  <SectionTag>Demo & Code</SectionTag>
+  <h2 class="-mt-4 mb-4">Components</h2>
+  <h3>Pre-built UI elements and layouts</h3>
+  <p class="text-gray-600">
+    Glade provides a rich set of pre-built components including buttons, inputs, sliders, menus, and complex layouts. All components are fully customizable and accessible by default, following modern design patterns.
+  </p>
+  <DemoButtons client:load />
+  <LiveDemo client:load />
+  <hr class="mt-10 bg-gray-300" />
+</section>

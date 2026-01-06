@@ -55,6 +55,7 @@ export default [
       "packages/website/serve.ts",
       "packages/website/website.ts",
       "packages/website/dev.ts",
+      "**/.astro/*",
     ],
   },
   {

@@ -1,0 +1,17 @@
+---
+import SectionTag from "../SectionTag.astro";
+import { GladeDemoButtons } from "../react/GladeDemoButtons";
+import { GladeDemoShowcase } from "../react/GladeDemoShowcase";
+---
+
+<section id="demos" class="scroll-mt-24 flex flex-col gap-6">
+  <SectionTag>Examples</SectionTag>
+  <h2 class="-mt-4 mb-4">Full Demos</h2>
+  <h3>Interactive Glade component demos</h3>
+  <p class="text-gray-600">
+    Explore interactive examples showcasing Glade's capabilities. These demos run in real-time using WebGPU, demonstrating best practices and the full power of the library.
+  </p>
+  <GladeDemoButtons client:load />
+  <GladeDemoShowcase client:visible />
+  <hr class="mt-10 bg-gray-300" />
+</section>
