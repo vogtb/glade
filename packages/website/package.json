@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "type": "module",
   "dependencies": {
+    "@glade/glade": "workspace:*",
+    "@glade/library": "workspace:*",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

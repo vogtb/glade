@@ -13,10 +13,16 @@ import {
   TextInputController,
   type Theme,
 } from "@glade/glade";
-import { ALL_DEMOS, type Demo, type DemoState } from "@glade/library";
+
+import { type Demo, type DemoState } from "./demo.ts";
+
+export type MainViewOptions = {
+  showTitlebar?: boolean;
+  demos: Demo[];
+};
 
 export class MainView implements GladeView {
-  private readonly demos: Demo[] = ALL_DEMOS;
+  private readonly demos: Demo[];
   private readonly showTitlebar: boolean;
   private readonly titleBarHeight = 26;
   private selectedDemo: Demo;
@@ -92,8 +98,9 @@ export class MainView implements GladeView {
 
   private fpsEnabled = false;
 
-  constructor(options?: { showTitlebar: boolean }) {
-    this.showTitlebar = options?.showTitlebar ?? false;
+  constructor(options: MainViewOptions) {
+    this.demos = options.demos;
+    this.showTitlebar = options.showTitlebar ?? false;
     this.selectedDemoName = this.demos[0]?.name ?? "Demo";
     this.selectedDemo = this.demos[0]!;
   }
@@ -441,7 +448,8 @@ export class MainView implements GladeView {
               .flex()
               .flexCol()
               .w(220)
-              .px(6)
+              .px(4)
+              .py(4)
               .hFull()
               .flexShrink0()
               .bg(theme.semantic.window.background)

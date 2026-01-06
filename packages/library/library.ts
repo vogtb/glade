@@ -1,4 +1,5 @@
 export type { Demo, DemoItem, DemoState } from "./demo.ts";
+export { MainView, type MainViewOptions } from "./main_view.ts";
 
 import { BORDER_DEMO } from "./border_demo.ts";
 import { BUTTON_DEMO } from "./button_demo.ts";
@@ -19,6 +20,7 @@ import { FONTS_DEMO } from "./fonts_demo.ts";
 import { GRID_DEMO } from "./grid_demo.ts";
 import { GROUPS_DEMO } from "./groups_demo.ts";
 import { HEADING_DEMO } from "./heading_demo.ts";
+import { HELLO_DEMO } from "./hello.ts";
 import { HOTKEYS_DEMO } from "./hotkeys_demo.ts";
 import { ICON_DEMO } from "./icon_demo.ts";
 import { IMAGES_DEMO } from "./images_demo.ts";
@@ -42,6 +44,7 @@ import { VIRTUAL_SCROLLING_DEMO } from "./virtual_scrolling_demo.ts";
 import { WEBGPU_DEMO } from "./webgpu_demo.ts";
 
 export const ALL_DEMOS: Demo[] = [
+  HELLO_DEMO,
   BORDER_DEMO,
   BUTTON_DEMO,
   CANVAS_DEMO,
@@ -102,6 +105,7 @@ export {
   GRID_DEMO,
   GROUPS_DEMO,
   HEADING_DEMO,
+  HELLO_DEMO,
   HOTKEYS_DEMO,
   ICON_DEMO,
   IMAGES_DEMO,
