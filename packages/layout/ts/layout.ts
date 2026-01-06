@@ -6,7 +6,6 @@
  * works in both native (Bun) and browser environments.
  */
 
-import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
 import { base64ToBytes, formatBytes } from "@glade/utils";
 
@@ -16,9 +15,7 @@ import {
   initSync,
   TaffyLayoutEngine as WasmTaffyLayoutEngine,
 } from "../pkg/layout";
-
-// Embeded WASM as base64 at build time via Bun macro
-const WASM_BASE64 = COMPTIME_embedAsBase64("../layout/pkg/layout_bg.wasm");
+import { LAYOUT_WASM_BASE64 } from "./gen.embedded";
 
 export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
   readonly module: InitOutput;
@@ -33,7 +30,7 @@ export class TaffyLayoutEngine extends WasmTaffyLayoutEngine {
  * Create a new layout engine instance.
  */
 export function createLayoutEngine(): TaffyLayoutEngine {
-  const wasmBytes = base64ToBytes(WASM_BASE64);
+  const wasmBytes = base64ToBytes(LAYOUT_WASM_BASE64);
   log.info(`layout engine embedded WASM binary is ${formatBytes(wasmBytes.byteLength)}`);
   const module = initSync({ module: wasmBytes });
   return new TaffyLayoutEngine(module);

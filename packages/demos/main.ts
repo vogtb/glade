@@ -13,8 +13,7 @@ import {
   TextInputController,
   type Theme,
 } from "@glade/glade";
-
-import { ALL_DEMOS, type Demo, type DemoState } from "./library.ts";
+import { ALL_DEMOS, type Demo, type DemoState } from "@glade/library";
 
 export class MainView implements GladeView {
   private readonly demos: Demo[] = ALL_DEMOS;

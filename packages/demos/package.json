@@ -4,7 +4,6 @@
   "type": "module",
   "exports": {
     ".": "./demos.ts",
-    "./library": "./library.ts",
     "./platform": {
       "bun": "./platform.macos.ts",
       "browser": "./platform.browser.ts",
@@ -25,6 +24,7 @@
     "nuke": "rm -rf node_modules"
   },
   "dependencies": {
-    "@glade/glade": "workspace:*"
+    "@glade/glade": "workspace:*",
+    "@glade/library": "workspace:*"
   }
 }

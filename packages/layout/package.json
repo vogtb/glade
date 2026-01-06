@@ -9,6 +9,7 @@
     "pkg"
   ],
   "scripts": {
+    "gen": "bun run scripts/gen.ts",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "build.debug": "wasm-pack build --target web --out-dir pkg",
@@ -19,7 +20,6 @@
     "nuke": "rm -rf node_modules"
   },
   "dependencies": {
-    "@glade/comptime": "workspace:*",
     "@glade/utils": "workspace:*",
     "@glade/logging": "workspace:*"
   }

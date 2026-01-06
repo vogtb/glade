@@ -1,15 +1,13 @@
-import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
 import { formatBytes, timed } from "@glade/utils";
 
 import { FontFamily, FontVariant } from "./font";
-
-const INTER_VAR_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable.ttf");
-const INTER_VAR_ITALIC_BASE_64 = COMPTIME_embedAsBase64("../../assets/InterVariable-Italic.ttf");
-const JETBRAINS_MONO_REGULAR_BASE_64 = COMPTIME_embedAsBase64(
-  "../../assets/JetBrainsMono-Regular.ttf"
-);
-const NOTO_COLOR_EMOJI_REGULAR = COMPTIME_embedAsBase64("../../assets/NotoColorEmoji-Regular.ttf");
+import {
+  INTER_VAR_BASE64,
+  INTER_VAR_ITALIC_BASE64,
+  JETBRAINS_MONO_REGULAR_BASE64,
+  NOTO_COLOR_EMOJI_REGULAR_BASE64,
+} from "./gen.embedded";
 
 const logFontFamilyInfo = (f: FontFamily, ms: number) => {
   const uprightSize = formatBytes(f.upright.bytes.byteLength);
@@ -24,8 +22,8 @@ export const INTER_FAMILY = timed(
   () =>
     new FontFamily({
       name: "Inter",
-      upright: FontVariant.fromBase64(INTER_VAR_BASE_64),
-      italic: FontVariant.fromBase64(INTER_VAR_ITALIC_BASE_64),
+      upright: FontVariant.fromBase64(INTER_VAR_BASE64),
+      italic: FontVariant.fromBase64(INTER_VAR_ITALIC_BASE64),
     }),
   logFontFamilyInfo
 );
@@ -34,7 +32,7 @@ export const JETBRAINS_MONO_FAMILY = timed(
   () =>
     new FontFamily({
       name: "JetBrains Mono",
-      upright: FontVariant.fromBase64(JETBRAINS_MONO_REGULAR_BASE_64),
+      upright: FontVariant.fromBase64(JETBRAINS_MONO_REGULAR_BASE64),
     }),
   logFontFamilyInfo
 );
@@ -43,7 +41,7 @@ export const NOTO_COLOR_EMOJI_FAMILY = timed(
   () =>
     new FontFamily({
       name: "Noto Color Emoji",
-      upright: FontVariant.fromBase64(NOTO_COLOR_EMOJI_REGULAR),
+      upright: FontVariant.fromBase64(NOTO_COLOR_EMOJI_REGULAR_BASE64),
     }),
   logFontFamilyInfo
 );

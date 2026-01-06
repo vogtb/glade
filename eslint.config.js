@@ -5,38 +5,6 @@ import simpleImportSort from "eslint-plugin-simple-import-sort";
 
 export default [
   {
-    files: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        project: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-    plugins: {
-      "@typescript-eslint": tsPlugin,
-      "simple-import-sort": simpleImportSort,
-      prettier: prettier,
-    },
-    rules: {
-      ...Object.fromEntries(
-        Object.entries(tsPlugin.configs.recommended.rules || {}).map(([key, value]) => [key, value])
-      ),
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-expressions": ["error", { allowShortCircuit: true }],
-      "prettier/prettier": "warn",
-    },
-    settings: {
-      "use client": "readonly",
-    },
-  },
-  {
     ignores: [
       "**/node_modules/**",
       "**/.yarn/**",
@@ -83,6 +51,42 @@ export default [
       ".open-next/*",
       "packages/glade/platform.browser.ts",
       "packages/glade/platform.macos.ts",
+      "**/gen.embedded.ts",
+      "packages/website/serve.ts",
+      "packages/website/website.ts",
+      "packages/website/dev.ts",
     ],
+  },
+  {
+    files: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+      "simple-import-sort": simpleImportSort,
+      prettier: prettier,
+    },
+    rules: {
+      ...Object.fromEntries(
+        Object.entries(tsPlugin.configs.recommended.rules || {}).map(([key, value]) => [key, value])
+      ),
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-expressions": ["error", { allowShortCircuit: true }],
+      "prettier/prettier": "warn",
+    },
+    settings: {
+      "use client": "readonly",
+    },
   },
 ];

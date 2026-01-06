@@ -1,4 +1,4 @@
-import { ALL_DEMOS } from "@glade/demos/library";
+import { ALL_DEMOS } from "@glade/library";
 import { useState } from "react";
 
 import { ComponentDemoButton } from "./components/ComponentDemoButton";

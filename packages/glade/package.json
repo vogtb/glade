@@ -14,8 +14,7 @@
       "browser": "./platform.browser.ts",
       "default": "./platform.browser.ts"
     },
-    "./fonts": "./fonts.ts",
-    "./comptime": "./comptime.ts"
+    "./fonts": "./fonts.ts"
   },
   "scripts": {
     "lint": "eslint . --fix",
@@ -25,7 +24,6 @@
     "nuke": "rm -rf node_modules"
   },
   "dependencies": {
-    "@glade/comptime": "workspace:*",
     "@glade/core": "workspace:*",
     "@glade/fonts": "workspace:*",
     "@glade/layout": "workspace:*",

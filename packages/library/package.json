@@ -1,0 +1,18 @@
+{
+  "name": "@glade/library",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "library.ts",
+  "types": "library.ts",
+  "scripts": {
+    "gen": "bun run scripts/gen.ts",
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf node_modules"
+  },
+  "dependencies": {
+    "@glade/glade": "workspace:*"
+  }
+}

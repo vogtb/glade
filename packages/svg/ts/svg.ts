@@ -5,13 +5,11 @@
  * for GPU rendering in Glade.
  */
 
-import { COMPTIME_embedAsBase64 } from "@glade/comptime" with { type: "macro" };
 import { log } from "@glade/logging";
 import { base64ToBytes, formatBytes } from "@glade/utils";
 
 import { type InitOutput, initSync, SvgTessellator as WasmSvgTessellator } from "../pkg/svg";
-
-const WASM_BASE64 = COMPTIME_embedAsBase64("../svg/pkg/svg_bg.wasm");
+import { SVG_WASM_BASE64 } from "./gen.embedded";
 
 export class SvgTessellator extends WasmSvgTessellator {
   readonly module: InitOutput;
@@ -23,7 +21,7 @@ export class SvgTessellator extends WasmSvgTessellator {
 }
 
 export function createSvgTessellator(): SvgTessellator {
-  const wasmBytes = base64ToBytes(WASM_BASE64);
+  const wasmBytes = base64ToBytes(SVG_WASM_BASE64);
   log.info(`SVG embedded WASM binary is ${formatBytes(wasmBytes.byteLength)}`);
   const module = initSync({ module: wasmBytes });
   return new SvgTessellator(module);

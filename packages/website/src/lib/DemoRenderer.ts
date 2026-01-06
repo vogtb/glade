@@ -1,4 +1,3 @@
-import { ALL_DEMOS, type Demo, type DemoState } from "@glade/demos/library";
 import {
   createListState,
   div,
@@ -15,6 +14,7 @@ import {
   type WindowId,
 } from "@glade/glade";
 import { type BrowserGladePlatformInstance, createGladePlatform } from "@glade/glade/platform";
+import { ALL_DEMOS, type Demo, type DemoState } from "@glade/library";
 
 const FONT_BASE_URL = "/fonts";
 

@@ -23,6 +23,5 @@
     },
     "baseUrl": "."
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "website.ts"],
-  "exclude": ["**/comptime.ts", "**/comptime/**"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "website.ts"]
 }
