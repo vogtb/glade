@@ -4,12 +4,27 @@
 
 ![Cross-platform demos](assets/x-platform-demos.png)
 
-
 Glade is a library for writing cross-platform graphical applications with TypeScript and JavaScript. It uses WebGPU and includes an application framework and component library (text, inputs, flexbox layouts, etc.), all drawn using WebGPU.
 
 For browsers, it renders to a canvas element. For native macOS, it renders to a GLFW window via Google's Dawn WebGPU implementation.
 
 (Glade is a backronym for GL-assisted Drawing environment, which seemed like a fun name when this project started, because it originally used WebGL/OpenGL. It now uses WebGPU, but the name stuck.)
+
+--
+
+# Development + Contributing
+
+Bootstrap your local environment by installing the tools we use. Run `./scripts/bootstrap.macos.sh` Then install dependencies by running `./scripts/install.sh`.
+
+Run `turbo run --filter='*' build.release` to build _everything_ (including the layout, shaper, and svg Rust crates as WASM modules.) Then you should be good to run the demo by running `bun run run:demos:macos`. I don't have hot-reloading or file-watchers setup, so my development flow has been to make a change, re-run the demo.
+
+Hitting `⌘ I` will turn on the "debug mode" inspector that outlines things, which is useful for debugging layout and viewport issues.
+
+![Debug-mode inspector](assets/debug-mode-inspector.jpg)
+
+New features, bug fixes, and other improvements are always welcome. If you need a PR reviewed, please send me an email, and I'll try to take a look when I've got a moment.
+
+---
 
 # License
 
