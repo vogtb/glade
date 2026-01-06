@@ -1,43 +1,18 @@
 ---
-
+import Layout from "../layouts/Layout.astro";
+import { LiveDemo } from "../components/react/LiveDemo";
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Glade Demo</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        outline: none;
-      }
-      *:focus {
-        outline: none;
-      }
-      body {
-        background-color: #1a1a1a;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      @media (prefers-color-scheme: light) {
-        body {
-          background-color: #f5f5f5;
-        }
-      }
-      canvas {
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-        image-rendering: pixelated;
-      }
-    </style>
-  </head>
-  <body>
-    <script type="module" src="./dist/demos.js"></script>
-  </body>
-</html>
+<Layout title="Glade Demo">
+  <div class="w-screen h-screen">
+    <LiveDemo standalone client:only="react" />
+  </div>
+</Layout>
+
+<style>
+  canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+</style>
