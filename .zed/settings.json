@@ -15,6 +15,7 @@
     "**/build",
     "**/.cache",
     "**/tmp",
+    "**/.astro",
     "vendor/dawn",
   ],
   "lsp": {
