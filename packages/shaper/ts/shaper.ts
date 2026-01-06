@@ -10,8 +10,8 @@ import type { FontStyle } from "@glade/fonts";
 import { log } from "@glade/logging";
 import { base64ToBytes, formatBytes } from "@glade/utils";
 
-import type { FontId } from "../pkg/shaper";
-import { type InitOutput, initSync, TextShaper as WasmTextShaper } from "../pkg/shaper";
+import type { FontId, InitOutput } from "../pkg/shaper";
+import { initSync, TextShaper as WasmTextShaper } from "../pkg/shaper";
 import { SHAPER_WASM_BASE64 } from "./gen.embedded";
 
 export function createTextShaper(): TextShaper {

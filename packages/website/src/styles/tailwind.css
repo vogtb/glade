@@ -1,8 +1,6 @@
 @import "tailwindcss" source(none);
 @source "../**/*.{astro,js,ts,jsx,tsx}";
 
-@import "tw-animate-css";
-
 @theme {
   --font-family-sans: var(--font-sans);
   --font-family-mono: var(--font-mono);
