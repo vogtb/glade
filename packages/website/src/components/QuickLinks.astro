@@ -2,67 +2,55 @@
 
 ---
 
-<div class="flex flex-col gap-4">
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div class="col-span-2 flex flex-col gap-2 rounded-lg border border-black/[0.04] bg-gray-50 p-4">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
-        <h3 class="text-sm">Install macOS demos</h3>
-        <a
-          href="https://github.com/nicholasbarnette/glade/blob/main/install.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-xs hover:text-[#155dfc] text-[14px] text-[#155dfc] font-normal"
-        >
-          See install.sh in GitHub
-        </a>
-      </div>
-      <div class="relative">
-        <pre class="relative overflow-x-auto rounded-lg bg-gray-800 px-2 py-1 text-[rgb(101,195,246)] font-medium after:pointer-events-none after:absolute after:right-0 after:top-0 after:h-full after:w-16 after:bg-gradient-to-l after:from-gray-900 after:to-transparent md:after:hidden">
-          <code class="bg-transparent text-xs shadow-none">curl -fsSL https://glade.graphics/install.sh | sh</code>
-        </pre>
-        <button
-          id="copy-install-btn"
-          class="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded text-[rgb(199,205,216)] hover:bg-gray-700 hover:text-gray-200 p-1"
-          title="Copy to clipboard"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-          </svg>
-        </button>
-      </div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="col-span-2 flex flex-col gap-2 rounded-lg border border-black/4 bg-gray-50 p-4">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
+      <h3 class="text-sm">Install macOS demos</h3>
+      <a
+        href="https://github.com/vogtb/glade/blob/main/install.sh"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-xs transition-colors hover:text-[#155dfc] text-[14px] text-[#155dfc]"
+      >
+        See install.sh in GitHub →
+      </a>
     </div>
+    <div class="relative">
+      <pre class="relative overflow-x-auto rounded-lg bg-gray-800 px-1.75 py-0.75 text-[rgb(101,195,246)] font-medium after:pointer-events-none after:absolute after:right-0 after:top-0 after:h-full after:w-16 after:bg-linear-to-l after:from-gray-900 after:to-transparent md:after:hidden"><code class="bg-transparent text-xs shadow-none">curl -fsSL https://glade.graphics/install.sh | sh</code></pre>
+      <button
+        id="copy-install-btn"
+        class="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded text-[rgb(199,205,216)] transition-colors hover:bg-gray-800 hover:text-gray-200 p-1.5"
+        title="Copy to clipboard"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-    <div class="col-span-1 flex flex-col gap-2 rounded-lg border border-black/[0.04] bg-gray-50 p-4">
-      <h3 class="text-sm">See browser demo</h3>
-      <div class="flex flex-1 items-center justify-start">
-        <a
-          href="#demos"
-          class="flex cursor-pointer items-center gap-2 rounded-lg bg-[#155dfc] px-3 py-1 text-sm text-white hover:bg-blue-700 no-underline"
-        >
-          <span>Open Demo</span>
-          <span>→</span>
-        </a>
-      </div>
+  <div class="col-span-1 flex flex-col gap-2 rounded-lg border border-black/4 bg-gray-50 p-4">
+    <h3 class="text-sm">See browser demo</h3>
+    <div class="flex flex-1 items-center justify-start">
+      <a
+        href="#demos"
+        class="flex cursor-pointer items-center gap-2 rounded-lg bg-[#155dfc] px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700 no-underline"
+      >
+        <span class="text-[rgb(255,255,255)]">Open Demo</span>
+        <span>→</span>
+      </a>
     </div>
   </div>
 </div>
 
 <script>
-  document.getElementById("copy-install-btn")?.addEventListener("click", () => {
+  document.getElementById("copy-install-btn")?.addEventListener("click", async () => {
     const text = "curl -fsSL https://glade.graphics/install.sh | sh";
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
     try {
-      document.execCommand("copy");
+      await navigator.clipboard.writeText(text);
     } catch (err) {
       console.error("Failed to copy:", err);
-    } finally {
-      document.body.removeChild(textarea);
     }
   });
 </script>

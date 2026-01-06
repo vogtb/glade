@@ -72,6 +72,7 @@
     "fontdb",
     "autorelease",
     "onuncapturederror",
-    "lucide"
+    "lucide",
+    "rgba"
   ]
 }
