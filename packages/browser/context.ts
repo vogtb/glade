@@ -95,6 +95,27 @@ export async function createWebGPUContext(
     document.body.appendChild(canvas);
   }
 
+  // Hidden input element to capture text/IME events.
+  // Canvas elements cannot receive beforeinput or composition events directly
+  // because they are not editable. This hidden input acts as a proxy.
+  const hiddenInput = document.createElement("input");
+  hiddenInput.type = "text";
+  hiddenInput.autocomplete = "off";
+  hiddenInput.setAttribute("autocapitalize", "off");
+  hiddenInput.setAttribute("autocorrect", "off");
+  hiddenInput.setAttribute("spellcheck", "false");
+  hiddenInput.style.cssText = `
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    font-size: 16px;
+  `;
+  document.body.appendChild(hiddenInput);
+
   // Check for WebGPU support
   if (!navigator.gpu) {
     throw new Error("WebGPU is not supported in this browser");
@@ -188,19 +209,29 @@ export async function createWebGPUContext(
   let currentLogicalHeight = logicalHeight;
   let hasKeyboardCapture = false;
 
-  const focusCanvas = () => {
-    if (document.activeElement !== canvas) {
-      canvas.focus();
+  // Focus the hidden input to capture text events.
+  // We need to prevent default on mousedown to stop the canvas from stealing
+  // focus back (canvas has tabIndex=0 which makes it focusable).
+  const focusHiddenInput = (e: MouseEvent) => {
+    // Prevent the canvas from receiving focus
+    e.preventDefault();
+    if (document.activeElement !== hiddenInput) {
+      hiddenInput.focus();
       hasKeyboardCapture = true;
     }
   };
 
-  canvas.addEventListener("mousedown", focusCanvas);
-  canvas.addEventListener("pointerdown", focusCanvas);
-  const blurHandler = () => {
+  canvas.addEventListener("mousedown", focusHiddenInput);
+
+  const hiddenInputBlurHandler = () => {
     hasKeyboardCapture = false;
   };
-  window.addEventListener("blur", blurHandler);
+  hiddenInput.addEventListener("blur", hiddenInputBlurHandler);
+
+  const windowBlurHandler = () => {
+    hasKeyboardCapture = false;
+  };
+  window.addEventListener("blur", windowBlurHandler);
 
   // Registered resize callbacks
   const resizeCallbacks: Set<ResizeCallback> = new Set();
@@ -283,15 +314,28 @@ export async function createWebGPUContext(
 
     destroy() {
       resizeObserver.disconnect();
-      canvas.removeEventListener("mousedown", focusCanvas);
-      canvas.removeEventListener("pointerdown", focusCanvas);
-      window.removeEventListener("blur", blurHandler);
+      canvas.removeEventListener("mousedown", focusHiddenInput);
+      hiddenInput.removeEventListener("blur", hiddenInputBlurHandler);
+      window.removeEventListener("blur", windowBlurHandler);
+      hiddenInput.remove();
       device.destroy();
     },
 
     onKey(callback: KeyCallback): () => void {
+      // Keys that should have their default behavior prevented.
+      // Single character keys should NOT be prevented - they need to generate
+      // input events for the hidden text input.
+      const shouldPreventDefault = (e: KeyboardEvent): boolean => {
+        // Allow character input to flow through to generate beforeinput events
+        if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
+          return false;
+        }
+        // Prevent default for special keys, shortcuts, etc.
+        return true;
+      };
+
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (hasKeyboardCapture) {
+        if (hasKeyboardCapture && shouldPreventDefault(e)) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -303,7 +347,7 @@ export async function createWebGPUContext(
         });
       };
       const handleKeyUp = (e: KeyboardEvent) => {
-        if (hasKeyboardCapture) {
+        if (hasKeyboardCapture && shouldPreventDefault(e)) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -443,9 +487,9 @@ export async function createWebGPUContext(
         const selection = text.length;
         callback({ text, selectionStart: selection, selectionEnd: selection });
       };
-      canvas.addEventListener("compositionstart", handle);
+      hiddenInput.addEventListener("compositionstart", handle);
       return () => {
-        canvas.removeEventListener("compositionstart", handle);
+        hiddenInput.removeEventListener("compositionstart", handle);
       };
     },
 
@@ -455,9 +499,9 @@ export async function createWebGPUContext(
         const selection = text.length;
         callback({ text, selectionStart: selection, selectionEnd: selection });
       };
-      canvas.addEventListener("compositionupdate", handle);
+      hiddenInput.addEventListener("compositionupdate", handle);
       return () => {
-        canvas.removeEventListener("compositionupdate", handle);
+        hiddenInput.removeEventListener("compositionupdate", handle);
       };
     },
 
@@ -466,10 +510,12 @@ export async function createWebGPUContext(
         const text = event.data ?? "";
         const selection = text.length;
         callback({ text, selectionStart: selection, selectionEnd: selection });
+        // Clear the hidden input after composition ends
+        hiddenInput.value = "";
       };
-      canvas.addEventListener("compositionend", handle);
+      hiddenInput.addEventListener("compositionend", handle);
       return () => {
-        canvas.removeEventListener("compositionend", handle);
+        hiddenInput.removeEventListener("compositionend", handle);
       };
     },
 
@@ -486,10 +532,12 @@ export async function createWebGPUContext(
         }
         callback({ text, isComposing: event.isComposing });
         event.preventDefault();
+        // Clear the hidden input to prevent text accumulation
+        hiddenInput.value = "";
       };
-      canvas.addEventListener("beforeinput", handle);
+      hiddenInput.addEventListener("beforeinput", handle);
       return () => {
-        canvas.removeEventListener("beforeinput", handle);
+        hiddenInput.removeEventListener("beforeinput", handle);
       };
     },
 

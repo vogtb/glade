@@ -9,6 +9,9 @@
       <div
         class="flex flex-col gap-5 leading-relaxed [&_p]:text-[18px] [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-7 [&_h3]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-5 [&_h3]:mb-2"
       >
+        <h2 class="text-2xl font-bold my-3">
+          {"WebGL → WebGPU → GUI"}
+        </h2>
         <p>
           I originally started building this as an OpenGL/WebGL cross platform proof-of-concept, and
           then it sorta snowballed from there. I like building websites and web apps and so on, but
@@ -19,17 +22,19 @@
         </p>
 
         <p>
-          And making things fast is fun! And it's fun to use things that are fast. Zed's fixation on
-          performance might seem, idk, a little market-gimmicky but the barely perceptible speed of
-          the editor adds up to something super perceptible. So I thought it would be fun to learn
-          about their GUI library GPUI.
+          And making things fast is fun! And it's fun to use things that are fast.
+          <a href="https://zed.dev/">Zed's</a> fixation
+          <a href="https://zed.dev/blog/videogame">on performance</a>
+          might seem, idk, a little marketing-gimmicky but the barely perceptible speed of the editor
+          adds up to something super perceptible. So I thought it would be fun to learn about their GUI
+          library GPUI.
         </p>
 
         <p>
           At the same time, I wanted to mess around with Bun because I think their FFI and
           file-embedding features are cool. So this is the result: a cross-platform GUI library for
-          TypeScript that uses WebGPU to render apps at 120fps, for browsers and native macOS. (This
-          is not production ready. This is something built for fun.)
+          TypeScript that uses WebGPU to render apps somewhere between 60 and 120fps, for browsers
+          and native macOS.
         </p>
 
         <hr class="my-4 border-gray-300" />
@@ -39,18 +44,24 @@
         <p>At the risk of boring anyone who knows how this works, here's a bit on rendering.</p>
 
         <p>
-          GUIs use a render loop that takes code and puts pixels on your screen. Depending on
-          whether you're using an immediate-mode, or retained-mode, it might only update part of the
-          screen, or it might update all of it. I researched a couple specific approaches as I built
-          out Glade, namely egui and GPUI.
+          GUIs use a render loop that takes code and puts pixels on your screen. Oftentimes they're
+          piggybacking off of the even queue to do the loop, but it might be the other way around.
+          But regardless of whether your loop is flushing events, or events trigger the loop, the
+          loop is there. Depending on whether you're using an immediate-mode, or retained-mode, the
+          GUI might only update part of the screen, or it might update all of it. I researched a
+          couple specific approaches as I built out Glade, namely egui and GPUI.
         </p>
 
         <h3>egui's Approach</h3>
 
         <p>
-          egui is an immediate-mode GUI library for Rust. Because it's immediate mode, it does
-          everything in one go: layout, paint, and response in one pass. This means you're handling
-          much of the layout yourself (ie <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm"
+          <a href="https://github.com/emilk/egui">egui</a>
+          is an immediate-mode GUI library for Rust. Because it's
+          <a href="https://en.wikipedia.org/wiki/Immediate_mode_(computer_graphics)"
+            >immediate-mode</a
+          >, it does everything in one go: layout, paint, and response in one pass. This means
+          you're handling much of the layout yourself (ie <code
+            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm"
             >button_size = parent_width - 10px</code
           > or whatever) but you get to tell it what to render and where pretty precisely.
         </p>
@@ -94,11 +105,12 @@
         <h3>GPUI's Approach</h3>
 
         <p>
-          GPUI is the rendering engine behind Zed. It's more opinionated than egui. They take the
-          approach of splitting out the rendering loop into a 4 (but sorta 3) steps, which are
-          implemented by every element that will be rendered on screen. By focusing on the elements,
-          and how they're drawn, the framework is pretty clear on the best way to draw certain
-          elements.
+          <a href="https://github.com/zed-industries/zed/tree/main/crates/gpui">GPUI</a>
+          is the rendering engine behind <a href="https://zed.dev/">Zed</a>. It's more opinionated
+          than egui. They take the approach of splitting out the rendering loop into a 4 (but sorta
+          3) steps, which are implemented by every element that will be rendered on screen. By
+          focusing on the elements, and how they're drawn, the framework is pretty clear on the best
+          way to draw certain elements.
         </p>
 
         <p>
