@@ -121,6 +121,8 @@ export interface GlyphCacheKey {
   weight?: number;
   /** Font style (normal, italic, oblique) */
   style?: FontStyle;
+  /** cosmic-text's internal font ID - required to distinguish glyphs from different fallback fonts */
+  cosmicFontId?: number;
 }
 
 /**
@@ -262,17 +264,15 @@ export class GlyphAtlas {
   }
 
   /**
-   * Create a cache key string from glyph parameters.
-   * Includes character when present (browser rasterization) for correct caching.
-   * Includes weight for variable font support.
+   * Create a cache key from glyph parameters.
+   * Uses cosmicFontId to distinguish glyphs from different fallback fonts,
+   * since glyphId is only unique within a single font.
    */
   private makeCacheKey(key: GlyphCacheKey): string {
-    const weight = key.weight ?? 400;
-    const style = key.style ?? "normal";
-    if (key.char !== undefined) {
-      return `${key.fontId}:${key.char}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}:${style}`;
-    }
-    return `${key.fontId}:${key.glyphId}:${key.fontSize}:${key.subpixelX}:${key.subpixelY}:${weight}:${style}`;
+    const weight = ((key.weight ?? 400) / 100) | 0;
+    const style = key.style === "italic" ? 1 : key.style === "oblique" ? 2 : 0;
+    const cosmicId = key.cosmicFontId ?? 0;
+    return `${cosmicId}:${key.glyphId}:${key.fontSize}:${weight}:${style}`;
   }
 
   /**
@@ -991,6 +991,7 @@ export class TextSystem {
               subpixelY,
               weight: effectiveStyle.weight,
               style: effectiveStyle.style,
+              cosmicFontId: targetCosmicFontId,
             },
             fallbackFamily,
             char,

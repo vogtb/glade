@@ -4,16 +4,11 @@
 //! via wasm-bindgen for use in Glade.
 
 use cosmic_text::{
-    Attrs, Buffer, Family, FontSystem, Metrics, ShapeBuffer, Shaping, Stretch, Style, Weight, Wrap,
+    Attrs, Buffer, CacheKey, CacheKeyFlags, Family, FeatureTag, FontFeatures, FontSystem, Metrics,
+    ShapeBuffer, Shaping, Stretch, Style, SwashCache, Weight, Wrap,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use swash::{
-    scale::image::Content,
-    scale::{Render, ScaleContext, Source, StrikeWith},
-    zeno::Format,
-    FontRef,
-};
 use wasm_bindgen::prelude::*;
 
 /// Opaque font ID exposed to JS.
@@ -115,15 +110,15 @@ struct FontInfo {
 #[wasm_bindgen]
 pub struct TextShaper {
     font_system: FontSystem,
-    scale_context: ScaleContext,
+    swash_cache: SwashCache,
     #[allow(dead_code)]
     shape_buffer: ShapeBuffer,
     font_data: HashMap<u32, Vec<u8>>,
-    /// Maps cosmic-text fontdb::ID to font data for rasterization
-    cosmic_font_data: HashMap<u64, Vec<u8>>,
     next_font_id: u32,
     /// Maps our registration name to internal font properties
     font_name_to_info: HashMap<String, FontInfo>,
+    /// Maps serialized cosmic font ID (u64) back to fontdb::ID for rasterization
+    cosmic_id_to_fontdb: HashMap<u64, cosmic_text::fontdb::ID>,
 }
 
 #[wasm_bindgen]
@@ -136,10 +131,10 @@ impl TextShaper {
         );
         Self {
             font_system,
-            scale_context: ScaleContext::new(),
+            swash_cache: SwashCache::new(),
             shape_buffer: ShapeBuffer::default(),
             font_data: HashMap::new(),
-            cosmic_font_data: HashMap::new(),
+            cosmic_id_to_fontdb: HashMap::new(),
             next_font_id: 0,
             font_name_to_info: HashMap::new(),
         }
@@ -183,27 +178,14 @@ impl TextShaper {
         let faces: Vec<_> = db.faces().collect();
 
         if faces.len() > count_before {
-            // Get the last added face
-            let face = &faces[faces.len() - 1];
+            // Register all newly added faces in the cosmic_id_to_fontdb mapping
+            for face in faces.iter().skip(count_before) {
+                let cosmic_id: u64 = format!("{}", face.id).parse().unwrap_or(0);
+                self.cosmic_id_to_fontdb.insert(cosmic_id, face.id);
+            }
 
-            // Store font data keyed by cosmic-text's internal font ID
-            // This allows rasterization to use the correct font for fallback glyphs
-            // fontdb::ID implements Display which outputs the u64 FFI value
-            let cosmic_id: u64 = format!("{}", face.id).parse().unwrap_or(0);
-            // Also store a variant with the high 32 bits set, since some platforms
-            // encode the ID that way (e.g., 0x1_0000_0000 | id).
-            let cosmic_id_hi = cosmic_id | (1u64 << 32);
-            #[cfg(debug_assertions)]
-            web_sys::console::log_1(
-                &format!(
-                    "[Shaper] Registered font '{}' with cosmic_id={}",
-                    name, cosmic_id
-                )
-                .into(),
-            );
-            self.cosmic_font_data.insert(cosmic_id, font_data.to_vec());
-            self.cosmic_font_data
-                .insert(cosmic_id_hi, font_data.to_vec());
+            // Use the first newly added face for font info (primary variant)
+            let face = &faces[count_before];
 
             // Get the English family name (first in the list)
             let family = face
@@ -267,9 +249,10 @@ impl TextShaper {
 
         for run in buffer.layout_runs() {
             for glyph in run.glyphs.iter() {
+                let cosmic_font_id: u64 = format!("{}", glyph.font_id).parse().unwrap_or(0);
                 glyphs.push(ShapedGlyph {
                     glyph_id: glyph.glyph_id as u32,
-                    cosmic_font_id: format!("{}", glyph.font_id).parse().unwrap_or(0),
+                    cosmic_font_id,
                     x: glyph.x,
                     y: glyph.y,
                     x_advance: glyph.w,
@@ -329,9 +312,10 @@ impl TextShaper {
             let mut line_width = 0.0f32;
 
             for glyph in run.glyphs.iter() {
+                let cosmic_font_id: u64 = format!("{}", glyph.font_id).parse().unwrap_or(0);
                 line_glyphs.push(ShapedGlyph {
                     glyph_id: glyph.glyph_id as u32,
-                    cosmic_font_id: format!("{}", glyph.font_id).parse().unwrap_or(0),
+                    cosmic_font_id,
                     x: glyph.x,
                     y: glyph.y,
                     x_advance: glyph.w,
@@ -420,113 +404,56 @@ impl TextShaper {
             .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
     }
 
-    /// Rasterize a glyph at the given font size and weight.
-    /// The weight parameter is used for variable fonts (e.g., 400 for regular, 700 for bold).
-    /// Returns the rasterized glyph with alpha coverage values.
-    #[wasm_bindgen]
-    pub fn rasterize_glyph(
-        &mut self,
-        font_id: u32,
-        glyph_id: u32,
-        font_size: f32,
-        weight: Option<u16>,
-    ) -> Result<JsValue, JsValue> {
-        // Get the font data for this font ID (clone to avoid borrow issues)
-        let font_data = match self.font_data.get(&font_id) {
-            Some(data) => data.clone(),
-            None => {
-                return Err(JsValue::from_str("Font not found"));
-            }
-        };
-
-        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size, weight)
-    }
-
-    /// Rasterize a glyph using cosmic-text's internal font ID.
-    /// This is used when shaping falls back to a different font than requested.
+    /// Rasterize a glyph using cosmic-text's internal font ID and glyph ID.
+    /// This uses SwashCache which properly handles the cosmic-text internal glyph IDs.
     #[wasm_bindgen]
     pub fn rasterize_glyph_by_cosmic_id(
         &mut self,
         cosmic_font_id: u64,
         glyph_id: u32,
         font_size: f32,
-        weight: Option<u16>,
+        _weight: Option<u16>,
     ) -> Result<JsValue, JsValue> {
-        // Get the font data for this cosmic font ID
-        let font_data = match self.cosmic_font_data.get(&cosmic_font_id) {
-            Some(data) => data.clone(),
+        // Look up the fontdb::ID from our mapping
+        let font_id = match self.cosmic_id_to_fontdb.get(&cosmic_font_id) {
+            Some(&id) => id,
             None => {
-                // Some platforms encode the font ID with high bits; try the lower 32 bits as a fallback.
-                let masked_id = cosmic_font_id & 0xFFFF_FFFF;
-                match self.cosmic_font_data.get(&masked_id) {
-                    Some(data) => data.clone(),
-                    None => {
-                        // As a last resort, fall back to the first registered font data if present.
-                        if let Some((_k, data)) = self.cosmic_font_data.iter().next() {
-                            data.clone()
-                        } else {
-                            return Err(JsValue::from_str(&format!(
-                                "Font not found for cosmic_font_id: {} (masked: {})",
-                                cosmic_font_id, masked_id
-                            )));
-                        }
-                    }
-                }
+                // Font ID not found - return empty glyph
+                let result = RasterizedGlyph {
+                    width: 0,
+                    height: 0,
+                    bearing_x: 0,
+                    bearing_y: 0,
+                    advance: 0.0,
+                    pixels: Vec::new(),
+                    is_color: false,
+                };
+                return serde_wasm_bindgen::to_value(&result)
+                    .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)));
             }
         };
 
-        self.rasterize_glyph_with_data(&font_data, glyph_id, font_size, weight)
-    }
+        // Create the proper CacheKey with the correct font_id
+        let (cache_key, _x_int, _y_int) = CacheKey::new(
+            font_id,
+            glyph_id as u16,
+            font_size,
+            (0.0, 0.0),
+            Weight::NORMAL,
+            CacheKeyFlags::empty(),
+        );
 
-    fn rasterize_glyph_with_data(
-        &mut self,
-        font_data: &[u8],
-        glyph_id: u32,
-        font_size: f32,
-        weight: Option<u16>,
-    ) -> Result<JsValue, JsValue> {
-        // Create a swash FontRef from the font data
-        let font = match FontRef::from_index(font_data, 0) {
-            Some(f) => f,
-            None => {
-                return Err(JsValue::from_str("Failed to parse font"));
-            }
-        };
-
-        // Create a scaler for this font at the given size.
-        // For variable fonts, apply the weight variation if specified.
-        let mut builder = self.scale_context.builder(font).size(font_size).hint(true);
-
-        if let Some(w) = weight {
-            builder = builder.variations(&[("wght", w as f32)]);
-        }
-
-        let mut scaler = builder.build();
-
-        // Render the glyph. Prefer full color output so color emoji stay intact,
-        // but fall back to alpha-only coverage when color data is unavailable.
-        let sources = [
-            Source::ColorBitmap(StrikeWith::LargestSize),
-            Source::ColorBitmap(StrikeWith::BestFit),
-            Source::ColorOutline(0),
-            Source::Bitmap(StrikeWith::LargestSize),
-            Source::Bitmap(StrikeWith::BestFit),
-            Source::Outline,
-        ];
-
-        let image = Render::new(&sources)
-            .render(&mut scaler, glyph_id as u16)
-            .or_else(|| {
-                Render::new(&sources)
-                    .format(Format::Alpha)
-                    .render(&mut scaler, glyph_id as u16)
-            });
+        // Use SwashCache to get the glyph image
+        let image = self
+            .swash_cache
+            .get_image_uncached(&mut self.font_system, cache_key);
 
         match image {
             Some(img) => {
+                use cosmic_text::SwashContent;
                 let (pixels, is_color) = match img.content {
-                    Content::Mask => (img.data, false),
-                    Content::SubpixelMask => {
+                    SwashContent::Mask => (img.data.clone(), false),
+                    SwashContent::SubpixelMask => {
                         // Extract alpha channel from subpixel glyphs
                         let mut alpha = Vec::with_capacity(
                             (img.placement.width as usize)
@@ -537,7 +464,7 @@ impl TextShaper {
                         }
                         (alpha, false)
                     }
-                    Content::Color => (img.data, true),
+                    SwashContent::Color => (img.data.clone(), true),
                 };
 
                 let result = RasterizedGlyph {
@@ -568,6 +495,28 @@ impl TextShaper {
                 serde_wasm_bindgen::to_value(&result)
                     .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)))
             }
+        }
+    }
+
+    /// Rasterize a glyph at the given font size (legacy API, prefer rasterize_glyph_by_cosmic_id).
+    #[wasm_bindgen]
+    pub fn rasterize_glyph(
+        &mut self,
+        _font_id: u32,
+        glyph_id: u32,
+        font_size: f32,
+        weight: Option<u16>,
+    ) -> Result<JsValue, JsValue> {
+        // For the legacy API, try to use the first registered font
+        let db = self.font_system.db();
+        let first_face = db.faces().next();
+
+        match first_face {
+            Some(face) => {
+                let cosmic_font_id: u64 = format!("{}", face.id).parse().unwrap_or(0);
+                self.rasterize_glyph_by_cosmic_id(cosmic_font_id, glyph_id, font_size, weight)
+            }
+            None => Err(JsValue::from_str("No fonts registered")),
         }
     }
 
@@ -628,6 +577,12 @@ impl TextShaper {
                 _ => Stretch::Normal,
             });
         }
+
+        // Disable contextual alternates (calt) which can cause issues with harfrust shaping
+        // in some fonts like JetBrains Mono
+        let mut features = FontFeatures::new();
+        features.disable(FeatureTag::new(b"calt"));
+        attrs = attrs.font_features(features);
 
         attrs
     }

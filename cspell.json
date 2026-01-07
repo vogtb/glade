@@ -73,6 +73,7 @@
     "autorelease",
     "onuncapturederror",
     "lucide",
-    "rgba"
+    "rgba",
+    "lifecycles"
   ]
 }
