@@ -1,0 +1,63 @@
+---
+type Info = "done" | "partial" | "todo" | "improvement";
+
+type Props = {
+  name: string;
+  info: Info;
+  details: string;
+  isLast?: boolean;
+};
+
+const { name, info, details, isLast = false } = Astro.props;
+
+const infoSymbols: Record<Info, string> = {
+  done: "✓",
+  partial: "~",
+  todo: "✗",
+  improvement: "↑",
+};
+
+const infoColors: Record<Info, string> = {
+  done: "bg-green-600",
+  partial: "bg-purple-600",
+  todo: "bg-red-600",
+  improvement: "bg-blue-600",
+};
+
+const rowClass = ["grid", "grid-cols-10", isLast ? "" : "border-b-2 border-gray-500"]
+  .filter(Boolean)
+  .join(" ");
+
+const infoCellClass = [
+  "col-span-1",
+  "px-2",
+  "py-1",
+  "border-l-2",
+  "border-gray-500",
+  "flex",
+  "items-center",
+].join(" ");
+
+const infoBadgeClass = [
+  "h-4",
+  "w-4",
+  "rounded-[3px]",
+  "text-[13px]",
+  "font-semibold",
+  "text-white",
+  "flex",
+  "items-center",
+  "justify-center",
+  infoColors[info],
+].join(" ");
+---
+
+<div class={rowClass}>
+  <div class="col-span-2 px-2 py-1 text-[13px] text-gray-900">{name}</div>
+  <div class={infoCellClass}>
+    <div class={infoBadgeClass}>{infoSymbols[info]}</div>
+  </div>
+  <div class="col-span-7 px-2 py-1 text-[13px] text-gray-600 border-l-2 border-gray-500">
+    {details}
+  </div>
+</div>
