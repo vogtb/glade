@@ -18,9 +18,10 @@
   },
   "scripts": {
     "dev": "astro dev --port 3001",
-    "build": "astro build",
+    "build.debug": "astro build",
+    "build.release": "astro build",
     "preview": "astro preview --port 3001",
-    "deploy": "bun run build && wrangler pages deploy dist --project-name=glade --commit-dirty=true",
+    "deploy": "bun run build.release && wrangler pages deploy dist --project-name=glade --commit-dirty=true",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "typecheck": "astro check && tsc --noEmit",

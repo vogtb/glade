@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@glade/core": "workspace:*",
-    "@glade/glade": "workspace:*",
     "@glade/utils": "workspace:*",
     "@glade/logging": "workspace:*"
   }

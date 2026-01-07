@@ -28,7 +28,7 @@
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "tailwindcss": "4.1.18",
-    "turbo": "2.7.2",
+    "turbo": "2.7.3",
     "typescript": "5.7.2",
     "typescript-eslint": "8.48.1",
     "@typescript-eslint/eslint-plugin": "8.51.0",
@@ -36,6 +36,6 @@
     "eslint-plugin-prettier": "5.5.4",
     "prettier-plugin-astro": "0.14.1",
     "eslint-plugin-simple-import-sort": "12.1.1",
-    "wrangler": "4.56.0"
+    "wrangler": "4.57.0"
   }
 }
