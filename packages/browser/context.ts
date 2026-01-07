@@ -82,11 +82,10 @@ export async function createWebGPUContext(
     document.body.style.margin = "0";
     document.body.style.padding = "0";
     document.body.style.overflow = "hidden";
-  } else {
-    // Set CSS size to logical pixels so it displays at the correct size
-    canvas.style.width = `${logicalWidth}px`;
-    canvas.style.height = `${logicalHeight}px`;
   }
+  // When a canvas is passed in, don't override its CSS dimensions.
+  // The caller is responsible for styling it (e.g., with CSS classes
+  // that set width: 100%; height: 100%;).
 
   log.info(
     `canvas setup: buffer=${canvas.width}x${canvas.height}, logical=${logicalWidth}x${logicalHeight}, dpr=${dpr}, fullscreen=${isFullscreen}`
@@ -189,10 +188,6 @@ export async function createWebGPUContext(
   let currentLogicalHeight = logicalHeight;
   let hasKeyboardCapture = false;
 
-  // Throttled resize handler
-  let resizeTimeout: number | null = null;
-  const RESIZE_THROTTLE_MS = 16; // ~60fps
-
   const focusCanvas = () => {
     if (document.activeElement !== canvas) {
       canvas.focus();
@@ -207,12 +202,19 @@ export async function createWebGPUContext(
   };
   window.addEventListener("blur", blurHandler);
 
-  function handleResize() {
-    const newLogicalWidth = window.innerWidth;
-    const newLogicalHeight = window.innerHeight;
+  // Registered resize callbacks
+  const resizeCallbacks: Set<ResizeCallback> = new Set();
+
+  // Unified resize handler that updates framebuffer and notifies callbacks
+  function handleResizeEvent(newLogicalWidth: number, newLogicalHeight: number) {
     const newDpr = window.devicePixelRatio || 1;
     const newPhysicalWidth = Math.floor(newLogicalWidth * newDpr);
     const newPhysicalHeight = Math.floor(newLogicalHeight * newDpr);
+
+    // Skip zero-size to avoid WebGPU errors
+    if (newPhysicalWidth === 0 || newPhysicalHeight === 0) {
+      return;
+    }
 
     if (newPhysicalWidth !== currentPhysicalWidth || newPhysicalHeight !== currentPhysicalHeight) {
       currentPhysicalWidth = newPhysicalWidth;
@@ -227,24 +229,21 @@ export async function createWebGPUContext(
       log.info(
         `canvas resized: buffer=${newPhysicalWidth}x${newPhysicalHeight}, logical=${newLogicalWidth}x${newLogicalHeight}`
       );
+
+      // Notify all registered callbacks
+      for (const callback of resizeCallbacks) {
+        callback({ width: newLogicalWidth, height: newLogicalHeight });
+      }
     }
   }
 
-  // Set up throttled resize listener for fullscreen mode
-  let removeResizeListener: (() => void) | null = null;
-  if (isFullscreen) {
-    const throttledResize = () => {
-      if (resizeTimeout !== null) {
-        return;
-      }
-      resizeTimeout = window.setTimeout(() => {
-        resizeTimeout = null;
-        handleResize();
-      }, RESIZE_THROTTLE_MS);
-    };
-    window.addEventListener("resize", throttledResize);
-    removeResizeListener = () => window.removeEventListener("resize", throttledResize);
-  }
+  // ResizeObserver to detect canvas size changes (works for both fullscreen and embedded)
+  const resizeObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      handleResizeEvent(entry.contentRect.width, entry.contentRect.height);
+    }
+  });
+  resizeObserver.observe(canvas);
 
   return {
     gpu,
@@ -283,12 +282,7 @@ export async function createWebGPUContext(
     },
 
     destroy() {
-      if (removeResizeListener) {
-        removeResizeListener();
-      }
-      if (resizeTimeout !== null) {
-        clearTimeout(resizeTimeout);
-      }
+      resizeObserver.disconnect();
       canvas.removeEventListener("mousedown", focusCanvas);
       canvas.removeEventListener("pointerdown", focusCanvas);
       window.removeEventListener("blur", blurHandler);
@@ -404,16 +398,10 @@ export async function createWebGPUContext(
     },
 
     onResize(callback: ResizeCallback): () => void {
-      const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          callback({
-            width: entry.contentRect.width,
-            height: entry.contentRect.height,
-          });
-        }
-      });
-      observer.observe(canvas);
-      return () => observer.disconnect();
+      resizeCallbacks.add(callback);
+      return () => {
+        resizeCallbacks.delete(callback);
+      };
     },
 
     onClose(callback: CloseCallback): () => void {
