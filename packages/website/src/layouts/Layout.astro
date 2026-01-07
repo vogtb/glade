@@ -2,9 +2,20 @@
 type Props = {
   title: string;
   description?: string;
+  image?: string;
+  canonicalUrl?: string;
 };
 
-const { title, description = "Glade is a TypeScript GUI library that uses WebGPU to render apps at 120fps, whether you're targeting a browser or native macOS." } = Astro.props;
+const {
+  title,
+  description = "Glade is a TypeScript GUI library that uses WebGPU to render apps at 120fps, whether you're targeting a browser or native macOS.",
+  image = "/og-image.png",
+  canonicalUrl,
+} = Astro.props;
+
+const siteUrl = Astro.site?.href ?? "https://glade.graphics";
+const currentUrl = canonicalUrl ?? new URL(Astro.url.pathname, siteUrl).href;
+const imageUrl = new URL(image, siteUrl).href;
 ---
 
 <!doctype html>
@@ -12,9 +23,33 @@ const { title, description = "Glade is a TypeScript GUI library that uses WebGPU
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
     <title>{title}</title>
+    <meta name="title" content={title} />
     <meta name="description" content={description} />
+    <meta name="author" content="Glade" />
+
+    <link rel="canonical" href={currentUrl} />
+
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={currentUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:site_name" content="Glade" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={currentUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
   </head>
   <body class="bg-white">
     <slot />
