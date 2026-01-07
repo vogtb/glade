@@ -4,7 +4,7 @@ import FeatureRow from "../FeatureRow.astro";
 
 <section id="features" class="py-20 border-b border-gray-100 bg-white scroll-mt-8">
   <div class="mx-auto max-w-3xl px-3">
-    <h2 class="font-mono text-sm uppercase tracking-wider text-gray-400 mb-8">03 — Features</h2>
+    <h2 class="font-mono text-sm uppercase tracking-wider text-gray-400 mb-8">01 — Features</h2>
     <p class="text-gray-700 leading-relaxed mb-6">
       A quick overview of what Glade can, can't, doesn't, won't, or could do, and why. For more
       information on the "why" or "how" please read the README.md section below this one
@@ -35,14 +35,6 @@ import FeatureRow from "../FeatureRow.astro";
           ✗
         </span>
         todo
-      </span>
-      <span class="inline-flex items-center gap-1">
-        <span
-          class="inline-flex h-4 w-4 items-center justify-center rounded-[3px] bg-blue-600 text-white text-[13px] font-semibold"
-        >
-          ↑
-        </span>
-        improvement
       </span>
     </div>
     <div class="border-2 border-gray-500 rounded-md overflow-hidden bg-white">
@@ -78,21 +70,6 @@ import FeatureRow from "../FeatureRow.astro";
       />
       <FeatureRow name="Monospaced fonts" info="done" details="Monospaced font stack support." />
       <FeatureRow
-        name="SVGs"
-        info="partial"
-        details="Lyon-based path parsing; renders SVGs ok. Room for improvement."
-      />
-      <FeatureRow
-        name="Elements"
-        info="partial"
-        details="Core elements and primitives; more in progress."
-      />
-      <FeatureRow
-        name="Components"
-        info="partial"
-        details="Buttons, tooltips, tabs, scrollbars, dialogs, inputs; more in progress."
-      />
-      <FeatureRow
         name="Style utils"
         info="done"
         details="Tailwind-style utility props on elements and components."
@@ -115,6 +92,31 @@ import FeatureRow from "../FeatureRow.astro";
         name="Custom cursors"
         info="done"
         details="Tailwind-like cursor set: pointer, text, default, and more."
+      />
+      <FeatureRow
+        name="120fps target"
+        info="partial"
+        details="Depends on components on the page. Demos run between 60 and 120."
+      />
+      <FeatureRow
+        name="SVGs"
+        info="partial"
+        details="Lyon-based path parsing; renders SVGs ok. Room for improvement."
+      />
+      <FeatureRow
+        name="Elements"
+        info="partial"
+        details="Core elements and primitives, more possible."
+      />
+      <FeatureRow
+        name="Components"
+        info="partial"
+        details="Buttons, tooltips, tabs, scrollbars, dialogs, inputs; more possible."
+      />
+      <FeatureRow
+        name="Native emoji"
+        info="todo"
+        details="Possible for macOS to access Apple Color Emoji rather than our embedded one."
       />
       <FeatureRow
         name="Generated docs"
@@ -147,19 +149,19 @@ import FeatureRow from "../FeatureRow.astro";
         details="Composing text in one line like you would with <p>, <span>, <strong> and so on."
       />
       <FeatureRow
-        name="120fps target"
-        info="partial"
-        details="Depends on components on the page. Demos run between 60 and 120."
-      />
-      <FeatureRow
         name="Glyph serde"
-        info="improvement"
+        info="todo"
         details="Using font shaping in WASM adds overhead per frame"
       />
       <FeatureRow
         name="Layout caching"
-        info="improvement"
+        info="todo"
         details="Could improve rendering speed by around 70%"
+      />
+      <FeatureRow
+        name="macOS file menu"
+        info="todo"
+        details="While not available in browser, could be useful for macOS builds."
         isLast={true}
       />
     </div>

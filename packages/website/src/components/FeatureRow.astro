@@ -1,5 +1,5 @@
 ---
-type Info = "done" | "partial" | "todo" | "improvement";
+type Info = "done" | "partial" | "todo";
 
 type Props = {
   name: string;
@@ -14,14 +14,12 @@ const infoSymbols: Record<Info, string> = {
   done: "✓",
   partial: "~",
   todo: "✗",
-  improvement: "↑",
 };
 
 const infoColors: Record<Info, string> = {
   done: "bg-green-600",
   partial: "bg-purple-600",
   todo: "bg-red-600",
-  improvement: "bg-blue-600",
 };
 
 const rowClass = [
