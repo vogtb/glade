@@ -2,11 +2,14 @@
 
 ---
 
-<section id="how-it-works" class="py-20 border-b border-gray-100 bg-gray-50 scroll-mt-8 [&_p]:text-[19px]">
+<section
+  id="how-it-works"
+  class="py-20 border-b border-gray-100 bg-gray-50 scroll-mt-8"
+>
   <div class="mx-auto max-w-4xl px-3">
     <div class="mx-auto max-w-[860px]">
       <h2 class="font-mono text-sm tracking-wider text-gray-400 mb-8">02 — README.md</h2>
-      <div class="flex flex-col gap-6 text-gray-700 leading-relaxed">
+      <div class="flex flex-col gap-5 leading-relaxed [&_p]:text-[19px] [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-7 [&_h3]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-5 [&_h3]:mb-2">
         <p>
           I originally started building this as an OpenGL/WebGL cross platform proof-of-concept, and
           then it sorta snowballed from there. I like building websites and web apps and so on, but
@@ -43,7 +46,7 @@
           out Glade, namely egui and GPUI.
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">egui's Approach</h3>
+        <h3 >egui's Approach</h3>
 
         <p>
           egui is an immediate-mode GUI library for Rust. Because it's immediate mode, it does
@@ -89,7 +92,7 @@
           that GPUI established.
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">GPUI's Approach</h3>
+        <h3 >GPUI's Approach</h3>
 
         <p>
           GPUI is the rendering engine behind Zed. It's more opinionated than egui. They take the
@@ -116,7 +119,7 @@
           shaders, which doesn't fit its triangle-only model.
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">Glade's Frame Loop</h3>
+        <h3 >Glade's Frame Loop</h3>
 
         <p>
           Glade borrows from GPUI's approach but adapts it for TypeScript and WebGPU. Here's what
@@ -187,7 +190,7 @@
           kicks off the next frame.
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">State and Actions</h3>
+        <h3 >State and Actions</h3>
 
         <p>Application state in Glade is subscription-based, not event-based.</p>
 
@@ -214,7 +217,7 @@
 
         <hr class="my-4 border-gray-300" />
 
-        <h2 class="text-2xl font-bold mt-12 mb-6">
+        <h2 >
           The Hard Parts (and the Libraries That Solved Them)
         </h2>
 
@@ -267,7 +270,7 @@
 
         <hr class="my-4 border-gray-300" />
 
-        <h2 class="text-2xl font-bold mt-12 mb-6">Making It Cross-Platform</h2>
+        <h2 >Making It Cross-Platform</h2>
 
         <p>
           The whole point of Glade is that you write your TypeScript once and it runs on a browser
@@ -275,7 +278,7 @@
           platform-specific code and everything else.
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">The Platform Interface</h3>
+        <h3 >The Platform Interface</h3>
 
         <p>
           Here's the rule: outside of the <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm"
@@ -310,7 +313,7 @@
           doesn't know or care which one it's talking to.
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">Browser</h3>
+        <h3 >Browser</h3>
 
         <p>
           The browser implementation is the easy one. Grab a canvas element, get a WebGPU context
@@ -319,7 +322,7 @@
           hacky, but it works perfectly).
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">macOS via Dawn and GLFW</h3>
+        <h3 >macOS via Dawn and GLFW</h3>
 
         <p>The native macOS implementation is more interesting.</p>
 
@@ -358,7 +361,7 @@
           under the traffic lights).
         </p>
 
-        <h3 class="text-xl font-bold mt-10 mb-4">Bun's FFI Trick</h3>
+        <h3 >Bun's FFI Trick</h3>
 
         <p>
           In Node, if you want to call native code, you create a native module. It's messy, it's
@@ -396,28 +399,27 @@
         </p>
 
         <pre
-          class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-6 text-sm">
-                <code>{`// @ts-expect-error - Bun-specific import attribute
-    import GLFW_PATH from "../../vendor/libglfw.dylib" with { type: "file" };
+          class="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto text-sm">
+<code>{`// @ts-expect-error - Bun-specific import attribute
+import GLFW_PATH from "../../vendor/libglfw.dylib" with { type: "file" };
 
-    const lib = dlopen(GLFW_PATH, {
-        glfwInit: { args: [], returns: FFIType.i32 },
-        // ...
-    });`}</code>
-            </pre>
+const lib = dlopen(GLFW_PATH, {
+    glfwInit: { args: [], returns: FFIType.i32 },
+    // ...
+});`}</code></pre>
 
         <p>When you run the compiled binary, you see something like:</p>
 
         <pre
-          class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-6 text-sm">
-                <code>{`using embedded GLFW_PATH=/$bunfs/root/libglfw-d9csjcyg.dylib`}</code>
-            </pre>
+          class="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto text-sm">
+<code>{`using embedded GLFW_PATH=/$bunfs/root/libglfw-d9csjcyg.dylib`}</code>
+</pre>
 
         <p>And it just works.</p>
 
         <hr class="my-4 border-gray-300" />
 
-        <h2 class="text-2xl font-bold mt-12 mb-6">What's There and What's Not</h2>
+        <h2 >What's There and What's Not</h2>
 
         <p>
           Current state: Glade runs at 60-120fps on a modern MacBook Pro, depending on how many
