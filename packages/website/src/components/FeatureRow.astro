@@ -24,18 +24,29 @@ const infoColors: Record<Info, string> = {
   improvement: "bg-blue-600",
 };
 
-const rowClass = ["grid", "grid-cols-10", isLast ? "" : "border-b-2 border-gray-500"]
+const rowClass = [
+  "block",
+  "p-1",
+  "md:grid",
+  "md:grid-cols-10",
+  "md:p-0",
+  isLast ? "" : "border-b-2 border-gray-500",
+]
   .filter(Boolean)
   .join(" ");
 
 const infoCellClass = [
-  "col-span-1",
-  "px-2",
-  "py-1",
-  "border-l-2",
-  "border-gray-500",
-  "flex",
+  "inline-flex",
   "items-center",
+  "p-0",
+  "border-l-0",
+  "md:mr-0",
+  "md:col-span-1",
+  "md:border-l-2",
+  "md:border-gray-500",
+  "md:px-2",
+  "md:py-1",
+  "md:block",
 ].join(" ");
 
 const infoBadgeClass = [
@@ -53,11 +64,17 @@ const infoBadgeClass = [
 ---
 
 <div class={rowClass}>
-  <div class="col-span-2 px-2 py-1 text-[13px] text-gray-900">{name}</div>
+  <div
+    class="inline-flex items-center p-0 text-[13px] text-gray-900 md:mr-0 md:col-span-2 md:block md:px-2 md:py-1"
+  >
+    {name}
+  </div>
   <div class={infoCellClass}>
     <div class={infoBadgeClass}>{infoSymbols[info]}</div>
   </div>
-  <div class="col-span-7 px-2 py-1 text-[13px] text-gray-600 border-l-2 border-gray-500">
+  <span
+    class="inline p-0 text-[13px] text-gray-600 border-l-0 border-t-0 md:col-span-7 md:border-l-2 md:border-gray-500 md:block md:px-2 md:py-1"
+  >
     {details}
-  </div>
+  </span>
 </div>

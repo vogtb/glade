@@ -9,59 +9,91 @@ import FeatureRow from "../FeatureRow.astro";
       A quick overview of what Glade can, can't, doesn't, won't, or could do, and why. For more
       information on the "why" or "how" please read the README.md section below this one
     </p>
+    <div
+      class="flex flex-wrap items-center gap-2 text-[12px] font-mono uppercase tracking-wider text-gray-500 mb-3"
+    >
+      <span class="inline-flex items-center gap-1">
+        <span
+          class="inline-flex h-4 w-4 items-center justify-center rounded-[3px] bg-green-600 text-white text-[13px] font-semibold"
+        >
+          ✓
+        </span>
+        done
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <span
+          class="inline-flex h-4 w-4 items-center justify-center rounded-[3px] bg-purple-600 text-white text-[13px] font-semibold"
+        >
+          ~
+        </span>
+        partial
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <span
+          class="inline-flex h-4 w-4 items-center justify-center rounded-[3px] bg-red-600 text-white text-[13px] font-semibold"
+        >
+          ✗
+        </span>
+        todo
+      </span>
+      <span class="inline-flex items-center gap-1">
+        <span
+          class="inline-flex h-4 w-4 items-center justify-center rounded-[3px] bg-blue-600 text-white text-[13px] font-semibold"
+        >
+          ↑
+        </span>
+        improvement
+      </span>
+    </div>
     <div class="border-2 border-gray-500 rounded-md overflow-hidden bg-white">
       <!-- Header Row -->
-      <div class="grid grid-cols-10 border-b-2 border-gray-500">
+      <div
+        class="flex flex-wrap items-center gap-x-2 gap-y-1 md:grid md:grid-cols-10 md:gap-0 border-b-2 border-gray-500"
+      >
         <div
-          class="col-span-2 px-2 py-1 text-[13px] font-mono uppercase tracking-wider text-gray-900 font-bold"
+          class="md:col-span-2 px-2 py-1 text-[13px] font-mono uppercase tracking-wider text-gray-900 font-bold truncate"
         >
           Name
         </div>
         <div
-          class="col-span-1 px-2 py-1 text-[13px] font-mono uppercase tracking-wider text-gray-900 border-l-2 border-gray-500 font-bold"
+          class="px-2 py-1 text-[13px] font-mono uppercase tracking-wider text-gray-900 border-l-0 md:border-l-2 md:border-gray-500 font-bold truncate"
         >
           Status
         </div>
         <div
-          class="col-span-7 px-2 py-1 text-[13px] font-mono uppercase tracking-wider text-gray-900 border-l-2 border-gray-500 font-bold"
+          class="md:col-span-7 px-2 py-1 text-[13px] font-mono uppercase tracking-wider text-gray-900 border-l-0 border-t-0 md:border-l-2 md:border-gray-500 font-bold truncate"
         >
           Details
         </div>
       </div>
 
       <!-- Data Rows -->
-      <FeatureRow
-        name="WebGPU renderer"
-        info="done"
-        details="WebGPU in the browser and Dawn on native; scene-based render loop with ordered layers."
-      />
-      <FeatureRow
-        name="Cross-platform"
-        info="done"
-        details="macOS + web targets from the same TypeScript codebase."
-      />
-      <FeatureRow
-        name="Taffy layout"
-        info="partial"
-        details="Flexbox + grid via WASM. Note: layout is serialized every frame; todo: cache unchanged constraints to avoid reflow."
-      />
+      <FeatureRow name="Flexbox Layout" info="done" details="Flexbox layout implemented." />
+      <FeatureRow name="Grid Layout" info="done" details="CSS Grid layout implemented." />
+      <FeatureRow name="Table Layout" info="done" details="Table layout implemented." />
       <FeatureRow
         name="Font rendering"
         info="done"
         details="rustybuzz shaping, glyph caching, and font fallback; Noto Color Emoji default."
       />
+      <FeatureRow name="Monospaced fonts" info="done" details="Monospaced font stack support." />
       <FeatureRow
-        name="SVG rendering"
+        name="SVGs"
         info="partial"
-        details="Lyon-based path parsing; renders SVGs fairly well. Known gaps around full spec edge cases."
+        details="Lyon-based path parsing; renders SVGs ok. Room for improvement."
       />
       <FeatureRow
-        name="Elements + components"
+        name="Elements"
         info="partial"
-        details="Core elements plus buttons, tooltips, tabs, scrollbars, dialogs, inputs; more in progress."
+        details="Core elements and primitives; more in progress."
       />
       <FeatureRow
-        name="Utilities"
+        name="Components"
+        info="partial"
+        details="Buttons, tooltips, tabs, scrollbars, dialogs, inputs; more in progress."
+      />
+      <FeatureRow
+        name="Style utils"
         info="done"
         details="Tailwind-style utility props on elements and components."
       />
@@ -75,13 +107,22 @@ import FeatureRow from "../FeatureRow.astro";
         info="done"
         details="Bun FFI + file embedding for single, self-contained executables."
       />
+      <FeatureRow name="macOS 15.0+" info="done" details="Native support for macOS 15.0+." />
+      <FeatureRow name="Chrome 113" info="done" details="Browser support for Chrome 113." />
+      <FeatureRow name="Safari 26" info="done" details="Browser support for Safari 26." />
+      <FeatureRow name="Firefox 141" info="done" details="Browser support for Firefox 141." />
       <FeatureRow
         name="Custom cursors"
         info="done"
         details="Tailwind-like cursor set: pointer, text, default, and more."
       />
       <FeatureRow
-        name="Typography components"
+        name="Generated docs"
+        info="todo"
+        details="Auto-generated docs for APIs and components."
+      />
+      <FeatureRow
+        name="Prose utils"
         info="todo"
         details="Common primitives like p(), em(), strong(), span(), and kbd()."
       />
