@@ -871,7 +871,19 @@ export class GladeTextElement extends GladeElement<TextRequestLayoutState, TextP
   }
 
   private getLineHeight(): number {
-    return this.lineHeightValue ?? this.fontSize * 1.2;
+    const defaultLineHeight = this.fontSize * 1.2;
+    if (this.lineHeightValue === null) {
+      return defaultLineHeight;
+    }
+    const requested = this.lineHeightValue;
+    if (requested <= 0) {
+      return defaultLineHeight;
+    }
+    // Treat small values as CSS-like multipliers for convenience
+    if (requested <= 10) {
+      return requested * this.fontSize;
+    }
+    return requested;
   }
 
   private getUnderlineSpace(): number {

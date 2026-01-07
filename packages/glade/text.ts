@@ -272,7 +272,8 @@ export class GlyphAtlas {
     const weight = ((key.weight ?? 400) / 100) | 0;
     const style = key.style === "italic" ? 1 : key.style === "oblique" ? 2 : 0;
     const cosmicId = key.cosmicFontId ?? 0;
-    return `${cosmicId}:${key.glyphId}:${key.fontSize}:${weight}:${style}`;
+    const char = key.char ?? "";
+    return `${cosmicId}:${key.glyphId}:${key.fontSize}:${weight}:${style}:${char}`;
   }
 
   /**
@@ -485,6 +486,62 @@ function utf8Length(codePoint: number): number {
     return 3;
   }
   return 4;
+}
+
+const NEWLINE_BYTE_LENGTH = 1;
+
+type GlyphLineLayout = {
+  glyphs: ShapedGlyph[];
+  width: number;
+  y: number;
+  lineHeight: number;
+};
+
+function utf8ByteLengthOfString(value: string): number {
+  let length = 0;
+  for (let i = 0; i < value.length; ) {
+    const codePoint = value.codePointAt(i);
+    if (codePoint === undefined) {
+      break;
+    }
+    length += utf8Length(codePoint);
+    i += codePoint > 0xffff ? 2 : 1;
+  }
+  return length;
+}
+
+function shapeLinesWithoutWrapping(
+  text: string,
+  lineHeight: number,
+  shapeLineFn: (lineText: string) => ShapedLineResult
+): GlyphLineLayout[] {
+  const lines: GlyphLineLayout[] = [];
+  let currentY = 0;
+  let byteOffset = 0;
+  const segments = text.split("\n");
+
+  for (let i = 0; i < segments.length; i++) {
+    const lineText = segments[i]!;
+    const shaped = shapeLineFn(lineText);
+    const adjustedGlyphs = shaped.glyphs.map((glyph) => ({
+      ...glyph,
+      start: glyph.start + byteOffset,
+      end: glyph.end + byteOffset,
+    }));
+    lines.push({
+      glyphs: adjustedGlyphs,
+      width: shaped.width,
+      y: currentY,
+      lineHeight,
+    });
+    currentY += lineHeight;
+    byteOffset += utf8ByteLengthOfString(lineText);
+    if (i < segments.length - 1) {
+      byteOffset += NEWLINE_BYTE_LENGTH;
+    }
+  }
+
+  return lines;
 }
 
 /**
@@ -728,20 +785,48 @@ export class TextSystem {
   ): { width: number; height: number } {
     const safeFontSize = fontSize > 0 ? fontSize : 1;
     const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
+    const ascentOffset = safeFontSize * 0.8;
     const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
-    const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
+    const effectiveMaxWidth =
+      hasFiniteWidth && maxWidth !== undefined ? Math.max(maxWidth, 1) : undefined;
+    const effectiveStyle = style ?? {};
+
+    if (effectiveMaxWidth === undefined && text.includes("\n")) {
+      try {
+        const lines = shapeLinesWithoutWrapping(text, safeLineHeight, (lineText) =>
+          this.shapeLine(lineText, safeFontSize, safeLineHeight, effectiveStyle)
+        );
+        let maxWidthSeen = 0;
+        for (const line of lines) {
+          if (line.width > maxWidthSeen) {
+            maxWidthSeen = line.width;
+          }
+        }
+        return { width: maxWidthSeen, height: lines.length * safeLineHeight + ascentOffset };
+      } catch {
+        // Fall through to the generic fallback below.
+      }
+    }
+
     try {
       return this.shaper.measureText(
         text,
         safeFontSize,
         safeLineHeight,
         effectiveMaxWidth,
-        style ?? {}
+        effectiveStyle
       );
     } catch {
       // Fallback to simple estimate to avoid crashing the app.
-      const width = Math.max(text.length * safeFontSize * 0.6, 1);
-      return { width, height: safeLineHeight };
+      const segments = text.split("\n");
+      let maxLength = 0;
+      for (const segment of segments) {
+        if (segment.length > maxLength) {
+          maxLength = segment.length;
+        }
+      }
+      const width = Math.max(maxLength * safeFontSize * 0.6, 1);
+      return { width, height: safeLineHeight * segments.length + ascentOffset };
     }
   }
 
@@ -762,8 +847,9 @@ export class TextSystem {
     const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
     const effectiveStyle: FontStyleOptions = { ...style, family: fontFamily };
     const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
-    const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
-    let lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
+    const effectiveMaxWidth =
+      hasFiniteWidth && maxWidth !== undefined ? Math.max(maxWidth, 1) : undefined;
+    let lines: GlyphLineLayout[];
 
     try {
       if (effectiveMaxWidth !== undefined) {
@@ -788,25 +874,18 @@ export class TextSystem {
                 },
               ];
       } else {
-        lines = [
-          {
-            glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
-            width: this.measureText(text, safeFontSize, safeLineHeight, undefined, effectiveStyle)
-              .width,
-            y: 0,
-            lineHeight: safeLineHeight,
-          },
-        ];
+        lines = shapeLinesWithoutWrapping(text, safeLineHeight, (lineText) =>
+          this.shapeLine(lineText, safeFontSize, safeLineHeight, effectiveStyle)
+        );
       }
     } catch {
-      lines = [
-        {
-          glyphs: [],
-          width: effectiveMaxWidth ?? Math.max(text.length * safeFontSize * 0.6, 1),
-          y: 0,
-          lineHeight: safeLineHeight,
-        },
-      ];
+      const segments = text.split("\n");
+      lines = segments.map((segment, index) => ({
+        glyphs: [],
+        width: effectiveMaxWidth ?? Math.max(segment.length * safeFontSize * 0.6, 1),
+        y: safeLineHeight * index,
+        lineHeight: safeLineHeight,
+      }));
     }
 
     const byteToUtf16Index = buildByteToUtf16Index(text);
@@ -849,10 +928,10 @@ export class TextSystem {
     const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
     const effectiveStyle: FontStyleOptions = { ...style, family: fontFamily };
     const instances: GlyphInstance[] = [];
-    type GlyphLine = { glyphs: ShapedGlyph[]; y: number; lineHeight: number };
     const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
-    const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
-    let glyphLines: GlyphLine[];
+    const effectiveMaxWidth =
+      hasFiniteWidth && maxWidth !== undefined ? Math.max(maxWidth, 1) : undefined;
+    let glyphLines: GlyphLineLayout[];
     try {
       if (effectiveMaxWidth !== undefined) {
         const layoutResult = this.layoutText(
@@ -871,6 +950,7 @@ export class TextSystem {
           const firstLineY = firstLine ? firstLine.y : 0;
           glyphLines = layoutResult.lines.map((line) => ({
             glyphs: line.glyphs,
+            width: line.width,
             y: line.y - firstLineY,
             lineHeight: line.lineHeight,
           }));
@@ -878,24 +958,23 @@ export class TextSystem {
           glyphLines = [
             {
               glyphs: [],
+              width: 0,
               y: 0,
               lineHeight: safeLineHeight,
             },
           ];
         }
       } else {
-        glyphLines = [
-          {
-            glyphs: this.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle).glyphs,
-            y: 0,
-            lineHeight: safeLineHeight,
-          },
-        ];
+        // No max width - shape each line separately to honor explicit newlines
+        glyphLines = shapeLinesWithoutWrapping(text, safeLineHeight, (lineText) =>
+          this.shapeLine(lineText, safeFontSize, safeLineHeight, effectiveStyle)
+        );
       }
     } catch {
       glyphLines = [
         {
           glyphs: [],
+          width: 0,
           y: 0,
           lineHeight: safeLineHeight,
         },
@@ -992,6 +1071,7 @@ export class TextSystem {
               weight: effectiveStyle.weight,
               style: effectiveStyle.style,
               cosmicFontId: targetCosmicFontId,
+              char,
             },
             fallbackFamily,
             char,
@@ -1761,10 +1841,11 @@ function layoutDecoratedLines(
   const hasFiniteWidth = maxWidth !== undefined && Number.isFinite(maxWidth);
   // The underlying shaper panics on non-positive or non-finite widths; clamp
   // to at least 1px when provided.
-  const effectiveMaxWidth = hasFiniteWidth ? Math.max(maxWidth as number, 1) : undefined;
+  const effectiveMaxWidth =
+    hasFiniteWidth && maxWidth !== undefined ? Math.max(maxWidth, 1) : undefined;
   const effectiveLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
   const shaper = getSharedTextShaper();
-  const fallbackWidth = Math.max(text.length * safeFontSize * 0.6, 1);
+  const segments = text.split("\n");
   let lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }>;
 
   try {
@@ -1801,31 +1882,17 @@ function layoutDecoratedLines(
         ];
       }
     } else {
-      lines = [
-        {
-          glyphs: shaper.shapeLine(text, safeFontSize, effectiveLineHeight, effectiveStyle).glyphs,
-          width: shaper.measureText(
-            text,
-            safeFontSize,
-            effectiveLineHeight,
-            undefined,
-            effectiveStyle
-          ).width,
-          y: 0,
-          lineHeight: effectiveLineHeight,
-        },
-      ];
+      lines = shapeLinesWithoutWrapping(text, effectiveLineHeight, (lineText) =>
+        shaper.shapeLine(lineText, safeFontSize, effectiveLineHeight, effectiveStyle)
+      );
     }
   } catch {
-    const safeWidth = Math.max(1, fallbackWidth);
-    lines = [
-      {
-        glyphs: [],
-        width: safeWidth,
-        y: 0,
-        lineHeight: effectiveLineHeight,
-      },
-    ];
+    lines = segments.map((segment, index) => ({
+      glyphs: [],
+      width: Math.max(segment.length * safeFontSize * 0.6, 1),
+      y: effectiveLineHeight * index,
+      lineHeight: effectiveLineHeight,
+    }));
   }
 
   return {

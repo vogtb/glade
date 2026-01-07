@@ -506,6 +506,59 @@ function getShaper(): TextShaper {
   return getSharedTextShaper();
 }
 
+function utf8ByteLengthOfString(value: string): number {
+  let length = 0;
+  for (let i = 0; i < value.length; ) {
+    const codePoint = value.codePointAt(i);
+    if (codePoint === undefined) {
+      break;
+    }
+    length += utf8Length(codePoint);
+    i += codePoint > 0xffff ? 2 : 1;
+  }
+  return length;
+}
+
+function shapeLinesWithoutWrapping(
+  text: string,
+  fontSize: number,
+  lineHeight: number,
+  fontFamily: string,
+  style?: FontStyleOptions
+): Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }> {
+  const shaper = getShaper();
+  const safeFontSize = fontSize > 0 ? fontSize : 1;
+  const safeLineHeight = lineHeight > 0 ? lineHeight : Math.max(safeFontSize, 1);
+  const effectiveStyle: FontStyleOptions = { ...style, family: fontFamily };
+  const lines: Array<{ glyphs: ShapedGlyph[]; width: number; y: number; lineHeight: number }> = [];
+  let currentY = 0;
+  let byteOffset = 0;
+  const segments = text.split("\n");
+
+  for (let i = 0; i < segments.length; i++) {
+    const lineText = segments[i] ?? "";
+    const shaped = shaper.shapeLine(lineText, safeFontSize, safeLineHeight, effectiveStyle);
+    const adjustedGlyphs = shaped.glyphs.map((glyph) => ({
+      ...glyph,
+      start: glyph.start + byteOffset,
+      end: glyph.end + byteOffset,
+    }));
+    lines.push({
+      glyphs: adjustedGlyphs,
+      width: shaped.width,
+      y: currentY,
+      lineHeight: safeLineHeight,
+    });
+    currentY += safeLineHeight;
+    byteOffset += utf8ByteLengthOfString(lineText);
+    if (i < segments.length - 1) {
+      byteOffset += 1;
+    }
+  }
+
+  return lines;
+}
+
 // ============================================================================
 // TextDocument Creation
 // ============================================================================
@@ -549,33 +602,23 @@ export function createTextDocument(
       );
       shapedLines = result.lines;
     } else {
-      const result = shaper.shapeLine(text, safeFontSize, safeLineHeight, effectiveStyle);
-      const measured = shaper.measureText(
+      shapedLines = shapeLinesWithoutWrapping(
         text,
         safeFontSize,
         safeLineHeight,
-        undefined,
+        fontFamily,
         effectiveStyle
       );
-      shapedLines = [
-        {
-          glyphs: result.glyphs,
-          width: measured.width,
-          y: 0,
-          lineHeight: safeLineHeight,
-        },
-      ];
     }
   } catch {
     // Fallback for shaper errors
-    shapedLines = [
-      {
-        glyphs: [],
-        width: Math.max(text.length * safeFontSize * 0.6, 1),
-        y: 0,
-        lineHeight: safeLineHeight,
-      },
-    ];
+    const segments = text.split("\n");
+    shapedLines = segments.map((segment, index) => ({
+      glyphs: [],
+      width: Math.max(segment.length * safeFontSize * 0.6, 1),
+      y: safeLineHeight * index,
+      lineHeight: safeLineHeight,
+    }));
   }
 
   // Normalize Y values so the first line starts at y=0.

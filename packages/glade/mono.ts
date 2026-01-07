@@ -176,27 +176,6 @@ function createMonoTextElement(
   return element;
 }
 
-function createPreLines(normalizedContent: string, options: NormalizedMonoOptions): GladeDiv {
-  const lines = normalizedContent.split("\n");
-  const container = div().flex().flexCol().gap(0);
-
-  for (const line of lines) {
-    const lineEl = text(line).font(options.fontFamily).whitespace("pre");
-    if (options.selectable) {
-      lineEl.selectable();
-    }
-    if (options.fontSize !== undefined) {
-      lineEl.size(options.fontSize);
-    }
-    if (options.lineHeight !== undefined) {
-      lineEl.lineHeight(options.lineHeight);
-    }
-    container.child(lineEl);
-  }
-
-  return container;
-}
-
 function wrapPreBlock(
   textElement: GladeTextElement | GladeDiv,
   options: NormalizedMonoOptions
@@ -390,13 +369,6 @@ export class MonoElement extends GladeElement<MonoRequestLayoutState, MonoPrepai
 
   private buildChild(normalizedOptions: NormalizedMonoOptions): GladeElement<unknown, unknown> {
     const normalizedContent = normalizeContentForVariant(this.content, normalizedOptions);
-
-    if (normalizedOptions.variant === "pre" && !normalizedOptions.wrap) {
-      const preLines = createPreLines(normalizedContent, normalizedOptions);
-      const wrapped = wrapPreBlock(preLines, normalizedOptions);
-      this.childElement = wrapped;
-      return wrapped;
-    }
 
     const whitespaceMode = normalizedOptions.wrap ? "pre-wrap" : "pre";
     const textElement = createMonoTextElement(normalizedContent, normalizedOptions, whitespaceMode);

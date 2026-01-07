@@ -467,10 +467,6 @@ function codeExample(title: string, theme: Theme, code: string) {
     .gap(4)
     .children(
       text(title).weight(600).color(theme.semantic.text.default),
-      div()
-        .bg(theme.components.mono.background)
-        .rounded(6)
-        .p(12)
-        .child(mono(code).size(12).lineHeight(1.5))
+      div().bg(theme.components.mono.background).rounded(6).p(12).child(mono(code).variant("pre"))
     );
 }

@@ -236,8 +236,10 @@ impl TextShaper {
         let attrs = self.build_attrs(&style);
         let metrics = Metrics::new(font_size, line_height);
 
-        // Use Buffer for single-line shaping (simpler than ShapeLine)
+        // Use Buffer for shaping - set a large width to allow cosmic-text to
+        // process the text without word wrapping
         let mut buffer = Buffer::new(&mut self.font_system, metrics);
+        buffer.set_size(&mut self.font_system, Some(f32::MAX), None);
         buffer.set_wrap(&mut self.font_system, Wrap::None);
         buffer.set_text(&mut self.font_system, text, &attrs, Shaping::Advanced, None);
         buffer.shape_until_scroll(&mut self.font_system, false);
@@ -364,8 +366,52 @@ impl TextShaper {
         let attrs = self.build_attrs(&style);
         let metrics = Metrics::new(font_size, line_height);
 
+        // Handle explicit newlines when wrapping is disabled. cosmic-text with
+        // Wrap::None does not allocate multiple layout runs for '\n', so we
+        // split and measure each line ourselves.
+        if max_width.is_none() && text.contains('\n') {
+            let ascent_offset = font_size * 0.8;
+            let mut max_width_seen = 0.0f32;
+            let mut line_count = 0usize;
+
+            for line in text.split('\n') {
+                let mut buffer = Buffer::new(&mut self.font_system, metrics);
+                buffer.set_size(&mut self.font_system, Some(f32::MAX), None);
+                buffer.set_wrap(&mut self.font_system, Wrap::None);
+                buffer.set_text(&mut self.font_system, line, &attrs, Shaping::Advanced, None);
+                buffer.shape_until_scroll(&mut self.font_system, false);
+
+                let mut line_width = 0.0f32;
+                for run in buffer.layout_runs() {
+                    for glyph in run.glyphs.iter() {
+                        line_width = line_width.max(glyph.x + glyph.w);
+                    }
+                }
+
+                max_width_seen = max_width_seen.max(line_width);
+                line_count += 1;
+            }
+
+            #[derive(Serialize)]
+            struct MeasureResult {
+                width: f32,
+                height: f32,
+            }
+
+            let result = MeasureResult {
+                width: max_width_seen,
+                height: line_height * line_count as f32 + ascent_offset,
+            };
+
+            return serde_wasm_bindgen::to_value(&result)
+                .map_err(|e| JsValue::from_str(&format!("Serialization error: {}", e)));
+        }
+
         let mut buffer = Buffer::new(&mut self.font_system, metrics);
-        buffer.set_size(&mut self.font_system, max_width, None);
+        // When no max_width is provided, use a very large value to allow cosmic-text
+        // to process newlines while not wrapping. This enables whitespace: pre behavior.
+        let effective_width = max_width.unwrap_or(f32::MAX);
+        buffer.set_size(&mut self.font_system, Some(effective_width), None);
         buffer.set_wrap(
             &mut self.font_system,
             if max_width.is_some() {
