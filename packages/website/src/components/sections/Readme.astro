@@ -9,9 +9,6 @@
       <div
         class="flex flex-col gap-5 leading-relaxed [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-7 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-5 [&_h3]:mb-2"
       >
-        <h2 class="text-2xl font-bold my-3">
-          {"WebGL → WebGPU → GUI"}
-        </h2>
         <p>
           I originally started building this as an OpenGL/WebGL cross platform proof-of-concept, and
           then it sorta snowballed from there. I like building websites and web apps and so on, but
@@ -22,471 +19,198 @@
         </p>
 
         <p>
-          And making things fast is fun! And it's fun to use things that are fast.
-          <a href="https://zed.dev/">Zed's</a> fixation
-          <a href="https://zed.dev/blog/videogame">on performance</a>
-          might seem, idk, a little marketing-gimmicky but the barely perceptible speed of the editor
-          adds up to something super perceptible. So I thought it would be fun to learn about their GUI
-          library GPUI.
+          Glade is largely based on GPUI and egui, but written in Typescript rather than Rust. Last
+          year I worked on a project that used Dawn, WebGPU, and Zig to do essentially the same
+          thing that Glade does, but it's hard enough learning one new thing, and much, much harder
+          to learn two new things at once. So I used Typescript, a language I know and (mostly)
+          like.
         </p>
 
         <p>
-          At the same time, I wanted to mess around with Bun because I think their FFI and
-          file-embedding features are cool. So this is the result: a cross-platform GUI library for
-          TypeScript that uses WebGPU to render apps somewhere between 60 and 120fps, for browsers
-          and native macOS.
-        </p>
-
-        <hr class="my-4 border-gray-300" />
-
-        <h2 class="text-2xl font-bold my-3">How Frames Get Rendered</h2>
-
-        <p>At the risk of boring anyone who knows how this works, here's a bit on rendering.</p>
-
-        <p>
-          GUIs use a render loop that takes code and puts pixels on your screen. Oftentimes they're
-          piggybacking off of the even queue to do the loop, but it might be the other way around.
-          But regardless of whether your loop is flushing events, or events trigger the loop, the
-          loop is there. Depending on whether you're using an immediate-mode, or retained-mode, the
-          GUI might only update part of the screen, or it might update all of it. I researched a
-          couple specific approaches as I built out Glade, namely egui and GPUI.
-        </p>
-
-        <h3>egui's Approach</h3>
-
-        <p>
-          <a href="https://github.com/emilk/egui">egui</a>
-          is an immediate-mode GUI library for Rust. Because it's
-          <a href="https://en.wikipedia.org/wiki/Immediate_mode_(computer_graphics)"
-            >immediate-mode</a
-          >, it does everything in one go: layout, paint, and response in one pass. This means
-          you're handling much of the layout yourself (ie <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm"
-            >button_size = parent_width - 10px</code
-          > or whatever) but you get to tell it what to render and where pretty precisely.
+          At it's core, Glade's render loop is essentially GPUIs: submit constraints for layout,
+          prepaint, paint, and render.
         </p>
 
         <p>
-          You execute your UI code, which allocates space, emits shapes, and returns interaction
-          state — all at once. The output is a bunch of high-level primitives (rectangles, circles,
-          text, beziers), which then get tessellated into triangle meshes on the CPU. Those
-          triangles go into vertex and index buffers, get pipelined to the GPU, and rasterized into
-          pixels.
-        </p>
-
-        <figure class="my-8">
-          <img
-            src="/assets/render_flow_for_egui.png"
-            alt="egui render flow diagram showing run -> widget fn -> tessellation -> GPU pipeline"
-            class="w-full rounded-lg border border-gray-200"
-          />
-          <figcaption class="text-sm text-gray-500 mt-2 mx-4">egui's render flow</figcaption>
-        </figure>
-
-        <p>
-          It's simple, and more importantly, hard to mess up and fairly fast. It's fast, because you
-          have this giant array of triangle data that aligns nicely with cache, and the CPU can
-          prefetch and run it through the GPU with good speed.
+          Glade take "elements" (the simplest unit of the UI) and their layout, and paints them into
+          layers by groups. You have background primitives, text, images, and deferred elements. It
+          takes your components and classifies them into these groups inside a scene (basically just
+          primitives), then paints them using the painter's algorithm — back to front — so things
+          stack correctly toward the user.
         </p>
 
         <p>
-          But because you're using a ton of triangles, your rounded corners might look a little
-          sharp, and in the end, you have to do a lot of the painters algorithm in-component rather
-          than letting the GUI library take care of it for you.
+          For each primitive, we can use specialized WGSL shaders to render that element on screen.
+          That's the nice thing about WebGPU; I don't have to write shaders for the browser, AND
+          Metal shaders for macOS.
         </p>
 
         <p>
-          And for more complex features, you need more than triangles. Shadows, for instance.
-          Rounded corners with anti-aliasing. Text rendering that doesn't look terrible. This is
-          where egui's simplicity becomes a limitation, and where I leaned heavily on the patterns
-          that GPUI established.
-        </p>
-
-        <h3>GPUI's Approach</h3>
-
-        <p>
-          <a href="https://github.com/zed-industries/zed/tree/main/crates/gpui">GPUI</a>
-          is the rendering engine behind <a href="https://zed.dev/">Zed</a>. It's more opinionated
-          than egui. They take the approach of splitting out the rendering loop into a 4 (but sorta
-          3) steps, which are implemented by every element that will be rendered on screen. By
-          focusing on the elements, and how they're drawn, the framework is pretty clear on the best
-          way to draw certain elements.
+          Most of the hard parts of the render loop are actually not parts I've written. Our layout
+          engine is a wrapper around Taffy, build as a WASM module, and embedded in our JS. We do a
+          similar thing for SVGs, and text shaping, using Lyon for SVG parsing and rustybuzz and
+          cosmic text for text shaping. These are WASM modules as well. I could have compiled these
+          as native code for macOS, but on the whole, it seemed unnecessary, as we still need to
+          cross the ABI boundary.
         </p>
 
         <p>
-          GPUI takes elements and their layout, and paints them into layers by groups. You have
-          background primitives, text, images, and deferred elements. It takes your components and
-          classifies them into these groups inside a scene, then paints them using the painter's
-          algorithm — back to front — so things stack correctly toward the user.
+          That's actually the most expensive part of rendering a single frame: interacting with the
+          layout engine over WASM. Because I've not implemented any custom performance
+          optimizations, we're re-rendering the app every single frame. And the first part of that
+          frame is requesting the layout, which requires us to submit (serialize) ALL
+          element/component constraints to our layout engine.
         </p>
 
         <p>
-          One of the more interesting things I learned about from their code is signed distance
-          functions (SDFs) which are a faster way to do rounded rectangles and pretty-good shadows.
-          SDFs are basically a way of asking "is this point within my shape?" You write a shader
-          that evaluates the distance function, and the GPU can throw a bunch of points at it in
-          parallel. This makes rounded corners and shadows fast — not as precise as a Gaussian blur
-          for shadows, but definitely faster. egui doesn't use SDFs because they require custom
-          shaders, which doesn't fit its triangle-only model.
-        </p>
-
-        <h3>Glade's Frame Loop</h3>
-
-        <p>
-          Glade borrows from GPUI's approach but adapts it for TypeScript and WebGPU. Here's what
-          happens every frame (ideally) 120 times per second.
-        </p>
-
-        <figure class="my-8">
-          <img
-            src="/assets/detailed_render_life_cycle.png"
-            alt="Glade's detailed render lifecycle showing requestLayout -> Taffy -> prepaint -> paint -> Scene -> WebGPU"
-            class="w-full rounded-lg border border-gray-200"
-          />
-          <figcaption class="text-sm text-gray-500 mt-2 mx-4">
-            Glade's detailed render lifecycle
-          </figcaption>
-        </figure>
-
-        <p>
-          <strong>requestLayout()</strong>: Every element declares its constraints — the space it
-          wants or needs to occupy, and how flexible it is about that. We collect all of these into
-          a layout request and pass it to Taffy, a Rust library that implements flexbox and CSS
-          grid. Taffy is compiled to WebAssembly.
-        </p>
-
-        <p>
-          This is one of the most expensive parts of the frame. We're serializing our layout
-          constraints, sending them across the WASM boundary, having Taffy compute the layout, then
-          serializing the results back. Even when nothing has changed frame-to-frame, we're paying
-          this cost. There's room for optimization here — caching layouts when constraints haven't
-          changed — but for now, it works.
-        </p>
-
-        <p>
-          <strong>prepaint()</strong>: We receive the computed bounds back from Taffy. This step
-          finalizes positions and prepares any state needed for painting. It's really a tag-along to
-          the previous step, but it's where each component gets its actual screen coordinates.
-        </p>
-
-        <p>
-          <strong>paint()</strong>: Now we build the Scene. The Scene is a semantically keyed,
-          physically valued representation of the app — a bunch of primitives (shadows, rectangles,
-          glyphs, images) in a structure that preserves rendering order. Each primitive is
-          essentially a call to one of our WebGPU shaders. We're not rendering yet — we're
-          constructing the data structure that tells us what to render and in what order.
-        </p>
-
-        <p>
-          <strong>render()</strong>: Finally, we traverse the Scene layer by layer and issue the
-          actual GPU draw calls. Backgrounds first, then rectangles, then text, then images, and so
-          on. Painter's algorithm — back to front — so everything composites correctly.
-        </p>
-
-        <figure class="my-8">
-          <img
-            src="/assets/render_life_cycle.png"
-            alt="Glade's simplified lifecycle showing requestLayout -> prepaint -> paint"
-            class="w-full rounded-lg border border-gray-200"
-          />
-          <figcaption class="text-sm text-gray-500 mt-2 mx-4">
-            Glade's simplified lifecycle
-          </figcaption>
-        </figure>
-
-        <p>
-          Then we loop back and do it again. We use a <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">tick()</code
-          > method that consumes the event queue between frames, runs any actions that change state, and
-          kicks off the next frame.
-        </p>
-
-        <h3>State and Actions</h3>
-
-        <p>Application state in Glade is subscription-based, not event-based.</p>
-
-        <p>
-          Everything is a view. Writing something like <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">div().p(2)</code
-          > doesn't render the element — it tells the render loop <em>how</em> to do the steps for that
-          element. The actual render gets a context, which makes it easier to think about conceptually.
-        </p>
-
-        <p>
-          When the user clicks something or types a key, we don't fire events that propagate through
-          a tree. Well, we kinda do, but we don't call them events, and they don't go through the
-          event queue. We call them actions, and they immediately mutate state. Because we're
-          subscription-based, those actions run right away, and the next frame just renders the new
-          version of the state. There's no "reacting" to anything — we're just always rendering the
-          current state.
-        </p>
-
-        <p>
-          Mouse and keyboard events are still events in the sense that we have to capture them from
-          the platform, but internally they become synchronous state mutations.
-        </p>
-
-        <hr class="my-4 border-gray-300" />
-
-        <h2>The Hard Parts (and the Libraries That Solved Them)</h2>
-
-        <p>
-          Drawing rectangles and shadows and borders on screen is fairly simple. You write a couple
-          of shaders, and you can go to town. But figuring out <em>where</em> to draw those rectangles,
-          and in what order is not simple.
-        </p>
-
-        <p>
-          Doing that for text is even harder, because characters differ in size, shape, whether
-          they're italic, their width, their kerning. You need to shape the text (figure out which
-          glyphs to use and where they go), then render those glyphs.
-        </p>
-
-        <p>
-          And then SVGs are a bugger because it's a pretty big spec, and a lot of edge cases. I'm
-          not messing around with that stuff.
-        </p>
-
-        <p>
-          I'm not going to reinvent the wheel here. Smarter and more determined people than me have
-          figured these out. So Glade uses three Rust crates, each compiled to WebAssembly:
-        </p>
-
-        <ul class="list-disc pl-6 my-4 space-y-2">
-          <li><strong>layout</strong>: Taffy for flexbox and grid</li>
-          <li>
-            <strong>shaper</strong>: rustybuzz (a Rust port of HarfBuzz) for text shaping and glyph
-            layout
-          </li>
-          <li>
-            <strong>svg</strong>: for parsing and rendering SVGs (mostly — there are still edge
-            cases)
-          </li>
-        </ul>
-
-        <p>
-          I could have compiled these natively for macOS and used WASM only for the browser. But Bun
-          has solid WASM support, and the serialization cost is basically the same either way. It's
-          simpler to just compile everything to WASM, embed the modules in the JavaScript bundle,
-          and call it a day. They're fairly small.
-        </p>
-
-        <p>
-          The one caveat is that for text rendering, there's a lot of data going over the WASM
-          boundary — glyph data, positions, metrics. The first frame can be slow while we warm up
-          the glyph cache. But after that, it's fine.
-        </p>
-
-        <hr class="my-4 border-gray-300" />
-
-        <h2>Making It Cross-Platform</h2>
-
-        <p>
-          The whole point of Glade is that you write your TypeScript once and it runs on a browser
-          or on macOS with no modifications. To make that work, there's a strict separation between
-          platform-specific code and everything else.
-        </p>
-
-        <h3>The Platform Interface</h3>
-
-        <p>
-          Here's the rule: outside of the <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm"
-            >platform</code
-          > package, we don't touch DOM, Node.js, or Bun types. The only external types we use are WebGPU
-          types, via the <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">@webgpu/types</code
-          > package.
-        </p>
-
-        <p>
-          The <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">platform</code> package defines
-          an interface — here are the things you need to implement for a given target. The big ones are:
-        </p>
-
-        <ol class="list-decimal pl-6 my-4 space-y-2">
-          <li>
-            <strong>WebGPU context</strong>: How do you get a GPU device and a surface to render to?
-          </li>
-          <li>
-            <strong>Input events</strong>: How do you capture mouse movement, clicks, keyboard
-            input?
-          </li>
-          <li>
-            <strong>Window management</strong>: How do you set the title, resize, handle focus?
-          </li>
-          <li><strong>Clipboard</strong>: How do you copy and paste?</li>
-          <li><strong>Cursors</strong>: How do you change the cursor style?</li>
-        </ol>
-
-        <p>
-          Each target (browser, macOS) implements this interface differently, but the rest of Glade
-          doesn't know or care which one it's talking to.
-        </p>
-
-        <h3>Browser</h3>
-
-        <p>
-          The browser implementation is the easy one. Grab a canvas element, get a WebGPU context
-          from it, set up the device and surface. Listen to window events for mouse and keyboard
-          input. Set cursor styles by adding and removing CSS classes on the body element (a little
-          hacky, but it works perfectly).
-        </p>
-
-        <h3>macOS via Dawn and GLFW</h3>
-
-        <p>The native macOS implementation is more interesting.</p>
-
-        <p>
-          Dawn is Google's implementation of WebGPU, and it powers Chrome's WebGPU feature. I found
-          that it maps almost exactly one-to-one to the WebGPU spec and the <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">@webgpu/types</code
-          > definitions. You grab the headers, wrap the C functions, and you basically have WebGPU that
-          works natively.
-        </p>
-
-        <p>
-          This is really cool, because when/if I eventually want to support Windows or Linux, I
-          don't have to mess around with Metal shaders or DirectX or Vulkan.
-        </p>
-
-        <p>
-          For windowing and input, I use GLFW. It lets you create a window, run a render loop, and
-          capture mouse and keyboard events. The events come in as GLFW callbacks, which I transform
-          into DOM-like events that components can subscribe to — <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">onClick</code
-          >, <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">onMouseMove</code>, <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">onKeyDown</code
-          >, that sort of thing.
-        </p>
-
-        <p>
-          There's also some Objective-C code for things like IME (input method editor) handling and
-          interacting with macOS-specific APIs. This is the least polished part of the codebase.
-        </p>
-
-        <p>
-          On macOS, you can set the window's titlebar to be standard (the normal system bar),
-          transparent (inherits the background color of your app), or controlled (you can draw under
-          it, it still works for dragging, but you're responsible for not putting content directly
-          under the traffic lights).
-        </p>
-
-        <h3>Bun's FFI Trick</h3>
-
-        <p>
-          In Node, if you want to call native code, you create a native module. It's messy, it's
-          hard to build, and distributing it is a pain.
-        </p>
-
-        <p>
-          Bun makes this way simpler. It uses TinyCC to let you link against dynamically linked
-          libraries at runtime. You just point <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">dlopen</code
-          > at a path, define your function signatures, and call them.
-        </p>
-
-        <p>
-          But it gets better. Bun also has a file embedding feature. You can import a file with <code
-            class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">{`{ type: "file" }`}</code
-          > and it gets embedded in your binary at compile time. At runtime, Bun provides a virtual path
-          to that embedded file, and it acts like a real file on disk.
-        </p>
-
-        <p>So for GLFW and Dawn, which might not be installed on the user's system, I can:</p>
-
-        <ol class="list-decimal pl-6 my-4 space-y-2">
-          <li>Build them as dylibs (or download prebuilt ones)</li>
-          <li>Embed them in the binary using Bun's import syntax</li>
-          <li>
-            Point <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">dlopen</code> at the virtual
-            path
-          </li>
-        </ol>
-
-        <p>
-          The result is a statically linked binary built from dynamically linked libraries. The user
-          doesn't need to install anything. They just run the binary.
+          Apart from those three bugaboos (layout, svg, shaping) the rest of the code is fairly
+          element-specific, but not wildly complex. Platforming is fairly straight forward as well.
+          In our code, we have a <code>@glade/platform</code> interface that must be implemented by
+          <code>@glade/macos</code> and <code>@glade/browser</code>. It's just this.
         </p>
 
         <pre
           class="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto text-sm">
-<code>{`// @ts-expect-error - Bun-specific import attribute
-import GLFW_PATH from "../../vendor/libglfw.dylib" with { type: "file" };
+<code>{`export interface GladePlatform {
+  readonly runtime: GladePlatformRuntime;
+  readonly clipboard: Clipboard;
+  readonly colorSchemeProvider: ColorSchemeProvider;
+
+  requestAdapter(): Promise<GPUAdapter | null>;
+  requestDevice(): Promise<GPUDevice>;
+  getPreferredCanvasFormat(): GPUTextureFormat;
+
+  createRenderTarget(options: { width: number; height: number; title?: string }): GladeRenderTarget;
+
+  now(): number;
+  requestAnimationFrame(callback: (time: number) => void): number;
+  cancelAnimationFrame(id: number): void;
+
+  decodeImage(data: Uint8Array): Promise<DecodedImageData>;
+
+  openUrl(url: string): void;
+
+  runRenderLoop(callback: RenderCallback): void;
+}
+GladeRenderTarget {
+  readonly width: number;
+  readonly height: number;
+  readonly devicePixelRatio: number;
+
+  configure(device: GPUDevice, format: GPUTextureFormat): void;
+  getCurrentTexture(): GPUTexture;
+  present(): void;
+
+  resize(width: number, height: number): void;
+  destroy(): void;
+
+  onMouseDown?(
+    callback: (x: number, y: number, button: number, mods: Modifiers) => void
+  ): () => void;
+  onMouseUp?(callback: (x: number, y: number, button: number, mods: Modifiers) => void): () => void;
+  onMouseMove?(callback: (x: number, y: number) => void): () => void;
+  onClick?(
+    callback: (x: number, y: number, clickCount: number, mods: Modifiers) => void
+  ): () => void;
+  onScroll?(
+    callback: (x: number, y: number, deltaX: number, deltaY: number, mods: Modifiers) => void
+  ): () => void;
+  onResize?(callback: (width: number, height: number) => void): () => void;
+  onKey?(callback: (event: KeyEvent) => void): () => void;
+  onChar?(callback: (event: CharEvent) => void): () => void;
+  onCompositionStart?(callback: (event: CompositionEvent) => void): () => void;
+  onCompositionUpdate?(callback: (event: CompositionEvent) => void): () => void;
+  onCompositionEnd?(callback: (event: CompositionEvent) => void): () => void;
+  onTextInput?(callback: (event: TextInputEvent) => void): () => void;
+
+  setCursor?(style: CursorStyle): void;
+  setTitle?(title: string): void;
+
+  onClose?(callback: () => void): () => void;
+  onFocus?(callback: (focused: boolean) => void): () => void;
+  onCursorEnter?(callback: (entered: boolean) => void): () => void;
+  onRefresh?(callback: () => void): () => void;
+}`}</code></pre>
+
+        <p>
+          All in all maybe 60 lines of code. All of these are easy to implement. For example, in the
+          browser platform, we just sort listen to onMouseDown on the canvas element, while macOS
+          uses GLFW's input events.
+        </p>
+
+        <p>
+          That brings me to GLFW, which is a nice, easy, cross-platform way to create a window, run
+          a render loop, capture mouse and keyboard input, and draw. We download the pre-built dylib
+          GLFW hosts, embed it using Bun's embedding feature, and then Bun's <code>dlopen</code> to open
+          and link against it.
+        </p>
+
+        <pre
+          class="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto text-sm">
+<code>{`import { dlopen, FFIType, JSCallback, type Pointer, ptr } from "bun:ffi";
+
+// @ts-expect-error - Bun-specific import attribute
+import GLFW_PATH from "../../libs/libglfw.dylib" with { type: "file" };
 
 const lib = dlopen(GLFW_PATH, {
-    glfwInit: { args: [], returns: FFIType.i32 },
-    // ...
+  glfwInit: { args: [], returns: FFIType.i32 },
+  glfwSwapBuffers: { args: [FFIType.ptr], returns: FFIType.void },
+  glfwSetCursor: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.void },
+  // and so on...
 });`}</code></pre>
 
-        <p>When you run the compiled binary, you see something like:</p>
-
-        <pre
-          class="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto text-sm">
-<code>{`using embedded GLFW_PATH=/$bunfs/root/libglfw-d9csjcyg.dylib`}</code>
-</pre>
-
-        <p>And it just works.</p>
-
-        <hr class="my-4 border-gray-300" />
-
-        <h2>What's There and What's Not</h2>
+        <p>
+          We do this for Dawn (more on that later), and then just plain <code>dlopen</code> without the
+          embedding for Metal, some custom Objective-C helpers, ImageIO, CoreFoundation, and libobjc.
+        </p>
 
         <p>
-          Current state: Glade runs at 60-120fps on a modern MacBook Pro, depending on how many
+          We have Objective-C helpers for some complex stuff we have to do with NSTextInputClient
+          for text input, and we use ImageIO and CoreFoundation so that we can decode JPG and PNG
+          images. In the browser, we can simply call <code>createImageBitmap</code>.
+        </p>
+
+        <p>
+          Going back to the point about Dawn: Dawn is Google's WebGPU implementation that compiles
+          for all major platforms, and is used in Chrome. It's a bit of a bear to build, so I build
+          it once, and uploaded the dylib into GitHub as a release package, so we can just
+          re-download that when cloning the repo.
+        </p>
+
+        <p>Put all those things together, and we've got a GUI. Neat!</p>
+
+        <p>
+          There are a few small features that we offer (or don't offer?) on the browser, that we do
+          on macOS. Things like setting the titlebar styling is only available on macOS. But many
+          other things have pretty good parity. Image rendering, clipboard access, setting the
+          title, window resize. Even custom cursors work! (Although I had to use the questionable
+          method of setting the style attribute on the window when the user hovers over particular
+          elements.)
+        </p>
+
+        <p>
+          So in the end we've got a passable GUI. Definitely not production ready, or even
+          alpha-ready, but it's good enough for hobby projects. I set a goal for myself to make it
+          run in 120fps. I think it'd be possible to get there, but it's going to take an awfully
+          long time. There are some inherent difficulties to JS, GC only being one of them.
+          Offloading the hard parts to other Rust libraries has a price, and that price is WASM
+          serialization/deserialization.
+        </p>
+
+        <p>
+          In terms of download size, total binary size for macOS is 88MB. Most of that is the Bun
+          runtime (~56MB) and the Dawn dylib (~9MB). Not much to be done about that. For comparison,
+          a similar project I did in Zig resulted in a 66MB binary. Browser bundle size is about
+          20MB, mostly because of emoji fonts. If you skip those, you can get down to about 2MB.
+        </p>
+
+        <p>
+          Current state is: Glade runs at 60-120fps on a modern MacBook Pro, depending on how many
           components are on screen. The demo app uses about 800MB of RAM natively, or about 430MB in
-          a browser, and doesn't appear to have memory leaks.
+          a browser, and doesn't (fingers crossed) appear to have memory leaks.
         </p>
 
-        <p>
-          Total binary size for macOS is 88MB. Most of that is the Bun runtime (~56MB) and the Dawn
-          dylib (~9MB). Not much to be done about that. For comparison, a similar project I did in
-          Zig resulted in a 66MB binary.
-        </p>
-
-        <p>
-          Browser bundle size is about 20MB, mostly because of emoji fonts. If you skip those, you
-          can get down to about 2MB.
-        </p>
-
-        <p><strong>What works:</strong></p>
-
-        <ul class="list-disc pl-6 my-4 space-y-1">
-          <li>Text rendering with font fallback and emoji support</li>
-          <li>Flexbox and grid layouts via Taffy</li>
-          <li>Buttons, inputs, checkboxes, radios, toggles, dropdowns, tooltips</li>
-          <li>Text selection within and across elements</li>
-          <li>Copy and paste via clipboard APIs</li>
-          <li>Image rendering (PNG, JPG)</li>
-          <li>SVG rendering (mostly)</li>
-          <li>Scrolling and scrollbars</li>
-          <li>Custom cursor styles</li>
-          <li>Native macOS titlebar styling</li>
-        </ul>
-
-        <p><strong>Room for optimization:</strong></p>
-
-        <ul class="list-disc pl-6 my-4 space-y-2">
-          <li>
-            <strong>Layout caching</strong>: We're sending layout constraints across the WASM
-            boundary every frame, even when nothing has changed. Caching layouts with constraints as
-            keys would save a lot of overhead.
-          </li>
-          <li>
-            <strong>Better memory management</strong>: We're creating a lot of disposable objects
-            that need to be garbage collected at the end of each frame. The GC can cause frame drops
-            if it doesn't run often enough, or runs at the wrong time.
-          </li>
-          <li>
-            <strong>Virtualization</strong>: For long lists, we should only lay out and render
-            what's actually visible. This is an application-level technique, but we could make it
-            easier at the component level.
-          </li>
-        </ul>
-
-        <p>
-          The biggest optimization would be to rewrite the whole thing in a WASM-compilable language
-          like Rust or Zig, and pay the serde cost only at the boundary. We'd avoid GC entirely and
-          have access to low-level performance improvements. But that's a different project.
-        </p>
+        <p>PRs are welcome!</p>
       </div>
     </div>
   </div>
