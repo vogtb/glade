@@ -19,11 +19,13 @@
         </p>
 
         <p>
-          Glade is largely based on GPUI and egui, but written in Typescript rather than Rust. Last
-          year I worked on a project that used Dawn, WebGPU, and Zig to do essentially the same
-          thing that Glade does, but it's hard enough learning one new thing, and much, much harder
-          to learn two new things at once. So I used Typescript, a language I know and (mostly)
-          like.
+          Glade is largely based on <a
+            href="https://github.com/zed-industries/zed/tree/main/crates/gpui">GPUI</a
+          > and <a href="https://github.com/emilk/egui">egui</a>, but written in Typescript rather
+          than Rust. Last year I worked on a project that used Dawn, WebGPU, and Zig to do
+          essentially the same thing that Glade does, but it's hard enough learning one new thing,
+          and much, much harder to learn two new things at once. So I used Typescript, a language I
+          know and (mostly) like.
         </p>
 
         <p>
@@ -47,11 +49,13 @@
 
         <p>
           Most of the hard parts of the render loop are actually not parts I've written. Our layout
-          engine is a wrapper around Taffy, build as a WASM module, and embedded in our JS. We do a
-          similar thing for SVGs, and text shaping, using Lyon for SVG parsing and rustybuzz and
-          cosmic text for text shaping. These are WASM modules as well. I could have compiled these
-          as native code for macOS, but on the whole, it seemed unnecessary, as we still need to
-          cross the ABI boundary.
+          engine is a wrapper around <a href="https://docs.rs/taffy/latest/taffy/">Taffy</a>, build
+          as a WASM module, and embedded in our JS. We do a similar thing for SVGs, and text
+          shaping, using <a href="https://docs.rs/lyon/latest/lyon/">Lyon</a> for SVG parsing and <a
+            href="https://github.com/harfbuzz/rustybuzz">rustybuzz</a
+          > and <a href="https://docs.rs/cosmic-text/latest/cosmic_text/">cosmic text</a> for text shaping.
+          These are WASM modules as well. I could have compiled these as native code for macOS, but on
+          the whole, it seemed unnecessary, as we still need to cross the ABI boundary.
         </p>
 
         <p>
@@ -139,10 +143,10 @@ GladeRenderTarget {
         </p>
 
         <p>
-          That brings me to GLFW, which is a nice, easy, cross-platform way to create a window, run
-          a render loop, capture mouse and keyboard input, and draw. We download the pre-built dylib
-          GLFW hosts, embed it using Bun's embedding feature, and then Bun's <code>dlopen</code> to open
-          and link against it.
+          That brings me to <a href="https://www.glfw.org/">GLFW</a>, which is a nice, easy,
+          cross-platform way to create a window, run a render loop, capture mouse and keyboard
+          input, and draw. We download the pre-built dylib GLFW hosts, embed it using Bun's
+          embedding feature, and then Bun's <code>dlopen</code> to open and link against it.
         </p>
 
         <pre
@@ -160,8 +164,9 @@ const lib = dlopen(GLFW_PATH, {
 });`}</code></pre>
 
         <p>
-          We do this for Dawn (more on that later), and then just plain <code>dlopen</code> without the
-          embedding for Metal, some custom Objective-C helpers, ImageIO, CoreFoundation, and libobjc.
+          We do this for <a href="https://github.com/google/dawn">Dawn</a> (more on that later), and then
+          just plain <code>dlopen</code> without the embedding for Metal, some custom Objective-C helpers,
+          ImageIO, CoreFoundation, and libobjc.
         </p>
 
         <p>
@@ -171,9 +176,10 @@ const lib = dlopen(GLFW_PATH, {
         </p>
 
         <p>
-          Going back to the point about Dawn: Dawn is Google's WebGPU implementation that compiles
-          for all major platforms, and is used in Chrome. It's a bit of a bear to build, so I build
-          it once, and uploaded the dylib into GitHub as a release package, so we can just
+          Going back to the point about Dawn: <a href="https://github.com/google/dawn"
+            >Dawn is Google's WebGPU implementation</a
+          > that compiles for all major platforms, and is used in Chrome. It's a bit of a bear to build,
+          so I build it once, and uploaded the dylib into GitHub as a release package, so we can just
           re-download that when cloning the repo.
         </p>
 
